@@ -1,0 +1,27 @@
+\name{simClaytonOakes}
+\alias{simClaytonOakes}
+\title{Simulate from the Clayton-Oakes frailty model}
+\usage{
+  simClaytonOakes(K, n, eta, beta, stoptime, left = 0)
+}
+\arguments{
+  \item{K}{Number of clusters}
+
+  \item{n}{Number of observations in each cluster}
+
+  \item{eta}{1/variance}
+
+  \item{beta}{Effect (log hazard ratio) of covariate}
+
+  \item{stoptime}{Stopping time}
+
+  \item{left}{Left truncation}
+}
+\description{
+  Simulate observations from the Clayton-Oakes copula model
+  with piecewise constant marginals.
+}
+\author{
+  Klaus K. Holst
+}
+

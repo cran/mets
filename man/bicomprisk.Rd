@@ -1,0 +1,63 @@
+\name{bicomprisk}
+\alias{bicomprisk}
+\title{Estimation of concordance in bivariate competing risks data}
+\usage{
+  bicomprisk(formula, data, cause = c(1, 1), cens = 0,
+    causes, indiv, strata = NULL, id, num, prodlim = FALSE,
+    messages = TRUE, model, return.data = 0, uniform = 0,
+    conservative = 1, resample.iid = 1, ...)
+}
+\arguments{
+  \item{formula}{Formula with left-hand-side being a
+  \code{Hist} object (see example below) and the
+  left-hand-side specying the covariate structure}
+
+  \item{data}{Data frame}
+
+  \item{cause}{Causes (default (1,1)) for which to estimate
+  the bivariate cumulative incidence}
+
+  \item{cens}{The censoring code}
+
+  \item{causes}{causes}
+
+  \item{indiv}{indiv}
+
+  \item{strata}{Strata}
+
+  \item{id}{Clustering variable}
+
+  \item{num}{num}
+
+  \item{prodlim}{prodlim to use prodlim estimator
+  (Aalen-Johansen) rather than IPCW weighted estimator
+  based on comp.risk function.These are equivalent in the
+  case of no covariates.}
+
+  \item{messages}{Control amount of output}
+
+  \item{model}{Type of competing risk model (default is
+  Fine-Gray model "fg", see comp.risk).}
+
+  \item{return.data}{Should data be returned (skipping
+  modeling)}
+
+  \item{uniform}{to compute uniform standard errors for
+  concordance estimates based on resampling.}
+
+  \item{conservative}{for conservative standard errors,
+  recommended for larger data-sets.}
+
+  \item{resample.iid}{to return iid residual processes for
+  further computations such as tests.}
+
+  \item{...}{Additional arguments to lower level functions}
+}
+\description{
+  Estimation of concordance in bivariate competing risks
+  data
+}
+\author{
+  Thomas Scheike, Klaus K. Holst
+}
+
