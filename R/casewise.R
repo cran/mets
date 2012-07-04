@@ -22,8 +22,15 @@
 ##' cdz <- cc$model$"DZ"
 ##' cmz <- cc$model$"MZ"
 ##' 
-##' cdz <- casewise.test(cdz,cifmz,test="case")
-##' cmz <- casewise.test(cmz,cifdz,test="conc")
+##' ### To compute casewise cluster argument must be passed on, here with a max of 100 to limit comp-time 
+##' outm <-comp.risk(Surv(time,status==0)~+1,data=prt,prt$status,causeS=2,times=times,max.clust=100)
+##' cifmz <-predict(outm,X=1,uniform=0,resample.iid=1) 
+##' cc <-bicomprisk(Hist(time,status)~strata(zyg)+id(id),data=prt,cause=c(2,2),se.clusters=outm$clusters)
+##' cdz <- cc$model$"DZ"
+##' cmz <- cc$model$"MZ"
+##' 
+##' cdz <- casewise.test(cdz,cifmz,test="case") ## test based on casewise
+##' cmz <- casewise.test(cmz,cifmz,test="conc") ## test based on concordance:w
 ##' 
 ##' plot(cmz,ylim=c(0,0.7),xlim=c(60,100))
 ##' par(new=TRUE)
@@ -40,65 +47,56 @@ casewise.test <- function(conc,marg,test="no-test")
   dtimer <- timer[2]-timer[1]
 
   margtime <- Cpred(cbind(marg$time,c(marg$P1)),timer)[,2]
-  concP1 <- Cpred(cbind(conc$time,c(conc$P1)),timer)[,2]
+  concP1 <-   Cpred(cbind(conc$time,c(conc$P1)),timer)[,2]
+  se.margtime <- Cpred(cbind(marg$time,c(marg$se.P1)),timer)
+  se.concP1 <-   Cpred(cbind(conc$time,c(conc$se.P1)),timer)
   outtest <- NULL
   casewise.iid <- NULL
   casewise <- concP1/margtime
 
-  if (test=="conc" ||test=="case") {
+  if (test=="conc" ||test=="case") if (is.null(conc$P1.iid) || is.null(marg$P1.iid))  
+     stop("Warning, need iid for Concordance and marginal\n");
 
-  if (is.null(conc$P1.iid) || is.null(marg$P1.iid))  {
-      stop("Warning, need iid for Concordance and marginal\n");
-  } else {
-  if ((ncol(conc$P1.iid[1,,])-ncol(marg$P1.iid[1,,]))!=0) {
-      cat("Warning, not same number of iid residuals for concordance and marginal estimate\n"); 
-      stop("Must be computed on same data\n"); 
-  }
-  }
-  }
+  se.casewise2 <- as.matrix(Cpred(se.concP1,timer)[,2]/margtime,ncol=100)
+  se.margtime <- as.matrix(Cpred(se.margtime,timer)[,2],ncol=100)
 
-   se.casewise <- as.matrix(Cpred(cbind(conc$time,c(conc$se.P1)),timer)[,2]/margtime,ncol=100)
-   se.margtime <- as.matrix(Cpred(marg$se.P1,timer)[,2],ncol=100)
+   conciid <- Cpred(cbind(conc$time,conc$P1.iid),timer)[,-1]
+   nconc <- colnames(conc$P1.iid)
+   P1iid <- Cpred(cbind(marg$time,marg$P1.iid),timer)[,-1]
+   casewise.iid1 <- conciid/margtime
+   casewise.iid2 <- P1iid*(concP1/margtime^2)
+   casewise.iid <- casewise.iid2
+   casewise.iid[,nconc] <- casewise.iid[,nconc]+casewise.iid1
+   se.casewise <- apply(casewise.iid^2,1,sum)^.5
 
-  if (!is.null(conc$se.P1) && !is.null(marg$se.P1) )
-  {
-   casewise.iid <- Cpred(cbind(conc$time,conc$P1.iid[1,,]),timer)[,-1]/margtime
-  if (test=="conc" || test=="case") {
-    if (ncol(conc$P1.iid[1,,])== ncol(marg$P1.iid[1,,])) {
-    if (test=="case") 
-    {
-    if (!is.null(conc$P1.iid)) { } 
-            margP1.iid  <- Cpred(cbind(marg$time,marg$P1.iid[1,,]),timer)[,-1]
-            diff.iid <- (apply(casewise.iid,2,sum)-apply(margP1.iid,2,sum))*dtimer
-            sd.pepem <- sum(diff.iid^2)^.5
-            diff.pepem <- sum((casewise-margtime))*dtimer
-            z.pepem <- diff.pepem/sd.pepem
-            pval.pepem <- 2*pnorm(-abs(z.pepem))
-            outtest <- cbind(diff.pepem,sd.pepem,z.pepem,pval.pepem)
-            colnames(outtest) <- c("cum dif.","sd","z","pval") 			 
-            rownames(outtest) <- "pepe-mori"
+   if (test=="case") 
+   {
+        diff.iid <- (apply(casewise.iid,2,sum)-apply(P1iid,2,sum))*dtimer
+        sd.pepem <- sum(diff.iid^2)^.5
+        diff.pepem <- sum((casewise-margtime))*dtimer
+        z.pepem <- diff.pepem/sd.pepem
+        pval.pepem <- 2*pnorm(-abs(z.pepem))
+        outtest <- cbind(diff.pepem,sd.pepem,z.pepem,pval.pepem)
+        colnames(outtest) <- c("cum dif.","sd","z","pval") 			 
+        rownames(outtest) <- "pepe-mori"
     } else if (test=="conc") {
-          if (!is.null(conc$P1.iid)) { } 
-            conciid <- Cpred(cbind(conc$time,conc$P1.iid[1,,]),timer)[,-1]
-            margP1.iid  <- Cpred(cbind(marg$time,marg$P1.iid[1,,]),timer)[,-1]*2*margtime
-            diff.iid <- (apply(conciid,2,sum)-apply(margP1.iid,2,sum))*dtimer
-            sd.pepem <- sum(diff.iid^2)^.5
-            diff.pepem <- sum((concP1-margtime^2))*dtimer
-            z.pepem <- diff.pepem/sd.pepem
-            pval.pepem <- 2*pnorm(-abs(z.pepem))
-            outtest <- cbind(diff.pepem,sd.pepem,z.pepem,pval.pepem)
-            colnames(outtest) <- c("cum dif.","sd","z","pval") 			 
-            rownames(outtest) <- "pepe-mori"
+        P1iid2  <- 2*P1iid;
+        P1iid2[,nconc] <- (P1iid2[,nconc] - conciid)
+        diff.iid <- apply(P1iid2,2,sum)*dtimer
+        sd.pepem <- sum(diff.iid^2)^.5
+        diff.pepem <- sum((concP1-margtime^2))*dtimer
+        z.pepem <- diff.pepem/sd.pepem
+        pval.pepem <- 2*pnorm(-abs(z.pepem))
+        outtest <- cbind(diff.pepem,sd.pepem,z.pepem,pval.pepem)
+        colnames(outtest) <- c("cum dif.","sd","z","pval") 			 
+        rownames(outtest) <- "pepe-mori"
     }
-   } 
-   }
-   }  
 
    margout <- cbind(timer,margtime,se.margtime)
    colnames(margout) <- c("time","cif","se")
 
-   casewiseout <- cbind(timer,casewise,se.casewise)
-   colnames(casewiseout) <- c("time","casewise","se")
+   casewiseout <- cbind(timer,casewise,se.casewise,se.casewise2)
+   colnames(casewiseout) <- c("time","casewise","se","se2")
 
   out <- list(casewise=casewiseout,marg=margout,
 	      test=outtest, mintime=mintime,maxtime=maxtime,same.cluster=TRUE,test=test)
@@ -111,7 +109,7 @@ casewise.test <- function(conc,marg,test="no-test")
 ##' @title Estimates the casewise concordance based on Concordance and marginal estimate using prodlim but no testing
 ##' @param conc Concordance 
 ##' @param marg Marginal estimate
-##' @param cause.prodlim specififes which cause that should be used for marginal cif based on prodlim
+##' @param cause.marg specififes which cause that should be used for marginal cif based on prodlim
 ##' @author Thomas Scheike
 ##' @examples
 ##' data(prt);
@@ -128,8 +126,8 @@ casewise.test <- function(conc,marg,test="no-test")
 ##' cdz <- cc$model$"DZ"
 ##' cmz <- cc$model$"MZ"
 ##' 
-##' cdz <- casewise(cdz,outm,cause.prodlim=2) ## cause refers to second cause of prodlim object (possibly with other name)
-##' cmz <- casewise(cmz,outm,cause.prodlim=2)
+##' cdz <- casewise(cdz,outm,cause.marg=2) 
+##' cmz <- casewise(cmz,outm,cause.marg=2)
 ##' 
 ##' plot(cmz,ci=NULL,ylim=c(0,0.5),xlim=c(60,100),legend=TRUE,col=c(3,2,1))
 ##' par(new=TRUE)
@@ -137,17 +135,21 @@ casewise.test <- function(conc,marg,test="no-test")
 ##' summary(cdz)
 ##' summary(cmz)
 ##' @export
-casewise <- function(conc,marg,cause.prodlim=1)
+casewise <- function(conc,marg,cause.marg)
 { ## {{{
+  if (missing(cause.marg)) stop("Please specify cause of marginal (as given in Hist object)")
   if ((!class(conc)=="prodlim")  || (!class(marg)=="prodlim")) stop("Assumes that both models are based on prodlim function \n"); 
   time1 <- conc$time
   time2 <- marg$time
 
+  cause.prodlim <- match(as.character(cause.marg),levels(getEvent(marg$model.response)))
+  if (is.na(cause.prodlim)) stop("Cause did not match marginal model")
+  
   mintime <- max(time1[1],time2[1])
   maxtime <- min(max(time1),max(time2))
   timer <- seq(mintime, maxtime,length=100)
   dtimer <- timer[2]-timer[1]
-
+ 
   out <- conc
   out$time <- timer
   if (class(marg)=="comp.risk") margtime <- Cpred(cbind(marg$time,c(marg$P1)),timer)[,2] else if (class(marg)=="prodlim") {

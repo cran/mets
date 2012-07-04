@@ -11,6 +11,8 @@
 ##' @param id Clustering variable
 ##' @param num num
 ##' @param max.clust max number of clusters in comp.risk call for iid decompostion, max.clust=NULL uses all clusters otherwise rougher grouping.
+##' @param marg marginal cumulative incidence to make stanard errors for same clusters for subsequent use in casewise.test()
+##' @param se.clusters to specify clusters for standard errors. Either a vector of cluster indices or a column name in \code{data}. Defaults to the \code{id} variable.
 ##' @param prodlim prodlim to use prodlim estimator (Aalen-Johansen) rather than IPCW weighted estimator based on comp.risk function.These are equivalent in the case of no covariates.
 ##' @param messages Control amount of output
 ##' @param model Type of competing risk model (default is Fine-Gray model "fg", see comp.risk). 
@@ -21,8 +23,9 @@
 ##' @param ... Additional arguments to lower level functions
 ##' @author Thomas Scheike, Klaus K. Holst
 ##' @export
-bicomprisk <- function(formula, data, cause=c(1,1), cens=0, causes, indiv, strata=NULL, id,num,max.clust=1000,
-		       prodlim=FALSE,messages=TRUE,model,return.data=0,uniform=0,conservative=1,resample.iid=1,...) {
+bicomprisk <- function(formula, data, cause=c(1,1), cens=0, causes, indiv, 
+ strata=NULL, id,num, max.clust=1000, marg=NULL,se.clusters=NULL,
+ prodlim=FALSE,messages=TRUE,model,return.data=0,uniform=0,conservative=1,resample.iid=1,...) {
 
   mycall <- match.call()
   formulaId <- unlist(Specials(formula,"id"))
@@ -46,6 +49,25 @@ bicomprisk <- function(formula, data, cause=c(1,1), cens=0, causes, indiv, strat
   } 
   if (missing(id)) stop("Missing 'id' variable")
   
+  ### setting up cluster level for iid decomposition
+  if (is.null(se.clusters) & is.null(marg))  lse.clusters <- data[,c(id)]
+  else { 
+    if (is.null(se.clusters)) {
+      lse.clusters <- marg$clusters
+###      if (!is.null(max.clust)) {   }
+    } else {
+      if (is.character(se.clusters)) {
+        lse.clusters <- data[,se.clusters]
+      } else {
+        lse.clusters <- se.clusters
+      }
+    }
+  }
+  if (length(lse.clusters)!=nrow(data)) stop("'se.clusters' and 'data' does not match!")
+  se.clusters.call <- se.clusters
+
+  data <- data.frame(cbind(data,lse.clusters))
+
   timevar <- terms(formula)[[2]]
   ##  hh <- with(data,eval(timevar))
   if (is.call(timevar)) {
@@ -56,12 +78,15 @@ bicomprisk <- function(formula, data, cause=c(1,1), cens=0, causes, indiv, strat
   causes <- as.character(causes)
   
   if (!is.null(strata)) {
-    dd <- split(data,interaction(data[,strata]))
+    fac <- interaction(data[,strata])
+    dd <- split(data,fac)
     nn <- unlist(lapply(dd,nrow))
     dd[which(nn==0)] <- NULL
     if (length(dd)>1) {
       fit <- lapply(seq_len(length(dd)),function(i) {
         if (messages>0) message("Strata '",names(dd)[i],"'")
+        idx <- which(fac==names(dd)[i])
+        mycall$se.clusters <- lse.clusters[idx]
         mycall$formula <- formula
         mycall$data <- dd[[i]]
         eval(mycall)
@@ -94,19 +119,13 @@ bicomprisk <- function(formula, data, cause=c(1,1), cens=0, causes, indiv, strat
   if (length(covars)>0)
     covars2 <- paste(covars,1,sep=".")
   for (i in seq_len(length(indiv)))
-    indiv2 <- c(indiv2, paste(indiv[i],1:2,sep="."))
+
+  indiv2 <- c(indiv2, paste(indiv[i],1:2,sep="."))
   
-  ww0 <- reshape(data[,c(timevar,causes,covars,indiv,id,num)],
-                 direction="wide",idvar=id,timevar=num)[,c(timevar2,causes2,indiv2,covars2)]
- 
-  ## switchers <- which(ww0[,timevar2[1]]>ww0[,timevar2[2]])
-  ## switchpos <- 1:4
-  ## if (length(indiv)>0)
-  ##   switchpos <- c(switchpos, seq_len(2*length(indiv))+4)
-  ## newpos <- switchpos
-  ## for (i in seq_len(length(newpos)))   
-  ##   newpos[i] <- newpos[i] + ifelse(i%%2==1,1,-1)
-  ##  ww0[switchers,switchpos] <- ww0[switchers,newpos]
+  ww0 <- reshape(data[,c(timevar,causes,covars,indiv,id,num,"lse.clusters")],
+         direction="wide",idvar=id,timevar=num)[,c(id,"lse.clusters.1",timevar2,causes2,indiv2,covars2)]
+
+###  ww0 <- simple.reshape(data[,c(timevar,causes,covars,indiv,id,num,"se.clusters")],id=id,num=data$num)
   ww0 <- na.omit(ww0)
  
   status <- rep(0,nrow(ww0))
@@ -118,7 +137,7 @@ bicomprisk <- function(formula, data, cause=c(1,1), cens=0, causes, indiv, strat
 
   ##  suppressMessages(browser())  
 
-  ##(i,j)
+  ## {{{ (i,j) causes 
   idx2 <- which(ww0[,causes2[1]]==cause[1] & ww0[,causes2[2]]==cause[2])
   status[idx2] <- 1
   time[idx2] <- apply(ww0[idx2,timevar2[1:2]],1,max)
@@ -150,22 +169,30 @@ bicomprisk <- function(formula, data, cause=c(1,1), cens=0, causes, indiv, strat
   
   mydata0 <- mydata <- data.frame(time,status,ww0[,covars2],ww0[,indiv2])
   names(mydata) <- c(timevar,causes,covars,indiv2)
-  
+  ## }}}
+
   if (return.data==2) return(list(data=mydata)) else {
   if (!prodlim) {
     ff <- paste("Surv(",timevar,",",causes,"!=",cens,") ~ 1",sep="")
     if (length(c(covars,indiv))>0) {
       xx <- c(covars,indiv2)
-      for (i in seq_len(length(xx)))
+     for (i in seq_len(length(xx)))
         xx[i] <- paste("const(",xx[i],")",sep="")
       ff <- paste(c(ff,xx),collapse="+")
       if (missing(model)) model <- "fg"      
     }
     if (missing(model)) model <- "fg"
+    ### clusters for iid construction
+    lse.clusters <- NULL
+    if (!is.null(se.clusters.call)) {
+        lse.clusters <- ww0$lse.clusters.1
+    }
+
     add<-comp.risk(as.formula(ff),data=mydata,
-                   status,causeS=1,n.sim=0,resample.iid=resample.iid,model=model,conservative=conservative,
-		   max.clust=max.clust)
+    status,causeS=1,n.sim=0,resample.iid=resample.iid,model=model,conservative=conservative,
+    clusters=lse.clusters, max.clust=max.clust)
     padd <- predict(add,X=1,se=1,uniform=uniform,resample.iid=resample.iid)
+    padd$cluster.names <- lse.clusters
   } else {
     ff <- as.formula(paste("Hist(",timevar,",",causes,")~",paste(c("1",covars,indiv2),collapse="+")))
     padd <- prodlim(ff,data=mydata)

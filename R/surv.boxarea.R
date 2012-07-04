@@ -6,7 +6,7 @@ surv.boxarea <- function(left.trunc,right.cens,data,timevar="time",status="statu
   if (is.null(data[,timevar])) stop("Wrong time variable")
   if (is.null(data[,status])) stop("Wrong status variable")
   data <- data[order(data[,id]),]
-  num <- NULL
+###  num <- NULL
   if (is.null(num)) {
     idtab <- table(data[,id])
     num <- "num"
@@ -19,7 +19,9 @@ surv.boxarea <- function(left.trunc,right.cens,data,timevar="time",status="statu
   covars2 <- NULL; 
   if (length(covars)>0) covars2 <- paste(covars,1:2,sep=".")
 
-  ww0 <- reshape(data[,c(timevar,status,covars,id,num)],direction="wide",idvar=id,timevar=num)[,c(timevar2,status2,covars2,id)] 
+  ww0 <- reshape(data[,c(timevar,status,covars,id,num)],direction="wide",
+		 idvar=id,timevar=num)[,c(timevar2,status2,covars2,id)] 
+
   mleft <- with(ww0, (get(timevar2[1])>left.trunc[1]) & (get(timevar2[2])>left.trunc[2]))  ## Both not-truncated
   if (length(na.idx <- which(is.na(mleft)))>0) {
     ##    warning("Removing incomplete cases", na.idx)
