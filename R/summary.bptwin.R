@@ -53,9 +53,10 @@ summary.bptwin <- function(object,level=0.05,...) {
     K <- length(ACD)
     Ki <- seq_len(K)
     corMZ <- sum(cc[Ki]); corDZ <- sum(cc[Ki]*dzsc)
-    i1 <- seq_len(length(dzsc))
-    h <- function(x) sum(x[i1])
-    dh <- function(x) { res <- rep(0,length(x)); res[i1] <- 1; res }
+    i1 <- na.omit(match(c("D","A"),nn))
+    h <- function(x) sum(x)
+    dh <- function(x) rep(1,length(i1))
+##    dh <- function(x) { res <- rep(0,length(x)); res[i1] <- 1; res }
     ##    h <- function(x) 2*(sum(x[i1])-sum(x[i1]*dzsc))
     ##    dh <- function(x) 2*(1-dzsc)
     
@@ -77,6 +78,7 @@ summary.bptwin <- function(object,level=0.05,...) {
     zrho.var <- datanh(cc)^2*diag(Vc)
     CIs <- tanh(zrho%x%cbind(1,1)+zrho.var^0.5%x%cbind(-1,1)*qnorm(1-alpha))
   }
+
   newcoef <- rbind(cbind(cc,diag(Vc)^0.5,CIs),corr);
   ##  CIs <- rbind(CIs,c(NA,NA),c(NA,NA))
   ##  newcoef <- cbind(newcoef,CIs)
@@ -160,7 +162,8 @@ summary.bptwin <- function(object,level=0.05,...) {
   rownames(Nstr) <- ""
   colnames(Nstr) <- unlist(lapply(strsplit(colnames(object$N)[npos*2-1],".",fixed=TRUE),
                                   function(x) paste(x[1], "MZ/DZ")))
-  res <- list(object=object, h=hval,
+  res <- list(h=hval,
+              par=object$coef,
               probMZ=probMZ, probDZ=probDZ, Nstr=Nstr,
               coef=newcoef) ##, concordance=concordance, conditional=conditional)
   class(res) <- "summary.bptwin"
@@ -170,7 +173,7 @@ summary.bptwin <- function(object,level=0.05,...) {
 ##' @S3method print summary.bptwin
 print.summary.bptwin <- function(x,digits = max(3, getOption("digits") - 2),...) {
   cat("\n")
-  print(x$object,digits=digits,...)
+  printCoefmat(x$par,digits=digits,...)
   cat("\n")
   x$Nstr <- x$Nstr[,which((colnames(x$Nstr)!="Complete MZ/DZ")),drop=FALSE]
   print(x$Nstr,quote=FALSE)

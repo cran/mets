@@ -34,7 +34,7 @@ summary.biprobit <- function(object,level=0.05,...) {
   rownames(pp) <- c("Concordance","Case-wise/Conditional","Marginal")
   colnames(pp) <- c("Estimate",CIlab)
   
-  res <- list(object=object,varcomp=varcomp,prob=pp)
+  res <- list(varcomp=varcomp,prob=pp,coef=object$coef,score=object$score,logLik=object$logLik,msg=object$msg,N=object$N)
   class(res) <- "summary.biprobit"
   res
 }

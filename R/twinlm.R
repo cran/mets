@@ -67,7 +67,7 @@
 ##' @param constrain Development argument
 ##' @param ... Additional arguments parsed on to lower-level functions
 twinlm <- function(formula, data, id, zyg, DZ, OS, weight=NULL, type=c("ace"), twinnum="twinnum", binary=FALSE,keep=weight,estimator="gaussian",constrain=TRUE,control=list(),...) {
-  
+
   cl <- match.call(expand.dots=TRUE)
   opt <- options(na.action="na.pass")
   mf <- model.frame(formula,data)
@@ -75,7 +75,9 @@ twinlm <- function(formula, data, id, zyg, DZ, OS, weight=NULL, type=c("ace"), t
   y <- model.response(mf, "any")
   formula <- update(formula, ~ . + 1)
   yvar <- getoutcome(formula)
-
+  if (missing(zyg)) stop("Zygosity variable not specified")
+  if (missing(id)) stop("Twin-pair variable not specified")
+  
   if (binary | is.factor(data[,yvar]) | is.character(data[,yvar]) | is.logical(data[,yvar])) {
     args <- as.list(cl)
     args[[1]] <- NULL
@@ -90,7 +92,7 @@ twinlm <- function(formula, data, id, zyg, DZ, OS, weight=NULL, type=c("ace"), t
   if (any(latentnames%in%varnames))
     stop(paste(paste(latentnames,collapse=",")," reserved for names of latent variables.",sep=""))
   
-  
+
   mm <- model.matrix(formula,mf)
   options(opt)
   
@@ -117,7 +119,7 @@ twinlm <- function(formula, data, id, zyg, DZ, OS, weight=NULL, type=c("ace"), t
     data[,twinnum] <- mynum
   }
 
-  cur <- cbind(data[,c(yvar,keep)],as.numeric(data[,twinnum]),as.numeric(data[,id]),as.numeric(zygstat));
+  cur <- cbind(data[,c(yvar,keep)],as.data.frame(cbind(as.numeric(data[,twinnum]),as.numeric(data[,id]),as.numeric(zygstat))));
   colnames(cur) <- c(yvar,keep,twinnum,id,zyg)
   mydata <- cbind(cur,mm)
   
@@ -266,6 +268,11 @@ twinlm <- function(formula, data, id, zyg, DZ, OS, weight=NULL, type=c("ace"), t
      covariance(model2,outcomes) <- c("var(DZ)1","var(DZ)2")
      covariance(model3,outcomes) <- c("var(OS)1","var(OS)2")
   }
+  ## if (type=="u") {
+  ##   covariance(model1,outcomes) <- c("var","var")
+  ##   covariance(model2,outcomes) <- c("var","var")
+  ##   covariance(model3,outcomes) <- c("var","var")   
+  ## }
   if (type%in%c("u","flex","sat")) {
     if (constrain) {
       if (type=="sat") {
@@ -273,9 +280,15 @@ twinlm <- function(formula, data, id, zyg, DZ, OS, weight=NULL, type=c("ace"), t
         model2 <- covariance(model2,outcomes,constrain=TRUE,rname="atanh(rhoDZ)",cname="covDZ",lname="log(var(DZ)).1",l2name="log(var(DZ)).2")
         model3 <- covariance(model3,outcomes,constrain=TRUE,rname="atanh(rhoOS)",cname="covOS",lname="log(var(OS)).1",l2name="log(var(OS)).2")
       } else {
-        model1 <- covariance(model1,outcomes,constrain=TRUE,rname="atanh(rhoMZ)",cname="covMZ",lname="log(var(MZ))")
-        model2 <- covariance(model2,outcomes,constrain=TRUE,rname="atanh(rhoDZ)",cname="covDZ",lname="log(var(DZ))")
-        model3 <- covariance(model3,outcomes,constrain=TRUE,rname="atanh(rhoOS)",cname="covOS",lname="log(var(OS))")
+        if (type=="flex") {
+          model1 <- covariance(model1,outcomes,constrain=TRUE,rname="atanh(rhoMZ)",cname="covMZ",lname="log(var(MZ))")
+          model2 <- covariance(model2,outcomes,constrain=TRUE,rname="atanh(rhoDZ)",cname="covDZ",lname="log(var(DZ))")
+          model3 <- covariance(model3,outcomes,constrain=TRUE,rname="atanh(rhoOS)",cname="covOS",lname="log(var(OS))")
+        }  else {
+          model1 <- covariance(model1,outcomes,constrain=TRUE,rname="atanh(rhoMZ)",cname="covMZ",lname="log(var)")
+          model2 <- covariance(model2,outcomes,constrain=TRUE,rname="atanh(rhoDZ)",cname="covDZ",lname="log(var)")
+          model3 <- covariance(model3,outcomes,constrain=TRUE,rname="atanh(rhoOS)",cname="covOS",lname="log(var)")          
+        }        
       }     
     } else {
       covariance(model1,outcomes[1],outcomes[2]) <- "covMZ"
@@ -380,7 +393,6 @@ twinlm <- function(formula, data, id, zyg, DZ, OS, weight=NULL, type=c("ace"), t
     estimator <- "weighted"
   }
 
-
   ## Estimate
   newkeep <- unlist(sapply(keep, function(x) paste(x,1:2,sep=".")))
   mm <- list(MZ=model1,DZ=model2)
@@ -390,21 +402,31 @@ twinlm <- function(formula, data, id, zyg, DZ, OS, weight=NULL, type=c("ace"), t
     dd <- c(dd,list(wide3))
   }
   names(dd) <- names(mm)
-  suppressWarnings(mg <- multigroup(mm, dd, missing=TRUE,fix=FALSE,keep=newkeep))
+  suppressWarnings(mg <- multigroup(mm, dd, missing=TRUE,fix=FALSE,keep=newkeep,type=2))
   if (is.null(estimator)) return(mg)
-  
-  optim <- list(method="nlminb2",refit=FALSE,gamma=1)  
+  optim <- list(method="nlminb2",refit=FALSE,gamma=1,start=rep(0.1,with(mg,npar+npar.mean)))  
   if (length(control)>0) {
     optim[names(control)] <- control
   }
-  e <- estimate(mg,weight=weight,estimator=estimator,fix=FALSE,control=optim,...)
+
+  if (is.Surv(data[,yvar])) {
+    require("lava.tobit")
+    estimator <- "tobit"
+    optim$method <- "nlminb1"
+    e <- estimate(mg,estimator=estimator,fix=FALSE,control=optim,...)
+  } else {
+    e <- estimate(mg,weight=weight,estimator=estimator,fix=FALSE,control=optim,...)
+  }
   if (!is.null(optim$refit) && optim$refit) {
     optim$method <- "NR"
     optim$start <- pars(e)
-    e <- estimate(mg,weight=weight,estimator=estimator,fix=FALSE,control=optim,...)
+    if (is.Surv(data[,yvar])) {
+      e <- estimate(mg,estimator=estimator,fix=FALSE,control=optim,...)      
+    } else {
+      e <- estimate(mg,weight=weight,estimator=estimator,fix=FALSE,control=optim,...)
+    }
   }
-  ##  suppressMessages(browser())
-  res <- list(coefficients=e$opt$estimate, vcov=Inverse(information(e)), estimate=e, model=mg, full=full, call=cl, data=data, zyg=zyg, id=id, twinnum=twinnum, type=type, model.mz=model1, model.dz=model2, model.dzos=model3, data.mz=wide1, data.dz=wide2, data.os=wide3, OS=!missing(OS), constrain=constrain)
+  res <- list(coefficients=e$opt$estimate, vcov=Inverse(information(e)), estimate=e, model=mm, full=full, call=cl, data=data, zyg=zyg, id=id, twinnum=twinnum, type=type, model.mz=model1, model.dz=model2, model.dzos=model3, data.mz=wide1, data.dz=wide2, data.os=wide3, OS=!missing(OS), constrain=constrain)
   class(res) <- "twinlm"
   return(res)
 }

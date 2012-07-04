@@ -16,21 +16,44 @@ data(prt)
 ## Estimation of cumulative incidence
 ###############################
 
-times <- seq(60,100,by=1)
+times <- seq(40,100,by=2)
 cifmod <- comp.risk(Surv(time,status>0)~+1+cluster(id),data=prt,prt$status,causeS=2,n.sim=0,
                   times=times,conservative=1,max.clust=NULL,model="fg")
 
 theta.des <- model.matrix(~-1+factor(zyg),data=prt) ## design for MZ/DZ status
-or1 <- or.cif(cifmod,data=prt,cause1=2,cause2=2,theta.des=theta.des,same.cens=TRUE,
+or1 <- mets::or.cif(cifmod,data=prt,cause1=2,cause2=2,theta.des=theta.des,same.cens=TRUE,
               score.method="fisher.scoring")
 summary(or1)
 or1$score
+
+rr1<-mets::rr.cif(cifmod,data=prt,cause1=2,cause2=2,theta.des=theta.des,same.cens=TRUE,score.method="fisher.scoring")
+summary(rr1)
 
 pcif <- predict(cifmod,X=1,resample.iid=0,uniform=0,se=0)
 
 png(filename="pcif.png")
 plot(pcif,multiple=1,se=0,uniform=0,ylim=c(0,0.15))
+abline(h=0.10143)
+abline(h=0.1105)
 dev.off()
+
+
+cifmodzyg <- comp.risk(Surv(time,status>0)~-1+factor(zyg)+cluster(id),
+		    data=prt,prt$status,causeS=2,n.sim=0,cens.model="aalen",
+                  times=times,conservative=1,max.clust=NULL,model="additive")
+pcifzyg <- predict(cifmodzyg,X=diag(2),resample.iid=0,uniform=0,se=0)
+plot(pcifzyg,multiple=1,se=0,uniform=0,ylim=c(0,0.15))
+abline(h=0.10143)
+abline(h=0.1105)
+
+out <- prodlim(Hist(time,status)~zyg,data=prt)
+poutmz <- predict(out,cause=2,time=times,newdata=data.frame(zyg="MZ"))
+poutdz <- predict(out,cause=2,time=times,newdata=data.frame(zyg="DZ"))
+###plot(out,cause=2,ylim=c(0,0.15),confInt=FALSE)
+lines(times,poutmz,type="s",col=2)
+lines(times,poutdz,type="s",col=2)
+###lines(times,c(pcifzyg$P1[1,]),col=4)
+###lines(times,c(pcifzyg$P1[2,]),col=4)
 
 ###############################
 ## Correcting for country
@@ -39,7 +62,7 @@ dev.off()
 png(filename="pcifl.png")
 table(prt$country)
 
-times <- seq(60,100,by=1)
+times <- seq(40,100,by=2)
 cifmodl <-comp.risk(Surv(time,status>0)~-1+factor(country)+cluster(id),data=prt,
                     prt$status,causeS=2,n.sim=0,times=times,conservative=1,
                     max.clust=NULL,cens.model="aalen")
@@ -50,7 +73,7 @@ dev.off()
 
 theta.des <- model.matrix(~-1+factor(zyg),data=prt) ## design for MZ/DZ status
 or.country <- or.cif(cifmodl,data=prt,cause1=2,cause2=2,theta.des=theta.des,same.cens=TRUE,
-                     theta=c(2.8,6.9),score.method="fisher.scoring")
+                     theta=c(0.8,1.8),score.method="fisher.scoring",detail=1)
 summary(or.country)
 or.country$score
 
@@ -68,7 +91,7 @@ legend("topleft",levels(prt$country),col=1:4,lty=1)
 dev.off()
 
 or.countryr <- or.cif(cifmodlr,data=prt,cause1=2,cause2=2,theta.des=theta.des,same.cens=TRUE,
-                     theta=c(2.8,6.9),score.method="fisher.scoring")
+                     theta=c(0.8,1.9),score.method="fisher.scoring")
 summary(or.countryr)
 
 ###############################
@@ -89,6 +112,7 @@ lines(pcif$time,pcif$P1^2,col=2)
 ### test for genetic effect 
 legend("topleft",c("DZ","MZ","Independence"),lty=rep(1,3),col=c(1,3,2))
 dev.off()
+
 
 ### test for genetic effect 
 test.conc(p33dz,p33mz);
@@ -114,17 +138,18 @@ zygeffect <- comp.risk(Surv(time,status==0)~const(zyg),
                   data=data33,data33$status,causeS=1,
                   cens.model="aalen",model="logistic",conservative=1)
 summary(zygeffect)
-
-case33mz <- conc2case(p33mz,pcif)
-case33dz <- conc2case(p33dz,pcif)
+ 
+case33mz <- conc2probandwise(p33mz,pcif)
+case33dz <- conc2probandwise(p33dz,pcif)
 
 png(filename="casewise.png")
-plot(case33mz$casewise,se=0,col=3)
-lines(case33dz$casewise$time,case33dz$casewise$P1)
+plot(case33mz$probandwise,se=0,col=3)
+lines(case33dz$probandwise$time,case33dz$probandwise$P1)
 title(main="Probandwise concordance")
 legend("topleft",c("MZ","DZ","Independence"),lty=rep(1,3),col=c(3,1,2))
 lines(pcif$time,pcif$P1,col=2)
 dev.off()
+
 
 ###############################
 ## Effect of zygosity correcting for country
@@ -163,8 +188,7 @@ summary(zygeffectll)
 coef(lm(cancer~-1+zyg,prt))
 
 ## Saturated model
-bpmz <- 
-    biprobit(cancer~1 + cluster(id), 
+bpmz <- biprobit(cancer~1 + cluster(id), 
              data=subset(prt,zyg=="MZ"), eqmarg=TRUE)
 
 logLik(bpmz) # Log-likelihood
@@ -195,7 +219,7 @@ summary(bp2)
 
 png(filename="ipw.png")
 ## Probability weights based on Aalen's additive model 
-prtw <- ipw(Surv(time,status==0)~country, data=prt,
+prtw <- ipw(Surv(time,status==0)~zyg, data=prt,
             cluster="id",weightname="w") 
 plot(0,type="n",xlim=range(prtw$time),ylim=c(0,1),xlab="Age",ylab="Probability")
 count <- 0
@@ -208,11 +232,16 @@ for (l in unique(prtw$country)) {
 legend("topright",legend=unique(prtw$country),col=1:4,pch=1)
 dev.off()
 
-bpmzIPW <- 
-              biprobit(cancer~1 + cluster(id), 
-                       data=subset(prtw,zyg=="MZ"), 
-                       weight="w")
+bpmzIPW <- biprobit(cancer~1 + cluster(id), 
+                       data=subset(prtw,zyg=="MZ"), weight="w")
 (smz <- summary(bpmzIPW))
+
+bpdzIPW <- biprobit(cancer~1 + cluster(id), 
+                       data=subset(prtw,zyg=="DZ"), weight="w")
+(sdz <- summary(bpdzIPW))
+abline(h=0.495)
+abline(h=0.21)
+
 
 png(filename="cif2.png")
 ## CIF
@@ -279,3 +308,25 @@ summary(ch1)
 png(filename="cumh.png")
 plot(ch1)
 dev.off()
+
+
+parfunc <- function(par,t,pardes)
+{
+par <- pardes %*% c(par[1],par[2]) + 
+       pardes %*% c( par[3]*(t-60)/12,par[4]*(t-60)/12)
+par
+}
+###parfunc(c(0.1,1,0.1,1),50,theta.des)
+
+names(prt)
+theta.des <- model.matrix(~-1+factor(zyg),data=prt)
+
+cor1 <- or.cif(cifmod,data=prt,cause1=2,cause2=2,theta.des=theta.des,same.cens=TRUE,
+	       score.method="fisher.scoring",detail=1)
+summary(cor1)
+
+corl <- or.cif(cifmod,data=prt,cause1=2,cause2=2,theta.des=theta.des,same.cens=TRUE,
+		par.func=parfunc,dimpar=4,control=list(trace=TRUE),detail=1)
+summary(corl)
+corl$score
+

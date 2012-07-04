@@ -1,49 +1,73 @@
-##' .. content for description (no empty lines) ..
+##' Clayton-Oakes frailty model
 ##'
-##' .. content for details ..
 ##' @title Clayton-Oakes model with piece-wise constant hazards
-##' @param formula formula specifying the marginal proportional (piecewise constant) hazard structure with the right-hand-side being a survival object (Surv) specifying the entry time (optional), the follow-up time, and event/censoring status at follow-up. The clustering can be specified using the special function \code{id} (see example below).
+##' @param formula formula specifying the marginal proportional (piecewise constant) hazard structure with the right-hand-side being a survival object (Surv) specifying the entry time (optional), the follow-up time, and event/censoring status at follow-up. The clustering can be specified using the special function \code{cluster} (see example below).
 ##' @param data Data frame
-##' @param id Variable defining the clustering (if not given in the formula)
-##' @param var.formula Formula specifying the variance component structure (if not given via the id special function in the formula) using a linear model with log-link.
+##' @param cluster Variable defining the clustering (if not given in the formula)
+##' @param var.formula Formula specifying the variance component structure (if not given via the cluster special function in the formula) using a linear model with log-link.
 ##' @param cuts Cut points defining the piecewise constant hazard
-##' @param type Type of estimation (Clayton-Oakes or conditional frailty model)
+##' @param type when equal to \code{two.stage}, the Clayton-Oakes-Glidden estimator will be calculated via the \code{timereg} package
 ##' @param start Optional starting values
 ##' @param control Control parameters to the optimization routine
+##' @param var.invlink Inverse link function for variance structure model
 ##' @param ... Additional arguments
 ##' @author Klaus K. Holst
 ##' @examples
 ##' set.seed(1)
-##' d <- simClaytonOakes(2000,4,2,1,stoptime=2,left=0.5)
-##' e <- ClaytonOakes(Surv(lefttime,time,status)~x1+id(~1,cluster),cuts=c(0,0.5,1,2),data=subset(d,!truncated))
+##' d <- subset(simClaytonOakes(2000,4,2,1,stoptime=2,left=2),!truncated)
+##' e <- ClaytonOakes(Surv(lefttime,time,status)~x1+cluster(~1,cluster),cuts=c(0,0.5,1,2),data=d)
 ##' e
-##' plot(e,add=FALSE)
+##'
+##' d2 <- simClaytonOakes(2000,4,2,1,stoptime=2,left=0)
+##' d$z <- rep(1,nrow(d)); d$z[d$cluster%in%sample(d$cluster,500)] <- 0
+##' ts <- ClaytonOakes(Surv(time,status)~prop(x1)+cluster(~1,cluster),data=d,type="two.stage") ## Cox Proportional Hazards model 
+##' ts2 <- ClaytonOakes(Surv(time,status)~x1+cluster(~1+factor(z),cluster),data=d,type="two.stage") ## Aalen's Additive model
+##' e2 <- ClaytonOakes(Surv(time,status)~x1+cluster(~-1+factor(z),cluster),cuts=c(0,0.5,1,2),data=d)
+##' e2
+##' plot(ts)
+##' plot(e2,add=TRUE)
+##' e3 <- ClaytonOakes(Surv(time,status)~x1+cluster(~1,cluster),cuts=c(0,0.5,1,2),data=d,var.invlink=identity)
+##' e3
 ##' @export
-ClaytonOakes <- function(formula,data=parent.frame(),id,var.formula=~1,cuts=NULL,type="co",start,control=list(),...) {
+ClaytonOakes <- function(formula,data=parent.frame(),cluster,var.formula=~1,cuts=NULL,type="piecewise",start,control=list(),var.invlink=exp,...) {
   
   mycall <- match.call()
-  formulaId <- Specials(formula,"id") 
+  dots <- list(...)
+  formulaId <- Specials(formula,"cluster") 
   formulaStrata <- Specials(formula,"strata")
   formulaSt <- "~."
+  formulaProp <- Specials(formula,"prop")
   if (!is.null(formulaId)) {
     var.formulaId <- ~1
     if (length(formulaId)>1) {
       var.formula <- as.formula(formulaId[[1]])
       formulaId <- formulaId[[2]]
     }
-    id <- formulaId
-    mycall$id <- id
-    formulaSt <- paste(formulaSt,paste("-id(",paste(var.formula,collapse=""),
+    cluster <- formulaId
+    mycall$cluster <- cluster
+    formulaSt <- paste(formulaSt,paste("-cluster(",paste(var.formula,collapse=""),
                                        ",",formulaId,")"))
   }
   formulaSt <- paste(formulaSt,paste("-strata(",paste(formulaStrata,collapse="+"),")"))
   formula <- update(formula,formulaSt)
-
+  
   if (!is.null(formulaStrata)) {
     strata <- formulaStrata
     mycall$strata <- strata
   }
-  if (missing(id)) stop("Missing 'id' variable")
+  if (missing(cluster)) stop("Missing 'cluster' variable")
+  ngamma <- 0
+  Z <- model.matrix(var.formula,data)
+  ngamma <- ncol(Z)
+
+  if (type!="piecewise") {
+    timeregmod <- ifelse(length(formulaProp)>0,"cox.aalen","aalen")
+    if (is.null(dots$robust)) dots$robust <- 0
+    args <- c(list(formula=formula,data=data,max.clust=NULL,clusters=data[,cluster]),dots)
+    marg <- do.call(timeregmod, args)    
+    return(two.stage(marg,data=data,theta.des=Z,var.link=1,...))
+  }
+  
   
   timevar <- terms(formula)[[2]]
   if (is.call(timevar)) {
@@ -61,20 +85,17 @@ ClaytonOakes <- function(formula,data=parent.frame(),id,var.formula=~1,cuts=NULL
   nbeta <- 0  
   if (length(covars)>0) {
 ##    X <- model.matrix(as.formula(paste("~-1+",paste(covars,collapse="+"))),data)
-    X <- model.matrix(formula,data)
+    X <- model.matrix(update(formula,.~.+1),data)[,-1,drop=FALSE]
     nbeta <- ncol(X)
   }
-  ngamma <- 0
-  Z <- model.matrix(var.formula,data)
-  ngamma <- ncol(Z)
   
   if (is.data.frame(data)) {
-    mydata <- data.frame(T=data[,timevar],status=data[,causes],cluster=data[,id],entry=0)
+    mydata <- data.frame(T=data[,timevar],status=data[,causes],cluster=data[,cluster],entry=0)
     if (!is.null(entry)) {
       mydata$entry <- data[,entry]
     }
   } else {
-    mydata <- data.frame(T=get(timevar,envir=data),status=get(causes,envir=data),cluster=get(id,envir=data),entry=0)
+    mydata <- data.frame(T=get(timevar,envir=data),status=get(causes,envir=data),cluster=get(cluster,envir=data),entry=0)
     if (!is.null(entry))      
       mydata$entry <- get(entry,envir=data)
   }
@@ -89,14 +110,19 @@ ClaytonOakes <- function(formula,data=parent.frame(),id,var.formula=~1,cuts=NULL
   npar <- length(cuts)-1
   if (!is.null(X)) npar <- npar+ncol(X)
   npar <- npar+ncol(Z)
-  p0 <- rep(0,npar)
+  p0 <- rep(0.1,npar)
   if (!missing(start)) p0 <- c(start,rep(0,max(0,length(npar)-length(start))))
+  if (!is.null(dots$theta)) p0[1] <- dots$theta
+
+  invlinkname <- as.character(substitute(var.invlink))
+
   
   obj <- function(p) {
     varpar <- p[seq(ngamma)]
     p <- p[-seq(ngamma)]
     ##    theta0 <- rep(exp(varpar),length(ucluster));
-    theta0 <- exp(Z%*%varpar)
+    theta0 <- Z%*%varpar
+    if (exists(invlinkname)) theta0 <- var.invlink(theta0)
     multhaz <- rep(1,nrow(mydata))
     if (!is.null(X)) {
       nbeta <- ncol(X)
@@ -104,6 +130,8 @@ ClaytonOakes <- function(formula,data=parent.frame(),id,var.formula=~1,cuts=NULL
       p <- p[-seq(nbeta)]
       multhaz <- exp(X%*%beta)
     }
+    if (!is.null(dots$theta)) theta0 <- cbind(rep(dots$theta,length(theta0)))
+    ##browser()
     res <- .Call("claytonoakes",
            ds=mydata$status,ts=mydata$T,es=mydata$entry,
            allcs=mydata$cluster,cs=ucluster,
@@ -129,7 +157,7 @@ ClaytonOakes <- function(formula,data=parent.frame(),id,var.formula=~1,cuts=NULL
       V <- matrix(NA,length(p0),length(p0))
     }
   }
-  res <- list(coef=opt$par,vcov=V,cuts=cuts,nbeta=nbeta,ngamma=ngamma,betanames=colnames(X),gammanames=colnames(Z),opt=opt)
+  res <- list(coef=opt$par,vcov=V,cuts=cuts,nbeta=nbeta,ngamma=ngamma,betanames=colnames(X),gammanames=colnames(Z),opt=opt,invlink=var.invlink,invlinkname=invlinkname)
   class(res) <- "claytonoakes"
   return(res)
 }
@@ -143,7 +171,10 @@ print.claytonoakes <- function(x,...) {
 
 ##' @S3method print summary.claytonoakes
 print.summary.claytonoakes <- function(x,...) {
-  print(x$coef[,c(1,3,4)])
+  printCoefmat(x$coef[,c(1,3,4)],...)
+  cat("\nDependence parameters:\n")
+  printCoefmat(x$var,...)
+  invisible(x)
 }
 
 ##' @S3method summary claytonoakes
@@ -154,9 +185,14 @@ summary.claytonoakes <- function(object,...) {
   colnames(mycoef) <- c("Estimate","Std.Err","2.5%","97.5%")
   if (length(object$cuts))
   cutnames <- levels(cut(0,breaks=object$cuts))
-  rownames(mycoef) <- c(paste("log-Var:",object$gammanames,sep=""),object$betanames,cutnames)
+  varname <- switch(object$invlinkname,exp="log-Var:",identity="Var:",paste("inv",object$invlinkname,"-Var:",sep=""))
+  rownames(mycoef) <- c(paste(varname,object$gammanames,sep=""),object$betanames,cutnames)
   mycoef[-seq(object$ngamma),] <- exp(mycoef[-seq(object$ngamma),])
-  res <- list(coef=mycoef)
+  varcoef <- object$invlink(mycoef[seq(object$ngamma),c(1,3,4),drop=FALSE])
+  rownames(varcoef) <- object$gammanames
+  varcoef <- cbind(varcoef,1/(1+2/varcoef))
+  colnames(varcoef)[c(1,4)] <- c("Variance","Kendall's tau")  
+  res <- list(coef=mycoef,var=varcoef)
   class(res) <- "summary.claytonoakes"
   res
 }

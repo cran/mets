@@ -1,8 +1,8 @@
-\name{conc2case}
-\alias{conc2case}
+\name{conc2probandwise}
+\alias{conc2probandwise}
 \title{Estimates the probandwise concordance based on Concordance and marginal estimate}
 \usage{
-  conc2case(conc, marg, test = "conc")
+  conc2probandwise(conc, marg, test = "no-test")
 }
 \arguments{
   \item{conc}{Concordance}
