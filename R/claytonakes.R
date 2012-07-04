@@ -14,12 +14,12 @@
 ##' @author Klaus K. Holst
 ##' @examples
 ##' set.seed(1)
-##' d <- subset(simClaytonOakes(2000,4,2,1,stoptime=2,left=2),!truncated)
+##' d <- subset(simClaytonOakes(500,4,2,1,stoptime=2,left=2),!truncated)
 ##' e <- ClaytonOakes(Surv(lefttime,time,status)~x1+cluster(~1,cluster),cuts=c(0,0.5,1,2),data=d)
 ##' e
 ##'
-##' d2 <- simClaytonOakes(2000,4,2,1,stoptime=2,left=0)
-##' d$z <- rep(1,nrow(d)); d$z[d$cluster%in%sample(d$cluster,500)] <- 0
+##' d2 <- simClaytonOakes(500,4,2,1,stoptime=2,left=0)
+##' d$z <- rep(1,nrow(d)); d$z[d$cluster%in%sample(d$cluster,100)] <- 0
 ##' ts <- ClaytonOakes(Surv(time,status)~prop(x1)+cluster(~1,cluster),data=d,type="two.stage") ## Cox Proportional Hazards model 
 ##' ts2 <- ClaytonOakes(Surv(time,status)~x1+cluster(~1+factor(z),cluster),data=d,type="two.stage") ## Aalen's Additive model
 ##' e2 <- ClaytonOakes(Surv(time,status)~x1+cluster(~-1+factor(z),cluster),cuts=c(0,0.5,1,2),data=d)
@@ -57,6 +57,7 @@ ClaytonOakes <- function(formula,data=parent.frame(),cluster,var.formula=~1,cuts
   }
   if (missing(cluster)) stop("Missing 'cluster' variable")
   ngamma <- 0
+  data <- data[order(data[,cluster]),]
   Z <- model.matrix(var.formula,data)
   ngamma <- ncol(Z)
 
@@ -131,7 +132,7 @@ ClaytonOakes <- function(formula,data=parent.frame(),cluster,var.formula=~1,cuts
       multhaz <- exp(X%*%beta)
     }
     if (!is.null(dots$theta)) theta0 <- cbind(rep(dots$theta,length(theta0)))
-    ##browser()
+    ##    browser()
     res <- .Call("claytonoakes",
            ds=mydata$status,ts=mydata$T,es=mydata$entry,
            allcs=mydata$cluster,cs=ucluster,

@@ -42,9 +42,11 @@
 ##' @author Klaus K. Holst
 ##' @export
 ##' @examples
+##' \donttest{
 ##' data(twinstut)
 ##' b0 <- bptwin(stutter~sex,data=twinstut,id="tvparnr",zyg="zyg",DZ="dz",type="u")
 ##' summary(b0)
+##' }
 bptwin <- function(formula, data, id, zyg, DZ, OS,
                    weight=NULL,
                    biweight=function(x) 1/min(x),
@@ -102,14 +104,21 @@ bptwin <- function(formula, data, id, zyg, DZ, OS,
 ##################################################
 ### No strata
     if (is.null(control$method)) {
-    control$method <- "gradient"
-    if (!samecens & !is.null(weight)) control$method <- "bhhh"
+      if (!samecens & !is.null(weight)) {
+        control$method <- "bhhh"
+      } else {
+        if (require(ucminf)) {
+          control$method <- "gradient"
+        } else control$method <- "nlminb"
+      }
   }
   if (length(grep("flex",tolower(type)))>0) { type <- "u"; eqmean <- FALSE }
 
   yvar <- paste(deparse(formula[[2]]),collapse="")
   data <- data[order(data[,id]),]
   idtab <- table(data[,id])
+  if (sum(idtab>2)) stop("More than two individuals with the same id ")
+  
   if (pairsonly)
     data <- data[as.character(data[,id])%in%names(idtab)[idtab==2],]
   if (is.logical(data[,yvar])) data[,yvar] <- data[,yvar]*1
@@ -146,12 +155,17 @@ bptwin <- function(formula, data, id, zyg, DZ, OS,
   idtab <- table(data[,id])
   ##  ii0 <- which(as.character(data[,id])%in%names(idtab)[idtab==2])              
   ##  data0 <- data[ii0,]  
-  idx2 <- NULL
+  idx2 <- NULL  
   if (!missing(DZ)) {
-    if (!missing(OS))
+    if (!missing(OS)) {
+      warning("Opposite-sex analysis not implemented yet!")
       idx2 <- data[,zyg]==OS
+      if (length(idx2)==0) stop("No opposite-sex twins found") 
+    }
     idx1 <- data[,zyg]==DZ
+    if (length(idx1)==0) stop("No DZ twins found")
     idx0 <- data[,zyg]!=DZ
+    if (length(idx1)==0) stop("No MZ twins found")
     data[,zyg] <- (data[,zyg]!=DZ)*1
   } else {
     if (!missing(OS))
@@ -265,7 +279,7 @@ bptwin <- function(formula, data, id, zyg, DZ, OS,
 
   ##Marginals etc.
   MyData0 <- ExMarg(Y0,XX0,W0,dS0,eqmarg=TRUE,allmarg=allmarg)
-  MyData1 <- ExMarg(Y1,XX1,W1,dS1,eqmarg=TRUE,allmarg=allmarg) 
+  MyData1 <- ExMarg(Y1,XX1,W1,dS1,eqmarg=TRUE,allmarg=allmarg)
   N <- cbind(sum(idx0),sum(idx1),sum(idx2)); 
   if (missing(OS)) N <- N[,-3,drop=FALSE]
   N <- cbind(N,
@@ -331,10 +345,8 @@ bptwin <- function(formula, data, id, zyg, DZ, OS,
     S <- Sigma(p)
     lambda <- eigen(S$Sigma0)$values
     if (any(lambda<1e-12 | lambda>1e9)) stop("Variance matrix out of bounds")
-    ##    browser()
     ##mu0 <- with(MyData0, X0%*%b00)
-    ##    Mu0 <- matrix(mu0,ncol=2,byrow=TRUE)
-    ##        browser()
+    ##Mu0 <- matrix(mu0,ncol=2,byrow=TRUE)
     
     Mu0 <- with(MyData0, cbind(XX0[,midx0,drop=FALSE]%*%b00,
                                XX0[,midx1,drop=FALSE]%*%b00))

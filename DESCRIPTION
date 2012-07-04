@@ -1,7 +1,7 @@
 Package: mets
 Type: Package
 Title: Analysis of Multivariate Event Times
-Version: 0.1-11
+Version: 0.1-12
 Date: 2012-07-04
 Author: Klaus K. Holst and Thomas Scheike
 Maintainer: Klaus K. Holst <kkho@biostat.ku.dk>
@@ -12,9 +12,9 @@ Description: Implementation of various statistical models for
 License: GPL (>= 2)
 LazyLoad: yes
 URL: http://r-forge.r-project.org/projects/lava/
-Depends: Rcpp (>= 0.9.2), RcppArmadillo (>= 0.3), lava, mvtnorm,
-        numDeriv, splines, timereg, ucminf, prodlim
-Suggests: lava.tobit
+Depends: Rcpp (>= 0.9.2), RcppArmadillo (>= 0.3), lava (>= 1.1-12),
+        mvtnorm, numDeriv, splines, timereg (>= 1.6-8), prodlim
+Suggests: lava.tobit (>= 0.4-7), ucminf
 LinkingTo: Rcpp, RcppArmadillo
 Collate: 'biprobit.R' 'biprobit.strata.R' 'bpnd.R' 'bptwin.R'
         'claytonakes.R' 'coef.biprobit.R' 'cumh.R' 'Dbvn.R'
@@ -25,7 +25,8 @@ Collate: 'biprobit.R' 'biprobit.strata.R' 'bpnd.R' 'bptwin.R'
         'summary.biprobit.R' 'summary.bptwin.R' 'uniprobit.R' 'utils.R'
         'vcov.biprobit.R' 'bicomprisk.R' 'event.R' 'procformula.R'
         'twinlm.R' 'twinsim.R' 'methodstwinlm.R' 'sim-nordic-twin.R'
-        'concordance-scripts.R' 'cor.R'
-Packaged: 2012-07-06 12:39:41 UTC; nqh369
+        'twostage.R' 'aalenfrailty.R' 'surv.boxarea.R' 'cor.R'
+        'casewise.R'
+Packaged: 2012-11-20 10:15:27 UTC; nqh369
 Repository: CRAN
-Date/Publication: 2012-07-06 13:33:26
+Date/Publication: 2012-11-20 11:02:38
