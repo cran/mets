@@ -7,12 +7,26 @@
 using namespace arma;
 using namespace Rcpp;
 
-double claytonoakes(double theta,int status1,int status2,double cif1,double cif2,vec &dp) 
+double claytonoakesP(double theta,int status1,int status2,double cif1,double cif2,vec &dp) 
 { // {{{
 double S,valr=1,cifs,x,y,z;
+double p00,p10,p01,p11; 
 
 cifs=cif1+cif2; S=1+(cifs*(theta-1)); 
 x=theta; y=cif1; z=cif2; 
+
+valr=  pow((1/pow(y,1/x) + 1/pow(z,1/x)) - 1,-x);
+dp(0)= (-((x*(log(y)/(pow(x,2)*pow(y,1/x)) + log(z)/(pow(x,2)*pow(z,1/x))))/(-1 + pow(y,-1/x) + pow(z,-1/x))) - log(-1 + pow(y,-1/x) + pow(z,-1/x)))/pow(-1 + pow(y,-1/x) + pow(z,-1/x),x);
+
+p11=valr; 
+p10=x-p11; 
+p01=y-p11; 
+p00=1-x-y+p11; 
+
+if (status1==1 && status2==1) { valr=p11; dp(0)= dp(0); }
+if (status1==1 && status2==0) { valr=p10; dp(0)=-dp(0); }
+if (status1==0 && status2==1) { valr=p01; dp(0)=-dp(0); }
+if (status1==0 && status2==0) { valr=p00; dp(0)= dp(0); } 
 
 if (status1==0 && status2==0) { // {{{
 valr=  pow((1/pow(y,1/x) + 1/pow(z,1/x)) - 1,-x);
@@ -37,41 +51,31 @@ dp(0)=((-1 - x)*pow(y,-1 - 1/x)*pow(z,-1 - 1/x)*pow(-1 + pow(y,-1/x) + pow(z,-1/
 return(valr); 
 } // }}}
  
-double placklike(double theta,int status1,int status2,double cif1,double cif2,vec &dp) 
+double placklikeP(double theta,int status1,int status2,double cif1,double cif2,vec &dp) 
 { // {{{
-double S,S2,valr=1,cifs,a,x,y,z; 
-cifs=cif1+cif2; S=1+cifs*(theta-1); S2=4*cif1*cif2*theta*(theta-1);
-a=(1+(theta-1)*(cifs)); x=theta; y=cif1; z=cif2; 
+//double S,S2,a;
+//S=1+cifs*(theta-1); S2=4*cif1*cif2*theta*(theta-1);
+double x,y,z,cifs,valr=1,p11,p10,p01,p00; 
+cifs=cif1+cif2; 
+//a=(1+(theta-1)*(cifs)); 
+x=theta; y=cif1; z=cif2; 
 
 dp(0)=0; 
 
-if (status1==0 && status2==0) { // {{{
 if (theta!=1) {
-valr=(1+(y+z)*(x-1)-sqrt(pow(1+(y+z)*(x-1),2)-4*x*(x-1)*y*z))/(2*(x-1));
+p11=(1+(y+z)*(x-1)-sqrt(pow(1+(y+z)*(x-1),2)-4*x*(x-1)*y*z))/(2*(x-1));
 dp(0)= (y + z - (-4*(-1 + x)*y*z - 4*x*y*z + 2*(y + z)*(1 + (-1 + x)*(y + z)))/(2.*sqrt(-4*(-1 + x)*x*y*z + pow(1 + (  -1 + x)*(y + z),2))))/(2.*(-1 + x)) - (1 + (-1 + x)*(y + z) - sqrt(-4*(-1 + x)*x*y*z + pow(1 + (-1 + x)*(y + z  ),2)))/(2.*pow(-1 + x,2));
-} else valr=cif1*cif2;
-} // }}}
+} else p11=cif1*cif2;
 
-if (status1==1 && status2==0) { // {{{
-if (theta!=1) {
-valr= (-1 + x - (-4*(-1 + x)*x*z + 2*(-1 + x)*(1 + (-1 + x)*(y + z)))/(2.*sqrt(-4*(-1 + x)*x*y*z + pow(1 + (-1 + x)*(y + z),2))))/(2.*(-1 + x));
-dp(0)= (1 + ((-4*(-1 + x)*x*z + 2*(-1 + x)*(1 + (-1 + x)*(y + z)))*(-4*(-1 + x)*y*z - 4*x*y*z + 2*(y + z)*(1 + (-1 +   x)*(y + z))))/(4.*pow(-4*(-1 + x)*x*y*z + pow(1 + (-1 + x)*(y + z),2),1.5)) - (-4*(-1 + x)*z - 4*x*z + 2*(-1   + x)*(y + z) + 2*(1 + (-1 + x)*(y + z)))/(2.*sqrt(-4*(-1 + x)*x*y*z + pow(1 + (-1 + x)*(y + z),2))))/(2.*(-1   + x)) - (-1 + x - (-4*(-1 + x)*x*z + 2*(-1 + x)*(1 + (-1 + x)*(y + z)))/(2.*sqrt(-4*(-1 + x)*x*y*z + pow(1 + (  -1 + x)*(y + z),2))))/(2.*pow(-1 + x,2));
-} else valr=cif2;
-} // }}}
+p11=p11;
+p10=y-p11; 
+p01=z-p11; 
+p00=1-y-z+p11; 
 
-if (status1==0 && status2==1) { // {{{
-if (theta!=1) {
-valr= (-1 + x - (-4*(-1 + x)*x*y + 2*(-1 + x)*(1 + (-1 + x)*(y + z)))/(2.*sqrt(-4*(-1 + x)*x*y*z + pow(1 + (-1 + x)*(y + z),2))))/(2.*(-1 + x)) ;
-dp(0)= (1 + ((-4*(-1 + x)*x*y + 2*(-1 + x)*(1 + (-1 + x)*(y + z)))*(-4*(-1 + x)*y*z - 4*x*y*z + 2*(y + z)*(1 + (-1 + x)*(y + z))))/(4.*pow(-4*(-1 + x)*x*y*z + pow(1 + (-1 + x)*(y + z),2),1.5)) - (-4*(-1 + x)*y - 4*x*y + 2*(-1 + x)*(y + z) + 2*(1 + (-1 + x)*(y + z)))/(2.*sqrt(-4*(-1 + x)*x*y*z + pow(1 + (-1 + x)*(y + z  ),2))))/(2.*(-1 + x)) - (-1 + x - (-4*(-1 + x)*x*y + 2*(-1 + x)*(1 + (-1 + x)*(y + z)))/(2.*sqrt(-4*(-1 + x)*x*y*z + pow(1 + (-1 + x)*(y + z),2))))/(2.*pow(  -1 + x,2));
-} else valr=cif2;
-} // }}}
-
-if (status1==1 && status2==1) { // {{{
-if (theta!=1) {
-valr=(((-4*(-1 + x)*x*y + 2*(-1 + x)*(1 + (-1 + x)*(y + z)))*(-4*(-1 + x)*x*z + 2*(-1 + x)*(1 + (-1 + x)*(y + z))))/(4.*pow(-4*(-1 + x)*x*y*z + pow(1 + (-1 + x)*(y + z),2),1.5)) - (2*pow(-1 + x,2) - 4*(-1 + x)*x)/(2.*sqrt(-4*(-1 + x)*x*y*z + pow(1 + (-1 + x)*(y + z),2))))/(2.*(-1 + x));
-dp(0)= ((-3*(-4*(-1 + x)*x*y + 2*(-1 + x)*(1 + (-1 + x)*(y + z)))*(-4*(-1 + x)*x*z + 2*(-1 + x)*(1 + (-1 + x)*(y + z)))*(-4*(-1 + x)*y*z - 4*x*y*z + 2*(y + z)*(1 + (-1 + x)*(y + z))))/(8.*pow(-4*(-1 + x)*x*y*z + pow(1 + (-1 + x)*(y + z),2),2.5)) + ((-4*(-1 + x)*z - 4*x*z + 2*(-1 + x)*(y + z) + 2*(1 + (-1 + x)*(y + z)))*(-4*(-1 + x)*x*y + 2*(-1 + x)*(1 + (-1 + x)*(y + z))))/(4.*pow(-4*(-1 + x)*x*y*z + pow(1 + (-1 + x)*(y + z),2),1.5)) + ((-4*(-1 + x)*y - 4*x*y + 2*(-1 + x)*(y + z) + 2*(1 + (-1 + x)*(y + z)))*(-4*(-1 + x)*x*z + 2*(-1 + x)*(1 + (-1 + x)*(y + z))))/(4.*pow(-4*(-1 + x)*x*y*z + pow(1 + (-1 + x)*(y + z),2),1.5)) + ((2*pow(-1 + x,2) - 4*(-1 + x)*x)*(-4*(-1 + x)*y*z - 4*x*y*z + 2*(y + z)*(1 + (-1 + x)*(y + z))))/(4.*pow(-4*(-1 + x)*x*y*z + pow(1 + (-1 + x)*(y + z),2),1.5)) + (2*x)/sqrt(-4*(-1 + x)*x*y*z + pow(1 + (-1 + x)*(y + z),2)))/(2.*(-1 + x)) - (((-4*(-1 + x)*x*y + 2*(-1 + x)*(1 + (-1 + x)*(y + z)))*(-4*(-1 + x)*x*z + 2*(-1 + x)*(1 + (-1 + x)*(y + z))))/(4.*pow(-4*(-1 + x)*x*y*z + pow(1 + (-1 + x)*(y + z),2),1.5)) - (2*pow(-1 + x,2) - 4*(-1 + x)*x)/(2.*sqrt(-4*(-1 + x)*x*y*z + pow(1 + (-1 + x)*(y + z),2))))/(2.*pow(-1 + x,2));
-} else  valr=1; 
-} // }}}
+if (status1==1 && status2==1) { valr=p11; dp(0)= dp(0); }
+if (status1==1 && status2==0) { valr=p10; dp(0)=-dp(0); }
+if (status1==0 && status2==1) { valr=p01; dp(0)=-dp(0); }
+if (status1==0 && status2==0) { valr=p00; dp(0)= dp(0); } 
 
 return(valr); 
 } // }}}
@@ -79,7 +83,7 @@ return(valr);
 //double min(double a, double b) { if (a<b) return(a); else return(b); }
 //double max(double a, double b) { if (a>b) return(a); else return(b); }
 
-RcppExport SEXP twostageloglike( 
+RcppExport SEXP twostageloglikebin( 
 		SEXP icause, SEXP ipmargsurv, 
 		SEXP itheta, SEXP iXtheta, SEXP iDXtheta, SEXP idimDX, SEXP ithetades,
 		SEXP icluster,SEXP iclustsize,SEXP iclusterindex, SEXP ivarlink, 
@@ -201,17 +205,6 @@ RcppExport SEXP twostageloglike(
   Utheta.fill(0); 
 //  if (!Utheta.is_finite()) {  Rprintf(" NA's i def U\n"); Utheta.print("U"); }
 //  if (!DUtheta.is_finite()) { Rprintf(" NA's i def DU\n"); DUtheta.print("DU"); }
-
-//  rowvec bhatt2 = est.row(est2.n_cols); 
-//  colvec pbhat2(z.n_rows); 
-// depmodel=5 
-//  rvdes.print("rvdes"); 
-//  thetades.print("ttt"); 
-//  nr=rvdes.n_cols; 
-//  vec alphaj(nr),alphai(nr),alpha(nr),
-//      rvvec(nr),rvvec1(nr),rvvec2vv(nr),rvvec2vt(nr),rvvec2tv(nr);
-//  vec  rvvec2(nr); 
-
   // }}}
 
 for (j=0;j<antclust;j++) if (clustsize(j)>=2) { 
@@ -230,54 +223,34 @@ for (j=0;j<antclust;j++) if (clustsize(j)>=2) {
           thetak=Xtheta(i,0);  
 	  pthetavec= trans(thetades.row(i)); 
 	  vthetascore=1*pthetavec; 
-      } else { 
+      } else { // {{{ 
 	  thetak=Xtheta(i,s); 
 	  pthetavec = DXtheta(span(s),span(i),span::all); 
-      }
+      } // }}} 
 
   if (depmodel==1){ if (varlink==1) deppar=1/exp(thetak); else deppar=1/thetak;}
   if (depmodel==2){ if (varlink==1) deppar=exp(thetak); else deppar=thetak; }
 
 	if (depmodel==1) { // clayton-oakes  // {{{
-
-           if (trunkp(i)<1) {	
-		   Lit=trunkp(i); Lkt=trunkp(k); 
-		   llt=claytonoakes(deppar,0,0,Lit,Lkt,dplack);
-		   ll=claytonoakes(deppar,ci,ck,Li,Lk,dplack);
-		   ssf+=weights(i)*(log(ll)-log(llt));
-	           diff=dplack(0)/ll-dplackt(0)/llt; 
-	   } else {
-		   ll=claytonoakes(deppar,ci,ck,Li,Lk,dplack);
-		   ssf+=weights(i)*log(ll); 
-	           diff=dplack(0)/ll; 
+	   ll=claytonoakesP(deppar,ci,ck,Li,Lk,dplack);
+	   ssf+=weights(i)*log(ll); 
+	   diff=dplack(0)/ll; 
 //	printf(" %d %d %d %d %d  \n",j,c,v,i,k); 
 //	printf(" %d %d %d %d %d %d %d %lf %lf %lf %lf %lf %lf \n",j,c,v,i,k,ci,ck,thetak,Li,Lk,weights(i),ll,log(ll)); 
-	   } 
-	   if (varlink==1) diff=-pow(deppar,1)*diff;  
-	   if (varlink==0) diff=-1*pow(deppar,2)*diff; 
-	   sdj=pow(diff,2); 
+	   if (varlink==1) diff=pow(deppar,1)*diff;  
+	   if (varlink==0) diff=1*pow(deppar,2)*diff; 
+	   sdj=-pow(diff,2); 
 	   // }}}
 	} else if (depmodel==2) { // plackett model  // {{{
-        if (trunkp(i)<1) {	
-           Lit=trunkp(i); Lkt=trunkp(k); 
-           llt=placklike(deppar,0,0,Lit,Lkt,dplackt);
-           ll=placklike(deppar,ci,ck,Li,Lk,dplack);
-	   ssf+=weights(i)*(log(ll)-log(llt));
-	   diff=dplack(0)/ll-dplackt(0)/llt; 
-	   sdj=pow(diff,2); 
-	} else {
-           ll=placklike(deppar,ci,ck,Li,Lk,dplack);
+           ll=placklikeP(deppar,ci,ck,Li,Lk,dplack);
 	   ssf+=weights(i)*log(ll); 
-//	printf(" %d %d %d %lf %lf %lf %lf %lf %lf %lf %lf \n",j,ci,ck,thetak,deppar,Li,Lk,weights(i),ll,log(ll),diff); 
-//	printf(" %d %lf \n",j,ll); 
-	}
-	   if (varlink==1) diff=deppar*dplack(0)/ll; 
-	   if (varlink==0) diff=dplack(0)/ll; 
-	   sdj=pow(diff,2); 
+	   sdj=pow(dplack(0)/ll,2); 
+	   if (varlink==1) diff=-deppar*dplack(0)/ll; 
+	   if (varlink==0) diff=-dplack(0)/ll;
 	} // }}}
 
      for (c1=0;c1<pt;c1++) 
-     for (v1=0;v1<pt;v1++) DUtheta(c1,v1)+=weights(i)*sdj*vthetascore(c1)*vthetascore(v1);
+     for (v1=0;v1<pt;v1++) DUtheta(c1,v1)-=weights(i)*pow(diff,2)*vthetascore(c1)*vthetascore(v1);
      vthetascore=weights(i)*diff*vthetascore; 
      Utheta=Utheta+vthetascore; 
 
@@ -288,7 +261,7 @@ for (j=0;j<antclust;j++) if (clustsize(j)>=2) {
 
 } /* j in antclust */ 
 
-//printf("Sum of squares %lf \n",ssf); theta.print("theta"); Utheta.print("Utheta"); DUtheta.print("DUtheta"); 
+//printf("Sum of squares %lf \n",ssf);theta.print("theta");Utheta.print("Utheta");DUtheta.print("DUtheta"); 
 List res; 
 res["loglike"]=ssf; 
 res["score"]=Utheta; 

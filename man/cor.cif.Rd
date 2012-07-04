@@ -153,8 +153,8 @@ summary(out1)
 out2<-cor.cif(add,data=multcif,cause1=1,cause2=1,theta.des=theta.des)
 summary(out2)
 
-out3<-cor.cif(add,data=multcif,cause1=1,cause2=2,cif2=add2)
-summary(out3)
+##out3<-cor.cif(add,data=multcif,cause1=1,cause2=2,cif2=add2)
+##summary(out3)
 ###########################################################
 # investigating further models using parfunc and dparfunc
 ###########################################################
@@ -192,7 +192,7 @@ summary(or1)
  cor1 <- cor.cif(cifmod,data=prt,cause1=1,cause2=1,theta.des=theta.des,same.cens=TRUE,theta=c(0.5,1.0,0.1,0.1),
        par.func=parfunc,dpar.func=dparfunc,dimpar=4,control=list(trace=TRUE),detail=1)
 summary(cor1)
-
+##'
 ### piecewise contant OR model
 gparfunc <- function(par,t,pardes)
 {

@@ -12,23 +12,23 @@
 ##' ## E(y|z1,z2) = z1 - z2. var(A) = var(C) = var(E) = 1
 ##' 
 ##' ## E.g to fit the data to an ACE-model without any confounders we simply write
-##' ace <- twinlm(y1 ~ 1, data=d, DZ="DZ", zyg="zyg", id="id")
+##' ace <- twinlm(y ~ 1, data=d, DZ="DZ", zyg="zyg", id="id")
 ##' ace
 ##' ## An AE-model could be fitted as
-##' ae <- twinlm(y1 ~ 1, data=d, DZ="DZ", zyg="zyg", id="id", type="ae")
+##' ae <- twinlm(y ~ 1, data=d, DZ="DZ", zyg="zyg", id="id", type="ae")
 ##' ## LRT:
 ##' compare(ae,ace)
 ##' ## AIC
 ##' AIC(ae)-AIC(ace)
 ##' ## To adjust for the covariates we simply alter the formula statement
-##' ace2 <- twinlm(y1 ~ x11+x12, data=d, DZ="DZ", zyg="zyg", id="id", type="ace")
+##' ace2 <- twinlm(y ~ x11+x12, data=d, DZ="DZ", zyg="zyg", id="id", type="ace")
 ##' ## Summary/GOF
 ##' summary(ace2)
 ##' ## An interaction could be analyzed as:
-##' ace3 <- twinlm(y1 ~ x11+x12 + x11:I(x12<0), data=d, DZ="DZ", zyg="zyg", id="id", type="ace")
+##' ace3 <- twinlm(y ~ x11+x12 + x11:I(x12<0), data=d, DZ="DZ", zyg="zyg", id="id", type="ace")
 ##' ## Categorical variables are also supported
 ##' d2 <- transform(d,x12cat=cut(x12,3,labels=c("Low","Med","High")))
-##' ace4 <- twinlm(y1 ~ x11+x12cat, data=d2, DZ="DZ", zyg="zyg", id="id", type="ace")
+##' ace4 <- twinlm(y ~ x11+x12cat, data=d2, DZ="DZ", zyg="zyg", id="id", type="ace")
 ##' ## plot the model structure
 ##' \dontrun{
 ##' plot(ace4)
@@ -50,6 +50,7 @@
 ##'     the dyzogitic twins.
 ##' @param OS Optional. Character defining the level in the zyg variable
 ##'     corresponding to the oppposite sex dyzogitic twins.
+##' @param strata Strata variable name
 ##' @param weight Weight matrix if needed by the chosen estimator. For use
 ##'     with Inverse Probability Weights
 ##' @param type Character defining the type of analysis to be
@@ -65,8 +66,9 @@
 ##' @param estimator Choice of estimator/model
 ##' @param control Control argument parsed on to the optimization routine
 ##' @param constrain Development argument
+##' @param messages Control amount of messages shown 
 ##' @param ... Additional arguments parsed on to lower-level functions
-twinlm <- function(formula, data, id, zyg, DZ, OS, weight=NULL, type=c("ace"), twinnum="twinnum", binary=FALSE,keep=weight,estimator="gaussian",constrain=TRUE,control=list(),...) {
+twinlm <- function(formula, data, id, zyg, DZ, OS, strata=NULL, weight=NULL, type=c("ace"), twinnum="twinnum", binary=FALSE,keep=weight,estimator="gaussian",constrain=TRUE,control=list(),messages=1,...) {
 
   cl <- match.call(expand.dots=TRUE)
   opt <- options(na.action="na.pass")
@@ -76,6 +78,8 @@ twinlm <- function(formula, data, id, zyg, DZ, OS, weight=NULL, type=c("ace"), t
   formula <- update(formula, ~ . + 1)
   yvar <- getoutcome(formula)
   if (missing(zyg)) stop("Zygosity variable not specified")
+  if (!(zyg%in%colnames(data))) stop("'zyg' not found in data")
+  if (!(id%in%colnames(data))) stop("'id' not found in data")
   if (missing(id)) stop("Twin-pair variable not specified")
   
   if (binary | is.factor(data[,yvar]) | is.character(data[,yvar]) | is.logical(data[,yvar])) {
@@ -83,6 +87,42 @@ twinlm <- function(formula, data, id, zyg, DZ, OS, weight=NULL, type=c("ace"), t
     args[[1]] <- NULL
     return(do.call("bptwin",args))
   }
+
+
+  formulaId <- unlist(Specials(formula,"cluster"))
+  formulaStrata <- unlist(Specials(formula,"strata"))
+  formulaSt <- paste("~.-cluster(",formulaId,")-strata(",paste(formulaStrata,collapse="+"),")")
+  formula <- update(formula,formulaSt)
+  if (!is.null(formulaId)) {
+    id <- formulaId
+    cl$id <- id
+  }
+  if (!is.null(formulaStrata)) strata <- formulaStrata
+  cl$formula <- formula
+ 
+  if (!is.null(strata)) {
+    dd <- split(data,interaction(data[,strata]))
+    nn <- unlist(lapply(dd,nrow))
+    dd[which(nn==0)] <- NULL
+    if (length(dd)>1) {
+      fit <- lapply(seq(length(dd)),function(i) {
+        if (messages>0) message("Strata '",names(dd)[i],"'")
+        cl$data <- dd[[i]]
+        eval(cl)
+      })
+      res <- list(model=fit)
+      res$strata <- names(res$model) <- names(dd)
+      class(res) <- c("twinlm.strata","twinlm")
+      res$coef <- unlist(lapply(res$model,coef))
+      res$vcov <- blockdiag(lapply(res$model,vcov))
+      res$N <- length(dd)
+      res$idx <- seq(length(coef(res$model[[1]])))
+      rownames(res$vcov) <- colnames(res$vcov) <- names(res$coef)
+      return(res)
+    }
+  }
+
+  
   
   type <- tolower(type)
   ## if ("u" %in% type) type <- c("ue")
@@ -100,6 +140,7 @@ twinlm <- function(formula, data, id, zyg, DZ, OS, weight=NULL, type=c("ace"), t
     covars <- covars[-1]
   if(length(covars)<1) covars <- NULL
 
+  
   zygstat <- data[,zyg]
   if(!is.factor(zygstat)) {
     zygstat <- as.factor(zygstat)
@@ -132,7 +173,7 @@ twinlm <- function(formula, data, id, zyg, DZ, OS, weight=NULL, type=c("ace"), t
   numlev <- seq(2+!missing(OS))
   myMZ <- setdiff(numlev,c(myDZ,myOS))
 
- 
+
   data1 <- mydata[mydata[,zyg]==myMZ,,drop=FALSE]
   if (nrow(data1)==0) stop("No MZ twins found")
   data2 <- mydata[mydata[,zyg]==myDZ,,drop=FALSE]
@@ -368,44 +409,48 @@ twinlm <- function(formula, data, id, zyg, DZ, OS, weight=NULL, type=c("ace"), t
       }      
     }
   }
-
   if (!is.null(weight)) {
     weight <- paste(weight,1:2,sep=".")
     estimator <- "weighted"
   }
 
-  ## Estimate
-  newkeep <- unlist(sapply(keep, function(x) paste(x,1:2,sep=".")))
-  mm <- list(MZ=model1,DZ=model2)
-  dd <- list(wide1,wide2)
+  newkeep <- unlist(sapply(keep, function(x) paste(x, 1:2, 
+                                                   sep = ".")))
+  mm <- list(MZ = model1, DZ = model2)
+  dd <- list(wide1, wide2)
   if (!missing(OS)) {
-    mm <- c(mm,OS=list(model3))
-    dd <- c(dd,list(wide3))
+    mm <- c(mm, OS = list(model3))
+    dd <- c(dd, list(wide3))
   }
+
   names(dd) <- names(mm)
-  suppressWarnings(mg <- multigroup(mm, dd, missing=TRUE,fix=FALSE,keep=newkeep,type=2))
-  if (is.null(estimator)) return(mg)
-  optim <- list(method="nlminb2",refit=FALSE,gamma=1,start=rep(0.1,with(mg,npar+npar.mean)))  
+  
+  ## suppressWarnings(mg <- multigroup(mm, dd, missing=TRUE,fix=FALSE,keep=newkeep,type=2))
+
+  if (is.null(estimator)) return(multigroup(mm, dd, missing=TRUE,fix=FALSE,keep=newkeep,type=2))
+
+  optim <- list(method="nlminb2",refit=FALSE,gamma=1,start=rep(0.1,length(coef(mm[[1]]))*length(mm)))
+  ##                                                       with(mg,npar+npar.mean)))
   if (length(control)>0) {
     optim[names(control)] <- control
   }
 
+
   if (is.Surv(data[,yvar])) {
     require("lava.tobit")
-    estimator <- "tobit"
     if (is.null(optim$method))
-      optim$method <- "nlminb1"
-    e <- estimate(mg,estimator=estimator,fix=FALSE,control=optim,...)
+       optim$method <- "nlminb1"
+    e <- estimate(mm,dd,control=optim,...)
   } else {
-    e <- estimate(mg,weight=weight,estimator=estimator,fix=FALSE,control=optim,...)
+    e <- estimate(mm,dd,weight=weight,estimator=estimator,fix=FALSE,control=optim,...)
   }
   if (!is.null(optim$refit) && optim$refit) {
     optim$method <- "NR"
     optim$start <- pars(e)
     if (is.Surv(data[,yvar])) {
-      e <- estimate(mg,estimator=estimator,fix=FALSE,control=optim,...)      
+      e <- estimate(mm,dd,estimator=estimator,fix=FALSE,control=optim,...)      
     } else {
-      e <- estimate(mg,weight=weight,estimator=estimator,fix=FALSE,control=optim,...)
+      e <- estimate(mm,dd,weight=weight,estimator=estimator,fix=FALSE,control=optim,...)
     }
   }
   res <- list(coefficients=e$opt$estimate, vcov=Inverse(information(e)), estimate=e, model=mm, full=full, call=cl, data=data, zyg=zyg, id=id, twinnum=twinnum, type=type, model.mz=model1, model.dz=model2, model.dzos=model3, data.mz=wide1, data.dz=wide2, data.os=wide3, OS=!missing(OS), constrain=constrain)

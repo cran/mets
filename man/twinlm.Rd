@@ -2,10 +2,10 @@
 \alias{twinlm}
 \title{Classic twin model for quantitative traits}
 \usage{
-  twinlm(formula, data, id, zyg, DZ, OS, weight = NULL,
-    type = c("ace"), twinnum = "twinnum", binary = FALSE,
-    keep = weight, estimator = "gaussian",
-    constrain = TRUE, control = list(), ...)
+  twinlm(formula, data, id, zyg, DZ, OS, strata = NULL,
+    weight = NULL, type = c("ace"), twinnum = "twinnum",
+    binary = FALSE, keep = weight, estimator = "gaussian",
+    constrain = TRUE, control = list(), messages = 1, ...)
 }
 \arguments{
   \item{formula}{Formula specifying effects of covariates
@@ -31,6 +31,8 @@
   \item{OS}{Optional. Character defining the level in the
   zyg variable corresponding to the oppposite sex dyzogitic
   twins.}
+
+  \item{strata}{Strata variable name}
 
   \item{weight}{Weight matrix if needed by the chosen
   estimator. For use with Inverse Probability Weights}
@@ -61,6 +63,8 @@
 
   \item{constrain}{Development argument}
 
+  \item{messages}{Control amount of messages shown}
+
   \item{...}{Additional arguments parsed on to lower-level
   functions}
 }
@@ -77,23 +81,23 @@ d <- twinsim(1000,b1=c(1,-1),b2=c(),acde=c(1,1,0,1))
 ## E(y|z1,z2) = z1 - z2. var(A) = var(C) = var(E) = 1
 
 ## E.g to fit the data to an ACE-model without any confounders we simply write
-ace <- twinlm(y1 ~ 1, data=d, DZ="DZ", zyg="zyg", id="id")
+ace <- twinlm(y ~ 1, data=d, DZ="DZ", zyg="zyg", id="id")
 ace
 ## An AE-model could be fitted as
-ae <- twinlm(y1 ~ 1, data=d, DZ="DZ", zyg="zyg", id="id", type="ae")
+ae <- twinlm(y ~ 1, data=d, DZ="DZ", zyg="zyg", id="id", type="ae")
 ## LRT:
 compare(ae,ace)
 ## AIC
 AIC(ae)-AIC(ace)
 ## To adjust for the covariates we simply alter the formula statement
-ace2 <- twinlm(y1 ~ x11+x12, data=d, DZ="DZ", zyg="zyg", id="id", type="ace")
+ace2 <- twinlm(y ~ x11+x12, data=d, DZ="DZ", zyg="zyg", id="id", type="ace")
 ## Summary/GOF
 summary(ace2)
 ## An interaction could be analyzed as:
-ace3 <- twinlm(y1 ~ x11+x12 + x11:I(x12<0), data=d, DZ="DZ", zyg="zyg", id="id", type="ace")
+ace3 <- twinlm(y ~ x11+x12 + x11:I(x12<0), data=d, DZ="DZ", zyg="zyg", id="id", type="ace")
 ## Categorical variables are also supported
 d2 <- transform(d,x12cat=cut(x12,3,labels=c("Low","Med","High")))
-ace4 <- twinlm(y1 ~ x11+x12cat, data=d2, DZ="DZ", zyg="zyg", id="id", type="ace")
+ace4 <- twinlm(y ~ x11+x12cat, data=d2, DZ="DZ", zyg="zyg", id="id", type="ace")
 ## plot the model structure
 \dontrun{
 plot(ace4)

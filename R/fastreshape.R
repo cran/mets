@@ -1,58 +1,169 @@
-##' Simple reshape/tranpose of data
-##'
 ##' @title Fast reshape
+##' Simple reshape/tranpose of data
 ##' @param data data.frame or matrix
-##' @param id id-variable. If omitted then reshape from wide to long. 
-##' @param varying Vector of prefix-names of the time varying
-##' variables. Optional for long->wide reshaping.
+##' @param id id-variable. If omitted then reshape Wide->Long. 
+##' @param varying Vector of prefix-names of the time varying variables. Optional for Long->Wide reshaping.
 ##' @param num Optional number/time variable
 ##' @param sep String seperating prefix-name with number/time
-##' @param ... Optional additional arguments to the \code{reshape} function used in the wide->long reshape.
+##' @param keep Vector of column names to keep
+##' @param idname Name of id-variable (Wide->Long)
+##' @param numname Name of number-variable (Wide->Long)
+##' @param factors.keep If false all factors are converted to integers
+##' @param ... Optional additional arguments
 ##' @author Thomas Scheike, Klaus K. Holst
 ##' @export
 ##' @examples
 ##' m <- lvm(c(y1,y2,y3,y4)~x)
-##' d <- sim(m,1e1)
+##' d <- sim(m,5)
+##' fast.reshape(fast.reshape(d,var="y"),id="id")
 ##' 
+##' ##### From wide-format
+##' (dd <- fast.reshape(d,var="y"))
+##' ## Same with explicit setting new id and number variable/column names and seperator "" (default) and dropping x
+##' fast.reshape(d,var="y",idname="a",timevar="b",sep="",keep=c())
+##' ## Same with 'reshape' list-syntax
+##' fast.reshape(d,var=list(c("y1","y2","y3","y4")))
+##' 
+##' ##### From long-format
+##' fast.reshape(dd,id="id")
+##' ## Restrict set up within-cluster varying variables
+##' fast.reshape(dd,id="id",var="y")
+##' fast.reshape(dd,id="id",var="y",keep="x",sep=".")
+##' 
+##' #####
+##' x <- data.frame(id=c(5,5,6,6,7),y=1:5,x=1:5,tv=c(1,2,2,1,2))
+##' (xw <- fast.reshape(x,id="id"))
+##' (xl <- fast.reshape(xw,varying=c("y","x"),idname="id2",keep=c()))
+##' (xl <- fast.reshape(xw,varying=c("y","x","tv")))
+##' (xw2 <- fast.reshape(xl,id="id",num="num"))
+##' fast.reshape(xw2,varying=c("y","x"),idname="id")
+##' 
+##' # more generally: varying=list(c("ym","yf","yb1","yb2"), c("zm","zf","zb1","zb2"))
+##' #varying=list(c("ym","yf","yb1","yb2")))
+##' 
+##' ##### Family cluster example
+##' d <- mets:::sim.bin.fam(3)
+##' d
 ##' dd <- fast.reshape(d,var="y")
-##' d1 <- fast.reshape(dd,"id")
-##'
-##' ## From wide-format
-##' d1 <- fast.reshape(dd,"id")
-##' d2 <- fast.reshape(dd,"id",var="y")
-##' d3 <- fast.reshape(dd,"id",var="y",num="time")
+##' dd
+##' dd2 <- fast.reshape(d,varying=list(c("ym","yf","yb1","yb2")))
+##' dd2
 ##' 
-##' d4 <- fast.reshape(data.matrix(dd),"id",var="y")
-##' 
-##' ## From long-format
-##' fast.reshape(d,var="y",idvar="a",timevar="b")
-##' fast.reshape(d,var=list(c("y1","y2","y3","y4")),idvar="a",timevar="b")
-##'
+##' ##### Prostate cancer example
 ##' data(prt)
-##' head(fast.reshape(prt,"id",var="cancer"))
-fast.reshape <- function(data,id,varying,num,sep="",...) {
-  if (NCOL(data)==1) data <- cbind(data)
-  
+##' head(prtw <- fast.reshape(prt,"id",var="cancer"))
+##' ftable(cancer1~cancer2,data=prtw)
+##' rm(prtw)
+##' 
+fast.reshape <- function(data,id,varying,num,sep="",keep,
+                         idname="id",numname="num",factors.keep=TRUE,...) {
+  if (!is.data.frame(data) & is.list(data)) {
+    data <- as.data.frame(data)
+  } else {
+    if (NCOL(data)==1) data <- cbind(data)
+  }
+
   if (missing(id)) {
-    ## reshape from wide to long format. Fall-back to stats::reshape
+    ## reshape from wide to long format. 
     nn <- colnames(data)
     nsep <- nchar(sep)
+    if (missing(varying)) stop("Prefix of time-varying variables needed")
     vnames <- NULL
-    if (missing(varying)) stop("Prefix of time-varying variables needed")    
     ncvar <- sapply(varying,nchar)
     newlist <- c()
+    numlev <- TRUE
     if (!is.list(varying)) {
       for (i in seq_len(length(varying))) {
         ii <- which(varying[i]==substr(nn,1,ncvar[i]))
-        tt <- as.numeric(substring(nn[ii],ncvar[i]+1+nsep))      
+        thelevels <- substring(nn[ii],ncvar[i]+1+nsep)
+        suppressWarnings(tt <- as.numeric(thelevels)) 
         newlist <- c(newlist,list(nn[ii[order(tt)]]))
       }
-      vnames <- varying
+      if (any(is.na(tt))) {
+        numlev <- FALSE
+      } else {
+        thelevels <- tt
+      }
+      vnames <- varying      
       varying <- newlist
+    } else {
+      thelevels <- seq(length(varying[[1]]))
     }
-    return(reshape(data,varying=varying,direction="long",v.names=vnames,...))
+    is_df <- is.data.frame(data)
+    oldreshape <- FALSE
+    if (is_df) {
+      ##      D0 <- droplevels(data)[1,,drop=FALSE]
+      D0 <- data[1,,drop=FALSE]
+      classes <- unlist(lapply(D0,class))
+      dim <- unlist(lapply(D0,NCOL))
+      if (any(dim>1) || !all(classes%in%c("numeric","logical","factor","integer","matrix"))) { ## e.g. Surv columns 
+        oldreshape <- TRUE
+      } else {
+        data <- data.matrix(data)
+      }
+    }
+    if (is.null(vnames)) {
+      vnames <- unlist(lapply(varying,function(x) x[1]))
+      if (!is.null(names(vnames))) vnames <- names(vnames)
+    }
+    if (oldreshape) return(reshape(as.data.frame(data),varying=varying,direction="long",v.names=vnames,...)) ### Fall-back to stats::reshape
+
+    fixed <- setdiff(nn,unlist(c(varying,numname)))
+    if (!missing(keep)) fixed <- intersect(fixed,c(keep,idname,numname))
+    nfixed <- length(fixed)
+    nvarying <- length(varying)
+    nclusts <- unlist(lapply(varying,length))
+    nclust <- length(varying[[1]])
+    if (any(nclusts!=nclust)) stop("Different length of varying vectors!")
+    data <- data[,c(fixed,unlist(varying)),drop=FALSE]
+    
+    long <- as.data.frame(.Call("FastLong",
+                                idata=data,
+                                inclust=as.integer(nclust),
+                                as.integer(nfixed),
+                                as.integer(nvarying),
+                                TRUE ## Remove rows with all missing
+                                ));
+
+    if (numname%in%fixed) {
+      while (numname%in%c(fixed)) numname <- paste(numname,"_",sep="")
+    }
+    if (idname%in%fixed) {
+      long <- long[,-(ncol(long)-1)]
+      cnames <- c(fixed,vnames,numname)
+    } else {
+      cnames <- c(fixed,vnames,idname,numname)
+    }
+    ##  while (idname%in%c(fixed,vnames,numname)) idname <- paste(idname,"_",sep="")
+    ##  while (numname%in%c(fixed,vnames)) numname <- paste(numname,"_",sep="")
+    
+    colnames(long) <- cnames
+    if (!numlev) {
+      long[,numname] <- factor(long[,numname],labels=thelevels)
+    } else {
+      if (!identical(order(thelevels),thelevels))
+        long[,numname] <- thelevels[long[,numname]]
+    }
+
+    if (is_df && factors.keep) { ## Recreate classes 
+      vars.orig <- c(fixed,unlist(lapply(varying,function(x) x[1])))
+      vars.new <- c(fixed,vnames)
+      factors <- which("factor"==classes[vars.orig])
+      logicals <- which("logical"==classes[vars.orig])
+      for (i in factors) {
+        lev <- levels(D0[,vars.orig[i]])
+        long[,vars.new[i]] <- factor(lev[long[,vars.new[i]]],levels=lev)
+      }
+      for (i in logicals) {
+        long[,vars.new[i]] <- long[,vars.new[i]]==1
+      }
+    }
+    return(long)
   }
 
+  
+  ## Long to wide format:
+  
   numvar <- idvar <- NULL 
   if (is.character(id) || is.factor(id)) {
     if (length(id)>1) stop("Expecting column name or vector of id's")
@@ -70,76 +181,68 @@ fast.reshape <- function(data,id,varying,num,sep="",...) {
     }
   } else {
     num <- NULL
-  }  
+  }
 
-  ## antpers <- nrow(data)  
-  ## unique.id <- unique(id)
-  ## if (any(is.na(unique.id))) stop("NA's not allowed in id-variable")
-  ## max.clust <- length(unique.id)  
-  ## ##clusters <- as.integer(factor(clusters, labels = seq_len(max.clust)))-1
-  ## clusters <- fast.approx(unique.id,id)$pos
-  ## nclust <- .C("nclusters", as.integer(antpers), as.integer(clusters), 
-  ##              as.integer(rep(0, antpers)), as.integer(0), as.integer(0))
-  ## maxclust <- nclust[[5]]
-  ## antclust <- nclust[[4]]
-  ## cluster.size <- nclust[[3]][seq_len(antclust)]
-  ## if (!is.null(num)) { ### different types in different columns
-  ##   mednum <- 1
-  ##   numnum <- numnum <- order(num)-1
-  ## } else {
-  ##   numnum <- 0;
-  ##   mednum <- 0;
-  ## }
-  ## init <- -1
-  ## clustud <- .C("clusterindex", as.integer(clusters), as.integer(antclust), 
-  ##               as.integer(antpers),
-  ##               as.integer(rep(init, antclust * maxclust)),
-  ##               as.integer(rep(0, antclust)), as.integer(mednum), 
-  ##               as.integer(numnum))
-  ## idclust <- matrix(clustud[[4]], antclust, maxclust)
-  ## idclust[idclust == -1] <- NA
- 
-  cud <- cluster.index(id,num=num,Rindex=1)
-  idclust <- cud$idclust
-  maxclust <- cud$maxclust
+  nn <- colnames(data)
+  if (any(nn=="")) data <- data.frame(data)
+
+  clustud <- cluster.index(id,num=num)
+  maxclust <- clustud$maxclust
+  idclust <- clustud$idclust  
+  obs1 <- as.vector(apply(idclust,1,function(x) na.omit(x)[1]))+1
   
   if (!is.null(numvar)) {
     ii <- which(colnames(data)==numvar)
     data <- data[,-ii,drop=FALSE]
   }
+
+  if (!missing(keep)) {
+    keepers <- c(keep,idvar)
+    if (!missing(varying)) keepers <- c(keepers,varying)
+    ii <- which(colnames(data)%in%keepers)
+    data <- data[,ii,drop=FALSE]
+  }
+  
   if (missing(varying)) varying <- setdiff(colnames(data),c(idvar))
   vidx <- match(varying,colnames(data))
   N <- nrow(idclust)
   p <- length(varying)
-
-  if (is.matrix(data) || all(apply(data[1,],2,is.numeric))) {
-  ## Everything numeric - we can work with matrices
+  P <- NCOL(data)
+  fixidx <- setdiff(seq(P),vidx)
+  if (is.matrix(data) || all(apply(data[1,,drop=FALSE],2,is.numeric))) {
+    ## Everything numeric - we can work with matrices
     dataw <- matrix(NA, nrow = N, ncol = p * (maxclust-1) + ncol(data))
-    for (i in seq_len(maxclust)) {
-      if (i==1) {
-        dataw[, seq(ncol(data))] <- as.matrix(data[idclust[, i] + 1,])
-        mnames <- colnames(data);
-        mnames[vidx] <- paste(mnames[vidx],i,sep=sep)
-      } else {
-        dataw[, seq(p) + (ncol(data)-p) + (i - 1) * p] <- as.matrix(data[idclust[, i] + 1,varying])
-        ##        mnames <- c(mnames,paste(varying,i,sep=sep))
+    dataw[,fixidx] <- as.matrix(data[obs1,fixidx,drop=FALSE])
+    mnames <- colnames(data)
+    mnames[vidx] <- paste(mnames[vidx],1,sep=sep)
+    if (p>0) {
+      for (i in seq_len(maxclust)) {
+        idx <- idclust[, i] + 1
+        pos <- vidx
+        if (i>1) {
+          pos <- P+seq(p)+p*(i-2)
+        }
+        dataw[which(!is.na(idx)), pos] <-
+          as.matrix(data[na.omit(idx),vidx,drop=FALSE])      
       }
+      mnames <- c(mnames,as.vector(t(outer(varying,seq_len(maxclust-1)+1,function(...) paste(...,sep=sep)))))
     }
-    mnames <- c(mnames,as.vector(t(outer(varying,seq_len(maxclust-1)+1,function(...) paste(...,sep=sep)))))
     colnames(dataw) <- mnames
     return(dataw)
-  } ## Potentially slower with data.frame where we use cbind
+  }
 
+  ## Potentially slower with data.frame where we use cbind
   for (i in seq_len(maxclust)) {
-     if (i==1) {
-       dataw <- data[idclust[,i]+1,,drop=FALSE]
-       mnames <- names(data);
-       mnames[vidx] <- paste(mnames[vidx],sep,i,sep="")
-     } else {
-       dataw <- cbind(dataw,data[idclust[,i]+1,varying,drop=FALSE])
-       mnames <- c(mnames,paste(varying,sep,i,sep=""))
-     }
-   }
+    if (i==1) {
+      dataw <- data[obs1,,drop=FALSE]
+      mnames <- names(data);
+      dataw[,vidx] <- data[idclust[,i]+1,vidx,drop=FALSE]
+      mnames[vidx] <- paste(mnames[vidx],sep,i,sep="")
+    } else {
+      dataw <- cbind(dataw,data[idclust[,i]+1,varying,drop=FALSE])
+      mnames <- c(mnames,paste(varying,sep,i,sep=""))
+    }
+  }
   names(dataw) <- mnames
   
   return(dataw)

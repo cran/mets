@@ -2,7 +2,7 @@
 \alias{casewise.test}
 \title{Estimates the casewise concordance based on Concordance and marginal estimate using timereg and performs test for independence}
 \usage{
-  casewise.test(conc, marg, test = "no-test")
+  casewise.test(conc, marg, test = "no-test", p = 0.01)
 }
 \arguments{
   \item{conc}{Concordance}
@@ -12,9 +12,14 @@
   \item{test}{Type of test for independence assumption.
   "conc" makes test on concordance scale and "case" means a
   test on the casewise concordance}
+
+  \item{p}{check that marginal probability is greater at
+  some point than p}
 }
 \description{
-  .. content for description (no empty lines) ..
+  Estimates the casewise concordance based on Concordance
+  and marginal estimate using timereg and performs test for
+  independence
 }
 \details{
   Uses cluster based conservative standard errors for
@@ -23,9 +28,9 @@
 \examples{
 data(prt);
 
-prt <- prt[which(prt$id \%in\% sample(unique(prt$id),10000)),]
+prt <- prt[which(prt$id \%in\% sample(unique(prt$id),7500)),]
 ### marginal cumulative incidence of prostate cancer
-times <- seq(60,100,by=10)
+times <- seq(60,100,by=2)
 outm <- comp.risk(Surv(time,status==0)~+1,data=prt,prt$status,causeS=2,times=times)
 
 cifmz <- predict(outm,X=1,uniform=0,resample.iid=1)
