@@ -5,7 +5,7 @@ Simple reshape/tranpose of data}
 \usage{
   fast.reshape(data, id, varying, num, sep = "", keep,
     idname = "id", numname = "num", factors.keep = TRUE,
-    ...)
+    idcombine = FALSE, labelnum = TRUE, ...)
 }
 \arguments{
   \item{data}{data.frame or matrix}
@@ -30,6 +30,14 @@ Simple reshape/tranpose of data}
   \item{factors.keep}{If false all factors are converted to
   integers}
 
+  \item{idcombine}{If TRUE and \code{id} is vector of
+  several variables, the unique id is combined from all the
+  variables. Otherwise the first variable is only used as
+  identifier.}
+
+  \item{labelnum}{If TRUE varying variables in wide format
+  are labeled 1,2,3,... otherwise use 'num' variable.}
+
   \item{...}{Optional additional arguments}
 }
 \description{
@@ -42,7 +50,8 @@ fast.reshape(fast.reshape(d,var="y"),id="id")
 
 ##### From wide-format
 (dd <- fast.reshape(d,var="y"))
-## Same with explicit setting new id and number variable/column names and seperator "" (default) and dropping x
+## Same with explicit setting new id and number variable/column names
+## and seperator "" (default) and dropping x
 fast.reshape(d,var="y",idname="a",timevar="b",sep="",keep=c())
 ## Same with 'reshape' list-syntax
 fast.reshape(d,var=list(c("y1","y2","y3","y4")))
@@ -61,11 +70,12 @@ x <- data.frame(id=c(5,5,6,6,7),y=1:5,x=1:5,tv=c(1,2,2,1,2))
 (xw2 <- fast.reshape(xl,id="id",num="num"))
 fast.reshape(xw2,varying=c("y","x"),idname="id")
 
-# more generally: varying=list(c("ym","yf","yb1","yb2"), c("zm","zf","zb1","zb2"))
-#varying=list(c("ym","yf","yb1","yb2")))
+### more generally:
+### varying=list(c("ym","yf","yb1","yb2"), c("zm","zf","zb1","zb2"))
+### varying=list(c("ym","yf","yb1","yb2")))
 
 ##### Family cluster example
-d <- mets:::sim.bin.fam(3)
+d <- mets:::simBinFam(3)
 d
 dd <- fast.reshape(d,var="y")
 dd

@@ -1,4 +1,3 @@
-
 ###{{{ print.twinlm
 
 ##' @S3method print twinlm
@@ -14,7 +13,32 @@ print.twinlm <- function(x,...) {
 ##' @S3method summary twinlm
 summary.twinlm <- function(object,...) {
   e <- object$estimate
-  zygtab <- with(object, table(data[,zyg]))
+  counts <- function(dd) {
+    dd0 <- apply(dd,2,function(x) !is.na(x))
+    pairs <- sum(dd0[,1]*dd0[,2])
+    singletons <- sum((!dd0[,1])*dd0[,2] + (!dd0[,2])*dd0[,1])
+    return(c(pairs,singletons))
+  }
+  mz  <- counts(object$data.mz[,object$outcomes])
+  dz  <- counts(object$data.dz[,object$outcomes])
+  if (!object$estimate$model$missing) {
+    zygtab <- c("MZ-pairs"=mz[1],"DZ-pairs"=dz[1])
+  } else {
+    zygtab <- c(paste(mz,collapse="/"),paste(dz,collapse="/"))
+    names(zygtab) <- c("MZ-pairs/singletons","DZ-pairs/singletons")
+  }
+  if (object$OS) {
+    os  <- counts(object$data.os[,object$outcomes])
+    if (!object$estimate$model$missing) {
+      zygtab <- c(zygtab,"OS-pairs"=os[1])
+    } else {
+      zygtab <- c(zygtab,paste(os,collapse="/"))
+      names(zygtab)[3] <- "OS-pairs/singletons"
+    }
+  } 
+  ## zygtab <- with(object, table(data[,zyg]))
+  ## names(zygtab) <- paste(names(zygtab),"pairs",sep="-")
+
   theta <- pars(e)
   theta.sd <- sqrt(diag(e$vcov))
   myest <- cbind(theta,theta.sd,(Z <- theta/theta.sd),2*(1-pnorm(abs(Z))))
@@ -22,11 +46,10 @@ summary.twinlm <- function(object,...) {
 
   if (object$type%in%c("u","flex","sat")) {
     corMZ <- corDZ <- NULL
-
     if (object$constrain) {
-      i1 <- which(lava:::parpos.multigroup(object$estimate$model,p="atanh(rhoMZ)")=="atanh(rhoMZ)")[1]
-      i2 <- which(lava:::parpos.multigroup(object$estimate$model,p="atanh(rhoDZ)")=="atanh(rhoDZ)")[1]
-      i3 <- which(lava:::parpos.multigroup(object$estimate$model,p="atanh(rhoOS)")=="atanh(rhoOS)")[1]
+      i1 <- lava:::parpos.multigroup(object$estimate$model,p="atanh(rhoMZ)")[1]
+      i2 <- lava:::parpos.multigroup(object$estimate$model,p="atanh(rhoDZ)")[1]
+      i3 <- lava:::parpos.multigroup(object$estimate$model,p="atanh(rhoOS)")[1]
       if (length(i1)>0) {
         corest <- coef(object$estimate,level=0)[c(i1,i2,i3)]
         sdest <- vcov(object$estimate)[cbind(c(i1,i2,i3),c(i1,i2,i3))]^0.5
@@ -34,81 +57,75 @@ summary.twinlm <- function(object,...) {
         corest <- tanh(corest)
         corMZ <- c(corest[1],ciest[1,])
         corDZ <- c(corest[2],ciest[2,])
+        corOS <- NULL
+        if (object$OS) {
+          corOS <- c(corest[3],ciest[3,])
+        }
       }
     }
     aa <- capture.output(e)
     res <- list(estimate=aa, zyg=zygtab,
-                varEst=NULL, varSigma=NULL, heritability=NULL, hci=NULL,
-                corMZ=corMZ, corDZ=corDZ,
+                varEst=NULL, varSigma=NULL, heritability=NULL,
+                corMZ=corMZ, corDZ=corDZ, corOS=corOS,
                 logLik=logLik(e), AIC=AIC(e), BIC=BIC(e), type=object$type
                 )                
     class(res) <- "summary.twinlm"
     return(res)
   }
 
-  OScor <- NULL
+
+  kinshipOS  <- NULL
   if(object$OS) {
-    OScor <- constraints(e,k=3)[,c(1,5,6),drop=FALSE]
-    myest <- myest[-nrow(myest),,drop=FALSE]
-    rownames(OScor)[1] <- "OS correlation"
-    if (nrow(OScor)>1) {
-      myest <- myest[-nrow(myest),,drop=FALSE]
-      rownames(OScor) <- c("OS correlation (A)","OS correlation (D)")
+    KinshipOS <- constraints(e,k=3)[,c(1,5,6),drop=FALSE]
+    rownames(KinshipOS)[1] <- "OS Kinship"
+    if (nrow(KinshipOS)>1) {
+      rownames(KinshipOS) <- c("OS Kinship(A)","OS Kinship(D)")
     }
-    
+    myest <- myest[-lava:::parpos.multigroup(object$estimate$model,p=c("ra","rd")),,drop=FALSE]
   }
 
   r1 <- gsub(".1","",coef(Model(Model(e))[[1]],
-                                       mean=e$meanstructure, silent=TRUE),
+                          mean=e$meanstructure, silent=TRUE),
                           fixed=TRUE)
   rownames(myest) <- seq(nrow(myest))
   idx <- seq(nrow(myest)); 
   rownames(myest)[idx] <- r1
-  ## r2 <- gsub(".2","",rownames(myest),fixed=TRUE)
-  ## rownames(myest)[idx] <- r2
-##  rownames(myest) <- coef(Model(Model(e))[[1]],
-##                                      mean=e$meanstructure, silent=TRUE)
 
-  lambda.idx <- sapply(c("<-a1","<-c1","<-d1","<-e1"),function(x) grep(x,rownames(myest)))
-  lambda.idx2 <- sapply(c("<-a2","<-c2","<-d2","<-e2"),function(x) grep(x,rownames(myest)))
+
+  myest.varpos <- unlist(sapply(c("<-a1","<-c1","<-d1","<-e1"),function(x) grep(x,rownames(myest))))
+  
+  lambda.idx <- sapply(c("<-a1","<-c1","<-d1","<-e1"),function(x) grep(x,names(coef(e))))
+  lambda.idx2 <- sapply(c("<-a2","<-c2","<-d2","<-e2"),function(x) grep(x,names(coef(e))))
   for (k in seq_len(length(lambda.idx)))
     if (length(lambda.idx[[k]])==0) lambda.idx[[k]] <- lambda.idx2[[k]] 
 
   lambda.w <- which(sapply(lambda.idx, function(x) length(x)>0))
-          
-  rownames(myest)[unlist(lambda.idx)] <- paste("sd(",c("A)","C)","D)","E)"),sep="")[lambda.w]
+
+  rownames(myest)[myest.varpos] <- paste("sd(",c("A)","C)","D)","E)"),sep="")[lambda.w]
 
   varEst <- rep(0,4)
-  varEst[lambda.w] <- myest[unlist(lambda.idx),1]
+  varEst[lambda.w] <- myest[myest.varpos,1]
   varSigma <- matrix(0,4,4);
   varSigma[lambda.w,lambda.w] <- e$vcov[unlist(lambda.idx),unlist(lambda.idx)]
 
   L <- binomial("logit")
   varcomp <- c()
   genpos <- c()
-  pos <- 0
-  ## if ("e1"%in%latent(e) & object$binary) {
-  ##   if (length(object$probitscale)>0)
-  ##     varEst[4] <- object$probitscale
-  ##   if ("a1"%in%latent(e)) { varcomp <- "lambda[a]"; pos <- pos+1; genpos <- c(genpos,pos) }
-  ##   if ("c1"%in%latent(e)) { varcomp <- c(varcomp,"lambda[c]"); pos <- pos+1 }
-  ##   if ("d1"%in%latent(e)) { varcomp <- c(varcomp,"lambda[d]"); pos <- pos+1;
-  ##                            genpos <- c(genpos,pos) }
-  ##   f <- paste("h2~",paste(varcomp,collapse="+"))
-  ##   constrain(e, as.formula(f)) <- function(x) L$linkfun(sum(x[genpos]^2)/sum(c(x^2,varEst[4])))
-    
-  ## } else
+  pos <- 0L
   {
     varcomp <- c()
-        if ("a1"%in%latent(e)) { varcomp <- "lambda[a]"; pos <- pos+1;
-                                 genpos <- c(genpos,pos) }
+    if ("a1"%in%latent(e)) { varcomp <- "lambda[a]"; pos <- pos+1
+                             genpos <- c(genpos,pos) }
     if ("c1"%in%latent(e)) { varcomp <- c(varcomp,"lambda[c]"); pos <- pos+1 }
     if ("d1"%in%latent(e)) { varcomp <- c(varcomp,"lambda[d]"); pos <- pos+1;
                              genpos <- c(genpos,pos) }
     if ("e1"%in%latent(e)) { varcomp <- c(varcomp,"lambda[e]"); pos <- pos+1 }
     f <- paste("h2~",paste(varcomp,collapse="+"))
 
-    constrain(e, as.formula(f)) <- function(x) L$linkfun(sum(x[genpos]^2)/sum(x^2))
+    constrain(e, as.formula(f)) <- function(x) {
+      L$linkfun(sum(x[genpos]^2)/sum(x^2))
+    }
+
   }
   ci.logit <- L$linkinv(constraints(e,k=1)["h2",5:6])
   
@@ -135,11 +152,10 @@ summary.twinlm <- function(object,...) {
   colnames(hval) <- c("Estimate", "Std.Err"); rownames(hval) <- "h squared"
   h2val <- cbind(h2(varEst), (t(dh2(varEst))%*%varSigma%*%(dh2(varEst)))^0.5)
   colnames(h2val) <- c("Estimate", "Std.Err"); rownames(h2val) <- "h squared"
-
-
-  
+ 
   atanhcorMZf <- function(x) atanh(sum(x[1:3]^2)/sum(x^2))
   atanhcorDZf <- function(x) atanh(sum(x[1:3]^2*c(0.5,1,0.25))/sum(x^2))
+ 
   e1 <- atanhcorMZf(varEst)
   D1 <- grad(atanhcorMZf,varEst)
   s1 <- (t(D1)%*%varSigma%*%(D1))^0.5
@@ -149,12 +165,27 @@ summary.twinlm <- function(object,...) {
   s2 <- (t(D2)%*%varSigma%*%(D2))^0.5
   ci2 <- e2+qnorm(0.975)*c(-1,1)*s2
   
-  ## corMZ <- sum(varEst[1:3]^2)/sum(varEst^2)
-  ## corDZ <- sum(varEst[1:3]^2*c(0.5,1,0.25))/sum(varEst^2<)
   corMZ <- c(tanh(c(e1,ci1)))
   corDZ <- c(tanh(c(e2,ci2)))  
+
+  acde <- acde.twinlm(object)
+  coef <- rbind(acde)  
+
+  corOS <- NULL
+  if (object$OS)
+    acde <- rbind(acde,KinshipOS)
+
   
-  res <- list(estimate=myest, zyg=zygtab, varEst=varEst, varSigma=varSigma, hval=hval, heritability=h2val, hci=ci.logit, corMZ=corMZ, corDZ=corDZ, acde=acde.twinlm(object), logLik=logLik(e), AIC=AIC(e), BIC=BIC(e), type=object$type, OScor=OScor)
+  hrow <- rbind(c(h2val,ci.logit));
+  rownames(hrow) <- "Broad-sense heritability"
+  colnames(hrow)[1:2] <- c("Estimate","Std.Err")
+  
+  all <- rbind(hrow[,c(1,3,4),drop=FALSE],coef,corMZ,corDZ,corOS)
+  
+  res <- list(estimate=myest, zyg=zygtab, varEst=varEst,
+              varSigma=varSigma, heritability=hrow, corMZ=corMZ, corDZ=corDZ,
+              corOS=corOS, acde=acde, logLik=logLik(e), AIC=AIC(e), BIC=BIC(e),
+              type=object$type, coef=coef, all=all);
   class(res) <- "summary.twinlm"
   return(res)
 }
@@ -172,38 +203,25 @@ print.summary.twinlm <- function(x,signif.stars=FALSE,...) {
 
     printCoefmat(x$estimate,signif.stars=signif.stars,...)
     cat("\n")
-    myzyg <- with(x,zyg)
-    names(myzyg)[1:2] <- c("Group 1 (DZ)", "Group 2 (MZ)")
-    if (length(myzyg)==3) names(myzyg)[3] <- "Group 3 (OS)"
-    print(myzyg)
-##   cat("\n")
-##   mynames <- c("sigmaA","sigmaC","sigmaD","sigmaE")
-##   for (i in 1:4) {
-##     cat(mynames[i], "=", x$varEst[i], "\n")
-##   }
+    print(x$zyg,quote=FALSE)
+
     if (!is.null(x$acde)) {
       cat("\nVariance decomposition:\n")
-      print(x$acde)
-      if (!is.null(x$OScor))
-        print(x$OScor)   
+      printCoefmat(x$acde,...)
     }
-    cat("\n")
-    ##  cat("hn2 = ", hn2, "\t hb2 = ", hb2, "\n\n")
-    ##  cat("Narrow-sense heritability (additive genetic factors):\n")
-    ##  print(x$hval)
-    ##  cat("\n")  
-    cat("Broad-sense heritability (total genetic factors):\n")
-    h <- with(x, c(heritability[1],hci));
-    names(h) <- c("Estimate",names(x$hci))
+    cat("\n\n")
+    ##    cat("Broad-sense heritability (total genetic factors):\n")
+    h <- with(x, heritability[,c(1,3,4),drop=FALSE]);
     h <- na.omit(h)
-    print(h)  
+    printCoefmat(h,...)  
     cat("\n")
   }
   if (!is.null(x$corMZ)) {
-    cc <- with(x, rbind(corMZ,corDZ))
-    rownames(cc) <- c("Correlation within MZ:","Correlation within DZ:")
+    cc <- with(x, rbind(corMZ,corDZ,corOS))
+    rownames(cc)[1:2] <- c("Correlation within MZ:","Correlation within DZ:")
+    if (!is.null(x$corOS)) rownames(cc)[3] <- "Correlation within OS:"
     colnames(cc) <- c("Estimate","2.5%","97.5%")
-    printCoefmat(cc,signif.stars=FALSE)
+    printCoefmat(cc,signif.stars=FALSE,...)
   }
   
   cat("\n")

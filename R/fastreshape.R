@@ -9,6 +9,9 @@
 ##' @param idname Name of id-variable (Wide->Long)
 ##' @param numname Name of number-variable (Wide->Long)
 ##' @param factors.keep If false all factors are converted to integers
+##' @param idcombine If TRUE and \code{id} is vector of several variables, the unique id is combined from all the variables.
+##' Otherwise the first variable is only used as identifier.
+##' @param labelnum If TRUE varying variables in wide format are labeled 1,2,3,... otherwise use 'num' variable.
 ##' @param ... Optional additional arguments
 ##' @author Thomas Scheike, Klaus K. Holst
 ##' @export
@@ -19,7 +22,8 @@
 ##' 
 ##' ##### From wide-format
 ##' (dd <- fast.reshape(d,var="y"))
-##' ## Same with explicit setting new id and number variable/column names and seperator "" (default) and dropping x
+##' ## Same with explicit setting new id and number variable/column names
+##' ## and seperator "" (default) and dropping x
 ##' fast.reshape(d,var="y",idname="a",timevar="b",sep="",keep=c())
 ##' ## Same with 'reshape' list-syntax
 ##' fast.reshape(d,var=list(c("y1","y2","y3","y4")))
@@ -38,11 +42,12 @@
 ##' (xw2 <- fast.reshape(xl,id="id",num="num"))
 ##' fast.reshape(xw2,varying=c("y","x"),idname="id")
 ##' 
-##' # more generally: varying=list(c("ym","yf","yb1","yb2"), c("zm","zf","zb1","zb2"))
-##' #varying=list(c("ym","yf","yb1","yb2")))
+##' ### more generally:
+##' ### varying=list(c("ym","yf","yb1","yb2"), c("zm","zf","zb1","zb2"))
+##' ### varying=list(c("ym","yf","yb1","yb2")))
 ##' 
 ##' ##### Family cluster example
-##' d <- mets:::sim.bin.fam(3)
+##' d <- mets:::simBinFam(3)
 ##' d
 ##' dd <- fast.reshape(d,var="y")
 ##' dd
@@ -54,9 +59,9 @@
 ##' head(prtw <- fast.reshape(prt,"id",var="cancer"))
 ##' ftable(cancer1~cancer2,data=prtw)
 ##' rm(prtw)
-##' 
 fast.reshape <- function(data,id,varying,num,sep="",keep,
-                         idname="id",numname="num",factors.keep=TRUE,...) {
+                         idname="id",numname="num",factors.keep=TRUE,
+                         idcombine=FALSE,labelnum=TRUE,...) {
   if (!is.data.frame(data) & is.list(data)) {
     data <- as.data.frame(data)
   } else {
@@ -163,34 +168,46 @@ fast.reshape <- function(data,id,varying,num,sep="",keep,
 
   
   ## Long to wide format:
-  
   numvar <- idvar <- NULL 
-  if (is.character(id) || is.factor(id)) {
-    if (length(id)>1) stop("Expecting column name or vector of id's")
+  if (is.character(id)) {
     idvar <- id
-    id <- as.integer(data[,id,drop=TRUE])
+    if (length(id)==1) {
+      id <- data[,idvar,drop=TRUE]
+    } else {
+      if (idcombine)
+        id <- interaction(as.data.frame(data[,idvar,drop=FALSE]),drop=TRUE)
+      else
+        id <- data[,idvar[1],drop=TRUE]
+    } 
   } else {
     if (length(id)!=nrow(data)) stop("Length of ids and data-set does not agree")
-  }    
-  if (!missing(num)) {
-    if (is.character(num) || is.factor(num)) {
-      numvar <- num
-      num <- as.integer(data[,num,drop=TRUE])
-    } else {
-      if (length(num)!=nrow(data)) stop("Length of time and data-set does not agree")
-    }
-  } else {
-    num <- NULL
   }
-
+  
+  unum <- NULL
+  if (!missing(num) && !is.null(num)) {
+      if (is.character(num)) {
+          numvar <- num
+          if (is.character(data[1,num,drop=TRUE])) {
+              data[,num,drop=TRUE] <- as.factor(data[,num,drop=TRUE])
+          }
+          num <- as.integer(data[,num,drop=TRUE])
+          if (!labelnum) unum <- sort(unique(data[,numvar,drop=TRUE]))
+      } else {
+          if (length(num)!=nrow(data)) stop("Length of time and data-set does not agree")
+          if (!labelnum) unum <- unique(num)
+      }
+  } else {
+      num <- NULL
+  }
+  
   nn <- colnames(data)
   if (any(nn=="")) data <- data.frame(data)
 
   clustud <- cluster.index(id,num=num)
   maxclust <- clustud$maxclust
   idclust <- clustud$idclust  
-  obs1 <- as.vector(apply(idclust,1,function(x) na.omit(x)[1]))+1
-  
+  obs1 <- clustud$firstclustid+1 ## as.vector(apply(idclust,1,function(x) na.omit(x)[1]))+1
+
   if (!is.null(numvar)) {
     ii <- which(colnames(data)==numvar)
     data <- data[,-ii,drop=FALSE]
@@ -202,19 +219,23 @@ fast.reshape <- function(data,id,varying,num,sep="",keep,
     ii <- which(colnames(data)%in%keepers)
     data <- data[,ii,drop=FALSE]
   }
-  
+
   if (missing(varying)) varying <- setdiff(colnames(data),c(idvar))
   vidx <- match(varying,colnames(data))
   N <- nrow(idclust)
   p <- length(varying)
-  P <- NCOL(data)
+  P <- NCOL(data)  
   fixidx <- setdiff(seq(P),vidx)
-  if (is.matrix(data) || all(apply(data[1,,drop=FALSE],2,is.numeric))) {
+  if (is.matrix(data) || (all(apply(data[1,,drop=FALSE],2,is.numeric)) & length(unlist(data[1,]))==length(data[1,]) )) {
     ## Everything numeric - we can work with matrices
     dataw <- matrix(NA, nrow = N, ncol = p * (maxclust-1) + ncol(data))
     dataw[,fixidx] <- as.matrix(data[obs1,fixidx,drop=FALSE])
     mnames <- colnames(data)
-    mnames[vidx] <- paste(mnames[vidx],1,sep=sep)
+    if (!is.null(unum)) {
+        mnames[vidx] <- paste(mnames[vidx],unum[1],sep=sep)
+    } else {
+        mnames[vidx] <- paste(mnames[vidx],1,sep=sep)
+    }
     if (p>0) {
       for (i in seq_len(maxclust)) {
         idx <- idclust[, i] + 1
@@ -225,7 +246,13 @@ fast.reshape <- function(data,id,varying,num,sep="",keep,
         dataw[which(!is.na(idx)), pos] <-
           as.matrix(data[na.omit(idx),vidx,drop=FALSE])      
       }
-      mnames <- c(mnames,as.vector(t(outer(varying,seq_len(maxclust-1)+1,function(...) paste(...,sep=sep)))))
+      if (!is.null(unum)) {
+          postn <- unum[-1]
+      } else {
+          postn <- seq_len(maxclust-1)+1
+      }
+      ##if (is.null(numname)) postn <- idlev[postn]
+      mnames <- c(mnames,as.vector(t(outer(varying,postn,function(...) paste(...,sep=sep)))))
     }
     colnames(dataw) <- mnames
     return(dataw)
@@ -240,7 +267,10 @@ fast.reshape <- function(data,id,varying,num,sep="",keep,
       mnames[vidx] <- paste(mnames[vidx],sep,i,sep="")
     } else {
       dataw <- cbind(dataw,data[idclust[,i]+1,varying,drop=FALSE])
-      mnames <- c(mnames,paste(varying,sep,i,sep=""))
+      if (!is.null(unum)) 
+          mnames <- c(mnames,paste(varying,sep,unum[i],sep=""))
+      else
+          mnames <- c(mnames,paste(varying,sep,i,sep=""))
     }
   }
   names(dataw) <- mnames

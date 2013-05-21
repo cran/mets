@@ -36,11 +36,14 @@
 ##' summary(bina)
 ##' 
 ##' twinstut$binstut <- (twinstut$stutter=="yes")*1
-##' out <- easy.binomial.twostage(stutter~factor(sex)+age,data=twinstut,response="binstut",id="tvparnr",
-##' 			      theta.formula=~-1+factor(zyg1),score.method="fisher.scoring")
+##' out <- easy.binomial.twostage(stutter~factor(sex)+age,data=twinstut,
+##'                               response="binstut",id="tvparnr",
+##' 			      theta.formula=~-1+factor(zyg1),
+##'                               score.method="fisher.scoring")
 ##' summary(out)
 ##' 
-##' desfs<-function(x,num1="zyg1",namesdes=c("mz","dz","os")) c(x[num1]=="dz",x[num1]=="mz",x[num1]=="os")*1
+##' desfs<-function(x,num1="zyg1",namesdes=c("mz","dz","os"))
+##'     c(x[num1]=="dz",x[num1]=="mz",x[num1]=="os")*1
 ###
 ##' out3 <- easy.binomial.twostage(binstut~factor(sex)+age,
 ##'       data=twinstut,response="binstut",id="tvparnr",
@@ -354,15 +357,19 @@ antpers <- NROW(data);
 ##' summary(bina)
 ##' 
 ##' twinstut0$binstut <- (twinstut0$stutter=="yes")*1
-##' out <- easy.binomial.twostage(stutter~factor(sex)+age,data=twinstut0,response="binstut",id="tvparnr",
-##' 			      theta.formula=~-1+factor(zyg1),score.method="fisher.scoring")
+##' out <- easy.binomial.twostage(stutter~factor(sex)+age,data=twinstut0,
+##'                               response="binstut",id="tvparnr",
+##' 			      theta.formula=~-1+factor(zyg1),
+##'                               score.method="fisher.scoring")
 ##' summary(out)
 ##' 
-##' desfs<-function(x,num1="zyg1",namesdes=c("mz","dz","os")) c(x[num1]=="dz",x[num1]=="mz",x[num1]=="os")*1
+##' desfs <- function(x,num1="zyg1",namesdes=c("mz","dz","os"))
+##'     c(x[num1]=="dz",x[num1]=="mz",x[num1]=="os")*1
 ##' 
 ##' out3 <- easy.binomial.twostage(binstut~factor(sex)+age,
-##'       data=twinstut0, response="binstut",id="tvparnr",
-##'       score.method="fisher.scoring", theta.formula=desfs,desnames=c("mz","dz","os"))
+##'                                data=twinstut0, response="binstut",id="tvparnr",
+##'                                score.method="fisher.scoring",
+##'                                theta.formula=desfs,desnames=c("mz","dz","os"))
 ##' summary(out3)
 ##' @keywords binomial regression 
 ##' @export
@@ -399,6 +406,8 @@ step=0.5,model="plackett",marginal.p=NULL,strata=NULL,max.clust=NULL,se.clusters
 	    margbin <- glm(margbin,data=data,family=binomial())
             ps <- predict(margbin,type="response")
     }  else if (is.null(marginal.p)) stop("without marginal model, marginal p's must be given\n"); 
+
+    if (!is.null(marginal.p)) ps <- marginal.p
 
      data <- cbind(data,ps)
 
@@ -456,7 +465,8 @@ step=0.5,model="plackett",marginal.p=NULL,strata=NULL,max.clust=NULL,se.clusters
    return(out)
 } ## }}}
 
-sim.bin.plack <- function(n,beta=0.3,theta=1,...) { ## {{{ 
+##' @export
+simBinPlack <- function(n,beta=0.3,theta=1,...) { ## {{{ 
 x1 <- rbinom(n,1,0.5)
 x2 <- rbinom(n,1,0.5)
 ###
@@ -475,7 +485,8 @@ y2 <- (y1==1)*rbinom(n,1,p11/p1)+(y1==0)*rbinom(n,1,p01/(1-p1))
 list(x1=x1,x2=x2,y1=y1,y2=y2,id=1:n)
 } ## }}} 
 
-sim.bin.fam <- function(n,beta=0.0,theta=1,lam1=1,lam2=1,...) { ## {{{ 
+##' @export
+simBinFam <- function(n,beta=0.0,theta=1,lam1=1,lam2=1,...) { ## {{{ 
 x1 <- rbinom(n,1,0.5); x2 <- rbinom(n,1,0.5); 
 x3 <- rbinom(n,1,0.5); x4 <- rbinom(n,1,0.5); 
 ###
@@ -497,7 +508,7 @@ data.frame(x1=x1,x2=x2,ym=ym,yf=yf,yb1=yb1,yb2=yb2,id=1:n)
 onerunfam <- function(i,n,alr=0,manual=1,time=0,simplealr=1,theta=1) { ## {{{ 
 ### n=200; beta=0.2; theta=1; time=0; i=1
 print(i)
-dd <- sim.bin.fam(n,beta=0,theta=theta) 
+dd <- simBinFam(n,beta=0,theta=theta) 
 ddl <- fast.reshape(dd,varying="y",keep="y")
 out2t <- system.time(
  marg  <-  glm(y~+1,data=ddl,family=binomial())
@@ -593,6 +604,52 @@ if (manual==1) {
 ###   names(ud) <- c("TWO","se-two","se-twoR","alr","se-alr")
 ###   } 
 ud <- c(udf$theta,diag(udf$var.theta)^.5)
+if (alr==1)  ud <- c(ud,outl)
+   return(ud)
+} ## }}} 
+
+onerunfam2 <- function(i,n,alr=0,manual=1,time=0,theta=1) { ## {{{ 
+### n=1000; beta=0.2; theta=1; time=0; i=1
+print(i)
+dd <- mets:::simBinFam(n,beta=0,theta=theta) 
+ddl <- fast.reshape(dd,varying="y",keep="y")
+
+desfs <- function(x,num1="num1",num2="num2")
+{ ## {{{ 
+     mf <- (x[num1]=="m")*(x[num2]=="f")*1
+     mb <- (x[num1]=="m" | x[num1]=="f")*(x[num2]=="b1" | x[num2]=="b2")*1
+     bb <- (x[num1]=="b1")*(x[num2]=="b1" | x[num2]=="b2")*1
+     c(mf,mb,bb)
+} ## }}} 
+
+ud <- easy.binomial.twostage(y~+1,data=ddl,
+      response="y",id="id",
+      score.method="fisher.scoring",deshelp=0,
+      theta.formula=desfs,desnames=c("pp","pc","cc"))
+
+    ud <- c(ud$theta[,1],diag(ud$var.theta)^.5)
+
+    zfam <- rbind(c(1,0,0), ## m-f
+	      	  c(0,1,0),  ## m-b1
+	      	  c(0,1,0),  ## m-b2
+                  c(1,0,0), ## f-m
+	      	  c(0,1,0),  ## f-b1
+	      	  c(0,1,0),  ## f-b2
+	      	  c(0,1,0), ## b1-m
+	      	  c(0,1,0), ## b1-f
+	      	  c(0,0,1), ## b1-b2
+	      	  c(0,1,0), ## b2-m
+	      	  c(0,1,0), ## b2-f
+	      	  c(0,0,1)) ## b2-b1
+
+if (alr==1) {
+   if (!require(alr)) stop("'alr' package required")
+   outl <- alr(ddl$y~+1,id=ddl$id,
+   depmodel="general",zlocs=rep(1:4,n),ainit=rep(0.01,3),z=zfam,zmast=1)
+   outl <- c(summary(outl)$alpha[,1],summary(outl)$alpha[,2])
+   names(outl) <- c(rep("alr",3),rep("se-alr",3))
+}
+
 if (alr==1)  ud <- c(ud,outl)
    return(ud)
 } ## }}} 

@@ -9,29 +9,34 @@
 ##' @author Thomas Scheike
 ##' @examples
 ##' data(prt);
-##'
-##' prt <- prt[which(prt$id %in% sample(unique(prt$id),7500)),]
-##' ### marginal cumulative incidence of prostate cancer 
-##' times <- seq(60,100,by=2)
-##' outm <- comp.risk(Surv(time,status==0)~+1,data=prt,prt$status,causeS=2,times=times)
 ##' 
-##' cifmz <- predict(outm,X=1,uniform=0,resample.iid=1) 
+##' prt <- prt[which(prt$id %in% sample(unique(prt$id),7500)),]
+##' ### marginal cumulative incidence of prostate cancer
+##' times <- seq(60,100,by=2)
+##' outm <- comp.risk(Surv(time,status==0)~+1,data=prt,prt$status,
+##'                   causeS=2,times=times)
+##' 
+##' cifmz <- predict(outm,X=1,uniform=0,resample.iid=1)
 ##' cifdz <- predict(outm,X=1,uniform=0,resample.iid=1)
 ##' 
 ##' ### concordance for MZ and DZ twins
-##' cc <- bicomprisk(Hist(time,status)~strata(zyg)+id(id),data=prt,cause=c(2,2))
+##' cc <- bicomprisk(Hist(time,status)~strata(zyg)+id(id),
+##'                  data=prt,cause=c(2,2))
 ##' cdz <- cc$model$"DZ"
 ##' cmz <- cc$model$"MZ"
 ##' 
-##' ### To compute casewise cluster argument must be passed on, here with a max of 100 to limit comp-time 
-##' outm <-comp.risk(Surv(time,status==0)~+1,data=prt,prt$status,causeS=2,times=times,max.clust=100)
-##' cifmz <-predict(outm,X=1,uniform=0,resample.iid=1) 
-##' cc <-bicomprisk(Hist(time,status)~strata(zyg)+id(id),data=prt,cause=c(2,2),se.clusters=outm$clusters)
+##' ### To compute casewise cluster argument must be passed on,
+##' ###  here with a max of 100 to limit comp-time
+##' outm <-comp.risk(Surv(time,status==0)~+1,data=prt,prt$status,
+##'                  causeS=2,times=times,max.clust=100)
+##' cifmz <-predict(outm,X=1,uniform=0,resample.iid=1)
+##' cc <-bicomprisk(Hist(time,status)~strata(zyg)+id(id),data=prt,
+##'                 cause=c(2,2),se.clusters=outm$clusters)
 ##' cdz <- cc$model$"DZ"
 ##' cmz <- cc$model$"MZ"
 ##' 
 ##' cdz <- casewise.test(cdz,cifmz,test="case") ## test based on casewise
-##' cmz <- casewise.test(cmz,cifmz,test="conc") ## test based on concordance:w
+##' cmz <- casewise.test(cmz,cifmz,test="conc") ## based on concordance:w
 ##' 
 ##' plot(cmz,ylim=c(0,0.7),xlim=c(60,100))
 ##' par(new=TRUE)
@@ -170,6 +175,9 @@ casewise <- function(conc,marg,cause.marg)
           se.P1 <-  Cpred(cbind(conc$time,conc.se.cuminc),timer)[,2]
 	  concP1 <- Cpred(cbind(conc$time,conc.cuminc),timer)[,2]
   }
+  concordance<- cbind(timer,concP1,se.P1)
+  colnames(concordance) <- c("time","cif","se.cif")
+
   P1 <- concP1/margtime
   se.P1 <- se.P1/margtime
   med <- (margtime>0)  & (concP1 > 0) 
@@ -177,13 +185,14 @@ casewise <- function(conc,marg,cause.marg)
   out$se.P1 <- se.P1[med]
   out$timer <- timer[med]
 
+
   margout <- cbind(timer,margtime,se.margtime)
   colnames(margout) <- c("time","cif","se.cif")
 
   probout <- cbind(out$timer,out$P1,out$se.P1)
   colnames(probout) <- c("time","casewise conc","se casewise")
 
-  out <- list(casewise=probout,marg=margout,test=NULL)
+  out <- list(casewise=probout,marg=margout,concordance=concordance,test=NULL)
   class(out) <- "casewise"
   return(out)
 } ## }}}
@@ -191,7 +200,6 @@ casewise <- function(conc,marg,cause.marg)
 ##' @S3method plot casewise 
 plot.casewise <- function(x,ci=NULL,lty=NULL,ylim=NULL,col=NULL,xlab="time",ylab="concordance",legend=FALSE,...)
 { ## {{{
-
   if (is.null(col)) col <- 1:3
   if (is.null(lty)) lty <- 1:3
   if (is.null(ylim)) ylim=range(c(x$casewise[,2],x$marg[,2]))

@@ -4,13 +4,13 @@
 \alias{cumh}
 \title{Liability model for twin data}
 \usage{
-  bptwin(formula, data, id, zyg, DZ, OS, weight = NULL,
-    biweight = function(x) 1/min(x), strata = NULL,
-    messages = 1, control = list(trace = 0), type = "ace",
-    eqmean = TRUE, pairsonly = FALSE, samecens = TRUE,
-    allmarg = samecens & !is.null(weight), stderr = TRUE,
-    robustvar = TRUE, p, indiv = FALSE, constrain,
-    bound = FALSE, debug = FALSE, ...)
+  bptwin(formula, data, id, zyg, DZ, OS = NULL, num = NULL,
+    weight = NULL, biweight = function(x) 1/min(x),
+    strata = NULL, messages = 1, control = list(trace = 0),
+    type = "ace", eqmean = TRUE, pairsonly = FALSE,
+    samecens = TRUE, allmarg = samecens & !is.null(weight),
+    stderr = TRUE, robustvar = TRUE, p, indiv = FALSE,
+    constrain, bound = FALSE, ...)
 }
 \arguments{
   \item{formula}{Formula specifying effects of covariates
@@ -37,6 +37,8 @@
   zyg variable corresponding to the oppposite sex dyzogitic
   twins.}
 
+  \item{num}{Optional twin number variable}
+
   \item{weight}{Weight matrix if needed by the chosen
   estimator. For use with Inverse Probability Weights}
 
@@ -48,7 +50,8 @@
   \item{messages}{Control amount of messages shown}
 
   \item{control}{Control argument parsed on to the
-  optimization routine}
+  optimization routine. Starting values may be parsed as
+  '\code{start}'.}
 
   \item{type}{Character defining the type of analysis to be
   performed. Should be a subset of "aced" (additive genetic
@@ -78,8 +81,6 @@
 
   \item{bound}{Development argument}
 
-  \item{debug}{Development argument}
-
   \item{...}{Additional arguments to lower level functions}
 }
 \description{
@@ -88,7 +89,7 @@
 \examples{
 \donttest{
 data(twinstut)
-b0 <- bptwin(stutter~sex,data=twinstut,id="tvparnr",zyg="zyg",DZ="dz",type="u")
+b0 <- bptwin(stutter~sex,data=twinstut,id="tvparnr",zyg="zyg",DZ="dz",OS="os",type="ae")
 summary(b0)
 }
 }

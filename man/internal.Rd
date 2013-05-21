@@ -11,7 +11,12 @@
 \alias{piecewise.data}
 \alias{piecewise.twostage}
 \alias{plotcr}
+\alias{sim}
+\alias{simBinFam}
+\alias{simBinPlack}
+\alias{simCox}
 \alias{simnordic}
+\alias{simSurvFam}
 \alias{surv.boxarea}
 \title{For internal use}
 \description{

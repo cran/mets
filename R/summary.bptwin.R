@@ -3,6 +3,7 @@ summary.bptwin <- function(object,level=0.05,...) {
   logit <- function(p) log(p/(1-p))
   tigol <- function(z) 1/(1+exp(-z))
   dlogit <- function(p) 1/(p*(1-p))
+  dtigol <- function(z) tigol(z)^2*exp(-z)
   trnam <- " "
   vcoef1 <- paste("log(var(",c("A","C","D"),"))",sep="")
   vcoef2 <- paste("atanh(",
@@ -14,18 +15,15 @@ summary.bptwin <- function(object,level=0.05,...) {
   alpha <- level/2
   CIlab <- paste(c(alpha*100,100*(1-alpha)),"%",sep="")
   V <- c()
-  if (length(idx2)>0) {    
+  if (length(idx2)>0) {
     idx <- idx2
     V <- vcov(object)[idx,idx]
     arho <- coef(object)[idx2[1:2]]
     mz <- multinomlogit(coef(object)[idx2[1]]); names(mz) <- c("U","E")
     dz <- multinomlogit(coef(object)[idx2[2]]); names(dz) <- c("U","E")
     cc <- tanh(arho)
-  ##    cc <- c(mz[1],dz[1]) ##,mz[2],dz[2])
     names(cc) <- c("Tetrachoric correlation MZ","Tetrachoric correlation DZ")
-##    corMZ <- mz[1]; corDZ <- dz[1]
     corMZ <- cc[1]; corDZ <- cc[2]
-##    D <- (cbind(c(attributes(mz)$gradient[1],0),c(0,attributes(dz)$gradient[1])))
     D <- diag(object$tr$dtr(arho))
     h <- function(x) 2*(x[1]-x[2])
     dh <- function(x) c(2,-2)
@@ -41,10 +39,6 @@ summary.bptwin <- function(object,level=0.05,...) {
     pp <- coef(object)[idx1]
     cc <- multinomlogit(pp); names(cc) <- nn
     D <- attributes(cc)$gradient  
-    ##    p <- coef(object)[2:3,1]
-    ##    F <- function(p) {
-    ##      logit(multinomlogit(p))
-    ##    }    
     cc2 <- logit(cc)
     D2 <- diag(dlogit(cc))
     DD <- D2%*%D
@@ -56,7 +50,7 @@ summary.bptwin <- function(object,level=0.05,...) {
     i1 <- na.omit(match(c("D","A"),nn))
     h <- function(x) sum(x)
     dh <- function(x) rep(1,length(i1))
-##    dh <- function(x) { res <- rep(0,length(x)); res[i1] <- 1; res }
+    ##    dh <- function(x) { res <- rep(0,length(x)); res[i1] <- 1; res }
     ##    h <- function(x) 2*(sum(x[i1])-sum(x[i1]*dzsc))
     ##    dh <- function(x) 2*(1-dzsc)
     
@@ -83,13 +77,27 @@ summary.bptwin <- function(object,level=0.05,...) {
   ##  newcoef <- cbind(newcoef,CIs)
   colnames(newcoef) <- c("Estimate","Std.Err",CIlab)
   logith <- function(x) logit(h(x))  
-  dlogith <- function(x) dlogit(h(x))*dh(x)
+  dlogith <- function(x) dlogit(h(x))*dh(x)  
   Dlh <- dlogith(cc[i1])
   sdlh <- (t(Dlh)%*%Vc[i1,i1]%*%(Dlh))[1]^0.5
   H <- h(cc[i1])
   hstd <- t(dh(cc[i1]))%*%Vc[i1,i1]%*%dh(cc[i1])
   suppressWarnings(ci <- tigol(logith(cc[i1]) + qnorm(1-alpha)*c(-1,1)*sdlh))
+
+  rhoOS <- NULL
+  if (object$OS) {
+    rEst <- object$coef[nrow(object$coef),1]
+    rSE <- object$coef[nrow(object$coef),2]
+    rhoOS <- tanh(rbind(c(rEst,rEst+qnorm(1-alpha)*c(-1,1)*rSE)))
+    colnames(rhoOS) <- c("Estimate",CIlab)
+    if (length(idx1)==0) {
+      rownames(rhoOS) <- "Tetrachoric correlation OS"
+    } else {
+      rownames(rhoOS) <- "Kinship OS"    
+    }
+  }
   
+    
   concordance <-  conditional <- marg <- c()
 
   probs <- function(p,idx=1) {
@@ -152,19 +160,31 @@ summary.bptwin <- function(object,level=0.05,...) {
   if (hval[1]>1) hval[1,] <- c(1,NaN,NaN,NaN)
 
 ##  hval <- rbind(hval, tigol(c(hp,NA,hp-qnorm(1-alpha)*shp,hp+qnorm(1-alpha)*shp)))
-  rownames(hval) <- c("Broad-sense Heritability")##,"Risk-scale Heritability")
-  
+  rownames(hval) <- c("Broad-sense heritability")##,"Risk-scale Heritability")
+
   Nstr <- object$N
   nN <- ncol(object$N)
-  npos <- seq(nN/2)
-  Nstr <- rbind(paste(Nstr[npos*2-1],Nstr[npos*2],sep="/"))
+  ngroups <- ifelse(object$OS,3,2)
+  postn  <- "MZ/DZ"; if (object$OS) postn <- paste(postn,"OS",sep="/")
+  npos <- seq(ngroups)
+  Nstr <- cbind(paste(Nstr[npos],collapse="/"),
+                paste(Nstr[npos+ngroups],collapse="/"),
+                paste(Nstr[npos+2*ngroups],collapse="/"))
   rownames(Nstr) <- ""
-  colnames(Nstr) <- unlist(lapply(strsplit(colnames(object$N)[npos*2-1],".",fixed=TRUE),
-                                  function(x) paste(x[1], "MZ/DZ")))
-  res <- list(h=hval,
+  colnames(Nstr) <-
+    unlist(lapply(strsplit(colnames(object$N)[(1:3)*ngroups],".",fixed=TRUE),
+                                  function(x) paste(x[1], postn)))
+  
+  all  <-  rbind(hval[,c(1,3,4),drop=FALSE],newcoef[,c(1,3,4),drop=FALSE])
+  allprob <- rbind(probMZ,probDZ); rownames(allprob) <-
+    c(paste("MZ",rownames(probMZ)),paste("DZ",rownames(probDZ)))
+  all <- rbind(all,allprob)
+    
+  res <- list(heritability=hval,
               par=object$coef,
               probMZ=probMZ, probDZ=probDZ, Nstr=Nstr,
-              coef=newcoef) ##, concordance=concordance, conditional=conditional)
+              rhoOS=rhoOS,
+              coef=newcoef, all=all) ##, concordance=concordance, conditional=conditional)
   class(res) <- "summary.bptwin"
   res
 }
@@ -174,10 +194,12 @@ print.summary.bptwin <- function(x,digits = max(3, getOption("digits") - 2),...)
   cat("\n")
   printCoefmat(x$par,digits=digits,...)
   cat("\n")
-  x$Nstr <- x$Nstr[,which((colnames(x$Nstr)!="Complete MZ/DZ")),drop=FALSE]
-  print(x$Nstr,quote=FALSE)
+  ##  x$Nstr <- x$Nstr[,which((colnames(x$Nstr)!="Complete MZ/DZ")),drop=FALSE]
+  NN <- x$Nstr[,2:3,drop=FALSE]; colnames(NN)[1] <- gsub("Complete ","",colnames(NN)[1])
+  print(NN,quote=FALSE)
   cat("\n")
-  print(RoundMat(x$coef[,-2,drop=FALSE],digits=digits),quote=FALSE)
+  cc <- rbind(x$coef[,-2,drop=FALSE],x$rhoOS)
+  print(RoundMat(cc,digits=digits),quote=FALSE)
   cat("\nMZ:\n");
   print(RoundMat(x$probMZ,digits=digits),quote=FALSE)
   cat("DZ:\n")
@@ -185,6 +207,6 @@ print.summary.bptwin <- function(x,digits = max(3, getOption("digits") - 2),...)
 ##  cat("\nConcordance (MZ; DZ):\t\t", x$concordance,"\n")
 ##  cat("Case-wise concordance (MZ; DZ):\t", x$conditional,"\n\n")
   cat("\n")
-  print(RoundMat(x$h[,-2,drop=FALSE],digits=digits),quote=FALSE)
+  print(RoundMat(x$heritability[,-2,drop=FALSE],digits=digits),quote=FALSE)
   cat("\n")
 }

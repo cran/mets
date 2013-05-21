@@ -10,7 +10,8 @@ based on the pairwise bivariate models.}
     clusters = NULL, silent = 1, weights = NULL,
     control = list(), theta = NULL, theta.des = NULL,
     var.link = 1, iid = 1, step = 0.5, notaylor = 0,
-    model = "plackett", marginal.survival = NULL,
+    model = "plackett", marginal.trunc = NULL,
+    marginal.survival = NULL, marginal.status = NULL,
     strata = NULL, se.clusters = NULL, max.clust = NULL,
     numDeriv = 1)
 }
@@ -47,8 +48,14 @@ based on the pairwise bivariate models.}
 
   \item{model}{model}
 
+  \item{marginal.trunc}{marginal left truncation
+  probabilities}
+
   \item{marginal.survival}{optional vector of marginal
   survival probabilities}
+
+  \item{marginal.status}{related to marginal survival
+  probabilities}
 
   \item{strata}{strata for fitting, see example}
 
@@ -69,33 +76,37 @@ based on the pairwise bivariate models.}
 \examples{
 data(diabetes)
 
-data(diabetes)
 # Marginal Cox model  with treat as covariate
 margph <- coxph(Surv(time,status)~treat,data=diabetes)
 ### Clayton-Oakes, from timereg
 fitco1<-two.stage(margph,data=diabetes,theta=1.0,detail=0,Nit=40,clusters=diabetes$id)
 summary(fitco1)
 ### Plackett model
-fitp<-twostage(margph,data=diabetes,theta=1.0,detail=0,Nit=40,clusters=diabetes$id,var.link=1)
+fitp<-twostage(margph,data=diabetes,theta=0.0,Nit=40,
+               clusters=diabetes$id,var.link=1)
 summary(fitp)
 ### Clayton-Oakes
-fitco2<-twostage(margph,data=diabetes,theta=1.0,detail=0,Nit=40,clusters=diabetes$id,var.link=1,model="clayton.oakes")
+fitco2<-twostage(margph,data=diabetes,theta=1.0,detail=0,Nit=40,
+                 clusters=diabetes$id,var.link=1,model="clayton.oakes")
 summary(fitco2)
 
 ### without covariates using Aalen for marginals
 marg <- aalen(Surv(time,status)~+1,data=diabetes,n.sim=0,max.clust=NULL,robust=0)
-fitpa<-twostage(marg,data=diabetes,theta=1.0,detail=0,Nit=40,clusters=diabetes$id,score.method="optimize")
+fitpa<-twostage(marg,data=diabetes,theta=1.0,detail=0,Nit=40,
+                clusters=diabetes$id,score.method="optimize")
 summary(fitpa)
 
-fitcoa<-twostage(marg,data=diabetes,theta=1.0,detail=0,Nit=40,clusters=diabetes$id,var.link=1,model="clayton.oakes")
+fitcoa<-twostage(marg,data=diabetes,theta=1.0,detail=0,Nit=40,clusters=diabetes$id,
+                 var.link=1,model="clayton.oakes")
 summary(fitcoa)
 
 ### Piecewise constant cross hazards ratio modelling
 ########################################################
 
 d <- subset(simClaytonOakes(2000,2,0.5,0,stoptime=2,left=0),!truncated)
-udp <- piecewise.twostage(c(0,0.5,2),data=d,score.method="optimize",id="cluster",timevar="time",
-			  status="status",model="clayton.oakes",silent=0)
+udp <- piecewise.twostage(c(0,0.5,2),data=d,score.method="optimize",
+                          id="cluster",timevar="time",
+                          status="status",model="clayton.oakes",silent=0)
 summary(udp)
 
 \donttest{
@@ -109,20 +120,22 @@ ud4=surv.boxarea(c(0.5,0.5),c(2,2),data=d,id="cluster",timevar="time",status="st
 ud1$strata <- 1; ud2$strata <- 2; ud3$strata <- 3; ud4$strata <- 4
 ud <- rbind(ud1,ud2,ud3,ud4)
 
-marg2 <- aalen(Surv(boxtime,status)~-1+factor(num):factor(strata),data=ud,n.sim=0,robust=0)
+marg2 <- aalen(Surv(boxtime,status)~-1+factor(num):factor(strata),
+               data=ud,n.sim=0,robust=0)
 tdes <- model.matrix(~-1+factor(strata),data=ud)
-fitp2<-twostage(marg2,data=ud,clusters=ud$cluster,score.method="fisher.scoring",model="clayton.oakes",
+fitp2<-twostage(marg2,data=ud,clusters=ud$cluster,
+                score.method="fisher.scoring",model="clayton.oakes",
                 theta.des=tdes,step=0.5,detail=0,strata=ud$strata)
 summary(fitp2)
 
 ### now fitting the model with symmetry, i.e. strata 2 and 3 same effect
 ud$stratas <- ud$strata; ud$stratas[ud$strata==3] <- 2;
 tdes2 <- model.matrix(~-1+factor(stratas),data=ud)
-fitp3<-twostage(marg2,data=ud,clusters=ud$cluster,score.method="fisher.scoring",model="clayton.oakes",
+fitp3<-twostage(marg2,data=ud,clusters=ud$cluster,
+                score.method="fisher.scoring",model="clayton.oakes",
                 theta.des=tdes2,step=0.5,detail=0,strata=ud$strata)
 summary(fitp3)
 }
-### could also symmetry in marginal models
 }
 \author{
   Thomas Scheike
