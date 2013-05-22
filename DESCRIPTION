@@ -1,8 +1,8 @@
 Package: mets
 Type: Package
 Title: Analysis of Multivariate Event Times
-Version: 0.2.2
-Date: 2013-05-21
+Version: 0.2.3
+Date: 2013-05-22
 Author: Klaus K. Holst and Thomas Scheike
 Maintainer: Klaus K. Holst <kkho@biostat.ku.dk>
 Description: Implementation of various statistical models for
@@ -29,7 +29,7 @@ Collate: 'biprobit.R' 'biprobit.strata.R' 'bpnd.R' 'claytonakes.R'
         'aalenfrailty.R' 'surv.boxarea.R' 'casewise.R' 'cor.R'
         'fastpattern.R' 'fastreshape.R' 'binomial.twostage.R'
         'clusterindex-reshape.R' 'bptwin.R' 'prop-odds.R' 'phreg.R'
-Packaged: 2013-05-21 19:37:38 UTC; klaus
+Packaged: 2013-05-22 14:23:26 UTC; nqh369
 NeedsCompilation: yes
 Repository: CRAN
-Date/Publication: 2013-05-21 22:49:57
+Date/Publication: 2013-05-22 17:09:20

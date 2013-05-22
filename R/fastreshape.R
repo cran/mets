@@ -61,7 +61,7 @@
 ##' rm(prtw)
 fast.reshape <- function(data,id,varying,num,sep="",keep,
                          idname="id",numname="num",factors.keep=TRUE,
-                         idcombine=FALSE,labelnum=TRUE,...) {
+                         idcombine=FALSE,labelnum=FALSE,...) {
   if (!is.data.frame(data) & is.list(data)) {
     data <- as.data.frame(data)
   } else {
@@ -252,7 +252,8 @@ fast.reshape <- function(data,id,varying,num,sep="",keep,
           postn <- seq_len(maxclust-1)+1
       }
       ##if (is.null(numname)) postn <- idlev[postn]
-      mnames <- c(mnames,as.vector(t(outer(varying,postn,function(...) paste(...,sep=sep)))))
+      mnames <- c(mnames,
+                  as.vector(t(outer(postn,varying,function(x,y) paste(y,x,sep=sep)))))      
     }
     colnames(dataw) <- mnames
     return(dataw)
