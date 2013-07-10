@@ -1,6 +1,6 @@
 ##' Liability-threshold model for twin data
 ##'
-##' @aliases cumh biprobit
+##' @aliases biprobit cumh
 ##' @title Liability model for twin data
 ##' @param formula Formula specifying effects of covariates on the response.
 ##' @param data \code{data.frame} with one observation pr row. In
@@ -11,12 +11,12 @@
 ##' @param id The name of the column in the dataset containing the twin-id variable.
 ##' @param zyg The name of the column in the dataset containing the
 ##'     zygosity variable.
+##' @param MZ Character defining the level in the zyg variable
+##' corresponding to the monozygotic twins. Optional if 'DZ' argument is used. If both MZ and DZ arguments are omitted 
+##' the reference level (i.e. the first level) will be interpreted as the dyzogitic twins.
 ##' @param DZ Character defining the level in the zyg variable
-##'     corresponding to the dyzogitic twins. If this argument is missing,
-##'     the reference level (i.e. the first level) will be interpreted as
-##'     the dyzogitic twins.
-##' @param OS Optional. Character defining the level in the zyg variable
-##'     corresponding to the oppposite sex dyzogitic twins.
+##' corresponding to the dyzogitic twins. 
+##' @param group Optional. Variable name defining group for interaction analysis (e.g., gender)
 ##' @param num Optional twin number variable
 ##' @param weight Weight matrix if needed by the chosen estimator. For use
 ##'     with Inverse Probability Weights
@@ -44,10 +44,12 @@
 ##' @examples
 ##' \donttest{
 ##' data(twinstut)
-##' b0 <- bptwin(stutter~sex,data=twinstut,id="tvparnr",zyg="zyg",DZ="dz",OS="os",type="ae")
+##' b0 <- bptwin(stutter~sex,
+##'              data=droplevels(subset(twinstut,zyg%in%c("mz","dz"))),
+##'              id="tvparnr",zyg="zyg",DZ="dz",type="ae")
 ##' summary(b0)
 ##' }
-bptwin <- function(formula, data, id, zyg, DZ, OS=NULL,
+bptwin <- function(formula, data, id, zyg, MZ, DZ, group=NULL,
                    num=NULL,
                    weight=NULL,
                    biweight=function(x) 1/min(x),
@@ -132,6 +134,7 @@ bptwin <- function(formula, data, id, zyg, DZ, OS=NULL,
     DZ <- levels(as.factor(data[,zyg]))[1]
     message("Using '",DZ,"' as DZ",sep="")
   }
+  OS <- NULL
   OSon <- FALSE
   if (!is.null(OS)) {
     idx2 <- which(data[,zyg]==OS)
@@ -332,17 +335,16 @@ bptwin <- function(formula, data, id, zyg, DZ, OS=NULL,
 
   ## p0 <- op$par
   ## ff <- function(p) as.vector(Sigma(p)$Sigma2)
-  ## jacobian(ff,p0)
+  ## numDeriv::jacobian(ff,p0)
   ## Sigma(p0)$dS2
   ## dmytr(p0[vidx])
   ## Sigma(p0)$dS2[1,]*dmytr(p0[vidx])[1]
   ## Sigma(p0)$dS2[2,]*dmytr(p0[vidx])[2]
   ## Sigma(p0)$dS2[3,]*dmytr(p0[vidx])[3]
- 
+
 ###}}} Mean/Var function
   
 ###{{{ U  
-
 
   p0 <- rep(-1,plen); ##p0[vidx] <- 0
   if (OSon) p0[length(p0)] <- 0.3
@@ -496,7 +498,6 @@ bptwin <- function(formula, data, id, zyg, DZ, OS=NULL,
 
 ###{{{ optim
 
- 
   if (!missing(p)) return(U(p,indiv=indiv))
 
 
@@ -528,7 +529,7 @@ bptwin <- function(formula, data, id, zyg, DZ, OS=NULL,
   ## Derivatives, Sanity check 
   ## ff <- function(p) attributes(U(p,indiv=FALSE))$logLik
   ## pp <- c(0,-.1,.1,0.5)
-  ## grad(ff,pp)
+  ## numDeriv::grad(ff,pp)
   ## U(pp,indiv=FALSE)
 
   

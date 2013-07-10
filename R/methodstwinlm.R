@@ -91,11 +91,11 @@ summary.twinlm <- function(object,...) {
   idx <- seq(nrow(myest)); 
   rownames(myest)[idx] <- r1
 
-
-  myest.varpos <- unlist(sapply(c("<-a1","<-c1","<-d1","<-e1"),function(x) grep(x,rownames(myest))))
-  
-  lambda.idx <- sapply(c("<-a1","<-c1","<-d1","<-e1"),function(x) grep(x,names(coef(e))))
-  lambda.idx2 <- sapply(c("<-a2","<-c2","<-d2","<-e2"),function(x) grep(x,names(coef(e))))
+  coefpost <- paste(lava.options()$symbol[1],c("a1","c1","d1","e1"),sep="")
+  coefpost2 <- paste(lava.options()$symbol[1],c("a2","c2","d2","e2"),sep="")
+  myest.varpos <- unlist(sapply(coefpost,function(x) grep(x,rownames(myest))))  
+  lambda.idx <- sapply(coefpost,function(x) grep(x,names(coef(e))))
+  lambda.idx2 <- sapply(coefpost2,function(x) grep(x,names(coef(e))))
   for (k in seq_len(length(lambda.idx)))
     if (length(lambda.idx[[k]])==0) lambda.idx[[k]] <- lambda.idx2[[k]] 
 
@@ -157,11 +157,11 @@ summary.twinlm <- function(object,...) {
   atanhcorDZf <- function(x) atanh(sum(x[1:3]^2*c(0.5,1,0.25))/sum(x^2))
  
   e1 <- atanhcorMZf(varEst)
-  D1 <- grad(atanhcorMZf,varEst)
+  D1 <- numDeriv::grad(atanhcorMZf,varEst)
   s1 <- (t(D1)%*%varSigma%*%(D1))^0.5
   ci1 <- e1+qnorm(0.975)*c(-1,1)*s1
   e2 <- atanhcorDZf(varEst)
-  D2 <- grad(atanhcorDZf,varEst)
+  D2 <- numDeriv::grad(atanhcorDZf,varEst)
   s2 <- (t(D2)%*%varSigma%*%(D2))^0.5
   ci2 <- e2+qnorm(0.975)*c(-1,1)*s2
   

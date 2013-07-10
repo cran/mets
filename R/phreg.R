@@ -1,5 +1,6 @@
 ###{{{ phreg0 
-phreg0 <- function(X,entry,exit,status,id=NULL,strata=NULL,beta,stderr=TRUE,...) {
+
+phreg0 <- function(X,entry,exit,status,id=NULL,strata=NULL,beta,stderr=TRUE,method="NR",...) {
   p <- ncol(X)
   if (missing(beta)) beta <- rep(0,p)
   if (p==0) X <- cbind(rep(0,length(exit)))
@@ -38,31 +39,38 @@ phreg0 <- function(X,entry,exit,status,id=NULL,strata=NULL,beta,stderr=TRUE,...)
       structure(-ploglik,gradient=-gradient,hessian=-hessian)
     }
   } else {
-    system.time(dd <- .Call("FastCoxPrep",entry,exit,status,X,id,package="mets"))
-    if (!is.null(id))
-      id <- dd$id[dd$jumps+1]
-    obj <- function(pp,U=FALSE,all=FALSE) {
-      val <- with(dd,
-                  .Call("FastCoxPL",pp,X,XX,sign,jumps,package="mets"))
-      if (all) {
-        val$time <- dd$time[dd$ord+1]
-        val$ord <- dd$ord+1
-        val$jumps <- dd$jumps+1
-        val$jumptimes <- val$time[val$jumps]
-        val$nevent <- length(val$S0)
-        return(val)
-      }
+      dd <- .Call("FastCoxPrep",entry,exit,status,X,id,package="mets")
+      if (!is.null(id))
+          id <- dd$id[dd$jumps+1]
+      obj <- function(pp,U=FALSE,all=FALSE) {
+          val <- with(dd,
+                      .Call("FastCoxPL",pp,X,XX,sign,jumps,package="mets"))
+          if (all) {
+              val$time <- dd$time[dd$ord+1]
+              val$ord <- dd$ord+1
+              val$jumps <- dd$jumps+1
+              val$jumptimes <- val$time[val$jumps]
+              val$nevent <- length(val$S0)
+              return(val)
+          }
       with(val, structure(-ploglik,gradient=-gradient,hessian=-hessian))
-    }
+      }
   }
-  if (p>0) {
-    opt <- nlm(obj,beta)
-    cc <- opt$estimate; names(cc) <- colnames(X)
-    if (!stderr) return(cc)    
-    val <- c(list(coef=cc),obj(opt$estimate,all=TRUE))
+  opt <- NULL
+  if (p>0) {      
+      if (tolower(method)=="nr") {
+          opt <- lava:::NR(beta,obj,...)
+          opt$estimate <- opt$par
+      } else {
+          opt <- nlm(obj,beta,...)
+          opt$method <- "nlm"
+      }
+      cc <- opt$estimate;  names(cc) <- colnames(X)
+      if (!stderr) return(cc)
+      val <- c(list(coef=cc),obj(opt$estimate,all=TRUE))
   } else {
-    val <- obj(0,all=TRUE)
-    val[c("ploglik","gradient","hessian","U")] <- NULL
+      val <- obj(0,all=TRUE)
+      val[c("ploglik","gradient","hessian","U")] <- NULL
   }
   res <- c(val,
            list(strata=strata,
@@ -71,18 +79,19 @@ phreg0 <- function(X,entry,exit,status,id=NULL,strata=NULL,beta,stderr=TRUE,...)
                 status=status,
                 p=p,
                 X=X,
-                id=id))
+                id=id, opt=opt))
   class(res) <- "phreg"
   res
 }
+
 ###}}} phreg0
 
 ###{{{ simcox
 
+##' @export
 simCox <- function(n=1000, seed=1, beta=c(1,1), entry=TRUE) {
   if (!is.null(seed))
-    set.seed(seed)
-  library(lava)
+      set.seed(seed)
   m <- lvm()
   regression(m,T~X1+X2) <- beta
   distribution(m,~T+C) <- coxWeibull.lvm(scale=1/100)
@@ -137,7 +146,7 @@ simCox <- function(n=1000, seed=1, beta=c(1,1), entry=TRUE) {
 ##' 
 ##' m <- phreg(Surv(entry,time,status)~X1*X2+strata(group)+cluster(id),data=d)
 ##' m
-##' plot(m,ylim=c(0,5))
+##' plot(m,ylim=c(0,1))
 phreg <- function(formula,data,...) {
   cl <- match.call()
   m <- match.call(expand.dots = TRUE)[1:3]
@@ -172,30 +181,20 @@ phreg <- function(formula,data,...) {
   if (!is.null(intpos  <- attributes(Terms)$intercept))
     X <- X[,-intpos,drop=FALSE]
   if (ncol(X)==0) X <- matrix(nrow=0,ncol=0)
+
   res <- c(phreg0(X,entry,exit,status,id,strata,...),list(call=cl))
   class(res) <- "phreg"
+  
   res
 }
 ###}}} phreg
 
 ###{{{ vcov
 ##' @S3method vcov phreg
-vcov.phreg  <- function(object,...) {
-  I <- -solve(object$hessian)
-  ncluster <- NULL
-  if (!is.null(object$id)) {
-    ii <- mets::cluster.index(object$id)
-    UU <- matrix(nrow=ii$uniqueclust,ncol=ncol(I))
-    for (i in seq(ii$uniqueclust)) {
-      UU[i,] <- colSums(object$U[ii$idclustmat[i,seq(ii$cluster.size[i])]+1,,drop=FALSE])
-    }
-    ncluster <- nrow(UU)
-    J <- crossprod(UU)
-  } else {
-    J <- crossprod(object$U)
-  }
-  res <- I%*%J%*%t(I)
-  attributes(res)$ncluster <- ncluster
+vcov.phreg  <- function(object,...) {    
+  res <- crossprod(ii <- iid(object,...))
+  attributes(res)$ncluster <- attributes(ii)$ncluster
+  attributes(res)$invhess <- attributes(ii)$invhess
   colnames(res) <- rownames(res) <- names(coef(object))
   res
 }
@@ -207,6 +206,24 @@ coef.phreg  <- function(object,...) {
   object$coef
 }
 ###}}} coef
+
+###{{{ iid
+iid.phreg  <- function(x,...) {
+    invhess <- solve(x$hessian)
+  ncluster <- NULL
+  if (!is.null(x$id)) {
+    ii <- mets::cluster.index(x$id)
+    UU <- matrix(nrow=ii$uniqueclust,ncol=ncol(invhess))
+    for (i in seq(ii$uniqueclust)) {
+      UU[i,] <- colSums(x$U[ii$idclustmat[i,seq(ii$cluster.size[i])]+1,,drop=FALSE])
+    }
+    ncluster <- nrow(UU)
+  } else {
+      UU <- x$U
+  }
+  structure(UU%*%invhess,invhess=invhess,ncluster=ncluster)
+}
+###}}}
 
 ###{{{ summary
 ##' @S3method summary phreg
