@@ -60,7 +60,7 @@ extern "C" double mvtdst_(const int *N, const int *NU,
 			  const int *MAXPTS,
 			  const double *ABSEPS,
 			  const double *RELEPS,
-			  const double *ERR,
+			  const double *err,
 			  const double *VAL,
 			  const int *INFORM);
 

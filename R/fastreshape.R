@@ -69,9 +69,9 @@
 ##' head(prtw <- fast.reshape(prt,"id",var="cancer"))
 ##' ftable(cancer1~cancer2,data=prtw)
 ##' rm(prtw)
-fast.reshape <- function(data,id,varying,num,sep="",keep,
+fast.reshape <- function(data,varying,id,num,sep="",keep,
                          idname="id",numname="num",factors.keep=TRUE,
-                         idcombine=FALSE,labelnum=FALSE,...) {
+                         idcombine=TRUE,labelnum=FALSE,...) {
     if (!is.data.frame(data) & is.list(data)) {
         data <- as.data.frame(data)
     } else {
@@ -82,6 +82,8 @@ fast.reshape <- function(data,id,varying,num,sep="",keep,
         nn <- colnames(data)
         nsep <- nchar(sep)
         if (missing(varying)) stop("Prefix of time-varying variables needed")
+        ## nl <- as.list(seq_along(data)); names(nl) <- nn
+        ## varying <- eval(substitute(varying),nl,parent.frame())
         vnames <- NULL
         ncvar <- sapply(varying,nchar)
         newlist <- c()
@@ -186,7 +188,6 @@ fast.reshape <- function(data,id,varying,num,sep="",keep,
         return(long)
     }
 
-    
     ## Long to wide format:
     numvar <- idvar <- NULL 
     if (is.character(id)) {
@@ -297,6 +298,7 @@ fast.reshape <- function(data,id,varying,num,sep="",keep,
     names(dataw) <- mnames    
     return(dataw)
 } 
+
 
 
 simple.reshape <- function (data, id = "id", num = NULL) {

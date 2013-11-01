@@ -37,8 +37,8 @@
 ##' 
 ##' twinstut$binstut <- (twinstut$stutter=="yes")*1
 ##' out <- easy.binomial.twostage(stutter~factor(sex)+age,data=twinstut,
-##'                               response="binstut",id="tvparnr",
-##' 			      theta.formula=~-1+factor(zyg1),
+##'                           response="binstut",id="tvparnr",
+##' 	             	      theta.formula=~-1+factor(zyg1),
 ##'                               score.method="fisher.scoring")
 ##' summary(out)
 ##' 
@@ -364,7 +364,7 @@ antpers <- NROW(data);
 ##' summary(out)
 ##' 
 ##' desfs <- function(x,num1="zyg1",namesdes=c("mz","dz","os"))
-##'     c(x[num1]=="dz",x[num1]=="mz",x[num1]=="os")*1
+##'     c(x[num1]=="mz",x[num1]=="dz",x[num1]=="os")*1
 ##' 
 ##' out3 <- easy.binomial.twostage(binstut~factor(sex)+age,
 ##'                                data=twinstut0, response="binstut",id="tvparnr",
@@ -405,20 +405,20 @@ step=0.5,model="plackett",marginal.p=NULL,strata=NULL,max.clust=NULL,se.clusters
   else if (class(margbin)=="formula") {
 	    margbin <- glm(margbin,data=data,family=binomial())
             ps <- predict(margbin,type="response")
-    }  else if (is.null(marginal.p)) stop("without marginal model, marginal p's must be given\n"); 
+  }  else if (is.null(marginal.p)) stop("without marginal model, marginal p's must be given\n"); 
 
-    if (!is.null(marginal.p)) ps <- marginal.p
+  if (!is.null(marginal.p)) ps <- marginal.p
 
-     data <- cbind(data,ps)
+  data <- cbind(data,ps)
 
-     ### make all pairs in the families,
-     fam <- familycluster.index(data[,id])
-     data.fam <- data[fam$familypairindex,]
-     data.fam$subfam <- fam$subfamilyindex
+  ### make all pairs in the families,
+  fam <- familycluster.index(data[,id])
+  data.fam <- data[fam$familypairindex,]
+  data.fam$subfam <- fam$subfamilyindex
 
-     ### make dependency design using wide format for all pairs 
-     data.fam.clust <- fast.reshape(data.fam,id="subfam")
-     if (is.function(theta.formula)) {
+  ### make dependency design using wide format for all pairs 
+  data.fam.clust <- fast.reshape(data.fam,id="subfam")
+  if (is.function(theta.formula)) {
 	library(compiler) 
         desfunction <- compiler::cmpfun(theta.formula)
 	if (deshelp==1){
@@ -428,8 +428,9 @@ step=0.5,model="plackett",marginal.p=NULL,strata=NULL,max.clust=NULL,se.clusters
 	  cat("Here is head of wide version with pairs\n")
 	  print(head(data.fam.clust)); cat("\n")
 	}
-        des.theta  <- t( apply(data.fam.clust,1,desfunction)) 
-        colnames(des.theta) <- desnames
+###	des.theta <- Reduce("rbind",lapply(seq(nrow(data.fam.clust)),function(i) unlist(desfunction(data.fam.clust[i,] ))))
+        des.theta <- t(apply(data.fam.clust,1, function(x) desfunction(x)))
+	colnames(des.theta) <- desnames
 	desnames <- desnames
      } else {
 	  if (is.null(theta.formula)) theta.formula <- ~+1
@@ -483,6 +484,37 @@ p00 <- 1- p10-p01-p11
 y1 <- rbinom(n,1,p1)
 y2 <- (y1==1)*rbinom(n,1,p11/p1)+(y1==0)*rbinom(n,1,p01/(1-p1))
 list(x1=x1,x2=x2,y1=y1,y2=y2,id=1:n)
+} ## }}} 
+
+##' @export 
+simBinFam <- function(n,beta=0.0,rhopp=0.1,rhomb=0.7,rhofb=0.1,rhobb=0.7) { ## {{{ 
+xc <- runif(n)*0.5
+xm <- rbinom(n,1,0.5+xc); 
+xf <- rbinom(n,1,0.5+xc); 
+xb1 <- rbinom(n,1,0.3+xc); 
+xb2 <- rbinom(n,1,0.3+xc); 
+###
+rn <- matrix(rnorm(n*4),n,4)
+corm <- matrix( c(1,rhopp,rhomb,rhomb, rhopp,1,rhofb,rhofb, rhomb,rhofb,1,rhobb, rhomb,rhofb,rhobb,1),4,4)
+rnn <- t( corm %*% t(rn))
+zm <- exp(rnn[,1]); zf <- exp(rnn[,2]); zb1 <- exp(rnn[,3]); zb2 <- exp(rnn[,4]); 
+pm <- exp(0.5+xm*beta+zm)
+pf <- exp(0.5+xf*beta+zf)
+pf <- pf/(1+pf)
+pm <- pm/(1+pm)
+pb1 <- exp(0.5+xb1*beta+zb1)
+pb1 <- pb1/(1+pb1)
+pb2 <- exp(0.5+xb2*beta+zb2)
+pb2 <- pb2/(1+pb2)
+ym <- rbinom(n,1,pm)
+yf <- rbinom(n,1,pf)
+yb1 <- rbinom(n,1,pb1)
+yb2 <- rbinom(n,1,pb2)
+#
+agem <- 20+runif(n)*10
+ageb1 <- 5+runif(n)*10
+data.frame(agem=agem,agef=agem+3+rnorm(n)*2,
+	   ageb1=ageb1,ageb2=ageb1+1+runif(n)*3,xm=xm,xf=xf,xb1=xb1,xb2=xb2,ym=ym,yf=yf,yb1=yb1,yb2=yb2,id=1:n)
 } ## }}} 
 
 ##' @export
@@ -611,7 +643,7 @@ if (alr==1)  ud <- c(ud,outl)
 onerunfam2 <- function(i,n,alr=0,manual=1,time=0,theta=1) { ## {{{ 
 ### n=1000; beta=0.2; theta=1; time=0; i=1
 print(i)
-dd <- mets:::simBinFam(n,beta=0,theta=theta) 
+dd <- simBinFam(n,beta=0,theta=theta) 
 ddl <- fast.reshape(dd,varying="y",keep="y")
 
 desfs <- function(x,num1="num1",num2="num2")

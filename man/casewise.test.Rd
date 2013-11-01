@@ -54,7 +54,7 @@ cdz <- cc$model$"DZ"
 cmz <- cc$model$"MZ"
 
 cdz <- casewise.test(cdz,cifmz,test="case") ## test based on casewise
-cmz <- casewise.test(cmz,cifmz,test="conc") ## based on concordance:w
+cmz <- casewise.test(cmz,cifmz,test="conc") ## based on concordance
 
 plot(cmz,ylim=c(0,0.7),xlim=c(60,100))
 par(new=TRUE)

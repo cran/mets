@@ -11,9 +11,6 @@
 ##' @param id The name of the column in the dataset containing the twin-id variable.
 ##' @param zyg The name of the column in the dataset containing the
 ##'     zygosity variable.
-##' @param MZ Character defining the level in the zyg variable
-##' corresponding to the monozygotic twins. Optional if 'DZ' argument is used. If both MZ and DZ arguments are omitted 
-##' the reference level (i.e. the first level) will be interpreted as the dyzogitic twins.
 ##' @param DZ Character defining the level in the zyg variable
 ##' corresponding to the dyzogitic twins. 
 ##' @param group Optional. Variable name defining group for interaction analysis (e.g., gender)
@@ -38,6 +35,7 @@
 ##' @param samecens Same censoring
 ##' @param allmarg Should all marginal terms be included
 ##' @param bound Development argument
+##' @param varlink Link function for variance parameters
 ##' @param ... Additional arguments to lower level functions
 ##' @author Klaus K. Holst
 ##' @export
@@ -49,7 +47,7 @@
 ##'              id="tvparnr",zyg="zyg",DZ="dz",type="ae")
 ##' summary(b0)
 ##' }
-bptwin <- function(formula, data, id, zyg, MZ, DZ, group=NULL,
+bptwin <- function(formula, data, id, zyg, DZ, group=NULL,
                    num=NULL,
                    weight=NULL,
                    biweight=function(x) 1/min(x),
@@ -66,6 +64,7 @@ bptwin <- function(formula, data, id, zyg, MZ, DZ, group=NULL,
                    p, indiv=FALSE,
                    constrain,
                    bound=FALSE,
+                   varlink,
                    ...) {
 
 ###{{{ setup
@@ -182,9 +181,14 @@ bptwin <- function(formula, data, id, zyg, MZ, DZ, group=NULL,
   ACDU <- sapply(c("a","c","d","e","u"),function(x) length(grep(x,tolower(type)))>0)
   ACDU <- c(ACDU,os=OSon)
 
-  mytr <- exp; dmytr <- exp; myinvtr <- log
-  trname <- "exp"; invtrname <- "log"      
-
+  if (missing(varlink) || !is.null(varlink)) {
+      mytr <- exp; dmytr <- exp; myinvtr <- log
+      trname <- "exp"; invtrname <- "log"
+  } else {
+      mytr <- myinvtr <- identity; dmytr <- function(x) rep(1,length(x))
+      trname <- ""; invtrname <- ""
+  }
+  
   dmytr2 <- function(z) 4*exp(2*z)/(exp(2*z)+1)^2
   mytr2 <- tanh;  myinvtr2 <- atanh
   trname2 <- "tanh"; invtrname2 <- "atanh"
@@ -197,9 +201,9 @@ bptwin <- function(formula, data, id, zyg, MZ, DZ, group=NULL,
     ## mytr <- function(p) c(exp(p[-length(p)]),tigol(p[length(p)]))
     ## myinvtr <- function(z) c(log(z[-length(z)]),logit(z[length(z)]))
     ## dmytr <- function(p) c(exp(p[-length(p)]),dtigol(p[length(p)]))
-    mytr <- function(p) c(exp(p[-length(p)]),mytr2(p[length(p)]))
+    mytr <- function(x) c(exp(x[-length(x)]),mytr2(x[length(x)]))
     myinvtr <- function(z) c(log(z[-length(z)]),myinvtr2(z[length(z)]))
-    dmytr <- function(p) c(exp(p[-length(p)]),dmytr2(p[length(p)]))
+    dmytr <- function(x) c(exp(x[-length(x)]),dmytr2(x[length(x)]))
   }
 
   if (ACDU["u"]) {
@@ -347,6 +351,7 @@ bptwin <- function(formula, data, id, zyg, MZ, DZ, group=NULL,
 ###{{{ U  
 
   p0 <- rep(-1,plen); ##p0[vidx] <- 0
+  if (!missing(varlink) && is.null(varlink)) p0 <- rep(0.5,plen)
   if (OSon) p0[length(p0)] <- 0.3
   if (type=="u")
     p0[vidx] <- 0.3
@@ -588,7 +593,7 @@ bptwin <- function(formula, data, id, zyg, MZ, DZ, group=NULL,
 ###{{{ return
 
   suppressWarnings(cc <- cbind(op$par,sqrt(diag(V))))
-  cc <- cbind(cc,cc[,1]/cc[,2],2*(1-pnorm(abs(cc[,1]/cc[,2]))))
+  cc <- cbind(cc,cc[,1]/cc[,2],2*(pnorm(abs(cc[,1]/cc[,2]),lower.tail=FALSE)))
   colnames(cc) <- c("Estimate","Std.Err","Z","p-value")
   vnames1 <- NULL
   trnam <- " "
@@ -604,8 +609,11 @@ bptwin <- function(formula, data, id, zyg, MZ, DZ, group=NULL,
     groups <- c("MZ","DZ"); if (OSon) groups <- c(groups,"OS")
     rnames <- c(rnames1,paste(c("atanh(rho)","atanh(rho)"),groups,sep=trnam))
   } else {
-    rnames <- c(rnames1,c("log(var(A))","log(var(C))","log(var(D))")[ACDU[1:3]])
-    if (OSon) rnames <- c(rnames,"atanh(rho(G[OS]))")
+      rnames0 <- c("var(A)","var(C)","var(D)")[ACDU[1:3]]
+      if (invtrname!="")
+          rnames0 <- paste(invtrname,"(",rnames0,")",sep="")
+      rnames <- c(rnames1,rnames0)
+      if (OSon) rnames <- c(rnames,"atanh(rho(G[OS]))")
   }
   if (!missing(constrain)) rnames <- rnames[freeidx]
   rownames(cc) <- rnames

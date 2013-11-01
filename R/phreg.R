@@ -21,9 +21,9 @@ phreg0 <- function(X,entry,exit,status,id=NULL,strata=NULL,beta,stderr=TRUE,meth
       val <- lapply(dd,function(d)
                     with(d,
                          .Call("FastCoxPL",pp,X,XX,sign,jumps,package="mets")))
-      ploglik <- do.call("+",lapply(val,function(x) x$ploglik))
-      gradient <- do.call("+",lapply(val,function(x) x$gradient))
-      hessian <- do.call("+",lapply(val,function(x) x$hessian))
+      ploglik <- Reduce("+",lapply(val,function(x) x$ploglik))
+      gradient <- Reduce("+",lapply(val,function(x) x$gradient))
+      hessian <- Reduce("+",lapply(val,function(x) x$hessian))
       if (all) {
         U <- do.call("rbind",lapply(val,function(x) x$U))
         time <- lapply(dd,function(x) x$time[x$ord+1])
@@ -182,7 +182,7 @@ phreg <- function(formula,data,...) {
     X <- X[,-intpos,drop=FALSE]
   if (ncol(X)==0) X <- matrix(nrow=0,ncol=0)
 
-  res <- c(phreg0(X,entry,exit,status,id,strata,...),list(call=cl))
+  res <- c(phreg0(X,entry,exit,status,id,strata,...),list(call=cl,model.frame=m))
   class(res) <- "phreg"
   
   res
@@ -208,6 +208,7 @@ coef.phreg  <- function(object,...) {
 ###}}} coef
 
 ###{{{ iid
+##' @S3method iid phreg
 iid.phreg  <- function(x,...) {
     invhess <- solve(x$hessian)
   ncluster <- NULL
@@ -233,7 +234,7 @@ summary.phreg <- function(object,se="robust",...) {
     I <- -solve(object$hessian)
     V <- vcov(object)
     cc <- cbind(coef(object),diag(V)^0.5,diag(I)^0.5)
-    cc  <- cbind(cc,2*(1-pnorm(abs(cc[,1]/cc[,2]))))
+    cc  <- cbind(cc,2*(pnorm(abs(cc[,1]/cc[,2]),lower.tail=FALSE)))
     colnames(cc) <- c("Estimate","S.E.","dU^-1/2","P-value")
     if (!is.null(ncluster <- attributes(V)$ncluster))
     rownames(cc) <- names(coef(object))
@@ -253,12 +254,17 @@ summary.phreg <- function(object,se="robust",...) {
 
 ###{{{ print.summary
 ##' @S3method print summary.phreg
-print.summary.phreg  <- function(x,...) {
+print.summary.phreg  <- function(x,max.strata=5,...) {
   cat("\n")
   nn <- cbind(x$n, x$nevent)
   rownames(nn) <- x$strata; colnames(nn) <- c("n","events")
   if (is.null(rownames(nn))) rownames(nn) <- rep("",NROW(nn))
-  print(nn,quote=FALSE)
+  if (length(x$strata)>max.strata) {
+      nn <- rbind(c(colSums(nn),length(x$strata)));
+      colnames(nn) <- c("n","events","stratas")
+      rownames(nn) <- ""
+  } 
+  print(nn,quote=FALSE)  
   if (!is.null(x$ncluster)) cat("\n ", x$ncluster, " clusters\n",sep="")
   if (!is.null(x$coef)) {
     cat("\n")

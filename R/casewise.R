@@ -36,7 +36,7 @@
 ##' cmz <- cc$model$"MZ"
 ##' 
 ##' cdz <- casewise.test(cdz,cifmz,test="case") ## test based on casewise
-##' cmz <- casewise.test(cmz,cifmz,test="conc") ## based on concordance:w
+##' cmz <- casewise.test(cmz,cifmz,test="conc") ## based on concordance
 ##' 
 ##' plot(cmz,ylim=c(0,0.7),xlim=c(60,100))
 ##' par(new=TRUE)
@@ -44,6 +44,10 @@
 ##' @export
 casewise.test <- function(conc,marg,test="no-test",p=0.01)
 { ## {{{
+###	conc=cdz; marg=cifdz; p=0.01
+###	conc=cmz; marg=cifmz
+###	names(cdz)
+###	cdz$casewise
   if (sum(marg$P1>p)==0) stop("No timepoints where marginal > ",p,"\n"); 
   time1 <- conc$time; time2 <- marg$time[marg$P1>0.01]
   mintime <- max(time1[1],time2[1])
@@ -72,23 +76,34 @@ casewise.test <- function(conc,marg,test="no-test",p=0.01)
    P1iid <- Cpred(cbind(marg$time,marg$P1.iid),timer)[,-1]
    P1iid2  <- 2*P1iid*margtime;
    se.p2 <- apply(P1iid2^2,1,sum)^.5
-   difconciid <- (P1iid2[,nconc]-conciid)
-   casewise.iid <- difconciid/margtime;
+   conciid <- (P1iid2[,nconc]-conciid) ### iid of conc-p1^2 test
+   c.iid <- casewise.iid <- conciid/margtime - P1iid[,nconc]*casewise
    se.casewise <- apply(casewise.iid^2,1,sum)^.5
+   dif.casewise.iid <- conciid/margtime  ### iid of casewise test
 
    if (test=="case") 
    {
-        diff.iidcase <- apply(casewise.iid,2,sum)*dtimer;
+        diff.iidcase <- apply(dif.casewise.iid,2,sum)*dtimer;
         sd.pepem <- sum(diff.iidcase^2)^.5
         diff.pepem <- sum((casewise-margtime))*dtimer
-        mix <-  diff.pepem
         z.pepem <- diff.pepem/sd.pepem
         pval.pepem <- 2*pnorm(-abs(z.pepem))
         outtest <- cbind(diff.pepem,sd.pepem,z.pepem,pval.pepem)
-        colnames(outtest) <- c("cum dif.","sd","z","pval") 			 
+
+	### test for constant casewise concordance
+	diff.const <- (casewise-mean(casewise))
+	iid.constant <-  (c.iid - matrix(apply(c.iid,2,mean),nrow(c.iid),ncol(c.iid),byrow=T))
+	se.const <- apply(iid.constant^2,1,sum)^.5
+        test.constant <- max(abs(diff.const/se.const))
+	sim.maxs <- apply(abs(iid.constant/se.const),1,max)
+	pval.const <- pval(sim.maxs,test.constant)
+        outtest <- cbind(diff.pepem,sd.pepem,z.pepem,pval.pepem,test.constant,pval.const)
+
+        colnames(outtest) <- c("cum dif.","sd","z","pval","constant-case","pval") 			 
         rownames(outtest) <- "pepe-mori"
+
     } else if (test=="conc") {
-        diff.iid <- apply(difconciid,2,sum)*dtimer
+        diff.iid <- apply(conciid,2,sum)*dtimer
         sd.pepem <- sum(diff.iid^2)^.5
         diff.pepem <- sum((concP1-margtime^2))*dtimer
         z.pepem <- diff.pepem/sd.pepem
@@ -105,7 +120,7 @@ casewise.test <- function(conc,marg,test="no-test",p=0.01)
    colnames(margout) <- c("time","cif","se")
    casewiseout <- cbind(timer,casewise,se.casewise,se.casewise2)
    colnames(casewiseout) <- c("time","casewise","se","se2")
-   difout <- cbind(timer,concP1-margtime^2,apply(difconciid^2,1,sum)^.5)
+   difout <- cbind(timer,concP1-margtime^2,apply(conciid^2,1,sum)^.5)
 
   out <- list(casewise=casewiseout,marg=margout,conc=concout,
 	      test=outtest,mintime=mintime,maxtime=maxtime,same.cluster=TRUE,testtype=test)
