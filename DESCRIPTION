@@ -1,8 +1,8 @@
 Package: mets
 Type: Package
 Title: Analysis of Multivariate Event Times
-Version: 0.2.5
-Date: 2013-11-01
+Version: 0.2.6
+Date: 2013-12-02
 Author: Klaus K. Holst and Thomas Scheike
 Maintainer: Klaus K. Holst <kkho@biostat.ku.dk>
 Description: Implementation of various statistical models for multivariate
@@ -11,10 +11,10 @@ Description: Implementation of various statistical models for multivariate
 License: GPL (>= 2)
 LazyLoad: yes
 URL: http://lava.r-forge.r-project.org/
-Depends: R (>= 2.15), timereg (>= 1.8.1)
-Imports: lava (>= 1.2.3), numDeriv, compiler, splines, prodlim, Rcpp
-        (>= 0.9.2), RcppArmadillo (>= 0.3.6)
-Suggests: lava.tobit (>= 0.4-7), testthat, ucminf
+Depends: R (>= 2.15), timereg (>= 1.8.2), lava (>= 1.2.4)
+Imports: numDeriv, compiler, splines, Rcpp (>= 0.9.2), RcppArmadillo
+        (>= 0.3.6)
+Suggests: lava.tobit (>= 0.4-7), prodlim, testthat, ucminf
 Enhances: alr
 LinkingTo: Rcpp, RcppArmadillo
 Collate: 'biprobit.R' 'biprobit.strata.R' 'pmvn.R' 'claytonakes.R'
@@ -29,8 +29,8 @@ Collate: 'biprobit.R' 'biprobit.strata.R' 'pmvn.R' 'claytonakes.R'
         'surv.boxarea.R' 'casewise.R' 'cor.R' 'fastpattern.R'
         'fastreshape.R' 'binomial.twostage.R' 'clusterindex-reshape.R'
         'bptwin.R' 'prop-odds.R' 'phreg.R' 'lifetable.R'
-        'mets-package.R'
-Packaged: 2013-12-16 07:11:19 UTC; ripley
+        'mets-package.R' 'bptwin2.R'
+Packaged: 2013-12-17 10:26:33 UTC; nqh369
 NeedsCompilation: yes
 Repository: CRAN
-Date/Publication: 2013-12-16 08:14:57
+Date/Publication: 2013-12-17 12:56:44

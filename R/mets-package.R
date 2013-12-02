@@ -8,7 +8,7 @@
 ##' @docType package
 ##' @author Klaus K. Holst and Thomas Scheike
 ##' @useDynLib mets
-##' @import stats lava Rcpp RcppArmadillo prodlim splines timereg
+##' @import stats lava Rcpp RcppArmadillo splines timereg
 ##' @keywords package
 ##' @examples
 ##' 
@@ -128,6 +128,6 @@ NULL
 ##' @aliases plotcr npc nonparcuminc simnordic corsim.prostate
 ##' alpha2kendall alpha2spear coefmat piecewise.twostage surv.boxarea
 ##' cluster.index familycluster.index faster.reshape piecewise.data
-##' simBinPlack simBinFam simSurvFam simCox sim 
+##' simBinPlack simBinFam simBinFam2 simSurvFam simCox sim 
 NULL
 

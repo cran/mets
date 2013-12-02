@@ -1,5 +1,5 @@
 if (require(testthat)) {
   library(mets)
-
-  test_package("mets")
+  if (exists("test_check"))
+      test_check("mets")
 }

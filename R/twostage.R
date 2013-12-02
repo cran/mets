@@ -49,29 +49,43 @@
 ##' \donttest{
 ##' ### Same model using the strata option, a bit slower
 ##' ########################################################
+##' ## makes the survival pieces for different areas in the plane 
+##' ##ud1=surv.boxarea(c(0,0),c(0.5,0.5),data=d,id="cluster",timevar="time",status="status")
+##' ##ud2=surv.boxarea(c(0,0.5),c(0.5,2),data=d,id="cluster",timevar="time",status="status")
+##' ##ud3=surv.boxarea(c(0.5,0),c(2,0.5),data=d,id="cluster",timevar="time",status="status")
+##' ##ud4=surv.boxarea(c(0.5,0.5),c(2,2),data=d,id="cluster",timevar="time",status="status")
 ##' 
-##' ud1=surv.boxarea(c(0,0),c(0.5,0.5),data=d,id="cluster",timevar="time",status="status")
-##' ud2=surv.boxarea(c(0,0.5),c(0.5,2),data=d,id="cluster",timevar="time",status="status")
-##' ud3=surv.boxarea(c(0.5,0),c(2,0.5),data=d,id="cluster",timevar="time",status="status")
-##' ud4=surv.boxarea(c(0.5,0.5),c(2,2),data=d,id="cluster",timevar="time",status="status")
-##' ud1$strata <- 1; ud2$strata <- 2; ud3$strata <- 3; ud4$strata <- 4
-##' ud <- rbind(ud1,ud2,ud3,ud4)
+##' ## everything done in one call 
+##' ud <- piecewise.data(c(0,0.5,2),data=d,timevar="time",status="status",id="cluster")
+##' ud$strata <- factor(ud$strata); 
+##' ud$intstrata <- factor(ud$intstrata)
 ##' 
-##' marg2 <- aalen(Surv(boxtime,status)~-1+factor(num):factor(strata),
+##' ## makes strata specific id variable to identify pairs within strata
+##' ## se's computed based on the id variable across strata "cluster"
+##' ud$idstrata <- ud$id+(as.numeric(ud$strata)-1)*2000
+##' 
+##' marg2 <- aalen(Surv(boxtime,status)~-1+factor(num):factor(intstrata),
 ##'                data=ud,n.sim=0,robust=0)
 ##' tdes <- model.matrix(~-1+factor(strata),data=ud)
-##' fitp2<-twostage(marg2,data=ud,clusters=ud$cluster,
+##' fitp2<-twostage(marg2,data=ud,se.clusters=ud$cluster,clusters=ud$idstrata,
 ##'                 score.method="fisher.scoring",model="clayton.oakes",
-##'                 theta.des=tdes,step=0.5,detail=0,strata=ud$strata)
+##'                 theta.des=tdes,step=0.5)
 ##' summary(fitp2)
 ##' 
 ##' ### now fitting the model with symmetry, i.e. strata 2 and 3 same effect
-##' ud$stratas <- ud$strata; ud$stratas[ud$strata==3] <- 2;
+##' ud$stratas <- ud$strata; 
+##' ud$stratas[ud$strata=="0.5-2,0-0.5"] <- "0-0.5,0.5-2"
 ##' tdes2 <- model.matrix(~-1+factor(stratas),data=ud)
-##' fitp3<-twostage(marg2,data=ud,clusters=ud$cluster,
+##' fitp3<-twostage(marg2,data=ud,clusters=ud$idstrata,se.cluster=ud$cluster,
 ##'                 score.method="fisher.scoring",model="clayton.oakes",
-##'                 theta.des=tdes2,step=0.5,detail=0,strata=ud$strata)
+##'                 theta.des=tdes2,step=0.5)
 ##' summary(fitp3)
+##' 
+##' ### same model using strata option, a bit slower 
+##' fitp4<-twostage(marg2,data=ud,clusters=ud$cluster,se.cluster=ud$cluster,
+##'                 score.method="fisher.scoring",model="clayton.oakes",
+##'                 theta.des=tdes2,step=0.5,strata=ud$strata)
+##' summary(fitp4)
 ##' }
 ##' @keywords survival
 ##' @author Thomas Scheike
@@ -226,7 +240,7 @@ if (!is.null(margsurv))
   if (is.null(se.clusters)) { se.clusters <- clusters; antiid <- nrow(clusterindex);} else  {
       iids <-  unique(se.clusters); 
       antiid <- length(iids); 
-      if (is.numeric(se.clusters)) se.clusters <-  timereg:::sindex.prodlim(iids,se.clusters)-1
+      if (is.numeric(se.clusters)) se.clusters <-  fast.approx(iids,se.clusters)-1
        else se.clusters <- as.integer(factor(se.clusters, labels = seq(antiid)))-1
   }
   if (length(se.clusters)!=length(clusters)) stop("Length of seclusters and clusters must be same\n"); 
@@ -608,7 +622,7 @@ idi <- unique(data[,id]);
 ###  if (is.null(se.clusters)) { se.clusters <- clusters; antiid <- nrow(clusterindex);} else  {
 ###      iids <-  unique(seclusters); 
 ###      antiid <- length(iids); 
-###      if (is.numeric(seclusters)) se.clusters <-  timereg:::sindex.prodlim(iids,se.clusters)-1
+###      if (is.numeric(seclusters)) se.clusters <-  fast.approx(iids,se.clusters)-1
 ###       else se.clusters <- as.integer(factor(se.clusters, labels = seq(antiid)))-1
 ###  }
 ###  if (length(se.clusters)!=length(clusters)) stop("Length of seclusters and clusters must be same\n"); 
@@ -719,6 +733,8 @@ datalr$tsstatus <- datalr[,status]
 datalr$tsid <- datalr[,id]
 ###
 datalr$strata <- paste( c(cut1[i1-1],cut2[i2-1]),c(cut1[i1],cut2[i2]),collapse=",",sep="-")
+datalr$intstrata <- 
+c(paste(c(cut1[i1-1],cut1[i1]),collapse=",",sep="-"),paste( c(cut2[i2-1],cut2[i2]),collapse=",",sep="-"))
 
 if (silent<=-1) print(head(datalr)); 
 dataud <- rbind(dataud,datalr)
@@ -817,8 +833,7 @@ coefmat <- function(est,stderr,digits=3,...) { ## {{{
 ##' out3 <- easy.twostage(marg,data=dfam,time="time",status="status",id="id",deshelp=0,
 ##'                       score.method="fisher.scoring",theta.formula=desfs,
 ##'                       desnames=c("parent-parent","parent-child","child-cild"))
-##' 
-##' #summary(out3)
+##' summary(out3)
 ##' @keywords survival twostage 
 ##' @export
 ##' @param margsurv model 
@@ -869,7 +884,7 @@ if (class(margsurv)[1]=="coxph")
   {  ## {{{
 	  ps <- predict(margsurv)
 	  pentry <- predict(margsurv,pentry)
-  }
+  } ## }}} 
   else stop("marginal survival probabilities must be given as marginal.sur or margsurv \n"); 
 
   data <- cbind(data,ps)

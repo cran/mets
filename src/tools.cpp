@@ -1,10 +1,91 @@
 #include "tools.h"
 #include <vector>
 
+SEXP FastLong2(SEXP idata, SEXP inclust,
+	       SEXP infixed, SEXP invarying) {
+BEGIN_RCPP
+  unsigned nvarying = Rcpp::as<unsigned>(invarying); // Number of varying var
+  unsigned nfixed = Rcpp::as<unsigned>(infixed); // Number of non-varying
+  unsigned nclust = Rcpp::as<unsigned>(inclust); // Number within cluster      
+  Rcpp::DataFrame d = Rcpp::as<Rcpp::DataFrame>(idata); // Wide data
+  //bool Missing = Rcpp::as<bool>(missing);
+  unsigned n= d.nrows();
+  unsigned M = nclust*n;
+  unsigned K = nvarying+nfixed+2;
+
+  urowvec idx(nvarying);
+  uvec mis(M); mis.fill(0);
+  for (unsigned k=0; k<nvarying; k++)
+    idx[k] = nfixed+k*nclust;
+  Rcpp::List myList(K);
+     
+  for (unsigned k=0; k<nfixed; k++) {
+    if (Rf_isLogical(d[k])) {
+      LogicalVector mm = Rcpp::as<LogicalVector>(d[k]);
+      myList[k] = Rcpp::rep_each(mm,nclust);
+    } else if (Rf_isInteger(d[k])) {
+      IntegerVector mm = Rcpp::as<IntegerVector>(d[k]);	  
+      myList[k] = Rcpp::rep_each(mm,nclust);
+    } else if (Rf_isNumeric(d[k])) {
+      NumericVector mm = Rcpp::as<NumericVector>(d[k]);	  
+      myList[k] = Rcpp::rep_each(mm,nclust);
+    } else if (Rf_isComplex(d[k])) {
+      ComplexVector mm = Rcpp::as<ComplexVector>(d[k]);	  
+      myList[k] = Rcpp::rep_each(mm,nclust);
+    } else if (Rf_isString(d[k]) || Rf_isFactor(d[k])) {
+      CharacterVector mm = Rcpp::as<CharacterVector>(d[k]);	  
+      myList[k] = Rcpp::rep_each(mm,nclust);
+    }
+  }
+
+  for (unsigned k=0; k<nvarying; k++) {
+    if (Rf_isLogical(d[idx[k]])) {
+      LogicalMatrix mm(nclust,n);
+      for (unsigned i=0; i<nclust; i++)
+	mm(i,_) = Rcpp::as<LogicalVector>(d[idx[k]+i]);	    
+      myList[nfixed+k] = Rcpp::LogicalVector(mm.begin(),mm.end());
+    } else if (Rf_isInteger(d[idx[k]])) {
+      IntegerMatrix mm(nclust,n);
+      for (unsigned i=0; i<nclust; i++)
+	mm(i,_) = Rcpp::as<IntegerVector>(d[idx[k]+i]);	    
+      myList[nfixed+k] = Rcpp::IntegerVector(mm.begin(),mm.end());
+    } else if (Rf_isNumeric(d[idx[k]])) {
+      NumericMatrix mm(nclust,n);
+      for (unsigned i=0; i<nclust; i++)
+	mm(i,_) = Rcpp::as<NumericVector>(d[idx[k]+i]);	    
+      //myList[nfixed+k] = Rcpp::NumericMatrix(M,1,mm.begin());      
+      myList[nfixed+k] = Rcpp::NumericVector(mm.begin(),mm.end());
+    } else if (Rf_isComplex(d[idx[k]])) {
+      ComplexMatrix mm(nclust,n);
+      for (unsigned i=0; i<nclust; i++)
+	mm(i,_) = Rcpp::as<ComplexVector>(d[idx[k]+i]);	    
+      myList[nfixed+k] = Rcpp::ComplexVector(mm.begin(),mm.end());
+    } else if (Rf_isString(d[idx[k]]) || Rf_isFactor(d[idx[k]])) {
+      CharacterMatrix mm(nclust,n);
+      for (unsigned i=0; i<nclust; i++)
+	mm(i,_) = Rcpp::as<CharacterVector>(d[idx[k]+i]);	    
+      myList[nfixed+k] = Rcpp::CharacterVector(mm.begin(),mm.end());
+    } 
+  }      
+
+  //  IntegerVector Id = Rcpp::seq_len(n);
+  IntegerVector Id = Rcpp::rep_each(Rcpp::seq_len(n),nclust);
+  IntegerVector Num = Rcpp::rep(Rcpp::seq_len(nclust),n);  
+  myList[K-2] = Id;
+  myList[K-1] = Num;
+  myList.attr("names") = Rcpp::seq_len(K);
+  myList.attr("row.names") = Rcpp::seq_len(M);
+  myList.attr("class") = "data.frame";
+
+  return(Rcpp::wrap(myList));
+END_RCPP
+}
+
+
 SEXP FastLong(SEXP idata, SEXP inclust,
 	      SEXP infixed, SEXP invarying, SEXP missing) {
 BEGIN_RCPP
-      unsigned nvarying = Rcpp::as<unsigned>(invarying); // Number of vayring var
+      unsigned nvarying = Rcpp::as<unsigned>(invarying); // Number of varying var
       unsigned nfixed = Rcpp::as<unsigned>(infixed); // Number of non-varying
       unsigned nclust = Rcpp::as<unsigned>(inclust); // Number within cluster
       mat d = Rcpp::as<mat>(idata); // Wide data
@@ -13,7 +94,7 @@ BEGIN_RCPP
       unsigned K = nvarying+nfixed+2;
       mat dd(M,K); // Long data      
       urowvec idx(nvarying);
-      uvec mis(M); mis.fill(NA_REAL);
+      uvec mis(M); mis.fill(0); // NA_INTEGER
       for (unsigned k=0; k<nvarying; k++)
          idx[k] = nfixed+k*nclust;
       rowvec xx(K); xx.fill(NA_REAL);      
@@ -106,41 +187,43 @@ END_RCPP
 
 
 
-RcppExport SEXP FastApprox(const SEXP a,
-			   const SEXP t,
-			   const SEXP z) {
+
+RcppExport SEXP FastApprox(const SEXP time,
+			   const SEXP newtime,
+			   const SEXP equal) {
 BEGIN_RCPP
-  NumericVector A(a);
-  NumericVector T(t);
-  NumericVector Z(z);
-  vector<unsigned> idx(Z.size());
-  vector<double> newT(Z.size());
+  NumericVector NewTime(newtime);
+  NumericVector Time(time);
+  bool Equal = Rcpp::as<bool>(equal);
+  vector<int> idx(NewTime.size());
+  vector<int> eq(NewTime.size());
 
   NumericVector::iterator it;  
-  double lower,upper; int pos=200;
-  for (int i=0; i<Z.size(); i++) {
-    it = lower_bound(A.begin(), A.end(), Z[i]);
-    if (it == A.begin()) { 
+  double upper; int pos=0;
+  for (int i=0; i<NewTime.size(); i++) {    
+    eq[i] = 0;
+    it = lower_bound(Time.begin(), Time.end(), NewTime[i]);
+    if (it == Time.begin()) { 
       pos = 0; 
-      // upper = *it; // no smaller value  than val in vector
-    } 
-    else if (int(it-A.end())==0) {
-      pos = A.size()-1;
-      //lower = *(it-1); // no bigger value than val in vector
-    } else {
-      lower = *(it-1);
       upper = *it;
-      pos = int(it- A.begin());
-      if (abs(Z[i]-lower)<abs(Z[i]-upper)) {
-	pos = int(it- A.begin());
-      }
+      if (Equal && (NewTime[i]==upper)) { eq[i] = 1; }
     }
-    idx[i] = pos;
-    newT[i] = T[pos];
+    else if (int(it-Time.end())==0) {
+      pos = Time.size()-1;
+    } else {
+      pos = int(it-Time.begin());
+      upper = *it;
+      if (Equal && (NewTime[i]==upper)) { eq[i] = pos+1; }
+    }
+    idx[i] = pos+1;
   }
-  List ans;
-  ans["t"] = newT;
-  ans["pos"] = idx;
-  return(ans);
+  if (Equal) {
+    List ans;
+    ans["idx"] = idx;
+    ans["eq"] = eq;
+    return(ans);   
+  }
+
+  return(Rcpp::wrap(idx));
 END_RCPP
 }

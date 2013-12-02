@@ -3,24 +3,22 @@
 ##' @title Fast approximation
 ##' @param time Original ordered time points
 ##' @param new.time New time points 
-##' @param y Optional function values (default is simply the identity) evaluated at the original time points \code{time}
+##' @param equal If TRUE a list is returned with additional element
 ##' @param ... Optional additional arguments
 ##' @author Klaus K. Holst
-##' @return List with the elements
+##' @examples
+##' id <- c(1,1,2,2,7,7,10,10)
+##' fast.approx(unique(id),id)
 ##' 
-##' \item{approx}{Approximated function values (\code{y1}) evaluated in \code{t2}}
-##' 
-##' \item{pos}{The positions in \code{t1} of the elements of \code{t2} starting from index 0}
-##' 
+##' t <- 0:6
+##' n <- c(-1,0,0.1,0.9,1,1.1,1.2,6,6.5)
+##' fast.approx(t,n,equal=TRUE)
 ##' @export
-fast.approx <- function(time,new.time,y=time,...) {
-  if (is.matrix(time)) {
-    y <- time[,-1,drop=TRUE]; time <- time[,1,drop=TRUE]
-  }    
+fast.approx <- function(time,new.time,equal=FALSE,...) {
   arglist <- list("FastApprox",
-                  a=time,
-                  t=new.time,
-                  z=y,
+                  time=sort(time),
+                  newtime=new.time,
+                  equal=equal,
                   DUP=FALSE,PACKAGE="mets")
   res <- do.call(".Call",arglist)
   return(res)

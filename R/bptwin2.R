@@ -1,53 +1,4 @@
-##' Liability-threshold model for twin data
-##'
-##' @aliases biprobit cumh
-##' @title Liability model for twin data
-##' @param formula Formula specifying effects of covariates on the response.
-##' @param data \code{data.frame} with one observation pr row. In
-##'     addition a column with the zygosity (DZ or MZ given as a factor) of
-##'     each individual much be
-##'     specified as well as a twin id variable giving a unique pair of
-##'     numbers/factors to each twin pair.
-##' @param id The name of the column in the dataset containing the twin-id variable.
-##' @param zyg The name of the column in the dataset containing the
-##'     zygosity variable.
-##' @param DZ Character defining the level in the zyg variable
-##' corresponding to the dyzogitic twins. 
-##' @param group Optional. Variable name defining group for interaction analysis (e.g., gender)
-##' @param num Optional twin number variable
-##' @param weight Weight matrix if needed by the chosen estimator. For use
-##'     with Inverse Probability Weights
-##' @param biweight Function defining the bivariate weight in each cluster
-##' @param strata Strata
-##' @param messages Control amount of messages shown 
-##' @param control Control argument parsed on to the optimization routine. Starting values may be parsed as '\code{start}'.
-##' @param type Character defining the type of analysis to be
-##'     performed. Should be a subset of "acde" (additive genetic factors, common
-##'     environmental factors, dominant
-##'     genetic factors, unique environmental factors).
-##' @param eqmean Equal means (with type="u")?
-##' @param pairsonly Include complete pairs only?
-##' @param stderr Should standard errors be calculated?
-##' @param robustvar If TRUE robust (sandwich) variance estimates of the variance are used
-##' @param p Parameter vector p in which to evaluate log-Likelihood and score function
-##' @param indiv If TRUE the score and log-Likelihood contribution of each twin-pair
-##' @param constrain Development argument
-##' @param samecens Same censoring
-##' @param allmarg Should all marginal terms be included
-##' @param bound Development argument
-##' @param varlink Link function for variance parameters
-##' @param ... Additional arguments to lower level functions
-##' @author Klaus K. Holst
-##' @export
-##' @examples
-##' \donttest{
-##' data(twinstut)
-##' b0 <- bptwin(stutter~sex,
-##'              data=droplevels(subset(twinstut,zyg%in%c("mz","dz"))),
-##'              id="tvparnr",zyg="zyg",DZ="dz",type="ae")
-##' summary(b0)
-##' }
-bptwin <- function(formula, data, id, zyg, DZ, group=NULL,
+bptwin2 <- function(formula, data, id, zyg, DZ, group=NULL,
                    num=NULL,
                    weight=NULL,
                    biweight=function(x) 1/min(x),
@@ -68,6 +19,9 @@ bptwin <- function(formula, data, id, zyg, DZ, group=NULL,
                    ...) {
 
 ###{{{ setup
+
+    OSon <- FALSE
+    idx2 <- NULL
 
   mycall <- match.call()
   formulaId <- unlist(Specials(formula,"cluster"))
@@ -128,34 +82,21 @@ bptwin <- function(formula, data, id, zyg, DZ, group=NULL,
   if (is.logical(data[,yvar])) data[,yvar] <- data[,yvar]*1
   if (is.factor(data[,yvar])) data[,yvar] <- as.numeric(data[,yvar])-1  
 
-  idx2 <- NULL
   if (missing(DZ)) {
     DZ <- levels(as.factor(data[,zyg]))[1]
     message("Using '",DZ,"' as DZ",sep="")
   }
-  OS <- NULL
-  OSon <- FALSE
-  if (!is.null(OS)) {
-    idx2 <- which(data[,zyg]==OS)
-    OSon <- TRUE
-    if (length(idx2)==0) {
-      warning("No OS twins found")
-      OSon <- FALSE
-    }
-  }
-  idx1 <- which(data[,zyg]==DZ) ## DZ
-  if (length(idx1)==0) stop("No DZ twins found")
-  idx0 <- which(!(data[,zyg]%in%c(DZ,OS))) ## MZ
-  if (length(idx1)==0) stop("No MZ twins found")
-  zyg2 <- rep(1,nrow(data)); zyg2[idx0] <- 0; zyg2[idx2] <- 2
-  data[,zyg] <- zyg2 ## MZ=0, DZ=1, OS=2
 
-  
-  ## time <- "time"
-  ## while (time%in%names(data)) time <- paste(time,"_",sep="")
-  ## data[,time] <- unlist(lapply(idtab,seq))
-  
-  ## ff <- paste(as.character(formula)[3],"+",time,"+",id,"+",zyg)
+  idx1 <- which(data[,zyg]%in%DZ) ## DZ
+  if (length(idx1)==0) stop("No DZ twins found")
+  idx0 <- which(!(data[,zyg]%in%DZ)) ## MZ
+  if (length(idx1)==0) stop("No MZ twins found")
+  zyg2 <- rep(1,nrow(data)); zyg2[idx0] <- 0;
+  data[,zyg] <- zyg2 ## MZ=0, DZ=1
+
+  if (!is.null(group)) data[,group] <- as.factor(data[,group])
+ 
+
   ff <- paste(as.character(formula)[3],"+",
               paste(c(id,zyg,weight,num),collapse="+"))
   ff <- paste("~",yvar,"+",ff)
@@ -163,7 +104,6 @@ bptwin <- function(formula, data, id, zyg, DZ, group=NULL,
   opt <- options(na.action="na.pass")
   Data <- model.matrix(formula0,data)
   options(opt)
-  ## rnames1 <- setdiff(colnames(Data),c(yvar,time,id,weight,zyg))
   rnames1 <- setdiff(colnames(Data),c(yvar,id,weight,zyg,num))
   nx <- length(rnames1) 
   if (nx==0) stop("Zero design not allowed")
@@ -179,7 +119,7 @@ bptwin <- function(formula, data, id, zyg, DZ, group=NULL,
   ##mytr <- function(x) x^2; dmytr <- function(x) 2*x
   ##mytr <- function(z) 1/(1+exp(-z)); dmytr <- function(z) exp(-z)/(1+exp(-z))^2
   ACDU <- sapply(c("a","c","d","e","u"),function(x) length(grep(x,tolower(type)))>0)
-  ACDU <- c(ACDU,os=OSon)
+  ACDU <- c(ACDU)
 
   if (missing(varlink) || !is.null(varlink)) {
       mytr <- exp; dmytr <- exp; myinvtr <- log
@@ -193,14 +133,7 @@ bptwin <- function(formula, data, id, zyg, DZ, group=NULL,
   mytr2 <- tanh;  myinvtr2 <- atanh
   trname2 <- "tanh"; invtrname2 <- "atanh"
 
-  if (OSon) {
-    ## logit <- function(p) log(p/(1-p))
-    ## tigol <- function(z) 1/(1+exp(-z))
-    ## dlogit <- function(p) 1/(p*(1-p))
-    ## dtigol <- function(z) tigol(z)^2*exp(-z)    
-    ## mytr <- function(p) c(exp(p[-length(p)]),tigol(p[length(p)]))
-    ## myinvtr <- function(z) c(log(z[-length(z)]),logit(z[length(z)]))
-    ## dmytr <- function(p) c(exp(p[-length(p)]),dtigol(p[length(p)]))
+  if (!is.null(group)) {
     mytr <- function(x) c(exp(x[-length(x)]),mytr2(x[length(x)]))
     myinvtr <- function(z) c(log(z[-length(z)]),myinvtr2(z[length(z)]))
     dmytr <- function(x) c(exp(x[-length(x)]),dmytr2(x[length(x)]))

@@ -2,30 +2,28 @@
 \alias{fast.approx}
 \title{Fast approximation}
 \usage{
-  fast.approx(time, new.time, y = time, ...)
+  fast.approx(time, new.time, equal = FALSE, ...)
 }
 \arguments{
   \item{time}{Original ordered time points}
 
   \item{new.time}{New time points}
 
-  \item{y}{Optional function values (default is simply the
-  identity) evaluated at the original time points
-  \code{time}}
+  \item{equal}{If TRUE a list is returned with additional
+  element}
 
   \item{...}{Optional additional arguments}
 }
-\value{
-  List with the elements
-
-  \item{approx}{Approximated function values (\code{y1})
-  evaluated in \code{t2}}
-
-  \item{pos}{The positions in \code{t1} of the elements of
-  \code{t2} starting from index 0}
-}
 \description{
   Fast approximation
+}
+\examples{
+id <- c(1,1,2,2,7,7,10,10)
+fast.approx(unique(id),id)
+
+t <- 0:6
+n <- c(-1,0,0.1,0.9,1,1.1,1.2,6,6.5)
+fast.approx(t,n,equal=TRUE)
 }
 \author{
   Klaus K. Holst
