@@ -91,22 +91,23 @@ fast.reshape <- function(data,varying,id,num,sep="",keep,
     } else {
         if (NCOL(data)==1) data <- cbind(data)
     }
+    nn <- colnames(data)
+    if (!missing(varying)) {
+        varsubst <- substitute(varying)
+        if (as.character(varsubst)[1]=="-") {
+            notvarying <- varsubst[[-1]]
+            vars0 <- setdiff(nn,eval(notvarying))
+            varying <- unique(gsub("(\\d+)$","",vars0))
+        }
+    }
     if (missing(id)) {
         ## reshape from wide to long format. 
-        nn <- colnames(data)
         nsep <- nchar(sep)
         if (missing(varying)) {#stop("Prefix of time-varying variables needed")
             ## Find all variable names with trailing digits
             vars0 <- grep("(\\d+)$",nn)            
             varying <- unique(gsub("(\\d+)$","",nn[vars0]))
-        } else {
-            varsubst <- substitute(varying)
-            if (as.character(varsubst)[1]=="-") {
-                notvarying <- varsubst[[-1]]
-                vars0 <- setdiff(nn,eval(notvarying))
-                varying <- unique(gsub("(\\d+)$","",vars0))
-            }
-        }
+        } 
         ## nl <- as.list(seq_along(data)); names(nl) <- nn
         ## varying <- eval(substitute(varying),nl,parent.frame())
         vnames <- NULL
@@ -272,7 +273,6 @@ fast.reshape <- function(data,varying,id,num,sep="",keep,
         num <- NULL
     }
     
-    nn <- colnames(data)
     if (any(nn=="")) data <- data.frame(data)
 
     clustud <- cluster.index(id,num=num)
@@ -365,7 +365,7 @@ simple.reshape <- function (data, id = "id", num = NULL) {
 
 
 
-fast.reshape2 <- function(data,varying,id,num,sep="",keep,
+fast.reshape.obs <- function(data,varying,id,num,sep="",keep,
                          idname="id",numname="num",factors.keep=TRUE,
                          idcombine=TRUE,labelnum=FALSE,...) {
     if (!is.data.frame(data) & is.list(data)) {
@@ -373,21 +373,22 @@ fast.reshape2 <- function(data,varying,id,num,sep="",keep,
     } else {
         if (NCOL(data)==1) data <- cbind(data)
     }
+    nn <- colnames(data)
+    if (!missing(varying)) {
+        varsubst <- substitute(varying)
+        if (as.character(varsubst)[1]=="-") {
+            notvarying <- varsubst[[-1]]
+            vars0 <- setdiff(nn,eval(notvarying))
+            varying <- unique(gsub("(\\d+)$","",vars0))
+        }
+    }
     if (missing(id)) {
         ## reshape from wide to long format. 
-        nn <- colnames(data)
         nsep <- nchar(sep)
         if (missing(varying)) {#stop("Prefix of time-varying variables needed")
             ## Find all variable names with trailing digits
             vars0 <- grep("(\\d+)$",nn)            
             varying <- unique(gsub("(\\d+)$","",nn[vars0]))
-        } else {
-            varsubst <- substitute(varying)
-            if (as.character(varsubst)[1]=="-") {
-                notvarying <- varsubst[[-1]]
-                vars0 <- setdiff(nn,eval(notvarying))
-                varying <- unique(gsub("(\\d+)$","",vars0))
-            }
         }
         ## nl <- as.list(seq_along(data)); names(nl) <- nn
         ## varying <- eval(substitute(varying),nl,parent.frame())

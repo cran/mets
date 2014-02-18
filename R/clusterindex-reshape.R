@@ -1,5 +1,5 @@
 ##' @export
-cluster.index <- function(clusters,index.type=FALSE,num=NULL,Rindex=0)
+cluster.index <- function(clusters,index.type=FALSE,num=NULL,Rindex=0,mat=NULL,return.all=FALSE)
 { ## {{{
   n <- length(clusters)
 
@@ -18,7 +18,8 @@ cluster.index <- function(clusters,index.type=FALSE,num=NULL,Rindex=0)
     }
   } else { numnum <- 0; mednum <- 0; }
 
-  clustud <- .Call("clusterindexM",as.integer(clusters),as.integer(mednum), as.integer(numnum))
+  clustud <- .Call("clusterindexM",as.integer(clusters),as.integer(mednum), as.integer(numnum),mat,return.all)
+  if (!is.null(mat) && !return.all) return(clustud)
   
   if (Rindex==1) clustud$idclust <- clustud$idclustmat+1
   if (Rindex==1) clustud$firstclustid <- clustud$firstclustid +1 
@@ -70,7 +71,7 @@ faster.reshape <- function(data,clusters,index.type=FALSE,num=NULL,Rindex=1)
     else num <- as.integer(factor(num, labels = seq(length(unique(clusters))))) -1
   } else { num <- 0; mednum <- 0; }
 
-  clustud <- .Call("clusterindexdata",as.integer(clusters),as.integer(mednum), as.integer(num),iddata=data,DUP=FALSE)
+  clustud <- .Call("clusterindexdata",as.integer(clusters),as.integer(mednum), as.integer(num),iddata=data)
 
   if (Rindex==1) clustud$idclust  <- clustud$idclust+1
 ###  if(Rindex==1) idclust[idclust==0] <- NA 

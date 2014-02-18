@@ -1,3 +1,4 @@
+
 #include "mvn.h"
 #include "tools.h"
 #include <math.h>
@@ -8,6 +9,52 @@ double _mvt_releps=0;
 int _mvt_df = 0;
 int _mvt_inform;
 double _mvt_error[3]; 
+
+
+double mvtdst(int* n,         
+	      int* nu,        // Degrees of freedom (0=MVN)
+	      double* lower,  // Lower integration bounds 
+	      double* upper,  // Upper integration bounds
+	      int* infin,     // Infinity argument, ith element 0: ]-inf,up[i]], 1: [lo[i],inf[, 2: [lo[i],up[i]], 3: ]-inf,inf[
+	      double* correl, // Correlation coefficients (upper-tri)
+	      double* delta,  // non-central parameter
+	      int* maxpts,    // Max-pts (quasi-mc)
+	      double* abseps, // Tolerance absolute error 
+	      double* releps, // Tolerance relative error
+	      double* error,  // estimated abs. error. with 99% confidence interval
+	      double* value,  // result
+	      int* inform)    // Message (0 success)
+{
+  // *value = 1;
+  // return(*value);
+  if (*n==1 && *nu==0) {
+    // 0: right, 1: left, 2: interval
+    switch (*infin) {
+    case 0: *value = Rf_pnorm5(*upper,0.0,1.0,1,0); break;
+    case 1: *value = 1-Rf_pnorm5(*lower,0.0,1.0,1,0); break;
+    case 2: *value = Rf_pnorm5(*upper,0.0,1.0,1,0)-Rf_pnorm5(*lower,0.0,1,1,0); break;
+      //    default: *value = 0;
+    }
+    //cerr << "infin=" << *infin << " value=" << *value << " upper=" << *upper << " lower=" << *lower << endl;
+    return(*value);    
+  }
+
+  //  cerr << "fortran to be called...\n";
+  mvtdst_(n, nu,
+	  lower, upper, infin, correl, delta,
+	  maxpts, abseps, releps,
+	  error, value, inform);    
+  switch (*inform) {
+  case 0:
+    return *value;
+  case 1:
+  case 2:
+  case 3:
+    return -1.0;
+  };  
+  return *value;
+};
+
 
 
 double dmvn(const vec &y, const mat &W, 
@@ -41,14 +88,14 @@ double cdfmvn(mat &upper, mat &cor) {
     }
   }
   irowvec infin(n); infin.fill(0); //
-  mvtdst_(&n, &_mvt_df,
-  	  &upper[0], // Lower, ignored
-  	  &upper[0], 
-  	  &infin[0], // Infinity argument (all 0 since CDF)
-  	  &Cor[0],
-  	  &_mvt_delta[0], &_mvt_maxpts,
-  	  &_mvt_abseps, &_mvt_releps,
-  	  &_mvt_error[0], &val, &_mvt_inform);  
+  mvtdst(&n, &_mvt_df,
+	 &upper[0], // Lower, ignored
+	 &upper[0], 
+	 &infin[0], // Infinity argument (all 0 since CDF)
+	 &Cor[0],
+	 &_mvt_delta[0], &_mvt_maxpts,
+	 &_mvt_abseps, &_mvt_releps,
+	 &_mvt_error[0], &val, &_mvt_inform);  
   return(val);
 }
 
@@ -57,30 +104,30 @@ double cdfmvn(mat &upper, mat &cor) {
 RcppExport SEXP Dpmvn (SEXP lower, SEXP upper, SEXP mu, SEXP sigma, SEXP std) { 
 BEGIN_RCPP
   colvec y = Rcpp::as<colvec>(upper);
-  NumericVector Lower(lower);
-  bool Std = Rcpp::as<bool>(std);
-  mat S = Rcpp::as<mat>(sigma);  
-  colvec Mu = Rcpp::as<colvec>(mu);  
-  int n = S.n_cols;
-  vec L(n);
-  for (int j=0; j<n; j++) {    
-    if (y(j)==datum::inf) L(j) = 1; // (lower,+Inf)
-    if (Lower(j)==-datum::inf) L(j) = 0; // (-Inf,upper)
-    // =2 (low,up)   For now we actually don't consider the interval-censored case
+ NumericVector Lower(lower);
+ bool Std = Rcpp::as<bool>(std);
+ mat S = Rcpp::as<mat>(sigma);  
+ colvec Mu = Rcpp::as<colvec>(mu);  
+ int n = S.n_cols;
+ vec L(n);
+ for (int j=0; j<n; j++) {    
+   if (y(j)==datum::inf) L(j) = 1; // (lower,+Inf)
+   if (Lower(j)==-datum::inf) L(j) = 0; // (-Inf,upper)
+   // =2 (low,up)   For now we actually don't consider the interval-censored case
     // <0 (-Inf,Inf)
-  }  
-  mat LL = diagmat(L);
-  mat iLambda;
-  if (!Std) {
-    iLambda = diagmat(1/sqrt(diagvec(S)));
-    S = iLambda*S*iLambda;    
-    y = iLambda*(y-Mu);
-  }
-  
-  List res;
-
-  vec D(n);  
-  mat H(n,n);
+ }  
+ mat LL = diagmat(L);
+ mat iLambda;
+ if (!Std) {
+   iLambda = diagmat(1/sqrt(diagvec(S)));
+   S = iLambda*S*iLambda;    
+   y = iLambda*(y-Mu);
+ }
+ 
+ List res;
+ 
+ vec D(n);  
+ mat H(n,n);
   if (n==1) {
     List res;    
     D[0] = Rf_dnorm4(y[0],0.0,1.0,0);
@@ -93,7 +140,7 @@ BEGIN_RCPP
     res["hessian"] = H;
     return(res);    
   }
-
+  
   for (int j=0; j<n; j++) {
     mat Sj = S; Sj.shed_row(j); 
     mat Sj0 = Sj.col(j);
@@ -131,7 +178,7 @@ BEGIN_RCPP
 	mat B = Snij*inv(S2);
 	mat Sij = S.submat(idx1,idx1) - B*trans(Snij);
 	vec muij = y.elem(idx1) - B*y.elem(idx2);
-
+	
 	mat iL = diagmat(1/sqrt(diagvec(Sij)));    
 	Sij = iL*Sij*iL;
 	muij = iL*muij;
@@ -143,22 +190,20 @@ BEGIN_RCPP
     colvec ones(n); ones.fill(1);
     H.diag() = -y%D - (S%H)*ones;
   }
-
+  
   //double val = cdfmvn(y,S);  
   //return(Rcpp::wrap(val));
-
+  
   if (!Std) {
     H = iLambda*H*iLambda;    
     D = iLambda*D;
   }
   res["gradient"] = D;
   res["hessian"] = H;
-
+  
   return(res);
 END_RCPP
 }
-
-
 
 
 
@@ -183,6 +228,7 @@ vec loglikmvn(mat &Yl, mat &Yu, uvec &Status,
   mat Se,S0,iS0;
     
   vec loglik(n); loglik.fill(0);
+  //  return(loglik);
   if (nObs>0) {
     mat Y0 = Yl.cols(Obs)-Mu.cols(Obs);
     Se = S0 = S.submat(Obs,Obs); 
@@ -191,7 +237,7 @@ vec loglikmvn(mat &Yl, mat &Yu, uvec &Status,
     double normconst = -0.5*nObs*log2pi;  
 
     for (int i=0; i<n; i++) { // Iterate over subjects
-
+      
       if (nonconstvar) {
 	mat Z0 = reshape(Z.row(i),k,nu);	
 	S0 = Se+Z0.rows(Obs)*Su*trans(Z0.rows(Obs));
@@ -249,6 +295,9 @@ vec loglikmvn(mat &Yl, mat &Yu, uvec &Status,
     irowvec infin(nNonObs); // 0: right, 1: left, 2: interval
 
     uvec currow(1); 
+    //std::cerr << "Hallo conconstvar" << nonconstvar << endl;
+    // return(loglik);
+
     for (int i=0; i<n; i++) { // Iterate over subjects
 
       currow(0) = i;
@@ -293,7 +342,7 @@ vec loglikmvn(mat &Yl, mat &Yu, uvec &Status,
 	if (upper(j)==datum::inf && StatusNonObs(j)==1) infin(j) = 1;
 	if (lower(j)==-datum::inf && StatusNonObs(j)==1) infin(j) = 0;
       }
-      // uvec infplus = find(upper==datum::inf);
+      // uvec infplus = find(upper==datum::inf); 
       // uvec infminus = find(lower==-datum::inf);
       // if (infplus.size()>0) { infin.elem(infplus) -= 1; }
       // if (infminus.size()>0) { infin.elem(infminus) -= 2; }
@@ -328,13 +377,19 @@ vec loglikmvn(mat &Yl, mat &Yu, uvec &Status,
       lower = (lower-Mi)%trans(il);
       upper = (upper-Mi)%trans(il);
 
-      double val = 0;
-      mvtdst_(&nNonObs, &_mvt_df,
-	      &lower[0], &upper[0], 
-	      &infin[0], &Cor[0],
-	      &_mvt_delta[0], &_mvt_maxpts,
-	      &_mvt_abseps, &_mvt_releps,
-	      &_mvt_error[0], &val, &_mvt_inform);        
+      double val;
+      // mvtdst_(&nNonObs, &_mvt_df,
+      // 	      &lower[0], &upper[0], 
+      // 	      &infin[0], &Cor[0],
+      // 	      &_mvt_delta[0], &_mvt_maxpts,
+      // 	      &_mvt_abseps, &_mvt_releps,
+      // 	      &_mvt_error[0], &val, &_mvt_inform); 
+      val = mvtdst(&nNonObs, &_mvt_df,
+      		   &lower[0], &upper[0], 
+      		   &infin[0], &Cor[0],
+      		   &_mvt_delta[0], &_mvt_maxpts,
+      		   &_mvt_abseps, &_mvt_releps,
+      		   &_mvt_error[0], &val, &_mvt_inform);       
 
       // if (isnan(val)) {
       // 	cerr << "***i=" << i << endl;
@@ -347,10 +402,13 @@ vec loglikmvn(mat &Yl, mat &Yu, uvec &Status,
       // 	cerr << "upper=" << upper;
       // 	cerr << "infin=" << infin;
       // 	cerr << "Cor=\n" << Cor;
-      // 	cerr << "   val=" << val << endl;
-      // }
-      
+      // cerr << "   val=" << val << endl;
+      // // }
+      // cerr << "   1:loglik(i)=" << loglik(i) << endl;      
       loglik(i) += log(val);
+      // cerr << "   2:loglik(i)=" << loglik(i) << endl;
+      // }
+
     }
   }
   
@@ -364,6 +422,7 @@ RcppExport SEXP loglikMVN(SEXP yl, SEXP yu,
 			  SEXP z, SEXP su, SEXP dsu,
 			  SEXP threshold, SEXP dthreshold) {
 BEGIN_RCPP
+
   mat Yl = Rcpp::as<mat>(yl);
   uvec Status = Rcpp::as<uvec>(status);
   mat Yu = Rcpp::as<mat>(yu);
@@ -371,9 +430,9 @@ BEGIN_RCPP
   mat S = Rcpp::as<mat>(s);  
 
   if ((Mu.n_cols!=Yl.n_cols) || (Mu.n_rows!=Yl.n_rows))
-      throw(Rcpp::exception("Dimension of 'mu' and 'yl' did not agree","mvn.cpp",1));
+    throw(Rcpp::exception("Dimension of 'mu' and 'yl' did not agree","mvn.cpp",1));
   if (Status.size()!=Yl.n_cols)
-      throw(Rcpp::exception("Dimension of 'status' and 'yl' did not agree","mvn.cpp",1));
+    throw(Rcpp::exception("Dimension of 'status' and 'yl' did not agree","mvn.cpp",1));
 
   uvec Cens = find(Status==1);
   uvec Obs = find(Status==0);
@@ -428,18 +487,16 @@ BEGIN_RCPP
       // cerr << "Status =" << NewStatus << endl;
       
       vec ll = loglikmvn(Ylsub, Yusub, NewStatus,
-				   Musub, S, 
-				   Zsub,  Su,
-				   Threshold);      
+			 Musub, S, 
+			 Zsub,  Su,
+			 Threshold);      
       loglik.elem(idx) = ll;
-    }   
-    
-
+    }  
   } else {
     loglik = loglikmvn(Yl,Yu,Status,
-		       Mu, S, 
-		       Z,  Su,
-		       Threshold);
+    		       Mu, S, 
+    		       Z,  Su,
+    		       Threshold);
   }
 
   return (wrap(loglik));
@@ -453,33 +510,91 @@ END_RCPP
 // }
 
 
+void cov2cor0(const mat &x, mat &Cor, rowvec &sx, bool nrm=true) {
+  unsigned p = x.n_cols;
+  if (nrm) for (unsigned j=0; j<p; j++) sx(j) = 1/sqrt(x(j,j));
+  unsigned j=0;
+  for (unsigned r=0; r<(p-1); r++) {
+    for (unsigned c=r+1; c<p; c++) {
+      if (nrm)
+	Cor(j) = x(r,c)*sx(r)*sx(c);
+      else 
+	Cor(j) = x(r,c);
+      j++;
+    }
+  }  
+}
 
+RcppExport SEXP pmvn(SEXP lower, SEXP upper, SEXP mu, SEXP sigma, SEXP notcor) { 
+BEGIN_RCPP  
+  mat Sigma = Rcpp::as<mat>(sigma);
+  bool notCor = Rcpp::as<bool>(notcor);
+  mat Mu = Rcpp::as<mat>(mu);
+  mat Lower = Rcpp::as<mat>(lower);
+  mat Upper = Rcpp::as<mat>(upper);
+  unsigned n = Mu.n_rows;
+  int p = Mu.n_cols;
 
+  NumericVector _mvt_delta(n);
+  unsigned ncor = p*(p-1)/2;
+  vec Cor(ncor); // Vector of correlation coefficients (upper-tri, colwise)
+  rowvec L(p); // Std.deviations    
+  if (Sigma.n_rows==(unsigned)p) {
+    cov2cor0(Sigma,Cor,L,notCor);
+  }
+   
+  ivec infin(p); infin.fill(2); //
+  for (unsigned j=0; j<(unsigned)p; j++) {
+    if (Upper(0,j)==datum::inf) infin(j) = 1;
+    if (Lower(0,j)==-datum::inf) infin(j) = 0;
+  }
 
-RcppExport SEXP pmvn(SEXP upper, SEXP cor) { 
-  NumericVector Upper(upper); int n = Upper.size();
-  NumericVector Lower(n);
-  IntegerVector infin(n); 
-            // INFIN(I) < 0, Ith limits are (-infinity, infinity);
-            // INFIN(I) = 0, Ith limits are (-infinity, UPPER(I)];
-            // INFIN(I) = 1, Ith limits are [LOWER(I), infinity);
-            // INFIN(I) = 2, Ith limits are [LOWER(I), UPPER(I)].
-  NumericVector Cor(cor);
-  NumericVector _mvt_delta(n); 
-
-  double val;
-  mvtdst_(&n, &_mvt_df,
-	  &Lower[0], &Upper[0], 
-	  &infin[0], &Cor[0],
-	  &_mvt_delta[0], &_mvt_maxpts,
-	  &_mvt_abseps, &_mvt_releps,
-	  &_mvt_error[0], &val, &_mvt_inform);  
-  List res;
-  res["val"] = val;
-  return(res);
+  rowvec Lower0(p);
+  rowvec Upper0(p);
+  vec res(n);  
+  for  (unsigned i=0; i<n; i++) {
+    double val;
+    if (Lower.n_rows==n) {
+      Lower0 = Lower.row(i)-Mu.row(i);
+      Upper0 = Upper.row(i)-Mu.row(i);
+      infin.fill(2); // (a,b)
+      for (unsigned j=0; j<(unsigned)p; j++) {		
+	if (Upper0(0,j)==datum::inf) infin(j) = 1; // (a,Inf)
+	if (Lower0(0,j)==-datum::inf) {
+	  if (infin(j)==1) infin(j) = -1; // (-Inf,Inf)
+	  else infin(j) = 0; // (-Inf,b)
+	}
+      }
+    } else {
+      Lower0 = Lower.row(0)-Mu.row(i);
+      Upper0 = Upper.row(0)-Mu.row(i);
+    }
+    // We use that Phi(a,b,S,mu) = Phi(L(a-mu),L(b-mu),R,0); R=LSL
+    if (Sigma.n_rows!=(unsigned)p) {      
+      mat Sigma0 = Sigma.row(i);
+      Sigma0.reshape(p,p);
+      cov2cor0(Sigma0,Cor,L,notCor);
+    }
+    if (notCor) {
+      Lower0 = Lower0%L;
+      Upper0 = Upper0%L;
+    }
+    mvtdst(&p, &_mvt_df,
+	   &Lower0[0], &Upper0[0], 
+	   &infin[0], &Cor[0],
+	   &_mvt_delta[0], &_mvt_maxpts,
+	   &_mvt_abseps, &_mvt_releps,
+	   &_mvt_error[0], &val, &_mvt_inform);      
+    res(i) = val;
+  }
+  return(Rcpp::wrap(res));
+END_RCPP
 }
 
 
+////////////////////////////////////////////////// 
+// Bivariate case
+//////////////////////////////////////////////////
 RcppExport SEXP bvncdf(SEXP a, SEXP b, SEXP r) { 
   double u1=-Rcpp::as<double>(a);
   double u2=-Rcpp::as<double>(b);
@@ -515,4 +630,5 @@ double Sbvn(double &l1, double &l2,double &r) {
   double val = bvnd_(&l1, &l2, &r);
   return(val);
 }
+
 

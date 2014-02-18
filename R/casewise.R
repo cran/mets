@@ -8,13 +8,13 @@
 ##' @param p check that marginal probability is greater at some point than p
 ##' @author Thomas Scheike
 ##' @examples
+##' \donttest{
 ##' data(prt);
 ##' 
 ##' prt <- prt[which(prt$id %in% sample(unique(prt$id),7500)),]
 ##' ### marginal cumulative incidence of prostate cancer
 ##' times <- seq(60,100,by=2)
-##' outm <- comp.risk(Surv(time,status==0)~+1,data=prt,prt$status,
-##'                   causeS=2,times=times)
+##' outm <- comp.risk(Hist(time,status)~+1,data=prt,cause=2,times=times)
 ##' 
 ##' cifmz <- predict(outm,X=1,uniform=0,resample.iid=1)
 ##' cifdz <- predict(outm,X=1,uniform=0,resample.iid=1)
@@ -27,8 +27,8 @@
 ##' 
 ##' ### To compute casewise cluster argument must be passed on,
 ##' ###  here with a max of 100 to limit comp-time
-##' outm <-comp.risk(Surv(time,status==0)~+1,data=prt,prt$status,
-##'                  causeS=2,times=times,max.clust=100)
+##' outm <-comp.risk(Hist(time,status)~+1,data=prt,
+##'                  cause=2,times=times,max.clust=100)
 ##' cifmz <-predict(outm,X=1,uniform=0,resample.iid=1)
 ##' cc <-bicomprisk(Hist(time,status)~strata(zyg)+id(id),data=prt,
 ##'                 cause=c(2,2),se.clusters=outm$clusters)
@@ -41,6 +41,7 @@
 ##' plot(cmz,ylim=c(0,0.7),xlim=c(60,100))
 ##' par(new=TRUE)
 ##' plot(cdz,ylim=c(0,0.7),xlim=c(60,100))
+##' }
 ##' @export
 casewise.test <- function(conc,marg,test="no-test",p=0.01)
 { ## {{{

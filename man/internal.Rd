@@ -6,11 +6,14 @@
 \alias{corsim.prostate}
 \alias{familycluster.index}
 \alias{faster.reshape}
+\alias{loglikMVN}
 \alias{nonparcuminc}
 \alias{npc}
+\alias{pbvn}
 \alias{piecewise.data}
 \alias{piecewise.twostage}
 \alias{plotcr}
+\alias{pmvn}
 \alias{sim}
 \alias{simBinFam}
 \alias{simBinFam2}

@@ -3,8 +3,8 @@
 \title{Random effects model for competing risks data}
 \usage{
   random.cif(cif, data, cause, cif2 = NULL, cause1 = 1,
-    cause2 = 1, cens.code = 0, cens.model = "KM", Nit = 40,
-    detail = 0, clusters = NULL, theta = NULL,
+    cause2 = 1, cens.code = NULL, cens.model = "KM",
+    Nit = 40, detail = 0, clusters = NULL, theta = NULL,
     theta.des = NULL, step = 1, same.cens = FALSE,
     exp.link = 0, score.method = "nlminb", entry = NULL,
     trunkp = 1, ...)
@@ -27,7 +27,8 @@
 
   \item{cause2}{cause of second coordinate.}
 
-  \item{cens.code}{specificies the code for the censoring.}
+  \item{cens.code}{specificies the code for the censoring
+  if NULL then uses the one from the marginal cif model.}
 
   \item{cens.model}{specified which model to use for the
   ICPW, KM is Kaplan-Meier alternatively it may be "cox"}
@@ -90,8 +91,8 @@
 data(multcif)
 
 times <- seq(0.3,1,length=4)
-add<-comp.risk(Surv(time,cause>0)~+1+cluster(id),data=multcif,multcif$cause,
-               n.sim=0,causeS=1, times=times,max.clust=NULL)
+add<-comp.risk(Hist(time,cause)~+1+cluster(id),data=multcif,cause=1,
+               n.sim=0,times=times,max.clust=NULL)
 
 out1<-random.cif(add,data=multcif,cause1=1,cause2=1)
 summary(out1)
@@ -108,9 +109,9 @@ summary(out2)
 ## multcif$cause[multcif$cause==0] <- 2
 
 ## ###times<-sort(multcif$time[multcif$status \\\%in\\\% c(1,2)])
-## add1<-comp.risk(Surv(time,status>0)~const(X)+cluster(id),data=multcif,causeS=1,
+## add1<-comp.risk(Hist(time,status)~const(X)+cluster(id),data=multcif,cause=1,
 ## 		  multcif$cause,n.sim=0,times=times)
-## add2<-comp.risk(Surv(time,status>0)~const(X)+cluster(id),data=multcif,causeS=2,
+## add2<-comp.risk(Hist(time,status)~const(X)+cluster(id),data=multcif,cause=2,
 ## 		  multcif$cause,n.sim=0,times=times)
 
 ## out1<-random.cif(add1,data=multcif,cause1=1,cause2=2,cif2=add2)
