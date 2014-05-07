@@ -1,7 +1,8 @@
 ##' Liability-threshold model for twin data
 ##'
-##' @aliases biprobit cumh
+##' @aliases biprobit twinlm.time
 ##' @title Liability model for twin data
+##' @seealso \code{\link{twinlm}}, \code{\link{twinlm.time}}, \code{\link{twinlm.strata}}, \code{\link{twinsim}}
 ##' @param formula Formula specifying effects of covariates on the response.
 ##' @param data \code{data.frame} with one observation pr row. In
 ##'     addition a column with the zygosity (DZ or MZ given as a factor) of
@@ -15,8 +16,7 @@
 ##' corresponding to the dyzogitic twins. 
 ##' @param group Optional. Variable name defining group for interaction analysis (e.g., gender)
 ##' @param num Optional twin number variable
-##' @param weight Weight matrix if needed by the chosen estimator. For use
-##'     with Inverse Probability Weights
+##' @param weight Weight matrix if needed by the chosen estimator (IPCW)
 ##' @param biweight Function defining the bivariate weight in each cluster
 ##' @param strata Strata
 ##' @param messages Control amount of messages shown 
@@ -25,7 +25,7 @@
 ##'     performed. Should be a subset of "acde" (additive genetic factors, common
 ##'     environmental factors, dominant
 ##'     genetic factors, unique environmental factors).
-##' @param eqmean Equal means (with type="u")?
+##' @param eqmean Equal means (with type="cor")?
 ##' @param pairsonly Include complete pairs only?
 ##' @param stderr Should standard errors be calculated?
 ##' @param robustvar If TRUE robust (sandwich) variance estimates of the variance are used
@@ -66,7 +66,7 @@ bptwin <- function(formula, data, id, zyg, DZ, group=NULL,
                    bound=FALSE,
                    varlink,
                    ...) {
-
+    
 ###{{{ setup
 
   mycall <- match.call()
@@ -114,13 +114,15 @@ bptwin <- function(formula, data, id, zyg, DZ, group=NULL,
         } else control$method <- "nlminb"
       }
   }
+  if (tolower(type)=="cor") type <- "u"
   if (length(grep("flex",tolower(type)))>0) { type <- "u"; eqmean <- FALSE }
 
   yvar <- paste(deparse(formula[[2]]),collapse="")
   data <- data[order(data[,id]),]
   idtab <- table(data[,id])
   if (sum(idtab>2)) stop("More than two individuals with the same id ")
-  
+
+  ##  suppressMessages(browser())
   if (pairsonly) {
     data <- data[as.character(data[,id])%in%names(idtab)[idtab==2],]
     idtab <- table(data[,id])
@@ -154,14 +156,15 @@ bptwin <- function(formula, data, id, zyg, DZ, group=NULL,
   ## time <- "time"
   ## while (time%in%names(data)) time <- paste(time,"_",sep="")
   ## data[,time] <- unlist(lapply(idtab,seq))
-  
-  ## ff <- paste(as.character(formula)[3],"+",time,"+",id,"+",zyg)
-  ff <- paste(as.character(formula)[3],"+",
-              paste(c(id,zyg,weight,num),collapse="+"))
-  ff <- paste("~",yvar,"+",ff)
-  formula0 <- as.formula(ff)
+
+
+  ## ff <- paste(as.character(formula)[3],"+",
+  ##             paste(c(id,zyg,weight,num),collapse="+"))
+  ## ff <- paste("~",yvar,"+",ff)
+  ##formula0 <- as.formula(ff)
   opt <- options(na.action="na.pass")
-  Data <- model.matrix(formula0,data)
+  ##  Data <- model.matrix(formula0,data)
+  Data <- cbind(model.matrix(formula,data),data[,c(yvar,id,zyg,weight,num)])
   options(opt)
   ## rnames1 <- setdiff(colnames(Data),c(yvar,time,id,weight,zyg))
   rnames1 <- setdiff(colnames(Data),c(yvar,id,weight,zyg,num))
@@ -276,6 +279,8 @@ bptwin <- function(formula, data, id, zyg, DZ, group=NULL,
 
 ###{{{ Mean/Var function
 
+  ##  suppressMessages(browser())
+
   ##Marginals etc.
   MyData0 <- ExMarg(Y0,XX0,W0,dS0,eqmarg=TRUE,allmarg=allmarg)
   MyData1 <- ExMarg(Y1,XX1,W1,dS1,eqmarg=TRUE,allmarg=allmarg)
@@ -297,16 +302,14 @@ bptwin <- function(formula, data, id, zyg, DZ, group=NULL,
     MyData0$W0 <- cbind(apply(MyData0$W0,1,biweight))
     if (!is.null(MyData0$Y0_marg))
       MyData0$W0_marg <- cbind(apply(MyData0$W0_marg,1,biweight))
-  }
-  if (samecens & !is.null(weight)) {
+
     MyData1$W0 <- cbind(apply(MyData1$W0,1,biweight))
     if (!is.null(MyData1$Y0_marg))
-      MyData1$W0_marg <- cbind(apply(MyData1$W0_marg,1,biweight))
-  }
-  if (samecens & !is.null(weight)) {
+        MyData1$W0_marg <- cbind(apply(MyData1$W0_marg,1,biweight))
+
     MyData2$W0 <- cbind(apply(MyData2$W0,1,biweight))
     if (!is.null(MyData2$Y0_marg))
-      MyData2$W0_marg <- cbind(apply(MyData2$W0_marg,1,biweight))
+        MyData2$W0_marg <- cbind(apply(MyData2$W0_marg,1,biweight))
   }
 
   rm(Y0,XX0,W0,Y1,XX1,W1,Y2,XX2,W2)
@@ -364,8 +367,7 @@ bptwin <- function(formula, data, id, zyg, DZ, group=NULL,
     g <- suppressWarnings(glm(Y~-1+X,family=binomial(probit)))
     p0[midx] <- coef(g)
   }
-
-
+  
   U <- function(p,indiv=FALSE) {
     b0 <- cbind(p[bidx0])
     b1 <- cbind(p[bidx1])
@@ -626,8 +628,9 @@ bptwin <- function(formula, data, id, zyg, DZ, group=NULL,
                ACDU=ACDU[-4]*1)
   
   npar[unlist(lapply(npar,length))==0] <- 0
-  
-  val <- list(coef=cc,vcov=V,score=UU,logLik=attributes(UU)$logLik,opt=op,
+
+  val <- list(coef=cc,vcov=V,I=I,score=UU,logLik=attributes(UU)$logLik,opt=op,
+              id=Wide[,id], model.frame=Wide,
               Sigma0=S$Sigma0, Sigma1=S$Sigma1, Sigma2=S$Sigma2,
               dS0=dS0, dS1=dS1, dS2=dS2,
               N=N,
@@ -635,7 +638,7 @@ bptwin <- function(formula, data, id, zyg, DZ, group=NULL,
               vidx0=vidx0, vidx1=vidx1, vidx2=vidx2,
               eqmean=eqmean, I=I,J=J, robustvar=robustvar,
               transform=list(tr=mytr, invtr=myinvtr, dtr=dmytr,
-                name=trname, invname=invtrname),
+                  name=trname, invname=invtrname),
               SigmaFun=Sigma,
               npar=npar,
               OS=OSon
@@ -646,4 +649,7 @@ bptwin <- function(formula, data, id, zyg, DZ, group=NULL,
 
 ###}}} return
 
-
+##' @S3method model.frame bptwin
+model.frame.bptwin <- function(formula,...) {
+    formula$model.frame
+}

@@ -9,7 +9,7 @@
 ##' @param strata Strata
 ##' @param data data.frame
 ##' @param breaks Time intervals
-##' @param confint If TRUE 95% confidence limits are calculated
+##' @param confint If TRUE 95\% confidence limits are calculated
 ##' @param ... Additional arguments to lower level functions
 ##' @author Klaus K. Holst
 ##' @aliases lifetable lifetable.matrix lifetable.formula
@@ -24,7 +24,7 @@
 ##' data(TRACE)
 ##' \donttest{
 ##'     lifetable(Surv(time,status==9)~sex+I(cut(wmi,c(-Inf,1,1.5,Inf))),
-##'               data=TRACE,breaks=c(0.2,0.5),confint=TRUE)
+##'               data=TRACE,breaks=c(0.2),confint=TRUE)
 ##' }
 ##' 
 ##' d <- with(TRACE,lifetable(Surv(time,status==9)~sex+vf,breaks=c(0.2,0.5)))
@@ -113,10 +113,10 @@ LifeTable <- function(time,status,entry=NULL,strata=list(),breaks=c(),confint=FA
                       interval=as.factor(c(breaks,Inf)),
                       rate=events/atrisk)
     if (confint) {
-        f <- events ~ offset(log(atrisk))
-        if (length(breaks)>0) f <- update(f,.~.+factor(interval)-1)
-        g <- glm(f,data=res,poisson)
-        ci <- rbind(exp(stats::confint(g)))
+        ff <- events ~ offset(log(atrisk))
+        if (length(breaks)>0) ff <- update(ff,.~.+factor(interval)-1)
+        g <- glm(ff,data=res,poisson)
+        suppressMessages(ci <- rbind(exp(stats::confint(g))))
         res[,"2.5%"] <- ci[,1]
         res[,"97.5%"] <- ci[,2]
     }

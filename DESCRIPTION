@@ -1,8 +1,8 @@
 Package: mets
 Type: Package
 Title: Analysis of Multivariate Event Times
-Version: 0.2.7
-Date: 2014-02-18
+Version: 0.2.8
+Date: 2014-05-07
 Author: Klaus K. Holst and Thomas Scheike
 Maintainer: Klaus K. Holst <kkho@biostat.ku.dk>
 Description: Implementation of various statistical models for multivariate
@@ -18,20 +18,8 @@ Depends: R (>= 2.15), timereg (>= 1.8.4), lava (>= 1.2.4)
 Imports: numDeriv, compiler, Rcpp, splines
 Suggests: lava.tobit (>= 0.4-7), prodlim, testthat, ucminf
 LinkingTo: Rcpp, RcppArmadillo
-Collate: 'biprobit.R' 'biprobit.strata.R' 'pmvn.R' 'claytonakes.R'
-        'coef.biprobit.R' 'cumh.R' 'Dbvn.R' 'fastapprox.R' 'ipw.R'
-        'logLik.biprobit.R' 'npc.R' 'onload.R' 'plot.bptwin.R'
-        'plotcr.R' 'print.biprobit.R' 'print.summary.biprobit.R'
-        'score.biprobit.R' 'sim.bptwin.R' 'sim.clayton.oakes.R'
-        'summary.biprobit.R' 'summary.bptwin.R' 'uniprobit.R' 'utils.R'
-        'vcov.biprobit.R' 'bicomprisk.R' 'event.R' 'procformula.R'
-        'twinlm.R' 'twinlm2.R' 'twinsim.R' 'methodstwinlm.R'
-        'sim-nordic-twin.R' 'twostage.R' 'aalenfrailty.R'
-        'surv.boxarea.R' 'casewise.R' 'cor.R' 'fastpattern.R'
-        'fastreshape.R' 'binomial.twostage.R' 'clusterindex-reshape.R'
-        'bptwin.R' 'prop-odds.R' 'phreg.R' 'lifetable.R'
-        'mets-package.R' 'bptwin2.R' 'normal0.R'
-Packaged: 2014-02-20 06:17:28 UTC; klaus
+Roxygen: list(wrap = FALSE)
+Packaged: 2014-05-13 09:52:53 UTC; klaus
 NeedsCompilation: yes
 Repository: CRAN
-Date/Publication: 2014-02-20 07:37:26
+Date/Publication: 2014-05-13 14:57:03

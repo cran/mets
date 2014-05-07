@@ -21,18 +21,21 @@ pbvn <- function(upper,rho,sigma) {
 ## pmvn(lower=lower,upper=upper,mu=mu,sigma=sigma)
 
 ##' @export
-pmvn <- function(lower,upper,mu=rep(0,ncol(sigma)),sigma,notcor=TRUE) {
+pmvn <- function(lower,upper,mu,sigma,cor=FALSE) {
     if (missing(sigma)) stop("Specify variance matrix 'sigma'")
     if (missing(lower)) {
         if (missing(upper)) stop("Lower or upper integration bounds needed")
         lower <- upper; lower[] <- -Inf
     }
-    p <- ncol(rbind(mu))
+    p <- ncol(rbind(lower))
     if (missing(upper)) {
         upper <- lower; upper[] <- Inf
     }
-    if (ncol(rbind(sigma))!=p)
-        stop("Incompatible dimensions of mean and variance")
+    if (missing(mu)) mu <- rep(0,p)
+    sigma <- rbind(sigma)
+    ncor <- p*(p-1)/2
+    if (ncol(sigma)!=p && ncol(sigma)!=ncor)
+        stop("Incompatible dimensions of mean and variance")    
     if (ncol(rbind(lower))!=p || ncol(rbind(upper))!=p)
         stop("Incompatible integration bounds")    
     arglist <- list("pmvn",
@@ -40,7 +43,7 @@ pmvn <- function(lower,upper,mu=rep(0,ncol(sigma)),sigma,notcor=TRUE) {
                     upper=rbind(upper),
                     mu=rbind(mu),
                     sigma=rbind(sigma),
-                    notcor=as.logical(notcor[1]))
+                    cor=as.logical(cor[1]))
     res <- do.call(".Call",arglist)
     return(as.vector(res))
 }
