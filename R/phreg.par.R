@@ -234,6 +234,19 @@ info.gengamma <- function(...) {
 
 ###}}} Generalized-Gamma
 
+##' @export
+predict.phreg.par <- function(object,p=coef(object),X=object$X,time=object$time,...) {
+    info <- do.call(paste("info",object$model,sep="."),list())
+    cc <- coef(object)
+    eta <- 0
+    if (length(cc)>info$npar) {
+        eta <- X%*%cc[-seq(info$npar)]
+    } 
+    exp(-(info$cumhaz(time,info$partrans(p))*exp(eta)))
+}
+
+
+
 ###{{{ phreg.par + methods
 
 ##' @export
@@ -262,12 +275,12 @@ phreg.par <- function(formula,data=parent.frame(),
         }
         id <- strata <- NULL
         if (!is.null(attributes(Terms)$specials$cluster)) {
-            ts <- untangle.specials(Terms, "cluster")
+            ts <- survival::untangle.specials(Terms, "cluster")
             Terms  <- Terms[-ts$terms]
             id <- m[[ts$vars]]
         }
         if (!is.null(stratapos <- attributes(Terms)$specials$strata)) {
-            ts <- untangle.specials(Terms, "strata")
+            ts <- survival::untangle.specials(Terms, "strata")
             Terms  <- Terms[-ts$terms]
             strata <- m[[ts$vars]]
         }  
@@ -331,55 +344,55 @@ phreg.par <- function(formula,data=parent.frame(),
   structure(list(call=match.call(), coef=coefs[,1],
                  coefmat=coefs, vcov=V,
                  formula=eval(formula),
+                 nevent=sum(status),
                  model=model,
                  time=time, status=status, X=X),class=c("phreg.par","phreg"))
 }
 
 
-##' @S3method print phreg.par
-print.phreg.par <- function(x,...) {
-    cat("Call:\n")
-    dput(x$call)
-    printCoefmat(x$coefmat,...)
-}
+##' @export
+print.phreg.par <- function(x,...) { 	 
+    cat("Call:\n") 	 
+    dput(x$call) 	 
+    printCoefmat(x$coefmat,...) 	 
+} 	 
 
-##' @S3method vcov phreg.par
-vcov.phreg.par <- function(object,...) {
-    object$vcov
-}
+##' @export
+vcov.phreg.par <- function(object,...) { 	 
+    object$vcov 	 
+} 	 
 
-##' @S3method coef phreg.par
-coef.phreg.par <- function(object,...) {
-    object$coef
-}
+##' @export
+coef.phreg.par <- function(object,...) { 	 
+    object$coef 	 
+} 	 
+	  	 
+##' @export
+iid.phreg.par <- function(x,p=coef(x),...) { 	 
+    iI <- vcov(x) 	 
+    U <- do.call(paste("score",x$model,sep="."),list(theta=p,time=x$time,status=x$status,X=x$X,indiv=TRUE)) 	 
+    res <- (U)%*%iI; colnames(res) <- names(coef(x)) 	 
+    structure(res, iI=iI) 	 
+} 	 
 
-##' @S3method iid phreg.par
-iid.phreg.par <- function(x,p=coef(x),...) {
-    iI <- vcov(x)    
-    U <- do.call(paste("score",x$model,sep="."),list(theta=p,time=x$time,status=x$status,X=x$X,indiv=TRUE))
-    res <- (U)%*%iI; colnames(res) <- names(coef(x))
-    structure(res, iI=iI)
-}
+##' @export
+logLik.phreg.par <- function(object,p=coef(object),...) { 	 
+    do.call(paste("logl",object$model,sep="."),list(theta=p,object$time,object$status,object$X,...)) 	 
+	 } 	 
 
-##' @S3method logLik phreg.par
-logLik.phreg.par <- function(object,p=coef(object),...) {
-    do.call(paste("logl",object$model,sep="."),list(theta=p,object$time,object$status,object$X,...))
-}
+##' @export
+model.frame.phreg.par <- function(formula,...) { 	 
+    formula$X 	 
+} 	 
 
-##' @S3method model.frame phreg.par
-model.frame.phreg.par <- function(formula,...) {
-    formula$X
-}
+##' @export
+predict.phreg.par <- function(object,p=coef(object),X=object$X,time=object$time,...) { 	 
+    info <- do.call(paste("info",object$model,sep="."),list()) 	 
+    cc <- coef(object) 	 
+    eta <- 0 	 
+    if (length(cc)>info$npar) { 	 
+        eta <- X%*%cc[-seq(info$npar)] 	 
+    } 	 
+    exp(-(info$cumhaz(time,info$partrans(p))*exp(eta))) 	 
+} 	 
 
-##' @S3method predict phreg.par
-predict.phreg.par <- function(object,p=coef(object),X=object$X,time=object$time,...) {
-    info <- do.call(paste("info",object$model,sep="."),list())
-    cc <- coef(object)
-    eta <- 0
-    if (length(cc)>info$npar) {
-        eta <- X%*%cc[-seq(info$npar)]
-    } 
-    exp(-(info$cumhaz(time,info$partrans(p))*exp(eta)))
-}
-
-###}}} phreg.par + methods

@@ -1,6 +1,5 @@
 ##' @export
 `lifetable` <- function(x,...) UseMethod("lifetable")
-    
 
 ##' Create simple life table 
 ##' 
@@ -27,10 +26,10 @@
 ##'               data=TRACE,breaks=c(0.2),confint=TRUE)
 ##' }
 ##' 
-##' d <- with(TRACE,lifetable(Surv(time,status==9)~sex+vf,breaks=c(0.2,0.5)))
-##' summary(glm(events ~ offset(log(atrisk))+interval*vf + sex*vf,
+##' d <- with(TRACE,lifetable(Surv(time,status==9)~sex+vf,breaks=c(0,0.2,0.5,8.5)))
+##' summary(glm(events ~ offset(log(atrisk))+factor(int.end)*vf + sex*vf,
 ##'             data=d,poisson))
-##' @S3method lifetable matrix
+##' @export
 lifetable.matrix <- function(x,strata=list(),breaks=c(),confint=FALSE,...) {
     if (ncol(x)==3) {
         status <- x[,3]
@@ -44,7 +43,7 @@ lifetable.matrix <- function(x,strata=list(),breaks=c(),confint=FALSE,...) {
     LifeTable(time,status,entry,strata,breaks,confint,...)
 }
 
-##' @S3method lifetable formula
+##' @export
 lifetable.formula <- function(x,data=parent.frame(),breaks=c(),confint=FALSE,...) {
     cl <- match.call()
     mf <- model.frame(x,data)
@@ -87,18 +86,34 @@ LifeTable <- function(time,status,entry=NULL,strata=list(),breaks=c(),confint=FA
     if (length(strata)>0) {
         a <- by(cbind(entry,time,status), strata,
                 FUN=LifeTable, breaks=breaks, confint=confint)
+        cl <- lapply(strata,class)
+        nulls <- which(unlist(lapply(a,is.null)))
         nn <- do.call("expand.grid",attributes(a)$dimnames)
+        if (length(nulls)>0) nn <- nn[-nulls,,drop=FALSE]
         nam <- nn[rep(seq(NROW(nn)),each=NROW(a[[1]])),,drop=FALSE]
-        res <- cbind(Reduce("rbind",a),nam)
+        xx <- list()
+        for (i in seq(ncol(nam))) {
+            xx <- c(xx, list(do.call(paste("as.",as.character(cl[i]),sep=""),list(nam[,i]))))
+        }
+        xx <- as.data.frame(xx); colnames(xx) <- colnames(nam)
+        res <- Reduce("rbind",a)
+        res <- cbind(res,xx)
         return(res)
-    }    
-    if (length(breaks)>0) breaks <- sort(unique(breaks))
-    en <- matrix(unlist(lapply(c(-Inf, breaks),function(x) pmax(x,entry))),
-                  ncol=length(breaks)+1)
-    ex <- matrix(unlist(lapply(c(breaks, Inf),function(x) pmin(x,time))),
-                  ncol=length(breaks)+1)    
+    }
+    if (length(breaks)==0) breaks <- c(0,max(time,na.rm=TRUE))
+    if (length(breaks)==1) breaks <- c(0,breaks)
+    breaks <- sort(unique(breaks))
+    ## en <- matrix(unlist(lapply(c(-Inf, breaks),function(x) pmax(x,entry))),
+    ##               ncol=length(breaks)+1)
+    ## ex <- matrix(unlist(lapply(c(breaks, Inf),function(x) pmin(x,time))),
+    ##               ncol=length(breaks)+1)
+    en <- matrix(unlist(lapply(breaks[-length(breaks)],function(x) pmax(x,entry))),
+                  ncol=length(breaks)-1)
+    ex <- matrix(unlist(lapply(breaks[-1],function(x) pmin(x,time))),
+                  ncol=length(breaks)-1)
     dur <- ex-en
-    endur <- rbind(c(breaks,Inf))%x%cbind(rep(1,nrow(en)))-en
+    endur <- rbind(breaks[-1])%x%cbind(rep(1,nrow(en)))-en
+    ##endur <- rbind(c(breaks,Inf))%x%cbind(rep(1,nrow(en)))-en
     dur[dur<0] <- NA
     enter <- colSums(!is.na(dur))
     atrisk <- colSums(dur,na.rm=TRUE)
@@ -106,15 +121,21 @@ LifeTable <- function(time,status,entry=NULL,strata=list(),breaks=c(),confint=FA
     eventcens <- rbind(apply(dur<endur,2,function(x) x*(status+1)))
     lost <- colSums(eventcens==1,na.rm=TRUE)
     events <- colSums(eventcens==2,na.rm=TRUE)
-    res <- data.frame(enter=enter,
-                      atrisk=atrisk,
-                      lost=lost,
-                      events=events,
-                      interval=as.factor(c(breaks,Inf)),
-                      rate=events/atrisk)
+    res <- subset(data.frame(enter=enter,
+                             atrisk=atrisk,
+                             lost=lost,
+                             events=events,
+                             ## int.start=c(-Inf,breaks),
+                             ## int.end=c(breaks,Inf),
+                             int.start=breaks[-length(breaks)],
+                             int.end=breaks[-1],
+                             surv=0,
+                             rate=events/atrisk))
+    cumsum.na <- function(x,...) { x[is.na(x)] <- 0; cumsum(x) }
+    res$surv <- with(res, exp(-cumsum.na(rate*(int.end-int.start))))    
     if (confint) {
         ff <- events ~ offset(log(atrisk))
-        if (length(breaks)>0) ff <- update(ff,.~.+factor(interval)-1)
+        if (length(breaks)>2) ff <- update(ff,.~.+factor(int.end)-1)
         g <- glm(ff,data=res,poisson)
         suppressMessages(ci <- rbind(exp(stats::confint(g))))
         res[,"2.5%"] <- ci[,1]

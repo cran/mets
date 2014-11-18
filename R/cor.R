@@ -10,8 +10,8 @@ dep.cif<-function(cif,data,cause,model="OR",cif2=NULL,times=NULL,
   notaylor<-1; flex.func<-0; 
 
   ## extract design and time and cause from cif object 
-  time <- cif$response[,"time"]
-  if (missing(cause)) cause <- attr(cif,"cause"); 
+  time <- cif$response[,"exit"]
+  if (missing(cause)) cause <- cif$response[,"cause"]  ##  attr(cif,"cause"); 
   cause <- as.numeric(cause)
   if (is.null(cens.code)) cens.code <- attr(cif,"cens.code")
   delta<-(cause!=cens.code)
@@ -68,7 +68,7 @@ dep.cif<-function(cif,data,cause,model="OR",cif2=NULL,times=NULL,
   if (cens.model!="user.weights") {
     if (is.null(cens.weight) ) {
       if (cens.model=="KM") { ## {{{
-        ud.cens<-survfit(Surv(time,cause==cens.code)~+1); 
+        ud.cens<-survival::survfit(Surv(time,cause==cens.code)~+1); 
         Gfit<-cbind(ud.cens$time,ud.cens$surv)
         Gfit<-rbind(c(0,1),Gfit); 
         Gcx<-Cpred(Gfit,time)[,2];
@@ -466,9 +466,9 @@ dep.cif<-function(cif,data,cause,model="OR",cif2=NULL,times=NULL,
 ##' theta.des <- model.matrix(~-1+factor(zyg))
 ##' 
 ##' times=seq(0.05,1,by=0.05) # to speed up computations use only these time-points
-##' add<-comp.risk(Hist(time,cause)~+1+cluster(id),data=multcif,cause=1,
+##' add<-comp.risk(Event(time,cause)~+1+cluster(id),data=multcif,cause=1,
 ##'                n.sim=0,times=times,model="fg",max.clust=NULL)
-##' add2<-comp.risk(Hist(time,cause)~+1+cluster(id),data=multcif,cause=2,
+##' add2<-comp.risk(Event(time,cause)~+1+cluster(id),data=multcif,cause=2,
 ##'                n.sim=0,times=times,model="fg",max.clust=NULL)
 ##' 
 ##' out1<-cor.cif(add,data=multcif,cause1=1,cause2=1)
@@ -489,7 +489,7 @@ dep.cif<-function(cif,data,cause,model="OR",cif2=NULL,times=NULL,
 ##' table(prt$status)
 ##' 
 ##' times <- seq(40,100,by=10)
-##' cifmod <- comp.risk(Hist(time,cause)~+1+cluster(id),data=prt,
+##' cifmod <- comp.risk(Event(time,cause)~+1+cluster(id),data=prt,
 ##'                     cause=1,n.sim=0,
 ##'                     times=times,conservative=1,max.clust=NULL,model="fg")
 ##' theta.des <- model.matrix(~-1+factor(zyg),data=prt)
@@ -656,7 +656,7 @@ or.cif<-function(cif,data,cause,cif2=NULL,times=NULL,
 ##' data(multcif)
 ##' 
 ##' times <- seq(0.3,1,length=4)
-##' add<-comp.risk(Hist(time,cause)~+1+cluster(id),data=multcif,cause=1,
+##' add<-comp.risk(Event(time,cause)~+1+cluster(id),data=multcif,cause=1,
 ##'                n.sim=0,times=times,max.clust=NULL)
 ##' 
 ##' out1<-random.cif(add,data=multcif,cause1=1,cause2=1)
@@ -674,9 +674,9 @@ or.cif<-function(cif,data,cause,cif2=NULL,times=NULL,
 ##' ## multcif$cause[multcif$cause==0] <- 2
 ##' 
 ##' ## ###times<-sort(multcif$time[multcif$status \%in\% c(1,2)])
-##' ## add1<-comp.risk(Hist(time,status)~const(X)+cluster(id),data=multcif,cause=1,
+##' ## add1<-comp.risk(Event(time,status)~const(X)+cluster(id),data=multcif,cause=1,
 ##' ## 		  multcif$cause,n.sim=0,times=times)
-##' ## add2<-comp.risk(Hist(time,status)~const(X)+cluster(id),data=multcif,cause=2,
+##' ## add2<-comp.risk(Event(time,status)~const(X)+cluster(id),data=multcif,cause=2,
 ##' ## 		  multcif$cause,n.sim=0,times=times)
 ##' 
 ##' ## out1<-random.cif(add1,data=multcif,cause1=1,cause2=2,cif2=add2)
@@ -787,7 +787,7 @@ random.cif<-function(cif,data,cause,cif2=NULL,
 ##' @examples
 ##' data(multcif)
 ##' multcif$cause[multcif$cause==0] <- 2
-##' addm<-comp.risk(Hist(time,cause)~const(X)+cluster(id),data=multcif,
+##' addm<-comp.risk(Event(time,cause)~const(X)+cluster(id),data=multcif,
 ##'               cause=1,n.sim=0)
 ##'
 ##' ### making group indidcator 
@@ -845,7 +845,7 @@ fit <- dep.cif(cif=cif,data=data,cause=cause,model="ARANCIF",cif2=cif2,times=tim
     fit
 } ## }}}
 
-##' @S3method print summary.cor
+##' @export
 print.summary.cor <- function(x,digits=3,...)
 { ## {{{
   if (x$type=="cor") {
@@ -902,8 +902,8 @@ print.summary.cor <- function(x,digits=3,...)
 ##' multcif$cause[multcif$cause==0] <- 2
 ##' 
 ##' times=seq(0.05,3,by=0.1) # to speed up computations use only these time-points
-##' add<-comp.risk(Hist(time,cause)~const(X)+cluster(id),data=multcif,
-##'                n.sim=0,times=times)
+##' add<-comp.risk(Event(time,cause)~const(X)+cluster(id),data=multcif,
+##'                n.sim=0,times=times,cause=1)
 ##' ###
 ##' out1<-cor.cif(add,data=multcif,cause1=1,cause2=1,theta=log(2+1))
 ##' summary(out1)
@@ -962,7 +962,7 @@ summary.cor <- function(object,marg.cif=NULL,marg.cif2=NULL,digits=3,...) { ## {
   res
 } ## }}}
 
-##' @S3method coef cor
+##' @export
 coef.cor <- function(object,...)
 { ## {{{
   res <- cbind(object$theta, diag(object$var.theta)^0.5)
@@ -979,7 +979,7 @@ coef.cor <- function(object,...)
   return(res)
 } ## }}}
 
-##' @S3method print cor
+##' @export
 print.cor<-function(x,digits=3,...)
 { ## {{{
   print(x$call); 
@@ -1115,7 +1115,7 @@ plack.cif2 <- function(cif1,cif2,theta)
   return(valr); 
 } ## }}}
 
-##' @S3method summary randomcif
+##' @export
 summary.randomcif<-function (object, ...) 
 { ## {{{
   if (!inherits(object, "randomcif")) 
@@ -1129,7 +1129,7 @@ summary.randomcif<-function (object, ...)
   coef.randomcif(object, ...)
 } ## }}}
 
-##' @S3method coef randomcif
+##' @export
 coef.randomcif<- function (object, digits = 3, ...) 
 { ## {{{
   res <- cbind(object$theta, diag(object$var.theta)^0.5)
@@ -1143,12 +1143,12 @@ coef.randomcif<- function (object, digits = 3, ...)
   prmatrix(signif(res, digits))
 } ## }}}
 
-##' @S3method print randomcif
+##' @export
 print.randomcif<- function (x , digits = 3, ...) 
 { ## {{{
 } ## }}}
 
-##' @S3method summary randomcifrv
+##' @export
 summary.randomcifrv<-function (object, ...) 
 { ## {{{
     if (!inherits(object, "randomcifrv")) 
@@ -1163,7 +1163,7 @@ summary.randomcifrv<-function (object, ...)
     coef.randomcifrv(object, ...)
 } ## }}}
 
-##' @S3method coef randomcifrv
+##' @export
 coef.randomcifrv<- function (object, digits = 3, ...) 
 { ## {{{
     if (attr(object,"inverse")==1) elog <- 1 else elog  <- 0; 
@@ -1202,7 +1202,7 @@ coef.randomcifrv<- function (object, digits = 3, ...)
 
 } ## }}}
 
-##' @S3method print randomcifrv
+##' @export
 print.randomcifrv<- function (x , digits = 3, ...) 
 { ## {{{
  summary(x, ...)

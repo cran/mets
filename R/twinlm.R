@@ -27,12 +27,14 @@
 ##' ace2 <- twinlm(y ~ x1+x2, data=d, DZ="DZ", zyg="zyg", id="id", type="ace")
 ##' ## Summary/GOF
 ##' summary(ace2)
+##' \donttest{
 ##' ## An interaction could be analyzed as:
 ##' ace3 <- twinlm(y ~ x1+x2 + x1:I(x2<0), data=d, DZ="DZ", zyg="zyg", id="id", type="ace")
 ##' ace3
-##' ## Categorical variables are also supported
+##' ## Categorical variables are also supported##' 
 ##' d2 <- transform(d,x2cat=cut(x2,3,labels=c("Low","Med","High")))
 ##' ace4 <- twinlm(y ~ x1+x2cat, data=d2, DZ="DZ", zyg="zyg", id="id", type="ace")
+##' }
 ##' ## plot the model structure
 ##' \dontrun{
 ##' plot(ace4)
@@ -212,12 +214,12 @@ twinlm <- function(formula, data, id, zyg, DZ, group=NULL,
   if (is.null(estimator)) return(multigroup(mm, dd, missing=TRUE,fix=FALSE,keep=newkeep,type=2))
   optim <- list(method="nlminb2",refit=FALSE,gamma=1,start=rep(0.1,length(coef(mm[[1]]))*length(mm)))
 
-    optim$start <- twinlmStart(formula,na.omit(mf),type,hasIntercept,surv=is.Surv(data[,yvar]),model=mm, group=levgrp, group.equal=group.equal)
+    optim$start <- twinlmStart(formula,na.omit(mf),type,hasIntercept,surv=inherits(data[,yvar],"Surv"),model=mm, group=levgrp, group.equal=group.equal)
   if (length(control)>0) {
     optim[names(control)] <- control
   }
 
-  if (is.Surv(data[,yvar])) {
+  if (inherits(data[,yvar],"Surv")) {
     require("lava.tobit")
     if (is.null(optim$method))
        optim$method <- "nlminb1"
@@ -229,7 +231,7 @@ twinlm <- function(formula, data, id, zyg, DZ, group=NULL,
   if (!is.null(optim$refit) && optim$refit) {
     optim$method <- "NR"
     optim$start <- pars(e)
-    if (is.Surv(data[,yvar])) {
+    if (inherits(data[,yvar],"Surv")) {
         suppressWarnings(e <- estimate(mm,dd,estimator=estimator,fix=FALSE,control=optim,...))
     } else {
         suppressWarnings(e <- estimate(mm,dd,weight=weight,estimator=estimator,fix=FALSE,control=optim,...))
@@ -465,7 +467,7 @@ twinsem1 <- function(outcomes,groups=NULL,levels=NULL,covars=NULL,type="ace",dat
 
 twinlmStart <- function(formula,mf,type,hasIntercept,surv=FALSE,model,group=NULL,group.equal,...)  {
     if (surv) {
-        l <- survreg(formula,mf,dist="gaussian")
+        l <- survival::survreg(formula,mf,dist="gaussian")
         beta <- coef(l)
         sigma <- l$scale
     } else {

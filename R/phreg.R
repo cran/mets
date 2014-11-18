@@ -15,6 +15,8 @@ phreg0 <- function(X,entry,exit,status,id=NULL,strata=NULL,beta,stderr=TRUE,meth
                        entry[ii],exit[ii],status[ii],
                        as.matrix(X)[ii,,drop=FALSE],
                        id[ii],
+                       !is.null(id),
+                       !is.null(entry),
                        package="mets"))
     if (!is.null(id))
       id <- unlist(lapply(dd,function(x) x$id[x$jumps+1]))
@@ -40,7 +42,13 @@ phreg0 <- function(X,entry,exit,status,id=NULL,strata=NULL,beta,stderr=TRUE,meth
       structure(-ploglik,gradient=-gradient,hessian=-hessian)
     }
   } else {
-      dd <- .Call("FastCoxPrep",entry,exit,status,X,id,package="mets")
+      browser()      
+      system.time(dd <- .Call("mets_FastCoxPrep",
+                              entry,exit,status,X,
+                              as.integer(seq_along(entry)),
+                              is.null(id),
+                              !is.null(entry),
+                              package="mets"))
       if (!is.null(id))
           id <- dd$id[dd$jumps+1]
       obj <- function(pp,U=FALSE,all=FALSE) {
@@ -54,13 +62,13 @@ phreg0 <- function(X,entry,exit,status,id=NULL,strata=NULL,beta,stderr=TRUE,meth
               val$nevent <- length(val$S0)
               return(val)
           }
-      with(val, structure(-ploglik,gradient=-gradient,hessian=-hessian))
+          with(val, structure(-ploglik,gradient=-gradient,hessian=-hessian))
       }
   }
   opt <- NULL
   if (p>0) {      
       if (tolower(method)=="nr") {
-          opt <- lava:::NR(beta,obj,...)
+          opt <- lava::NR(beta,obj,...)
           opt$estimate <- opt$par
       } else {
           opt <- nlm(obj,beta,...)
@@ -132,7 +140,7 @@ simCox <- function(n=1000, seed=1, beta=c(1,1), entry=TRUE) {
 ##'   else d <- subset(d, time>entry,select=-c(T,C))
 ##'   return(d)
 ##' }
-##' 
+##' \dontrun{
 ##' n <- 1e3;
 ##' d <- mets:::simCox(n); d$id <- seq(nrow(d)); d$group <- factor(rbinom(nrow(d),1,0.5))
 ##' 
@@ -140,15 +148,15 @@ simCox <- function(n=1000, seed=1, beta=c(1,1), entry=TRUE) {
 ##' (m2 <- coxph(Surv(entry,time,status)~X1+X2+cluster(id),data=d))
 ##' (coef(m3 <-cox.aalen(Surv(entry,time,status)~prop(X1)+prop(X2),data=d)))
 ##' 
-##' \dontrun{
+##' 
 ##' (m1b <- phreg(Surv(entry,time,status)~X1+X2+strata(group),data=d))
 ##' (m2b <- coxph(Surv(entry,time,status)~X1+X2+cluster(id)+strata(group),data=d))
 ##' (coef(m3b <-cox.aalen(Surv(entry,time,status)~-1+group+prop(X1)+prop(X2),data=d)))
-##' }
 ##' 
 ##' m <- phreg(Surv(entry,time,status)~X1*X2+strata(group)+cluster(id),data=d)
 ##' m
 ##' plot(m,ylim=c(0,1))
+##' }
 phreg <- function(formula,data,...) {
   cl <- match.call()
   m <- match.call(expand.dots = TRUE)[1:3]
@@ -170,12 +178,12 @@ phreg <- function(formula,data,...) {
   }
   id <- strata <- NULL
   if (!is.null(attributes(Terms)$specials$cluster)) {
-    ts <- untangle.specials(Terms, "cluster")
+    ts <- survival::untangle.specials(Terms, "cluster")
     Terms  <- Terms[-ts$terms]
     id <- m[[ts$vars]]
   }
   if (!is.null(stratapos <- attributes(Terms)$specials$strata)) {
-    ts <- untangle.specials(Terms, "strata")
+    ts <- survival::untangle.specials(Terms, "strata")
     Terms  <- Terms[-ts$terms]
     strata <- m[[ts$vars]]
   }  
@@ -192,7 +200,8 @@ phreg <- function(formula,data,...) {
 ###}}} phreg
 
 ###{{{ vcov
-##' @S3method vcov phreg
+
+##' @export
 vcov.phreg  <- function(object,...) {    
   res <- crossprod(ii <- iid(object,...))
   attributes(res)$ncluster <- attributes(ii)$ncluster
@@ -200,17 +209,21 @@ vcov.phreg  <- function(object,...) {
   colnames(res) <- rownames(res) <- names(coef(object))
   res
 }
+
 ###}}} vcov
 
 ###{{{ coef
-##' @S3method coef phreg
+
+##' @export
 coef.phreg  <- function(object,...) {
   object$coef
 }
+
 ###}}} coef
 
 ###{{{ iid
-##' @S3method iid phreg
+
+##' @export
 iid.phreg  <- function(x,...) {
     invhess <- solve(x$hessian)
   ncluster <- NULL
@@ -226,13 +239,15 @@ iid.phreg  <- function(x,...) {
   }
   structure(UU%*%invhess,invhess=invhess,ncluster=ncluster)
 }
+
 ###}}}
 
 ###{{{ summary
-##' @S3method summary phreg
+
+##' @export
 summary.phreg <- function(object,se="robust",...) {
   cc <- ncluster <- NULL
-  if (object$p>0) {
+  if (length(object$p)>0) {
     I <- -solve(object$hessian)
     V <- vcov(object)
     cc <- cbind(coef(object),diag(V)^0.5,diag(I)^0.5)
@@ -252,10 +267,12 @@ summary.phreg <- function(object,se="robust",...) {
   class(res) <- "summary.phreg"
   res
 }
+
 ###}}} summary
 
 ###{{{ print.summary
-##' @S3method print summary.phreg
+
+##' @export
 print.summary.phreg  <- function(x,max.strata=5,...) {
   cat("\n")
   nn <- cbind(x$n, x$nevent)
@@ -274,6 +291,7 @@ print.summary.phreg  <- function(x,max.strata=5,...) {
   }
   cat("\n")
 }
+
 ###}}} print.summary
 
 ###{{{ predict
@@ -308,7 +326,7 @@ predictPhreg <- function(jumptimes,S0,beta,time=NULL,X=NULL,surv=FALSE,...) {
     return(chaz)
 }
 
-##' @S3method predict phreg
+##' @export
 predict.phreg  <- function(object,data,surv=FALSE,time=object$exit,X=object$X,strata=object$strata,...) {
     if (!is.null(object$strata)) {
         lev <- levels(object$strata)
@@ -336,11 +354,12 @@ predict.phreg  <- function(object,data,surv=FALSE,time=object$exit,X=object$X,st
     }
     return(chaz)
 }
+
 ###}}} predict
 
 ###{{{ plot
 
-##' @S3method plot phreg
+##' @export
 plot.phreg  <- function(x,surv=TRUE,X=NULL,time=NULL,add=FALSE,...) {
     if (!is.null(X) && nrow(X)>1) {
         P <- lapply(split(X,seq(nrow(X))),function(xx) predict(x,X=xx,time=time,surv=surv))
@@ -370,7 +389,7 @@ plot.phreg  <- function(x,surv=TRUE,X=NULL,time=NULL,add=FALSE,...) {
 ###}}} plot
 
 ###{{{ print
-##' @S3method print phreg
+##' @export
 print.phreg  <- function(x,...) {
   cat("Call:\n")
   dput(x$call)

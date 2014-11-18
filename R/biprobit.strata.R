@@ -2,36 +2,43 @@ do.twinlm.strata <- function(x,fun,...) {
   res <- lapply(x$model,function(m) do.call(fun,c(list(m),list(...))))
   names(res) <- names(x$model)
   class(res) <- "do.twinlm.strata"
+  newattr <- setdiff(names(attributes(x)),names(attributes(res)))
+  attributes(res) <- c(attributes(res),attributes(x)[newattr])
   return(res)
 }
 
-##' @S3method print do.twinlm.strata
+##' @export
 print.do.twinlm.strata <- function(x,...) {
   for (i in seq_len(length(x))) {    
     message(rep("-",60),sep="")
     message("Strata '",names(x)[i],"'",sep="")
     print(x[[i]])
   }
+  if (!is.null(attributes(x)$time)) {
+      message(rep("-",60),sep="")
+      cat("\n")
+      cat("Event of interest before time ", attributes(x)$time, "\n", sep="")      
+  }
   return(invisible(x))
 }
 
 
-##' @S3method plot twinlm.strata
+##' @export
 plot.twinlm.strata <- function(x,...)
   suppressMessages(do.twinlm.strata(x,"plot",...))
 
-##' @S3method print twinlm.strata
+##' @export
 print.twinlm.strata <- function(x,...)
   print.do.twinlm.strata(x$model,...)
 
-##' @S3method summary twinlm.strata
-summary.twinlm.strata <- function(object,...)
+##' @export
+summary.twinlm.strata <- function(object,...) 
   do.twinlm.strata(object,"summary",...)
 
-##' @S3method coef twinlm.strata
+##' @export
 coef.twinlm.strata <- function(object,...) object$coef
 
-##' @S3method logLik twinlm.strata
+##' @export
 logLik.twinlm.strata <- function(object,indiv=FALSE,list=FALSE,...) {
   ll <- lapply(object$model,function(x) logLik(x,indiv=indiv,...))
   if (list) return(ll)
@@ -49,7 +56,7 @@ logLik.twinlm.strata <- function(object,indiv=FALSE,list=FALSE,...) {
   return(unlist(ll))
 }
 
-##' @S3method score twinlm.strata
+##' @export
 score.twinlm.strata <- function(x,...) {
   ss <- lapply(x$model,function(m) score(m,indiv=FALSE,...))
   return(unlist(ss))

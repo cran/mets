@@ -205,7 +205,7 @@ if (!is.null(margsurv))
        ptrunc <- rep(1,length(psurvmarg)); 
        RR<- exp(margsurv$linear.predictors-sum(margsurv$means*coef(margsurv)))
         if ((lefttrunk==1)) { 
-         baseout <- basehaz(margsurv,centered=FALSE); 
+         baseout <- survival::basehaz(margsurv,centered=FALSE); 
          cum <- cbind(baseout$time,baseout$hazard)
 	 cum <- Cpred(cum,start.time)[,2]
 	 ptrunc <- exp(-cum * RR)
@@ -410,17 +410,20 @@ if (!is.null(margsurv))
   }  else stop("score.methods = optimize(dim=1) nlm nlminb fisher.scoring\n"); 
 
 ## {{{ handling output
+  loglikeiid <- NULL
   robvar.theta <- NULL
   var.theta <- -1*hessi
   if (iid==1) {
      theta.iid <- out$theta.iid %*% hessi
      if (is.null(call.secluster) & is.null(max.clust)) rownames(theta.iid) <- unique(cluster.call) else rownames(theta.iid) <- unique(se.clusters)
      robvar.theta  <- (t(theta.iid) %*% theta.iid) 
+     loglikeiid <- out$loglikeiid
   }
   if (!is.null(colnames(theta.des))) thetanames <- colnames(theta.des) else thetanames <- rep("intercept",ptheta)
 ###  if (length(thetanames)==nrow(theta)) rownames(theta) <- thetanames
   ud <- list(theta=theta,score=score,hess=hess,hessi=hessi,var.theta=var.theta,model=model,robvar.theta=robvar.theta,
-             theta.iid=theta.iid,thetanames=thetanames,loglike=-logl,score1=score1,Dscore=out$Dscore,margsurv=psurvmarg); 
+             theta.iid=theta.iid,loglikeiid=loglikeiid,
+	     thetanames=thetanames,loglike=-logl,score1=score1,Dscore=out$Dscore,margsurv=psurvmarg); 
   class(ud)<-"twostage" 
   attr(ud, "Formula") <- formula
   attr(ud, "clusters") <- clusters
@@ -437,16 +440,16 @@ if (!is.null(margsurv))
 
 } ## }}}
 
-##' @S3method summary twostage
-summary.twostage <-function (object,digits = 3,...) { ## {{{
+##' @export
+summary.twostage <-function (object,digits = 3,silent=0,...) { ## {{{
   if (!(inherits(object,"twostage"))) stop("Must be a Two-Stage object")
   
   var.link<-attr(object,"var.link");
-  if (object$model=="plackett") cat("Dependence parameter for Plackett model \n"); 
+  if ((object$model=="plackett") & (silent==0)) cat("Dependence parameter for Plackett model \n"); 
   if (attr(object,"response")=="binomial") response <- "binomial" else response <- "survival"
-  if (object$model=="clayton.oakes") cat("Dependence parameter for Clayton-Oakes model \n"); 
+  if ((object$model=="clayton.oakes") & (silent==0)) cat("Dependence parameter for Clayton-Oakes model \n"); 
 
-  if (sum(abs(object$score)>0.0001) ) {
+  if ((sum(abs(object$score))>0.0001) & (silent==0))  {
 	  cat("    Variance parameters did not converge, allow more iterations.\n"); 
 	  cat(paste("    Score:",object$score,"  \n")); 
   }
@@ -458,7 +461,7 @@ summary.twostage <-function (object,digits = 3,...) { ## {{{
   res
 } ## }}}
 
-##' @S3method coef twostage
+##' @export
 coef.twostage <- function(object,var.link=NULL,response="survival",...)
 { ## {{{
   theta <- object$theta
@@ -514,7 +517,7 @@ alpha2kendall <- function(theta,link=0) {  ## {{{
    return(1/(1+2/theta)) 
 } ## }}} 
 
-##' @S3method print twostage
+##' @export
 print.twostage<-function(x,digits=3,...)
 { ## {{{
   print(x$call); 
@@ -522,7 +525,7 @@ print.twostage<-function(x,digits=3,...)
   print(summary(x)); 
 } ## }}}
 
-##' @S3method plot twostage
+##' @export
 plot.twostage<-function(x,pointwise.ci=1,robust=0,specific.comps=FALSE,
 		level=0.05, 
 		start.time=0,stop.time=0,add.to.plot=FALSE,mains=TRUE,
@@ -562,7 +565,7 @@ plot.twostage<-function(x,pointwise.ci=1,robust=0,specific.comps=FALSE,
   }
 }  ## }}}
 
-##' @S3method predict twostage
+##' @export
 predict.twostage <- function(object,X=NULL,Z=NULL,times=NULL,times2=NULL,theta.des=NULL,diag=TRUE,...)
 { ## {{{
 time.coef <- data.frame(object$cum)
@@ -598,8 +601,8 @@ S1 <- exp(-cumhaz); S2 <- exp(-cumhaz2)
 if (attr(object,"var.link")==1) theta  <- exp(object$theta) else theta <- object$theta
 if (!is.null(theta.des)) theta <- c(theta.des %*% object$theta)
 
-if (diag==FALSE) St1t2<- (outer(c(S1)^{-(1/theta)},c(S2)^{-(1/theta)},FUN="+") - 1)^(-(theta)) else 
-St1t2<- ((S1^{-(1/theta)}+S2^{-(1/theta)})-1)^(-(theta))
+if (diag==FALSE) St1t2<- (outer(c(S1)^{-(theta)},c(S2)^{-(theta)},FUN="+") - 1)^(-(1/theta)) else 
+St1t2<- ((S1^{-(theta)}+S2^{-(theta)})-1)^(-(1/theta))
 
 out=list(St1t2=St1t2,S1=S1,S2=S2,times=times,times2=times2,theta=theta)
 return(out)
@@ -665,13 +668,14 @@ datalr$tsstatus <- datalr[,status]
 datalr$tsid <- datalr[,id]
 ###
 
+if (is.null(covars)) 
 f <- as.formula(with(attributes(datalr),paste("Surv(",time,",",status,")~-1+factor(",num,")")))
-###f <- as.formula(with(attributes(datalr),paste("Surv(",time,",",status,")~-1+factor(num)")))
+else f <- as.formula(with(attributes(datalr),paste("Surv(",time,",",status,")~-1+factor(",num,"):",covars)))
 marg1 <- aalen(f,data=datalr,n.sim=0,robust=0)
 
 fitlr<-  twostage(marg1,data=datalr,clusters=datalr$tsid,model=model,score.method=score.method,
-              Nit=Nit,detail=detail,silent=silent,weights=weights,
-              control=control,theta=theta,theta.des=theta.des,var.link=var.link,iid=iid,step=step)
+             Nit=Nit,detail=detail,silent=silent,weights=weights,
+             control=control,theta=theta,theta.des=theta.des,var.link=var.link,iid=iid,step=step)
 ####
 coef <- coef(fitlr)
 theta.mat[i1-1,i2-1] <- fitlr$theta
@@ -747,7 +751,7 @@ dataud <- rbind(dataud,datalr)
 return(data.frame(dataud))
 } ## }}}
 
-##' @S3method summary pc.twostage
+##' @export
 summary.pc.twostage <- function(object,var.link=NULL,...)
 { ## {{{
   if (!(inherits(object,"pc.twostage"))) stop("Must be a Piecewise constant two-Stage object")
@@ -760,14 +764,14 @@ summary.pc.twostage <- function(object,var.link=NULL,...)
   res
 } ## }}}
 
-##' @S3method print pc.twostage
+##' @export
 print.pc.twostage <- function(x,var.link=NULL,...)
 { ## {{{
    if (!(inherits(x,"pc.twostage"))) stop("Must be a Piecewise constant two-Stage object")
    print( summary(x,var.link=var.link,...))
 } ## }}}
 
-##' @S3method print summary.pc.twostage
+##' @export
 print.summary.pc.twostage <- function(x,var.link=NULL, digits=3,...)
 { ## {{{
   
@@ -878,7 +882,7 @@ if (class(margsurv)[1]=="coxph")
 ###    ps <- survfit(margsurv)$surv
     coxformula <- margsurv$formula
     X <- model.matrix(coxformula,data=data)[,-1]; 
-    baseout <- basehaz(margsurv,centered=FALSE); 
+    baseout <- survival::basehaz(margsurv,centered=FALSE); 
     baseout <- cbind(baseout$time,baseout$hazard)
     cumh <-  Cpred(baseout,data[,time])[,2]
     RR<-exp(X %*% coef(margsurv))
@@ -902,7 +906,6 @@ if (class(margsurv)[1]=="coxph")
   ### make dependency design using wide format for all pairs 
   data.fam.clust <- fast.reshape(data.fam,id="subfam")
   if (is.function(theta.formula)) {
-     library(compiler) 
      desfunction <- compiler::cmpfun(theta.formula)
     if (deshelp==1){
  	  cat("These names appear in wide version of pairs for dependence \n")

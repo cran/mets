@@ -1,6 +1,6 @@
 ###{{{ print.twinlm
 
-##' @S3method print twinlm
+##' @export
 print.twinlm <- function(x,...) {  
     print(summary(x,...))
     invisible(x)
@@ -15,7 +15,7 @@ summarygroup.twinlm <- function(object,...) {
     cc <- lapply(mz,function(i)
                  coef(object$model[[i]],label=TRUE))
     ii <- lapply(cc, function(x)
-                 sapply(x, function(i) lava:::parpos.multigroup(object$estimate$model,i)))    
+                 sapply(x, function(i) lava::parpos(object$estimate$model,i)))    
     c0 <- coef(object$estimate)
     c2 <- coef(object$estimate,level=2)
     pnam <- names(c0)
@@ -47,7 +47,7 @@ summarygroup.twinlm <- function(object,...) {
     structure(list(coef=c0,coefmat=coefs,vcov=vcov,acde=acde,kinship=kinship,fit=fit),class="summary.twinlm.group")
 }
 
-##' @S3method print summary.twinlm.group
+##' @export
 print.summary.twinlm.group <- function(x,...) {
     for (i in seq(length(x$coefmat))) {
         cat(names(x$coefmat)[i],"\n")
@@ -63,7 +63,7 @@ print.summary.twinlm.group <- function(x,...) {
 }
 
 
-##' @S3method summary twinlm
+##' @export
 summary.twinlm <- function(object,transform=FALSE,...) {
     if (!is.null(object$group) && !object$group.equal) {
         return(summarygroup.twinlm(object,...))
@@ -82,8 +82,8 @@ summary.twinlm <- function(object,transform=FALSE,...) {
     if (object$type%in%c("u","flex","sat")) {
         corMZ <- corDZ <- NULL
         if (object$constrain) {
-            i1 <- lava:::parpos.multigroup(object$estimate$model,p="atanh(rhoMZ)")[1]
-            i2 <- lava:::parpos.multigroup(object$estimate$model,p="atanh(rhoDZ)")[1]
+            i1 <- lava::parpos(object$estimate$model,p="atanh(rhoMZ)")[1]
+            i2 <- lava::parpos(object$estimate$model,p="atanh(rhoDZ)")[1]
             if (length(i1)>0) {
                 corest <- coef(object$estimate,level=0)[c(i1,i2)]
                 sdest <- vcov(object$estimate)[cbind(c(i1,i2),c(i1,i2))]^0.5
@@ -220,7 +220,7 @@ summary.twinlm <- function(object,transform=FALSE,...) {
 
 ###{{{ print.summary.twinlm
 
-##' @S3method print summary.twinlm
+##' @export
 print.summary.twinlm <- function(x,signif.stars=FALSE,...) {
     
     if (x$type%in%c("flex","u","sat")) {
@@ -263,16 +263,17 @@ print.summary.twinlm <- function(x,signif.stars=FALSE,...) {
 
 ###{{{ compare.twinlm
 
-##' @S3method compare twinlm
+##' @export
 compare.twinlm <- function(object,...) {
     if (length(list(...))==0) return(compare(object$estimate))
-    lava:::compare.default(object,...)
+    getS3method("compare","default")(object,...)
 }
+
 ###}}} compare.twinlm
 
 ###{{{ plot.twinlm
 
-##' @S3method plot twinlm
+##' @export
 plot.twinlm <- function(x,diag=TRUE,labels=TRUE,...) {
     op <- par(mfrow=c(2,1))
     plot(x$model,...)
@@ -282,26 +283,27 @@ plot.twinlm <- function(x,diag=TRUE,labels=TRUE,...) {
 
 ###{{{ vcov.twinlm
 
-##' @S3method vcov twinlm
+##' @export
 vcov.twinlm <- function(object,...) {
     return(object$vcov)
 }
+
 ###}}} vcov.twinlm
 
 ###{{{ logLik.twinlm
 
-##' @S3method logLik twinlm
+##' @export
 logLik.twinlm <- function(object,...) logLik(object$estimate,...)
 ###}}} logLik.twinlm
 
 ###{{{ score.twinlm
-##' @S3method score twinlm
+##' @export
 score.twinlm <- function(x,...) score(x$estimate,...)
 ###}}} score.twinlm
 
 ###{{{ model.frame.twinlm
 
-##' @S3method model.frame twinlm
+##' @export
 model.frame.twinlm <- function(formula,...) {
     return(formula$estimate$model$data)
 }
@@ -317,7 +319,7 @@ acde.twinlm <- function(x,index,transform=FALSE,estimate.return=FALSE,...) {
         pp <- sapply(lambdas,function(x) grep(x,as.vector(m$par),fixed=TRUE))
         ACDE <- unlist(lapply(pp,function(x) length(x)>0))
         pp <- unlist(lapply(pp[ACDE], function(x) as.vector(m$par)[x[1]]))
-        index <- sapply(pp,function(p) lava:::parpos.multigroup(x$estimate$model,p))
+        index <- sapply(pp,function(p) lava::parpos(x$estimate$model,p))
         names(index) <- c("A","C","D","E")[ACDE]
     }
 
@@ -326,11 +328,11 @@ acde.twinlm <- function(x,index,transform=FALSE,estimate.return=FALSE,...) {
         suppressWarnings(res <- estimate(x,function(p)
                                          lapply(index,
                                                 function(z)
-                                                lava:::logit((p[z]^2/sum(p[index]^2)))),
+                                                lava::logit((p[z]^2/sum(p[index]^2)))),
                                          vcov=vcov(x)))
         if (estimate.return) return(res)
         res <- res$coefmat[,c(1,3,4),drop=FALSE]
-        res <- lava:::tigol(res)
+        res <- lava::tigol(res)
     } else {
         suppressWarnings(res <- estimate(x,function(p)
                                          lapply(index,
@@ -345,10 +347,10 @@ acde.twinlm <- function(x,index,transform=FALSE,estimate.return=FALSE,...) {
 
 ###}}} acde
 
-##' @S3method coef twinlm
+##' @export
 coef.twinlm <- function(object,...) coef(object$estimate,...)
 
-##' @S3method iid twinlm
+##' @export
 iid.twinlm <- function(x,...) {
     U <- score(x$estimate,indiv=TRUE)
     U <- lapply(U,function(x) {x[is.na(x)] <- 0; return(x)})

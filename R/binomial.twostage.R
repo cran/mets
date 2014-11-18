@@ -9,9 +9,10 @@
 ##' The reported standard errors are based on a cluster corrected score equations from the 
 ##' pairwise likelihoods assuming that the marginals are known. This gives correct standard errors
 ##' in the case of the Plackett distribution (OR model for dependence), but incorrect standard
-##' errors for the clayton-oakes types model.
+##' errors for the Clayton-Oakes types model.
 ##'
 ##' @export
+##' @aliases binomial.twostage binomial.twostage.time
 ##' @references
 ##' Two-stage binomial modelling 
 ##' @examples
@@ -324,6 +325,80 @@ binomial.twostage <- function(margbin,data=sys.parent(),score.method="nlminb",
 
 } ## }}}
 
+##' @export
+binomial.twostage.time <- function(formula,data,id,...,silent=1,fix.censweights=1,
+breaks=Inf,pairsonly=TRUE,fix.marg=NULL,cens.formula,cens.model="aalen",weights="w") {
+   ## {{{ 
+    m <- match.call(expand.dots = FALSE)
+    m <- m[match(c("","data"),names(m),nomatch = 0)]
+    Terms <- terms(cens.formula,data=data)
+    m$formula <- Terms
+    m[[1]] <- as.name("model.frame")
+    M <- eval(m,envir=parent.frame())
+
+    censtime <- model.extract(M, "response")
+    status <- censtime[,2]
+    time <- censtime[,1]
+    timevar <- colnames(censtime)[1]
+    outcome <- as.character(terms(formula)[[2]])    
+    if (is.null(breaks)) breaks <-  quantile(time,c(0.25,0.5,0.75,1))
+
+    outcome0 <- paste(outcome,"_dummy")
+    res <- list()
+    logor <- cif <- conc <- c()
+    k <- 0
+    for (tau in rev(breaks)) {
+        if ((length(breaks)>1) & (silent==0)) message(tau)
+        ### construct min(T_i,tau) or T_i and related censoring variable, 
+        ### thus G_c(min(T_i,tau)) or G_c(T_i) as weights
+        if ((fix.censweights==1 & k==0) | (fix.censweights==0)) {
+        data0 <- data
+        time0 <- time 
+        status0 <- status 
+        }
+        cond0 <- (time>tau)
+        if ((fix.censweights==1 & k==0) | (fix.censweights==0)) status0[cond0 & status==1] <- 3 
+        if (fix.censweights==0) status0[cond0 & status==1] <- 3 
+        data0[,outcome] <- data[,outcome]
+        data0[cond0,outcome] <- FALSE
+        if ((fix.censweights==1 & k==0) | (fix.censweights==0)) time0[cond0] <- tau
+###        if (fix.censweights==0 ) time0[cond0] <- tau
+        if ((fix.censweights==1 & k==0) | (fix.censweights==0)) {
+		data0$S <- survival::Surv(time0,status0==1)        
+	}
+	if ((fix.censweights==1 & k==0) | (fix.censweights==0))
+        dataw <- ipw(update(cens.formula,S~.),data=data0,cens.model=cens.model,
+		     obsonly=TRUE)
+        if ((fix.censweights==1)) 
+		dataw[,outcome] <- (dataw[,outcome])*(dataw[,timevar]<tau)
+	marg.bin <- glm(formula,data=dataw,weights=1/dataw[,weights],family="quasibinomial")
+        pudz <- predict(marg.bin,newdata=dataw,type="response")
+	dataw$pudz <- pudz
+	datawdob <- fast.reshape(dataw,id=id)
+        datawdob$minw <- pmin(datawdob$w1,datawdob$w2)
+        dataw2 <- fast.reshape(datawdob)
+	### removes second row of singletons 
+	dataw2  <- subset(dataw2,!is.na(dataw2$minw)) 
+	k <- k+1
+	if (!is.null(fix.marg)) dataw2$pudz <- fix.marg[k]
+        suppressWarnings( b <- binomial.twostage(dataw2[,outcome],data=dataw2,clusters=dataw2[,id],marginal.p=dataw2$pudz,weights=1/dataw2$minw,...))
+        theta0 <- b$theta[1,1]
+        prev <- prev0 <- exp(coef(marg.bin)[1])/(1+exp(coef(marg.bin)[1]))
+	if (!is.null(fix.marg)) prev <- fix.marg[k]
+        concordance <- plack.cif2(prev,prev,theta0)
+	conc <- c(conc,concordance)
+	cif <- c(cif,prev0)
+	logor <- rbind(logor,coef(b))
+###     res <- c(res,list(coef(b),concordance=concordance,cif=prev0))
+    }
+###    if (length(breaks)==1) return(b)
+    res <- list(varname="Time",var=breaks,concordance=rev(conc),cif=rev(cif),
+		time=breaks,call=m,type="time",logor=logor[k:1,])
+###	coef=lapply(res,function(x) x$all),
+###    class(res) <- ""
+    return(res)    
+} ## }}} 
+
 
 ##' Fits two-stage binomial for describing depdendence in binomial data
 ##' using marginals that are on logistic form using the binomial.twostage funcion, but
@@ -384,7 +459,7 @@ binomial.twostage <- function(margbin,data=sys.parent(),score.method="nlminb",
 ##' \donttest{
 ##' n <- 10000
 ##' set.seed(100)
-##' dd <- simbinfam(n,beta=0.3) 
+##' dd <- simBinFam(n,beta=0.3) 
 ##' binfam <- fast.reshape(dd,varying=c("age","x","y"))
 ##' ## mother, father, children  (ordered)
 ##' head(binfam)
@@ -517,7 +592,6 @@ easy.binomial.twostage <- function(margbin=NULL,data=sys.parent(),score.method="
 ### make dependency design using wide format for all pairs 
     data.fam.clust <- fast.reshape(data.fam,id="subfam")
     if (is.function(theta.formula)) {
-	library(compiler) 
         desfunction <- compiler::cmpfun(theta.formula)
 	if (deshelp==1){
             cat("These names appear in wide version of pairs for dependence \n")

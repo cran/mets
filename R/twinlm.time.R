@@ -6,8 +6,8 @@
 ## plot(b,which=5:6,ylim=c(0,1),type="l")
 ## plot(b,which=5:6,ylim=c(0,1),col=c("darkred","darkblue"),legend=c("MZ","DZ"),lty=1:2)
 
-##' @S3method coef multitwinlm
-coef.multitwinlm <- function(object,...) {    
+##' @export
+coef.timemets <- function(object,...) {    
     res <- unlist(lapply(object$summary,function(x) x$estimate[,1]))
     if (!is.null(names(object$var))) {
         nn <- names(object$var)[seq(length(object$summary))]
@@ -18,8 +18,8 @@ coef.multitwinlm <- function(object,...) {
     return(res)
 }
 
-##' @S3method vcov multitwinlm
-vcov.multitwinlm <- function(object,...) {
+##' @export
+vcov.timemets <- function(object,...) {
     if (object$type=="strata") {
         return(do.call(blockdiag,
                        lapply(object$summary, function(x) x$vcov)))
@@ -53,7 +53,7 @@ twinlm.strata <- function(formula,data,var,breaks,quantiles,...) {
     if (!missing(breaks)) lev <- breaks
     coef <- c(lapply(res,function(x) x$all),list(res[[length(res)]]$all))
     res <- list(varname=varname,var=lev,coef=coef,summary=res,type="strata")
-    class(res) <- "multitwinlm"
+    class(res) <- "timemets"
     return(res)
 }
 
@@ -64,46 +64,17 @@ twinlm.strata <- function(formula,data,var,breaks,quantiles,...) {
 ## plot(bb,which=c(7,11),ylim=c(0,28),legendpos="topright",col=c("darkred","darkblue"),lty=c(1,2),legend=c("MZ","DZ"),ylab="Relative recurrence risk ratio",type="l")
 
 ##' @export
-twinlm.time <- function(formula,data,id,type="u",...,
-                        breaks=Inf,
-                        cens.formula,cens.model="aalen",weight="w") {
-
-    m <- match.call(expand.dots = TRUE)[1:3]
-    Terms <- terms(cens.formula, data = data)
-    m$formula <- Terms
-    m[[1]] <- as.name("model.frame")
-    M <- eval(m)
-    censtime <- model.extract(M, "response")
-    status <- censtime[,2]
-    time <- censtime[,1]
-    outcome <- as.character(terms(formula)[[2]])    
-    if (is.null(breaks)) breaks <-  quantile(time,c(0.25,0.5,0.75,1))
-
-    outcome0 <- paste(outcome,"_dummy")
-    res <- list()
-    for (tau in breaks) {
-        if (length(breaks)>1) message(tau)
-        data0 <- data
-        time0 <- time
-        cond0 <- time0>tau
-        status0 <- status
-        status0[cond0 & status==1] <- 3
-        data0[cond0,outcome] <- FALSE
-        time0[cond0] <- tau
-        data0$S <- Surv(time0,status0==1)        
-        dataw <- ipw(S~zyg, data=data0,
-                     cluster=id,weightname=weight,pairs=TRUE)
-        suppressWarnings(b <- bptwin(formula, data=dataw, id=id, weight=weight,type=type,...))
-        res <- c(res,list(summary(b)))
-    }
-    if (length(breaks)==1) return(b)
-    res <- list(varname="Time",var=breaks,coef=lapply(res,function(x) x$all),summary=res,call=m,type="time")
-    class(res) <- "multitwinlm"
-    return(res)    
+twinlm.time <- function(formula,...) {
+    biprobit.time(formula,estimator="bptwin",...)
 }
 
-##' @S3method summary multitwinlm
-summary.multitwinlm <- function(object,which=seq(nrow(object$coef[[1]])),...) {
+##' @export
+bptwin.time <- function(formula,...) {
+    biprobit.time(formula,estimator="bptwin",...)
+}
+
+##' @export
+summary.timemets <- function(object,which=seq(nrow(object$coef[[1]])),...) {
     res <- list()
     for (i in which) {    
         rr <- matrix(unlist(lapply(object$coef,function(z) z[i,])),ncol=3,byrow=TRUE)
@@ -117,33 +88,73 @@ summary.multitwinlm <- function(object,which=seq(nrow(object$coef[[1]])),...) {
 }
 
 
-##' @S3method print multitwinlm
-print.multitwinlm <- function(x,row.names=FALSE,...) {
+##' @export
+print.timemets <- function(x,tail,row.names=FALSE,digits=4,width=10,...) {
     res <- summary(x,...)
-    for (i in seq_along(res)) {
-        cat(i, ": ", names(res)[i], "\n",sep="")
-        print(res[[i]],...,row.names=row.names)
-        cat("\n")
+    if (!is.null(x$summary[[1]]$ncontrast) && x$summary[[1]]$ncontrast>1) {
+        cat("Contrasts:\n")
+        for (i in seq(x$summary[[1]]$ncontrasts)) {
+            cat("   c",i,":\n",sep="")
+            cat("\tDependence ", x$summary[[1]]$par[[i]]$corref, "\n")
+            if (x$summary[[1]]$model$eqmarg) {
+                cat("\tMean       ", x$summary[[1]]$par[[i]]$mref1, "\n")
+            } else {
+                cat("\tMean 1     ", x$summary[[1]]$par[[i]]$mref1, "\n")
+                cat("\tMean 2     ", x$summary[[1]]$par[[i]]$mref2, "\n")
+            }
+        }
     }
-    invisible(x)
+    ## }
+    ## if (mcontr2 || (x$contrast & !x$model$eqmarg)) {
+    ##     cat("\tMean 1       ", x$par[[i]]$mref1, "\n")
+    ##     cat("\tMean 2       ", x$par[[i]]$mref2, "\n")
+    ## } 
+    ## if (mcontr1 || (x$contrast & x$model$eqmarg))
+    ##     cat("\tMean         ", x$par[[i]]$mref1, "\n")
+    
+    
+    M <- res[[1]][,1]
+    nn <- c()
+    for (i in seq_along(res)) {
+        nn <- c(nn,names(res)[i])
+        M <- cbind(M,res[[i]][,2])
+    }
+    nn0 <- cbind(paste(seq(ncol(M)-1),":",nn,sep=""))
+    colnames(nn0) <- ""; rownames(nn0) <- rep("",nrow(nn0))
+    print(nn0,quote=FALSE)
+    cat("\n")
+    nn <- unlist(lapply(nn,
+                        function(x) {
+                            res <- toString(x,width)
+                            if (nchar(res)==nchar(x)) return(x)
+                            substr(res,1,nchar(res)-1)
+                        }))
+    nn <- paste(seq(ncol(M)-1),":",nn,sep="")
+    colnames(M) <- c("Time",nn)
+    if (!missing(tail)) {
+        print(utils::tail(round(M,digits=digits),tail),row.names=row.names)
+    } else {
+        print(round(M,digits=digits),row.names=row.names)
+    }
+    invisible(M)
 }
 
-##' @S3method plot multitwinlm
-plot.multitwinlm <- function(x,...,which=1,
+##' @export
+plot.timemets <- function(x,...,which=1,
                             type="s",
                             lwd=2,lty=1,col,fillcol,alpha=0.2,
                             xlab=x$varname,
                             ylab="",idx=seq_along(x$var),
-                            lasttick=TRUE,
+                            lasttick=TRUE,add=FALSE,
                             legend=TRUE,legendpos="topleft") {
     ss <- summary(x,which)
-    add <- FALSE
     if (missing(col)) col <- seq_along(which)
     if (length(col)==1) col <- rep(col,length(which))
     if (length(lwd)==1) lwd <- rep(lwd,length(which))
     if (length(lty)==1) lty <- rep(lty,length(which))
     if (alpha>0 & missing(fillcol)) fillcol <- Col(col,alpha)
     count <- 0
+    if (add) dev <- devcoords()
     for (tt in seq_along(which)) {
         count <- count+1
         zz <- ss[[tt]][idx,,drop=FALSE]
@@ -173,9 +184,15 @@ plot.multitwinlm <- function(x,...,which=1,
         if (!is.factor(zz[,1]))
             lines(zz[,1:2,drop=FALSE],lwd=lwd[count],lty=lty[count],col=col[count],type=type,...)        
     }
-    if (!is.null(legend) || !legend[1]) {
+    if (!is.null(legend) || (is.logical(legend) && !legend[1])) {
         if (is.logical(legend) || length(legend)==1) legend <- rownames(x$coef[[1]])[which]
         graphics::legend(legendpos,legend=legend,col=col,lwd=lwd,lty=lty)
     }
     invisible(x)    
+}
+
+
+##' @export
+bootstrap.timemets <- function(x,R=1000,...) {
+    
 }

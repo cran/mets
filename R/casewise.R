@@ -7,6 +7,7 @@
 ##' @param test Type of test for independence assumption. "conc" makes test on concordance scale and "case" means a test on the casewise concordance
 ##' @param p check that marginal probability is greater at some point than p
 ##' @author Thomas Scheike
+##' @aliases casewise.test slope.process casewise.bin
 ##' @examples
 ##' \donttest{
 ##' data(prt);
@@ -14,23 +15,23 @@
 ##' prt <- prt[which(prt$id %in% sample(unique(prt$id),7500)),]
 ##' ### marginal cumulative incidence of prostate cancer
 ##' times <- seq(60,100,by=2)
-##' outm <- comp.risk(Hist(time,status)~+1,data=prt,cause=2,times=times)
+##' outm <- comp.risk(Event(time,status)~+1,data=prt,cause=2,times=times)
 ##' 
 ##' cifmz <- predict(outm,X=1,uniform=0,resample.iid=1)
 ##' cifdz <- predict(outm,X=1,uniform=0,resample.iid=1)
 ##' 
 ##' ### concordance for MZ and DZ twins
-##' cc <- bicomprisk(Hist(time,status)~strata(zyg)+id(id),
+##' cc <- bicomprisk(Event(time,status)~strata(zyg)+id(id),
 ##'                  data=prt,cause=c(2,2))
 ##' cdz <- cc$model$"DZ"
 ##' cmz <- cc$model$"MZ"
 ##' 
 ##' ### To compute casewise cluster argument must be passed on,
 ##' ###  here with a max of 100 to limit comp-time
-##' outm <-comp.risk(Hist(time,status)~+1,data=prt,
+##' outm <-comp.risk(Event(time,status)~+1,data=prt,
 ##'                  cause=2,times=times,max.clust=100)
 ##' cifmz <-predict(outm,X=1,uniform=0,resample.iid=1)
-##' cc <-bicomprisk(Hist(time,status)~strata(zyg)+id(id),data=prt,
+##' cc <-bicomprisk(Event(time,status)~strata(zyg)+id(id),data=prt,
 ##'                 cause=c(2,2),se.clusters=outm$clusters)
 ##' cdz <- cc$model$"DZ"
 ##' cmz <- cc$model$"MZ"
@@ -41,6 +42,11 @@
 ##' plot(cmz,ylim=c(0,0.7),xlim=c(60,100))
 ##' par(new=TRUE)
 ##' plot(cdz,ylim=c(0,0.7),xlim=c(60,100))
+##' 
+##' slope.process(cdz$casewise[,1],cdz$casewise[,2],iid=cdz$casewise.iid)
+##' 
+##' slope.process(cmz$casewise[,1],cmz$casewise[,2],iid=cmz$casewise.iid)
+##'
 ##' }
 ##' @export
 casewise.test <- function(conc,marg,test="no-test",p=0.01)
@@ -123,11 +129,36 @@ casewise.test <- function(conc,marg,test="no-test",p=0.01)
    colnames(casewiseout) <- c("time","casewise","se","se2")
    difout <- cbind(timer,concP1-margtime^2,apply(conciid^2,1,sum)^.5)
 
-  out <- list(casewise=casewiseout,marg=margout,conc=concout,
+  out <- list(casewise=casewiseout,marg=margout,conc=concout,casewise.iid=casewise.iid, 
 	      test=outtest,mintime=mintime,maxtime=maxtime,same.cluster=TRUE,testtype=test)
   class(out) <- "casewise"
   return(out)
 } ## }}}
+
+##' @export
+slope.process  <-  function(time,y,iid=NULL)
+{ ## {{{ 
+ctime <- scale(time)
+caselm <- lm(y ~ ctime)
+slope <- coef(caselm)[2]
+
+if (!is.null(iid)) {
+diff.iid <- iid 
+lm.iid <- c()
+for (i in 1:ncol(iid))
+{
+lmiid <- lm(iid[,i] ~ ctime)
+lm.iid <- rbind(lm.iid,coef(lmiid))
+}
+se.slope <- apply(lm.iid,2,sd)^.5
+} else {se.slop <- NULL}
+
+z.slope <- slope/se.slope[2]
+pval <- 2*(1-pnorm(abs(z.slope)))
+
+out <- list(intercept=coef(caselm)[1],slope=slope,se.slope=se.slope,pval.slope=pval)
+return(out)
+} ## }}} 
 
 ##' .. content for description (no empty lines) ..
 ##'
@@ -149,7 +180,7 @@ casewise.test <- function(conc,marg,test="no-test",p=0.01)
 ##' cifdz <- predict(outm,cause=2,time=times,newdata=data.frame(zyg="DZ"))
 ##' 
 ##' ### concordance for MZ and DZ twins
-##' cc <- bicomprisk(Hist(time,status)~strata(zyg)+id(id),data=prt,cause=c(2,2),prodlim=TRUE)
+##' cc <- bicomprisk(Event(time,status)~strata(zyg)+id(id),data=prt,cause=c(2,2),prodlim=TRUE)
 ##' cdz <- cc$model$"DZ"
 ##' cmz <- cc$model$"MZ"
 ##' 
@@ -165,12 +196,12 @@ casewise.test <- function(conc,marg,test="no-test",p=0.01)
 ##' @export
 casewise <- function(conc,marg,cause.marg)
 { ## {{{
-  if (missing(cause.marg)) stop("Please specify cause of marginal (as given in Hist object)")
+  if (missing(cause.marg)) stop("Please specify cause of marginal (as given in Event object)")
   if ((!class(conc)=="prodlim")  || (!class(marg)=="prodlim")) stop("Assumes that both models are based on prodlim function \n"); 
   time1 <- conc$time
   time2 <- marg$time
 
-  cause.prodlim <- match(as.character(cause.marg),levels(getEvent(marg$model.response)))
+  cause.prodlim <- match(as.character(cause.marg),levels(prodlim::getEvent(marg$model.response)))
   if (is.na(cause.prodlim)) stop("Cause did not match marginal model")
   
   mintime <- max(time1[1],time2[1])
@@ -216,7 +247,17 @@ casewise <- function(conc,marg,cause.marg)
   return(out)
 } ## }}}
 
-##' @S3method plot casewise 
+##' @export
+casewise.bin <- function(nc,nd)
+{ ## {{{
+ud <- 	glm(cbind(nc,round(0.5*nd+nc))~ +1,family=binomial())
+udci <- confint(ud)
+pud <- predict(ud,se.fit=TRUE,type="response")
+return(list(p.casewise=pud$fit,ci.casewise=exp(udci)))
+} ## }}}
+
+
+##' @export
 plot.casewise <- function(x,ci=NULL,lty=NULL,ylim=NULL,col=NULL,xlab="time",ylab="concordance",legend=FALSE,...)
 { ## {{{
   if (is.null(col)) col <- 1:3
@@ -235,7 +276,7 @@ plot.casewise <- function(x,ci=NULL,lty=NULL,ylim=NULL,col=NULL,xlab="time",ylab
   if (legend==TRUE) legend("topleft",lty=lty[1:2],col=col[1:2],c("Casewise concordance","Marginal estimate"))
 } ## }}}
 
-##' @S3method summary casewise 
+##' @export
 summary.casewise <- function(object,marg=FALSE,...)
 { ## {{{
    cat("Casewise concordance and standard errors \n"); 
