@@ -35,10 +35,6 @@
 ##' d2 <- transform(d,x2cat=cut(x2,3,labels=c("Low","Med","High")))
 ##' ace4 <- twinlm(y ~ x1+x2cat, data=d2, DZ="DZ", zyg="zyg", id="id", type="ace")
 ##' }
-##' ## plot the model structure
-##' \dontrun{
-##' plot(ace4)
-##' }
 ##' @keywords models
 ##' @keywords regression
 ##' @param formula Formula specifying effects of covariates on the response
@@ -220,7 +216,7 @@ twinlm <- function(formula, data, id, zyg, DZ, group=NULL,
   }
 
   if (inherits(data[,yvar],"Surv")) {
-    require("lava.tobit")
+    if (!requireNamespace("lava.tobit",quietly=TRUE)) stop("lava.tobit required")
     if (is.null(optim$method))
        optim$method <- "nlminb1"
     suppressWarnings(e <- estimate(mm,dd,control=optim,missing=missing,...))

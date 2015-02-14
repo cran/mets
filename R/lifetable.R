@@ -21,10 +21,6 @@
 ##' @examples
 ##' library(timereg)
 ##' data(TRACE)
-##' \donttest{
-##'     lifetable(Surv(time,status==9)~sex+I(cut(wmi,c(-Inf,1,1.5,Inf))),
-##'               data=TRACE,breaks=c(0.2),confint=TRUE)
-##' }
 ##' 
 ##' d <- with(TRACE,lifetable(Surv(time,status==9)~sex+vf,breaks=c(0,0.2,0.5,8.5)))
 ##' summary(glm(events ~ offset(log(atrisk))+factor(int.end)*vf + sex*vf,
@@ -70,7 +66,7 @@ lifetable.formula <- function(x,data=parent.frame(),breaks=c(),confint=FALSE,...
 }
 
 
-LifeTable <- function(time,status,entry=NULL,strata=list(),breaks=c(),confint=FALSE) {
+LifeTable <- function(time,status,entry=NULL,strata=list(),breaks=c(),confint=FALSE,interval=TRUE) {
     if (is.null(entry)) entry <- rep(0,NROW(time))
     if ((is.matrix(time) || is.data.frame(time)) && ncol(time)>1) {
         if (ncol(time)==3) {
@@ -93,7 +89,10 @@ LifeTable <- function(time,status,entry=NULL,strata=list(),breaks=c(),confint=FA
         nam <- nn[rep(seq(NROW(nn)),each=NROW(a[[1]])),,drop=FALSE]
         xx <- list()
         for (i in seq(ncol(nam))) {
-            xx <- c(xx, list(do.call(paste("as.",as.character(cl[i]),sep=""),list(nam[,i]))))
+            if (cl[i]%in%c("numeric","integer"))
+                xx <- c(xx,list(as.numeric(as.character(nam[,i]))))
+            else                    
+                xx <- c(xx, list(do.call(paste("as.",as.character(cl[i]),sep=""),list(nam[,i]))))
         }
         xx <- as.data.frame(xx); colnames(xx) <- colnames(nam)
         res <- Reduce("rbind",a)
@@ -131,6 +130,7 @@ LifeTable <- function(time,status,entry=NULL,strata=list(),breaks=c(),confint=FA
                              int.end=breaks[-1],
                              surv=0,
                              rate=events/atrisk))
+    if (interval) res$interval <- factor(paste0("[",res$int.start,";",res$int.end,")"))
     cumsum.na <- function(x,...) { x[is.na(x)] <- 0; cumsum(x) }
     res$surv <- with(res, exp(-cumsum.na(rate*(int.end-int.start))))    
     if (confint) {
@@ -143,3 +143,111 @@ LifeTable <- function(time,status,entry=NULL,strata=list(),breaks=c(),confint=FA
     }
     res
 }
+
+
+
+##' Summary for survival analyses via the 'lifetable' function
+##'
+##' Summary for survival analyses via the 'lifetable' function 
+##' @title Extract survival estimates from lifetable analysis
+##' @param object glm object (poisson regression)
+##' @param ... Contrast arguments
+##' @param timevar Name of time variable
+##' @param time Time points (optional)
+##' @param int.len Time interval length (optional)
+##' @param confint If TRUE confidence limits are supplied
+##' @param level Level of confidence limits
+##' @param individual Individual predictions
+##' @param length.out Length of time vector
+##' @export
+##' @author Klaus K. Holst
+survpois <- function(object,...,timevar="int.end",time,int.len,confint=FALSE,level=0.95,individual=FALSE,length.out=25) {
+    nn <- names(coef(object))
+    timevar_re0 <- gsub("\\$|\\^","",glob2rx(timevar))
+    timevar_re <- paste0(timevar_re0,"[0-9]+\\.*[0-9]*")
+    idx <- regexpr(timevar_re,nn)
+    if (all(idx<0)) {
+        timevar_re0 <- gsub("\\$|\\^","",glob2rx(paste0("factor(",timevar,")")))
+        timevar_re <- paste0(timevar_re0,"[0-9]+\\.*[0-9]*")
+        idx <- regexpr(timevar_re,nn)
+    }
+    tvar <- unique(regmatches(nn,idx))
+    if (missing(time)) {
+        time <- sort(unique(as.numeric(gsub(timevar_re0,"",tvar))))        
+        rg <- range(object$data[,timevar],na.rm=TRUE)
+        if (length(time)==0) time <- seq(rg[1],rg[2],length.out=length.out)
+    }
+    if (missing(int.len)) {
+        int.len <- diff(c(0,time))
+    } else if (int.len==1) int.len <- rep(int.len,nrow(res))
+    tt <- terms(object)
+    ##if (attr(tt,"offset")) tt <- drop.terms(tt,dropx=attr(tt,"offset")-1)
+    vv <- all.vars(formula(tt))
+    dots <- list(...)
+    dots[[timevar]] <- time
+    if (individual) {
+        newdata <- as.data.frame(dots)
+        for (v in vv) {
+            if (v%ni%names(dots)) newdata[,v] <- object$data[1,v]
+        }        
+    } else {
+        for (v in vv) {
+            if (v%ni%names(dots)) dots[[v]] <- object$data[1,v]
+        }        
+        args <- c(list(`_data`=model.frame(object)),dots)
+        newdata <- do.call(Expand, args)
+    }
+    Terms <- delete.response(tt)    
+    m <- model.frame(Terms, newdata, xlev = object$xlevels)
+    X <- model.matrix(Terms, m, contrasts.arg = object$contrasts)
+    ##browser()
+    ## NA-robust matrix product
+    beta0 <- coef(object); beta0[is.na(beta0)] <- -.Machine$double.xmax    
+    V <- vcov(object)    
+    V0 <- structure(matrix(0,length(beta0),length(beta0)),dimnames=list(names(beta0),names(beta0)))
+    idx <- which(rownames(V0)%in%rownames(V))
+    V0[idx,idx] <- V    
+    coefs <- X%*%beta0
+    res <- cbind(time,exp(coefs))
+    if (!confint) {
+        res <- cbind(res,cumsum(res[,2]*int.len))
+        res <- cbind(res,exp(-res[,3]))
+    } else {
+        S0 <- X%*%V0%*%t(X)
+        system.time(e0 <- estimate(NULL,coef=coefs,vcov=S0,function(x) cumsum(exp(x)*int.len))) ## Cumulative hazard
+        system.time(e1 <- estimate(e0, function(x) exp(-x),level=level)) ## Survival
+        res <- cbind(res,e0$coefmat[,1],e1$coefmat[,c(1,3:4)])
+    }
+    colnames(res)[1:4] <- c("time","rate","chaz","surv") 
+    structure(as.data.frame(cbind(res,newdata)),class=c("survpois","data.frame"))
+}
+
+##' @export
+plot.survpois <- function(x,confint=TRUE,cont=TRUE,length.out=200,surv=TRUE,type=ifelse(surv,"l","s"),lty=c(1,2),add=FALSE,xlab="Time",ylab="Survival probability",xlim,ylim,...) {
+    if (!add) {
+        if (missing(xlim)) xlim <- c(0,max(x[,1]))
+        if (missing(ylim)) {            
+            ylim <- c(0,1)
+            if (!surv) ylim[2] <- max(x$chaz)
+        }
+        plot(0,type="n",xlab=xlab,ylab=ylab,xlim=xlim,ylim=ylim,...)
+    }
+    if (cont) {
+        tt <- seq(0,max(x$time),length.out=length.out)
+        ff <- with(x, approxfun(c(0,time),c(0,chaz),method="linear"))
+        if (surv) {
+            lines(tt,exp(-ff(tt)),lty=lty[1],type=type,...)
+        } else {
+            lines(tt,ff(tt),lty=lty[1],type=type,...)
+        }
+        return(invisible(NULL))
+    }
+    if (surv) lines(x[,c(1,4)],lty=lty[1],type=type,...)
+    else lines(x[,c(1,3)],lty=lty[1],type=type,...)
+    if (ncol(x)>4 && confint && surv) {
+        lines(x[,c(1,5)],lty=lty[2],type=type,...)
+        lines(x[,c(1,6)],lty=lty[2],type=type,...)
+    }
+}
+
+

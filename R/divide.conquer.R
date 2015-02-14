@@ -18,7 +18,7 @@ folds<- function (n, folds = 10)
 ##' data(TRACE)
 ##' \donttest{
 ##' res <- divide.conquer(prop.odds,TRACE,
-##' 	     formula=Surv(time,status==9)~chf+vf+age,n.sim=0,size=200)
+##' 	     formula=Event(time,status==9)~chf+vf+age,n.sim=0,size=200)
 ##' }
 divide.conquer <- function(func=NULL,data,size,...)
 { ## {{{ 
@@ -44,10 +44,10 @@ res
 ##' data(TRACE)
 ##' \donttest{
 ##' a <- divide.conquer.timereg(prop.odds,TRACE,
-##' 	     formula=Surv(time,status==9)~chf+vf+age,n.sim=0,size=200)
+##' 	     formula=Event(time,status==9)~chf+vf+age,n.sim=0,size=200)
 ##' coef(a)
 ##' a2 <- divide.conquer.timereg(prop.odds,TRACE,
-##'	     formula=Surv(time,status==9)~chf+vf+age,n.sim=0,size=500)
+##'	     formula=Event(time,status==9)~chf+vf+age,n.sim=0,size=500)
 ##' coef(a2)
 ##' par(mfrow=c(1,1))
 ##' plot(a,xlim=c(0,8),ylim=c(0,0.01))

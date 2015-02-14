@@ -521,7 +521,7 @@ dep.cif<-function(cif,data,cause,model="OR",cif2=NULL,times=NULL,
 ##'                  par.func=parfunc,dpar.func=dparfunc,dimpar=4,
 ##'                  control=list(trace=TRUE),detail=1)
 ##' summary(cor1)
-##' ##'
+##' 
 ##' ### piecewise contant OR model
 ##' gparfunc <- function(par,t,pardes)
 ##' {
@@ -819,13 +819,11 @@ random.cif<-function(cif,data,cause,cif2=NULL,
 ##' ### design making parameters half the variance for dizygotic components
 ##' pardes <- rbind(c(1,0), c(0.5,0),c(0.5,0), c(0.5,0), c(0,1))
 ##'
-##' \donttest{
-##' outacem <-Grandom.cif(addm,data=multcif,causeS=1,Nit=30,detail=0,
-##'           theta=c(-1.21,2.1),theta.des=pardes,step=1.0,random.design=des.rv)
-##' summary(outacem)
-##' ### genetic variance is 
-##' exp(outacem$theta[1])/sum(exp(outacem$theta))^2
-##' }
+##' ## outacem <-Grandom.cif(addm,data=multcif,causeS=1,Nit=30,detail=0,
+##' ##          theta=c(-1.21,2.1),theta.des=pardes,step=1.0,random.design=des.rv)
+##' ## summary(outacem)
+##' ## ## genetic variance is 
+##' ## exp(outacem$theta[1])/sum(exp(outacem$theta))^2
 ##' @keywords survival
 ##' @author Thomas Scheike
 ##' @export
