@@ -251,7 +251,7 @@ biprobit.vector <- function(x,id,X=NULL,Z=NULL,
 ##' predict(b,newdata=Expand(prt,zyg=c("MZ")))
 ##' predict(b,newdata=Expand(prt,zyg=c("MZ","DZ")))
 ##' 
-##' \donttest{
+##' \donttest{ ## Reduce Ex.Timings
 ##' m <- lvm(c(y1,y2)~x)
 ##' covariance(m,y1~y2) <- "r"
 ##' constrain(m,r~x+a+b) <- function(x) tanh(x[2]+x[3]*x[1])
@@ -299,6 +299,11 @@ biprobit.vector <- function(x,id,X=NULL,Z=NULL,
 ##'                         cens.formula=Surv(time,status==0)~1,
 ##'                         breaks=100,pairs.only=TRUE)
 ##' 
+##'     prt0$trunc <- prt0$time*runif(nrow(prt0))*rbinom(nrow(prt0),1,0.5)
+##'     a3 <- biprobit.time(cancer~1, rho=~1, id="id", data=subset(prt0,zyg=="DZ"), eqmarg=TRUE,
+##'                         cens.formula=Surv(trunc,time,status==0)~1,
+##'                         breaks=100,pairs.only=TRUE)
+#
 ##' 
 ##'     plot(a,which=3,ylim=c(0,0.1))
 ##' }
@@ -327,6 +332,7 @@ biprobit <- function(x, data, id, rho=~1, num=NULL, strata=NULL, eqmarg=TRUE,
                      "-id(",formulaId,")",
                      "-strata(",paste(formulaStrata,collapse="+"),")",sep="")
   formula <- update(x,formulaSt)
+
   if (!is.null(formulaId)) {
     id <- formulaId
     mycall$id <- id

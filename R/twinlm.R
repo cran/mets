@@ -27,7 +27,7 @@
 ##' ace2 <- twinlm(y ~ x1+x2, data=d, DZ="DZ", zyg="zyg", id="id", type="ace")
 ##' ## Summary/GOF
 ##' summary(ace2)
-##' \donttest{
+##' \donttest{ ## Reduce Ex.Timings
 ##' ## An interaction could be analyzed as:
 ##' ace3 <- twinlm(y ~ x1+x2 + x1:I(x2<0), data=d, DZ="DZ", zyg="zyg", id="id", type="ace")
 ##' ace3
@@ -216,10 +216,10 @@ twinlm <- function(formula, data, id, zyg, DZ, group=NULL,
   }
 
   if (inherits(data[,yvar],"Surv")) {
-    if (!requireNamespace("lava.tobit",quietly=TRUE)) stop("lava.tobit required")
-    if (is.null(optim$method))
-       optim$method <- "nlminb1"
-    suppressWarnings(e <- estimate(mm,dd,control=optim,missing=missing,...))
+      if (!requireNamespace("lava.tobit",quietly=TRUE)) stop("lava.tobit required")
+      if (is.null(optim$method))
+          optim$method <- "nlminb1"
+      suppressWarnings(e <- estimate(mm,dd,control=optim,...))
   } else {
       suppressWarnings(e <- estimate(mm,dd,weight=weight,estimator=estimator,fix=FALSE,control=optim,...))
   }

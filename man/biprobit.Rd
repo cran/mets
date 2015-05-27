@@ -67,7 +67,7 @@ b <- biprobit(cancer~1+zyg, ~1+zyg, data=prt0, id="id",pairs.only=TRUE)
 predict(b,newdata=Expand(prt,zyg=c("MZ")))
 predict(b,newdata=Expand(prt,zyg=c("MZ","DZ")))
 
-\donttest{
+\donttest{ ## Reduce Ex.Timings
 m <- lvm(c(y1,y2)~x)
 covariance(m,y1~y2) <- "r"
 constrain(m,r~x+a+b) <- function(x) tanh(x[2]+x[3]*x[1])
@@ -115,6 +115,10 @@ confband(pp2$x,pp2[,2],pp2[,3],center=pp2[,1])
                         cens.formula=Surv(time,status==0)~1,
                         breaks=100,pairs.only=TRUE)
 
+    prt0$trunc <- prt0$time*runif(nrow(prt0))*rbinom(nrow(prt0),1,0.5)
+    a3 <- biprobit.time(cancer~1, rho=~1, id="id", data=subset(prt0,zyg=="DZ"), eqmarg=TRUE,
+                        cens.formula=Surv(trunc,time,status==0)~1,
+                        breaks=100,pairs.only=TRUE)
 
     plot(a,which=3,ylim=c(0,0.1))
 }

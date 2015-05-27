@@ -1,8 +1,8 @@
 Package: mets
 Type: Package
 Title: Analysis of Multivariate Event Times
-Version: 1.1.0
-Date: 2015-02-14
+Version: 1.1.1
+Date: 2015-05-27
 Author: Klaus K. Holst and Thomas Scheike
 Maintainer: Klaus K. Holst <klaus@holst.it>
 Description: Implementation of various statistical models for multivariate
@@ -14,11 +14,11 @@ Description: Implementation of various statistical models for multivariate
 License: GPL (>= 2)
 LazyLoad: yes
 URL: http://lava.r-forge.r-project.org/
-Depends: R (>= 2.15), timereg (>= 1.8.6), lava (>= 1.3)
+Depends: R (>= 2.15), timereg (>= 1.8.9), lava (>= 1.4)
 Imports: numDeriv, compiler, Rcpp, splines, survival
 Suggests: lava.tobit (>= 0.4-7), prodlim, testthat, ucminf
 LinkingTo: Rcpp, RcppArmadillo
 NeedsCompilation: yes
-Packaged: 2015-02-15 21:28:06 UTC; klaus
+Packaged: 2015-05-28 17:17:19 UTC; klaus
 Repository: CRAN
-Date/Publication: 2015-02-16 07:06:18
+Date/Publication: 2015-05-29 07:36:10
