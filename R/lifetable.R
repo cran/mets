@@ -153,13 +153,17 @@ LifeTable <- function(time,status,entry=NULL,strata=list(),breaks=c(),confint=FA
     ex <- matrix(unlist(lapply(breaks[-1],function(x) pmin(x,time))),
                   ncol=length(breaks)-1)
     dur <- ex-en
-    endur <- rbind(breaks[-1])%x%cbind(rep(1,nrow(en)))-en
-    ##endur <- rbind(c(breaks,Inf))%x%cbind(rep(1,nrow(en)))-en
     dur[dur<=0] <- NA
     enter <- colSums(!is.na(dur))
     atrisk <- colSums(dur,na.rm=TRUE)
     ##eventcens <- dur<endur
-    eventcens <- rbind(apply(dur<endur,2,function(x) x*(status+1)))
+    ##endur <- rbind(c(breaks,Inf))%x%cbind(rep(1,nrow(en)))-en
+    ##endur <- rbind(breaks[-1])%x%cbind(rep(1,nrow(en)))-en
+    ##eventcens <- rbind(apply(dur<endur,2,function(x) x*(status+1)))
+    eventcens <- dur; eventcens[!is.na(dur)] <- 0
+    lastobs <- apply(eventcens,1,function(x) tail(which(!is.na(x)),1))
+    eventcens[cbind(seq(nrow(eventcens)),lastobs)] <- status+1
+    
     lost <- colSums(eventcens==1,na.rm=TRUE)
     events <- colSums(eventcens==2,na.rm=TRUE)
     rate <- events/atrisk; rate[is.nan(rate)] <- 0
@@ -206,6 +210,7 @@ eh <- function(formula,intervals,family=poisson(log),...) {
 ##' @param level Level of confidence limits
 ##' @param individual Individual predictions
 ##' @param length.out Length of time vector
+##' @aliases eventpois pcif 
 ##' @export
 ##' @author Klaus K. Holst
 eventpois <- function(object,...,timevar,time,int.len,confint=FALSE,level=0.95,individual=FALSE,length.out=25) {      
@@ -407,3 +412,35 @@ plot.eventpois <- function(x,var,confint=TRUE,cont=TRUE,length.out=200,type="sur
 }
 
 
+##' @export
+pcif <- function(models,timevar,survival,...,delta=0.01,stop.time,trunc=TRUE) {
+    if (!is.list(models)) models <- list(models)
+    ee <- lapply(models,eventpois,timevar=timevar,...)
+    t0 <- c(0,ee[[1]][,timevar])
+    int.len <- diff(t0)
+    if (!missing(survival)) {
+        G <- c(1,eventpois(survival,...)$surv)        
+    } else {
+        chaz <- c(0,Reduce("+",lapply(ee,function(x) x$chaz)))
+        G <- exp(-chaz)
+    }
+    rates <- lapply(ee,function(x) x$rate)
+    if (missing(stop.time)) stop.time <- max(ee[[1]][,1])
+    tt <- seq(0,stop.time,by=delta)
+    GG <- approx(x=t0,y=G,xout=tt,method="linear")
+    rr <- lapply(rates,function(rate)
+        approx(x=t0,y=c(rate,0),xout=tt,method="constant",f=0))    
+    FF <- lapply(rr,function(x) {
+        cif0 <- c(0,cumsum(x$y*GG$y*delta))
+        cif0 <- cif0[-length(cif0)]
+    })
+    S <- Reduce("+",FF)
+    idx <- which(S>1)
+    if (trunc & length(idx)>0) {
+        for (i in seq_along(FF)) {
+            FF[[i]][idx] <- FF[[i]][idx]/S[idx]
+        }
+    }
+    FF0 <- Reduce(cbind,FF); colnames(FF0) <- paste0("F",seq(ncol(FF0)))
+    as.data.frame(cbind(time=tt,FF0,G=GG$y))
+}

@@ -8,8 +8,16 @@
 ##' @docType package
 ##' @author Klaus K. Holst and Thomas Scheike
 ##' @useDynLib mets
-##' @import stats lava splines timereg Rcpp
+##' @import stats splines timereg Rcpp
+##' @importFrom lava iid estimate bootstrap compare score information twostage %++% %ni% addvar<- blockdiag cancel Col
+##'                  confband constrain<- constraints covariance covariance<- coxWeibull.lvm devcoords distribution<-
+##'                  endogenous eventTime Expand getoutcome intercept<- Inverse kill<- latent latent<- lava.options lvm
+##'                  Model multigroup parameter<- pars regression regression<- revdiag sim trim
 ##' @importFrom survival Surv is.Surv
+##' @importFrom utils head tail getS3method glob2rx capture.output
+##' @importFrom graphics matplot lines plot polygon par points abline
+##'     title matlines
+##' @importFrom grDevices dev.list devAskNewPage dev.interactive
 ##' @keywords package
 ##' @examples
 ##' 
@@ -128,10 +136,21 @@ NULL
 ##' @export
 ##' @aliases plotcr npc nonparcuminc simnordic corsim.prostate
 ##' alpha2kendall alpha2spear coefmat piecewise.twostage surv.boxarea
-##' cluster.index familycluster.index faster.reshape piecewise.data
+##' faster.reshape piecewise.data
 ##' simBinPlack simBinFam simBinFam2 simSurvFam corsim.prostate.random
 ##' simnordic.random simCox sim pmvn pbvn
 ##' loglikMVN scoreMVN grouptable jumptimes folds
+##'  ace.family.design ascertained.pairs CCbinomial.twostage
+##'  coarse.clust      concordance.twin.ace concordance.twostage
+##'  fast.cluster      force.same.cens ilap
+##'  kendall.ClaytonOakes.twin.ace kendall.normal.twin.ace
+##'  make.pairwise.design make.pairwise.design.competing
+##'  matplot.mets.twostage object.defined p11.binomial.twostage.RV
+##'  predictPairPlack simbinClaytonOakes.family.ace
+##'  simbinClaytonOakes.pairs simbinClaytonOakes.twin.ace
+##'  simClaytonOakes.family.ace simClaytonOakes.twin.ace
+##'  simCompete.simple simCompete.twin.ace twin.polygen.design
+##'  twostage.fullse
 NULL
 
 

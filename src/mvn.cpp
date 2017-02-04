@@ -1,14 +1,15 @@
+// [[Rcpp::interfaces(cpp)]]
 
 #include "mvn.h"
 #include "tools.h"
 #include <math.h>
 
-int _mvt_maxpts=25000; 
-double _mvt_abseps=0.001; 
-double _mvt_releps=0;  
+int _mvt_maxpts=25000;
+double _mvt_abseps=0.001;
+double _mvt_releps=0;
 int _mvt_df = 0;
 int _mvt_inform;
-double _mvt_error[3]; 
+double _mvt_error[3];
 
 
 double mvtdst(int* n,         
@@ -18,7 +19,7 @@ double mvtdst(int* n,
 	      int* infin,     // Infinity argument, ith element 0: ]-inf,up[i]], 1: [lo[i],inf[, 2: [lo[i],up[i]], 3: ]-inf,inf[
 	      double* correl, // Correlation coefficients (upper-tri)
 	      double* delta,  // non-central parameter
-	      int* maxpts,    // Max-pts (quasi-mc)
+	      int* maxpts,    // Max function evalutions (quasi-mc)
 	      double* abseps, // Tolerance absolute error 
 	      double* releps, // Tolerance relative error
 	      double* error,  // estimated abs. error. with 99% confidence interval
@@ -87,15 +88,18 @@ double cdfmvn(mat &upper, mat &cor) {
       j++;
     }
   }
-  irowvec infin(n); infin.fill(0); //
-  mvtdst(&n, &_mvt_df,
+  Row<int> infin(n); infin.fill(0); //
+  mvtdst(&n,
+	 &_mvt_df,
 	 &upper[0], // Lower, ignored
 	 &upper[0], 
 	 &infin[0], // Infinity argument (all 0 since CDF)
 	 &Cor[0],
-	 &_mvt_delta[0], &_mvt_maxpts,
+	 &_mvt_delta[0],
+	 &_mvt_maxpts,
 	 &_mvt_abseps, &_mvt_releps,
-	 &_mvt_error[0], &val, &_mvt_inform);  
+	 &_mvt_error[0],
+	 &val, &_mvt_inform);  
   return(val);
 }
 
@@ -355,7 +359,7 @@ vec loglikmvn(mat &Yl, mat &Yu, uvec &Status,
    
     rowvec lower(nNonObs); 
     rowvec upper(nNonObs);
-    irowvec infin(nNonObs); // 0: right, 1: left, 2: interval
+    Row<int> infin(nNonObs); // 0: right, 1: left, 2: interval
 
     uvec currow(1); 
     for (int i=0; i<n; i++) { // Iterate over subjects
@@ -469,17 +473,28 @@ vec loglikmvn(mat &Yl, mat &Yu, uvec &Status,
   return(loglik);
 }
 
-RcppExport SEXP loglikMVN(SEXP yl, SEXP yu, 
-			  SEXP status,
-			  SEXP mu, SEXP dmu,
-			  SEXP s, SEXP ds,
-			  SEXP z, SEXP su, SEXP dsu,
-			  SEXP threshold, SEXP dthreshold, SEXP score) {
-BEGIN_RCPP
-  mat Yl = Rcpp::as<mat>(yl);
-  mat Mu = Rcpp::as<mat>(mu);  
-  mat S = Rcpp::as<mat>(s);
-  bool Score = Rcpp::as<bool>(score);  
+
+
+
+// RcppExport SEXP loglikMVN(SEXP yl, SEXP yu, 
+// 			  SEXP status,
+// 			  SEXP mu, SEXP dmu,
+// 			  SEXP s, SEXP ds,
+// 			  SEXP z, SEXP su, SEXP dsu,
+// 			  SEXP threshold, SEXP dthreshold, SEXP score) {
+
+// [[Rcpp::export(name = ".loglikMVN")]]
+arma::mat loglikMVN(arma::mat Yl, SEXP yu, 
+		    SEXP status,
+		    arma::mat Mu, SEXP dmu,
+		    arma::mat S,  SEXP ds,
+		    SEXP z, SEXP su, SEXP dsu,
+		    SEXP threshold, SEXP dthreshold,
+		    bool Score) {  
+  // mat Yl = Rcpp::as<mat>(yl);
+  // mat Mu = Rcpp::as<mat>(mu);  
+  // mat S = Rcpp::as<mat>(s);
+  // bool Score = Rcpp::as<bool>(score);  
   if (Score) {
     mat dS = Rcpp::as<mat>(ds);
     mat dMu = Rcpp::as<mat>(dmu);
@@ -488,7 +503,7 @@ BEGIN_RCPP
 		     S, dS);
 		 // Z,  Su, dSu,
 		 // Threshold, dThreshold) {
-    return(wrap(U));
+    return(U);
   }
  
   uvec Status = Rcpp::as<uvec>(status);
@@ -564,8 +579,7 @@ BEGIN_RCPP
     		       Threshold);
   }
 
-  return (wrap(loglik));
-END_RCPP
+  return (loglik);
 }
 //   return(Rcpp::List::create(
 // 			    Rcpp::Named("loglik")=loglik,
@@ -621,7 +635,7 @@ BEGIN_RCPP
     }    
   }
    
-  irowvec infin(p); infin.fill(2); //
+  Row<int> infin(p); infin.fill(2); //
   for (unsigned j=0; j<(unsigned)p; j++) {
     if (Upper(0,j)==datum::inf) infin(j) = 1;
     if (Lower(0,j)==-datum::inf) infin(j) = 0;

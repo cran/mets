@@ -1,6 +1,7 @@
 #include <RcppArmadillo.h>
 #include <Rmath.h>
 #include <cmath>
+#include "twostage.h"
 
 using namespace arma;
 
@@ -9,7 +10,7 @@ RcppExport SEXP Bhat(SEXP ds,
 		     SEXP theta, 		     
 		     SEXP id, 
 		     SEXP ididx,
-		     SEXP idsize) {
+		     SEXP idsize) { // {{{ 
   try {
 
     uvec           event = Rcpp::as<uvec>(ds); 
@@ -87,12 +88,10 @@ RcppExport SEXP Bhat(SEXP ds,
     ::Rf_error( "c++ exception (unknown reason)" ); 
   }
   return R_NilValue; // -Wall
-}
-
-
+} // }}}
 
 RcppExport SEXP Uhat(SEXP ds, SEXP H, SEXP theta, SEXP id, SEXP idsize) {
-  try {
+  try { // {{{ 
     uvec                event = Rcpp::as<uvec>(ds);
     vec                   Hij = Rcpp::as<vec>(H);
     double           thetahat = Rcpp::as<double>(theta);
@@ -132,5 +131,356 @@ RcppExport SEXP Uhat(SEXP ds, SEXP H, SEXP theta, SEXP id, SEXP idsize) {
     ::Rf_error( "c++ exception (unknown reason)" ); 
   }
   return R_NilValue; // -Wall
-}
+} // }}} 
+
+
+RcppExport SEXP MatxCube(
+		SEXP imat,
+		SEXP idim,SEXP iDBhat 
+		)  
+{ // {{{ 
+  try {
+
+ mat  xmat = Rcpp::as<mat>(imat);
+
+ NumericVector vDBhat(iDBhat);
+ IntegerVector arrayDims(idim);
+ arma::cube DBhat(vDBhat.begin(), arrayDims[0], arrayDims[1], arrayDims[2], false);
+
+ mat X(arrayDims[2],arrayDims[0]); 
+
+ for (int k=0; k<arrayDims[2]; k++) { // Iterate over events
+//	    X.row(k)=  DBhat.slice(k) * trans(xmat.row(k)); 
+	    X.row(k)=  xmat.row(k) * trans(DBhat.slice(k)) ;
+ } 
+
+    return(Rcpp::List::create(Rcpp::Named("X")=X));
+  } catch( std::exception &ex ) {
+    forward_exception_to_r( ex );
+  } catch(...) {  
+    ::Rf_error( "c++ exception (unknown reason)" ); 
+  }
+  return R_NilValue; // -Wall
+} // }}}
+
+RcppExport SEXP BhatAddGam(SEXP irecursive, SEXP idBaalen,SEXP icause,
+		SEXP idimxjump,SEXP ixjump, // cube 
+		SEXP itheta,
+		SEXP idimthetades,SEXP ithetades, // cube 
+		SEXP iags, SEXP ivarlink, 
+		SEXP idimjumprv,SEXP ijumprv,SEXP iit, SEXP iBit)  // cube 
+{ // {{{ 
+  try {
+
+//   wall_clock timer; 
+//   timer.tic(); 
+
+// {{{ reading in matrices and cubes 
+    mat                dBaalen = Rcpp::as<mat>(idBaalen);
+    uvec                 cause = Rcpp::as<uvec>(icause); 
+    vec                  theta = Rcpp::as<vec>(itheta); 
+    mat                    ags = Rcpp::as<mat>(iags);
+    int                varlink = Rcpp::as<int>(ivarlink);
+    int                     it = Rcpp::as<int>(iit);
+    int              recursive = Rcpp::as<int>(irecursive);
+    mat                    Bit = Rcpp::as<mat>(iBit);
+
+ if (recursive==1) it=1; 
+
+// array for xjump covariates of jump subject, for all causes 
+ NumericVector vxjump(ixjump);
+ IntegerVector arrayDims(idimxjump);
+ arma::cube xjump(vxjump.begin(), arrayDims[0], arrayDims[1], arrayDims[2], false);
+
+// array for xjump covariates of jump subject, for all causes 
+ NumericVector vecthetades(ithetades);
+ IntegerVector arrayDims1(idimthetades);
+ arma::cube thetades(vecthetades.begin(), arrayDims1[0], arrayDims1[1], arrayDims1[2], false);
+
+// array for xjump covariates of jump subject, for all causes 
+ NumericVector vrv(ijumprv);
+ IntegerVector arrayDims2(idimjumprv);
+ arma::cube rv(vrv.begin(), arrayDims2[0], arrayDims2[1], arrayDims2[2], false);
+
+ // }}}
+ 
+// double nt = timer.toc();
+// printf("timer-ind %lf \n",nt); 
+
+  vec casev(cause.n_elem); 
+  vec etheta=theta; 
+  if (varlink==1) etheta=exp(theta); 
+
+//  xjump for each jump contains matrix of covariates such that vec cumhaz1= xjump.slice(s) * Bhat 
+
+    mat  Bhat(dBaalen.n_rows, dBaalen.n_cols); 
+//    mat  Bhatmarg(dBaalen.n_rows, dBaalen.n_cols); 
+//    cube  DthetaBhat(theta.n_elem, dBaalen.n_cols,dBaalen.n_rows); 
+//    vec dBB(theta.n_elem); 
+
+//    Bhat.fill(0); // initialize 
+//
+    vec DthetaS(theta.n_elem),DthetaDtS(theta.n_elem),DthetaW(theta.n_elem); 
+    vec allvec(6); 
+    int ncr=rv.n_rows; 
+    vec cumhaz(ncr); cumhaz.fill(0); 
+    vec Dcumhaz1(ncr); 
+//    vec cumhaz2(ncr); cumhaz2.fill(0); 
+
+    double  caseweight=1,ll; 
+//    mat rv2=0*rv.slice(0); 
+      mat rv1=rv.slice(0); 
+
+//	rv1.print("rv1"); 
+//	cumhaz1.print("ch1"); 
+//	ags.print("ags"); 
+
+// wall_clock timer; 
+// timer.tic(); 
+
+    for (int i=0; i<it ; i++) { // Iterate over baseline 
+    for (unsigned k=0; k<cause.n_elem; k++) { // Iterate over events
+   // {{{ 
+
+        if (recursive==0) cumhaz=xjump.slice(k) * trans(Bit.row(k)); 
+        // computes weights based on additive gamma model 
+        mat thetadesv=thetades.slice(k); 
+	rv1=rv.slice(k); 
+//	thetadesv.print("thetades"); rv1.print("rv1"); etheta.print("theta"); 
+//	cumhaz.print("cumhaz"); 
+        ll=survivalRVCmarg(etheta,thetadesv,ags,(int) cause(k),cumhaz,rv1,DthetaS,DthetaDtS,allvec);
+        caseweight=allvec(0)/ll; //   S / D_1 S
+	casev(k)=caseweight; 
+//	printf(" %d %lf %lf %lf \n",cause(k),caseweight,ll,allvec(0));  
+//	DthetaW=(ll*DthetaDtS-allvec(0)*DthetaS)/(ll*ll);
+
+        //  increments 
+        Bhat.row(k)=dBaalen.row(k)*caseweight;
+//        DthetaBhat.slice(k)= DthetaW * dBaalen.row(k);
+
+	// derivative of baseline wrt theta
+//	mat dBthetamat=xjump.slice(k) * trans(DthetaBhat.slice(k)); 
+//	dBB = trans(dBthetamat) *Dcumhaz1; 
+
+//  cumulative  for all causes
+        if (k>0) { Bhat.row(k) += Bhat.row(k-1); }
+//        if (k>0) { DthetaBhat.slice(k)+= DthetaBhat.slice(k-1)+ 
+//                      (dBB * dBaalen.row(k)); 
+//	}
+//	mat xj=xjump.slice(k); 
+//	xj.print("xj"); 
+//	vec bb=trans(Bhat.row(k)); 
+//	bb.print("bb"); 
+//	cumulative hazard at time t- for all causes 
+	if (recursive==1) cumhaz=xjump.slice(k) * trans(Bhat.row(k)); 
+	// update Bit Bit.row(k)=Bhat.row(k); 
+		
+//	mat pp=DthetaBhat.slice(k); 
+//	pp.print("pp"); Dcumhaz1.print("Dcumhaz1");  
+    } // }}}
+    } 
+
+// double nt2 = timer.toc();
+// printf("Bhat-profile timer-loop %lf \n",nt2); 
+
+    return(Rcpp::List::create(Rcpp::Named("B")=Bhat, 
+			      Rcpp::Named("caseweights")=casev)
+//			      Rcpp::Named("DthetaBhat")=-1*DthetaBhat)
+		    );
+  } catch( std::exception &ex ) {
+    forward_exception_to_r( ex );
+  } catch(...) {  
+    ::Rf_error( "c++ exception (unknown reason)" ); 
+  }
+  return R_NilValue; // -Wall
+} // }}}
+
+
+// marginal hazard estimation via iterative estimator
+// pairs where we condition on second subjects 
+// ascertainment correction is equivalent to case-control sampling (except for delayed entry)
+RcppExport SEXP BhatAddGamCC(SEXP itwostage,SEXP idBaalen,SEXP icause,
+		SEXP idimxjump,SEXP ixjump, // cube 
+		SEXP itheta,
+		SEXP idimthetades,SEXP ithetades, // cube 
+		SEXP iags, SEXP ivarlink, 
+		SEXP idimjumprv,SEXP ijumprv,
+		SEXP inrvs, SEXP iit, SEXP iBit, 
+		SEXP iBcaseit, SEXP icausecase)  // cube 
+{ // {{{ 
+  try {
+
+//   wall_clock timer; 
+//   timer.tic(); 
+
+// {{{ reading in matrices and cubes 
+    int               twostage = Rcpp::as<int>(itwostage);
+    mat                dBaalen = Rcpp::as<mat>(idBaalen);
+    uvec                 cause = Rcpp::as<uvec>(icause); 
+    vec                  theta = Rcpp::as<vec>(itheta); 
+    mat                    ags = Rcpp::as<mat>(iags);
+    int                varlink = Rcpp::as<int>(ivarlink);
+    uvec                  nrvs = Rcpp::as<uvec>(inrvs); 
+    int                     it = Rcpp::as<int>(iit);
+    mat                    Bit = Rcpp::as<mat>(iBit);
+    mat                Bcaseit = Rcpp::as<mat>(iBcaseit);
+    uvec             causecase = Rcpp::as<uvec>(icausecase); 
+
+    // if it>=1 then uses iterative estimator rather than recursive
+    // for baseline, case/proband is handled via iterative
+    int recursive=1;int ascertainment=1; 
+    if (twostage==-2)  { recursive=1; ascertainment=1;it=1;} // not two stage model 
+    if (twostage==-1)  { recursive=0; ascertainment=0;     } // not two stage model 
+    if (twostage==0)   { recursive=1; ascertainment=0;it=1;} // not two stage model 
+    if (twostage==1)   { recursive=1; ascertainment=0;it=1;} // two-stage 
+    if (twostage==2)   { recursive=0; ascertainment=0;     } // two-stage 
+    if (twostage==3)   { recursive=1; ascertainment=1;it=1;} // two-stage it=1; 
+
+//  xjump for each jump contains matrix of covariates such that vec cumhaz1= xjump.slice(s) * Bhat 
+// array for xjump covariates of jump subject, for all causes 
+ NumericVector vxjump(ixjump);
+ IntegerVector arrayDims(idimxjump);
+ arma::cube xjump(vxjump.begin(), arrayDims[0], arrayDims[1], arrayDims[2], false);
+
+// array for xjump covariates of jump subject, for all causes 
+ NumericVector vecthetades(ithetades);
+ IntegerVector arrayDims1(idimthetades);
+ arma::cube thetades(vecthetades.begin(), arrayDims1[0], arrayDims1[1], arrayDims1[2], false);
+
+// array for xjump covariates of jump subject, for all causes 
+ NumericVector vrv(ijumprv);
+ IntegerVector arrayDims2(idimjumprv);
+ arma::cube rv(vrv.begin(), arrayDims2[0], arrayDims2[1], arrayDims2[2], false);
+
+ // }}}
+ 
+// double nt = timer.toc(); printf("timer-ind %lf \n",nt); 
+
+  vec casev(cause.n_elem); 
+  vec etheta=theta; 
+//  if (varlink==1) etheta=exp(theta); 
+
+  mat  Bhat(dBaalen.n_rows, dBaalen.n_cols); 
+//    cube  DthetaBhat(theta.n_elem, dBaalen.n_cols,dBaalen.n_rows); 
+//    vec dBB(theta.n_elem); 
+//    Bhat.fill(0); // initialize 
+
+  vec DthetaS(theta.n_elem); // ,DthetaDtS(theta.n_elem),DthetaW(theta.n_elem); 
+  vec allvec(6),  allvect(6); 
+  int ncr=rv.n_rows/2; 
+//    printf(" %d \n",ncr); 
+  vec cumhaz(ncr); cumhaz.fill(0); 
+  vec cumhazt(ncr); cumhazt.fill(0); 
+//    vec Dcumhaz1(ncr); 
+//    vec cumhaz2(ncr); cumhaz2.fill(0); 
+
+  double s1=1,s2=1,caseweight=1,ll=1; 
+  double s1t=1,llt=1; 
+//    mat rv2=0*rv.slice(0); 
+//    mat rv1=rv.slice(0); 
+
+//	rv1.print("rv1"); cumhaz1.print("ch1"); ags.print("ags"); 
+
+// wall_clock timer; 
+// timer.tic(); 
+ mat rrv1,rrv2; 
+ vec rv1,rv2; 
+
+    for (int i=0; i<it ; i++) { // Iterate over baseline  or not
+    for (unsigned k=0; k<cause.n_elem; k++) { // Iterate over events
+    // {{{ 
+    
+        // computes weights based on additive gamma model 
+	// cumulative hazards for cases Xcase^T B(T_case)
+        vec cumhazcase=trans(Bcaseit.row(k)); 
+        if ((recursive==0) & (k>0)) cumhaz=xjump.slice(k)*trans(Bit.row(k)); 
+        cumhazt=xjump.slice(k)*trans(Bit.row(k)); 
+
+        int lnrv= nrvs(k)-1; // number of random effects for this cluster 	
+	mat rvm=rv.slice(k);
+	int nnn=rvm.n_rows; 
+//	rvm.print("rvm"); 
+	// first half of rows for person1 and second half for subject 2
+	// nn number of competing risks
+        if (twostage<=0) {	
+           rrv1= rvm.rows(0,nnn/2-1);
+           rrv2= rvm.rows(nnn/2,nnn-1);
+	} else {
+           rv1= trans(rvm.row(0));
+           rv2= trans(rvm.row(1));
+//	   rv1.print("rv1");  rv2.print("rv2"); 
+//	rv1.print("rv1"); thetadesv.print("thetades"); 
+	}
+
+        mat thetadesv=thetades.slice(k); 
+
+        if (twostage<=0) {
+           ll=survivalRVC2all(etheta,thetadesv,ags,cause(k),causecase(k),cumhaz,cumhazcase,rrv1,rrv2,DthetaS,allvec);
+	   if (ascertainment==0) caseweight=allvec(4)/(ll); 
+           if (ascertainment==1) {
+//	       s1t=exp(-cumhazt(0)); 
+	       llt=survivalRVC2all(etheta,thetadesv,ags,0,causecase(k),cumhaz,cumhazcase,rrv1,rrv2,DthetaS,allvect);
+	       caseweight=(allvec(4)+llt)/(ll); 
+	    }
+	} else { 
+	    s1=exp(-cumhaz(0));      // survival to clayton-oakes
+	    s2=exp(-cumhazcase(0));  // cases via iterative, one-dimensional only (survival)
+//         printf(" %d %d %lf %lf \n",cause(k),causecase(k),s1,s2); 
+//	    etheta.print("hlj");  ags.print("ags"); 
+	    ll=claytonoakesRVC(etheta,thetadesv,ags,cause(k),causecase(k),s1,s2,rv1,rv2,DthetaS,allvec);
+	    if (ascertainment==0) caseweight=allvec(0)/(s1*ll); 
+	    if (ascertainment==1) {
+//	       s1t=exp(-cumhazt(0)); 
+	       llt=claytonoakesRVC(etheta,thetadesv,ags,0,causecase(k),s1,s2,rv1,rv2,DthetaS,allvect);
+	       caseweight=(s1*allvec(0)+s2*llt)/(s2*s1*ll); 
+	    }
+//	    printf("caseweight %lf %lf \n",caseweight,ll); 
+	}
+	//   either S / D1 S, when cause2=0, or D2 S / D1D2S, when cause2=1
+	casev(k)=caseweight; 
+
+        //  increments 
+        Bhat.row(k)=dBaalen.row(k)*caseweight;
+//        DthetaBhat.slice(k)= DthetaW * dBaalen.row(k);
+
+	// derivative of baseline wrt theta
+//	mat dBthetamat=xjump.slice(k) * trans(DthetaBhat.slice(k)); 
+//	dBB = trans(dBthetamat) *Dcumhaz1; 
+
+//  cumulative  for all causes
+        if (k>0) { Bhat.row(k) += Bhat.row(k-1); }
+//      if (k>0) { DthetaBhat.slice(k)+= DthetaBhat.slice(k-1)+ 
+//                      (dBB * dBaalen.row(k)); 
+//	}
+	mat xj=xjump.slice(k); 
+//	vec bb=trans(Bhat.row(k)); 
+//	bb.print("bb"); 
+//	cumulative hazard at time t- for all causes 
+	if (recursive==1)  cumhaz=xjump.slice(k)*trans(Bhat.row(k)); 
+//	else  { 
+//		printf("sono qui \n"); 
+		// update Bit Bit.row(k)=Bhat.row(k); 
+//	}
+		
+//	mat pp=DthetaBhat.slice(k); 
+//	pp.print("pp"); Dcumhaz1.print("Dcumhaz1");  
+
+//		trans(sum(dBthetamat,0)); 
+    } // }}}
+    } 
+
+// double nt2 = timer.toc();
+// printf("Bhat-profile timer-loop %lf \n",nt2); 
+
+    return(Rcpp::List::create(Rcpp::Named("B")=Bhat, 
+			      Rcpp::Named("caseweights")=casev)
+//			      Rcpp::Named("DthetaBhat")=-1*DthetaBhat)
+		    );
+  } catch( std::exception &ex ) {
+    forward_exception_to_r( ex );
+  } catch(...) {  
+    ::Rf_error( "c++ exception (unknown reason)" ); 
+  }
+  return R_NilValue; // -Wall
+} // }}}
 

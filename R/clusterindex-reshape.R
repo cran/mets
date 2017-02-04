@@ -1,4 +1,26 @@
+##' Finds subjects related to same cluster
+##' 
+##' @aliases cluster.index 
+##' @references
+##' Cluster indeces 
+##' @examples
+##' i<-c(1,1,2,2,1,3)
+##' d<- cluster.index(i)
+##' print(d)
+##'
+##' type<-c("m","f","m","c","c","c")
+##' d<- cluster.index(i,num=type,Rindex=1)
+##' print(d)
+##' @seealso familycluster.index familyclusterWithProbands.index
+##' @author Klaus Holst, Thomas Scheike
 ##' @export
+##' @param clusters  list of indeces
+##' @param index.type if TRUE then already list of integers of index.type
+##' @param num to get numbering according to num-type in separate columns
+##' @param Rindex index starts with 1, in C is it is 0
+##' @param mat to return matrix of indeces
+##' @param return.all return all arguments
+##' @param code.na how to code missing values
 cluster.index <- function(clusters,index.type=FALSE,num=NULL,Rindex=0,mat=NULL,return.all=FALSE,code.na=NA)
 { ## {{{
   n <- length(clusters)
@@ -29,22 +51,94 @@ cluster.index <- function(clusters,index.type=FALSE,num=NULL,Rindex=0,mat=NULL,r
   clustud
 } ## }}}
 
+##' Finds all pairs within a cluster (family)
+##' 
+##' @aliases familycluster.index 
+##' @references
+##' Cluster indeces 
+##' @examples
+##' i<-c(1,1,2,2,1,3)
+##' d<- familycluster.index(i)
+##' print(d)
+##' @seealso cluster.index familyclusterWithProbands.index
+##' @author Klaus Holst, Thomas Scheike
 ##' @export
+##' @param clusters  list of indeces 
+##' @param index.type argument of cluster index 
+##' @param num num 
+##' @param Rindex index starts with 1 in R, and 0 in C
 familycluster.index <- function(clusters,index.type=FALSE,num=NULL,Rindex=1)
 { ## {{{
   clusters <- cluster.index(clusters,Rindex=Rindex)
-  totpairs <- sum(clusters$antclust*(clusters$antclust-1)/2)
+  totpairs <- sum(clusters$cluster.size*(clusters$cluster.size-1)/2)
   clustud <- .Call("familypairindex",clusters$idclust,clusters$cluster.size,as.integer(2*totpairs))
+  clustud$pairs <- matrix(clustud$familypairindex,ncol=2,byrow=TRUE)
 
   invisible(clustud)
 } ## }}}
 
-###library(mets)
-###index <- c(1,1,2,2,1)
-###clusters <- cluster.index(index,Rindex=1)
-###ud <- familycluster.index(index)
-###ud
+##' Finds all pairs within a cluster (famly)  with the proband (case/control) 
+##' 
+##' second column of pairs are the probands and the first column the related subjects
+##' 
+##' 
+##' @references
+##' Cluster indeces 
+##' @examples
+##' i<-c(1,1,2,2,1,3)
+##' p<-c(1,0,0,1,0,1)
+##' d<- familyclusterWithProbands.index(i,p)
+##' print(d)
+##' @author Klaus Holst, Thomas Scheike
+##' @seealso familycluster.index cluster.index
+##' @export
+##' @param clusters list of indeces giving the clusters (families)
+##' @param probands list of 0,1 where 1 specifices which of the subjects that are probands 
+##' @param index.type argument passed to other functions
+##' @param num argument passed to other functions
+##' @param Rindex index starts with 1, in C is it is 0
+familyclusterWithProbands.index <- function(clusters,probands,index.type=FALSE,num=NULL,Rindex=1)
+{ ## {{{
+    famc <-familycluster.index(clusters,index.type=index.type,num=num,Rindex=Rindex)
+    if (length(probands)!=length(clusters)) stop("clusters and probands not same length\n"); 
+    index.probs <- (1:length(clusters))[probands==1]
+    subfamsWprobands <-famc$subfamilyindex[ famc$familypairindex %in% index.probs ]
+    indexWproband <- famc$subfamilyindex %in% subfamsWprobands 
+    famc$subfamilyindex <- famc$subfamilyindex[indexWproband]
+    famc$familypairindex <- famc$familypairindex[indexWproband]
+    pairs <- matrix(famc$familypairindex,ncol=2,byrow=TRUE)
+    ipi1 <- pairs[,1] %in% index.probs
+    gem2 <- pairs[,2]
+    pairs[ipi1,2] <- pairs[ipi1,1]
+    pairs[ipi1,1] <- gem2[ipi1]
+    famc$pairs <- pairs
 
+    famc$familypairindex <- c(t(pairs))
+    invisible(famc)
+} ## }}}
+###library(mets)
+###clusters <-   c(1,1,2,2,1,3,3,3,4,4)
+###probands <-   c(0,1,0,1,0,1,0,0,0,0)
+###index.type=FALSE;num=NULL;Rindex=1
+###ilusters <- cluster.index(clusters,Rindex=1)
+###ud <- familycluster.index(clusters)
+###ud1 <- familyclusterWithProbands.index(clusters,probands)
+
+
+##' @export
+coarse.clust <- function(clusters,max.clust=100)
+{ ## {{{ 
+
+if (is.numeric(clusters)) 
+   clusters <-  sindex.prodlim(unique(clusters),clusters)
+cluster.size <- length(unique(clusters))
+
+qq <- unique(quantile(clusters, probs = seq(0, 1, by = 1/max.clust)))
+qqc <- cut(clusters, breaks = qq, include.lowest = TRUE)    
+cclusters <-  as.integer(qqc)-1
+
+return(cclusters)
+} ## }}} 
 
 ##' @export
 faster.reshape <- function(data,clusters,index.type=FALSE,num=NULL,Rindex=1)
