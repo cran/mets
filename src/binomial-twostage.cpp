@@ -797,6 +797,8 @@ mat rvdes=mat(rvdesvec.begin(),arrayDims2[0],arrayDims2[1]*arrayDD[2],false);
   colvec likepairs(antclust); 
 //  double claytonoakesbinRVC(); 
 
+//    Rprintf("--------%d  \n",antclust); 
+
 for (j=0;j<antclust;j++) { 
 
     R_CheckUserInterrupt(); diff=0; //sdj=0; 
@@ -814,14 +816,20 @@ for (j=0;j<antclust;j++) {
      int flexfunc=0; 
       if (flexfunc==0) {
 	  if (depmodel!=3) {
-		  thetak=Xtheta(i,0);  
-		  pthetavec= trans(thetades.row(i)); 
+//		  thetak=Xtheta(i,0);  
+//		  pthetavec= trans(thetades.row(i)); 
+//		  vthetascore=1*pthetavec; 
+                  thetak=Xtheta(j,0);  
+		  pthetavec= trans(thetades.row(j)); 
 		  vthetascore=1*pthetavec; 
 	  }
       } else { // {{{ 
 	  thetak=Xtheta(i,s); 
 	  pthetavec = DXtheta(span(s),span(i),span::all); 
       } // }}} 
+
+//  pthetavec.print("pthetavec");
+//  printf(" %lf \n",thetak);
 
   if (depmodel==1){ if (varlink==1) deppar=1/exp(thetak); else deppar=1/thetak;}
   if (depmodel==2){ if (varlink==1) deppar=exp(thetak); else deppar=thetak; }
@@ -850,7 +858,7 @@ for (j=0;j<antclust;j++) {
 
 	// 3-dimensional array pairs*(2xrandom effects)
         int lnrv= nrvs(j)-1; // number of random effects for this cluster 	
-//	printf(" %d \n",lnrv); 
+//	Rprintf(" %d \n",lnrv); 
 	mat rv=rvdesC.slice(j); 
         vec rv1= trans(rv.submat(span(0),span(0,lnrv)));
         vec rv2= trans(rv.submat(span(1),span(0,lnrv)));
@@ -869,15 +877,16 @@ for (j=0;j<antclust;j++) {
            rv1.print("rv1");    rv2.print("rv2"); 
 	   thetadesvv.print("thetades "); 
 	   etheta.print("e-theta"); 
-	   mat test=mat(thetades.begin(),3,1); 
-	   test.print("test"); 
+//	   mat test=mat(thetades.begin(),3,1); 
+//	   test.print("test"); 
 	}/*}}}*/
 
 	ll=claytonoakesbinRVC(etheta,thetadesv,ags,ci,ck,Li,Lk,rv1,rv2,dplack,vDbetaDtheta,ps,dp00);
-//	printf("==============================\n"); 
-//        if (j<10) { rv1.print("rv1"); rv2.print("rv1"); thetades.print("theta.des"); etheta.print("theta"); 
-//	   printf("%d  %d %d %lf %lf %lf \n",j,ci,ck,Li,Lk,ll); ps.print("ps"); 
-//	   }
+        if (j<-10) { 
+		Rprintf("==============================\n"); 
+		rv1.print("rv1"); rv2.print("rv1"); thetadesv.print("theta.des"); etheta.print("theta"); 
+		Rprintf("%d  %d %d %lf %lf %lf \n",j,ci,ck,Li,Lk,ll); ps.print("ps"); 
+	}
 
         ssf+=weights(i)*log(ll); 
 	loglikecont=log(ll);

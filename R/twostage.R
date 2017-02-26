@@ -76,7 +76,7 @@
 ##' Given the random effects the survival distributions with a cluster are independent and
 ##' on the form 
 ##' \deqn{
-##' P(T > t| x,z) = exp( - Laplace^{-1}(lamtot,lamtot,S(t|x)) )  
+##' P(T > t| x,z) = exp( -Z \cdot Laplace^{-1}(lamtot,lamtot,S(t|x)) )  
 ##' }
 ##' with the inverse laplace of the gamma distribution with mean 1 and variance lamtot.
 ##'
@@ -308,8 +308,8 @@ survival.twostage <- function(margsurv,data=sys.parent(),score.method="fisher.sc
 { ## {{{
 ## {{{ seting up design and variables
 rate.sim <- 1; sym=1; var.func <- NULL
-if (model=="clayton.oakes") dep.model <- 1
-else if (model=="plackett") dep.model <- 2
+if (model=="clayton.oakes" || model=="gamma") dep.model <- 1
+else if (model=="plackett" || model=="or") dep.model <- 2
 else stop("Model must by either clayton.oakes or plackett \n"); 
 start.time <- NULL; ptrunc <- NULL; psurvmarg <- NULL; status <- NULL
 fix.baseline <- 0; 
@@ -712,6 +712,7 @@ if (!is.null(margsurv))  {
          } else partheta <- epar ## par.func(epar)
       } 
 
+
       if (pair.structure==0) {
 	      outl<-.Call("twostageloglikeRV", ## {{{ only two stage model for this option
 	      icause=status,ipmargsurv=psurvmarg, 
@@ -783,6 +784,8 @@ if (!is.null(margsurv))  {
           } ## }}} 
           }
 
+###      browser()
+###      print(dim(random.design))
 
           outl<-.Call("twostageloglikeRVpairs", ## {{{
           icause=status,ipmargsurv=psurvmarg, 
@@ -952,7 +955,8 @@ if (!is.null(margsurv))  {
 	    mm <- mm/sp^4
 	 } else mm  <- numDeriv::hessian(var.func,par)
       } else {
-	   if (var.link==0) mm <- diag(length(epar)) else mm <- diag(c(epar))
+	   if (var.link==0) mm <- diag(length(epar)) else 
+			  mm <- diag(length(c(epar)))*c(epar)
       }
       }# }}}
 
@@ -960,6 +964,7 @@ if (!is.null(margsurv))  {
 ###    print("hh"); print(mm); print(outl$score)
 
     if (dep.model==3) {# {{{
+###	    print(dim(mm))
        outl$score <-  t(mm) %*% outl$score
        outl$Dscore <- t(mm) %*% outl$Dscore %*% mm
        if (iid==1) outl$theta.iid <- t(t(mm) %*% t(outl$theta.iid))
@@ -1140,8 +1145,9 @@ if (!is.null(margsurv))  {
   var.theta <- robvar.theta
   if (is.null(robvar.theta)) var.theta <- hessi
 
-  if (!is.null(colnames(theta.des))) thetanames <- colnames(theta.des) else thetanames <- rep("intercept",ptheta)
-###  if (length(thetanames)==nrow(theta)) rownames(theta) <- thetanames
+  if (!is.null(colnames(theta.des))) thetanames <- colnames(theta.des) else thetanames <- paste("dependence",1:length(theta),sep="")
+  theta <- matrix(theta,length(c(theta)),1)
+  if (length(thetanames)==nrow(theta)) { rownames(theta) <- thetanames; rownames(var.theta) <- colnames(var.theta) <- thetanames; }
   if (!is.null(logl)) logl <- -1*logl
 
   if (convergence.bp==0) theta <- rep(NA,length(theta))
@@ -1181,21 +1187,33 @@ if (!is.null(margsurv))  {
 } ## }}}
 
 ##' @export
-summary.mets.twostage <- function(object,digits = 3,silent=1,...) 
+summary.mets.twostage <- function(object,digits = 3,silent=0,...) 
 { ## {{{
   if (!(inherits(object,"mets.twostage"))) stop("Must be a Two-Stage object")
   
   var.link<-attr(object,"var.link");
-  if ((object$model=="plackett") & (silent==0)) cat("Dependence parameter for Plackett model \n"); 
+  var.par  <- attr(object,"var.par"); 
+  model <- object$model
+  if ((model=="plackett" || model=="or") )         model <- "or"
+  if ((model=="clayton.oakes" || model=="gamma") ) model <- "gamma"
+  if ((attr(object,"additive-gamma")==1) & (silent==0)) addgam <- TRUE else addgam <- FALSE
+
+  if ((model=="or") && (silent==0)) cat("Dependence parameter for Odds-Ratio (Plackett) model \n"); 
   if (attr(object,"response")=="binomial") response <- "binomial" else response <- "survival"
-  if ((object$model=="clayton.oakes") & (silent==0)) cat("Dependence parameter for Clayton-Oakes model \n"); 
-
-  if ((attr(object,"additive-gamma")==1) & (silent==0)) cat("Additive gamma model \n");
-
+  if ((model=="gamma") && (silent==0)) {
+	  cat("Dependence parameter for Clayton-Oakes model\n")
+	  if (var.par==1 || !addgam) 
+	  cat("Variance of Gamma distributed random effects \n"); 
+	  if (var.par==0 && addgam)
+	  cat("Inverse of variance of Gamma distributed random effects \n"); 
+  }
+  if (var.link==1 && silent==0) cat("With log-link \n")
   if ((sum(abs(object$score))>0.0001) & (silent==0))  {
 	  cat("    Variance parameters did not converge, allow more iterations.\n"); 
 	  cat(paste("    Score:",object$score,"  \n")); 
   }
+  theta <- object$theta
+  if (is.null(rownames(theta)))  rownames(theta) <- paste("dependence",1:nrow(theta),sep="")
 
   coefs <- coef.mets.twostage(object,response=response,...);
 
@@ -1207,47 +1225,69 @@ summary.mets.twostage <- function(object,digits = 3,silent=1,...)
       ags <- attr(object,"additive.gamma.sum"); 
       ptheta <- attr(object,"ptheta")
       theta <- object$theta[seq(1,ptheta),1,drop=FALSE]
-###      print(theta.des); print(theta); print(theta.des %*% theta); print(rv1); 
+###   print(theta.des); print(theta); print(theta.des %*% theta); print(rv1); 
       robvar.theta <- object$robvar.theta[seq(1,ptheta),seq(1,ptheta)]
       if (var.link==1) par <- theta.des %*% exp(theta) else  par <- theta.des %*% theta
+
+      if (model=="or" || model=="plackett") var.par<-1 ## same as var.par=0 for this model
 
       if (var.par==0) 
       if (var.link==1) { ## {{{ 
 	     fp <- function(p,d,t){  res <- exp(p*t)/(sum(rv1* c(theta.des %*% exp(p))))^d; 
                                      if (t==0) res <- res[1]; return(res); }
-             e <-      lava::estimate(coef=theta,vcov=robvar.theta,f=function(p) fp(p,1,1))
-             pare <-   lava::estimate(coef=theta,vcov=robvar.theta,f=function(p) exp(p))
-             vare <-   lava::estimate(coef=theta,vcov=robvar.theta,f=function(p) fp(p,2,1))
+             e      <-   lava::estimate(coef=theta,vcov=robvar.theta,f=function(p) fp(p,1,1),labels=rownames(theta))
+             pare <-   lava::estimate(coef=theta,vcov=robvar.theta,f=function(p) exp(p),labels=rownames(theta))
+             vare <-   lava::estimate(coef=theta,vcov=robvar.theta,f=function(p) fp(p,2,1),labels=rownames(theta))
              vartot <- lava::estimate(coef=theta,vcov=robvar.theta,f=function(p) fp(p,1,0))
+###	     names(e) <- names(vare) <- names(pare) <- colnames(coefs)
       } else {
               fp <- function(p,d,t) {  res <- (p^t)/(sum(rv1* c(theta.des %*% p)))^d;
                                      if (t==0) res <- res[1]; return(res); }
-              e <-      lava::estimate(coef=theta,vcov=robvar.theta,f=function(p) fp(p,1,1))
-              vare <-   lava::estimate(coef=theta,vcov=robvar.theta,f=function(p) fp(p,2,1))
+              e <-      lava::estimate(coef=theta,vcov=robvar.theta,f=function(p) fp(p,1,1),labels=rownames(theta))
+              vare <-   lava::estimate(coef=theta,vcov=robvar.theta,f=function(p) fp(p,2,1),labels=rownames(theta))
               vartot <- lava::estimate(coef=theta,vcov=robvar.theta,f=function(p) fp(p,1,0))
 	      pare <- NULL
       } ## }}} 
 
-if (var.par==1) 
+      if (var.par==1) 
       if (var.link==1) { ## {{{ 
-###             theta <- c(varg,varc)/sum(varg+varc)^2
 	     fp <- function(p,d,t){  res <- exp(p*t)/(sum(rv1* c(theta.des %*% exp(p))))^d; 
                                      if (t==0) res <- res[1]; return(res); }
-             e <-      lava::estimate(coef=theta,vcov=robvar.theta,f=function(p) fp(p,1,1))
-             vare <-   lava::estimate(coef=theta,vcov=robvar.theta,f=function(p) exp(p))
-             pare <-   lava::estimate(coef=theta,vcov=robvar.theta,f=function(p) fp(p,2,1))
-             vartot <- lava::estimate(coef=theta,vcov=robvar.theta,f=function(p) fp(p,1,0))
+             e      <-   lava::estimate(coef=theta,vcov=robvar.theta,f=function(p) fp(p,1,1),labels=rownames(theta))
+             vare   <-   lava::estimate(coef=theta,vcov=robvar.theta,f=function(p) exp(p),labels=rownames(theta))
+             vartot <-   lava::estimate(coef=theta,vcov=robvar.theta,f=function(p) sum(exp(p)))
+###	     names(e) <- names(vare) <- colnames(coefs)
       } else {
               fp <- function(p,d,t) {  res <- (p^t)/(sum(rv1* c(theta.des %*% p)))^d;
                                      if (t==0) res <- res[1]; return(res); }
-                e <-    lava::estimate(coef=theta,vcov=robvar.theta,f=function(p) fp(p,1,1))
-              pare <-   lava::estimate(coef=theta,vcov=robvar.theta,f=function(p) fp(p,2,1))
-              vartot <- lava::estimate(coef=theta,vcov=robvar.theta,f=function(p) fp(p,1,0))
+              e     <-  lava::estimate(coef=theta,vcov=robvar.theta,f=function(p) fp(p,1,1),labels=rownames(theta))
+              pare  <-  lava::estimate(coef=theta,vcov=robvar.theta,f=function(p) fp(p,2,1),labels=rownames(theta))
+              vartot <- lava::estimate(coef=theta,vcov=robvar.theta,f=function(p) sum(p))
 	      vare <- NULL
+###	      names(e) <- names(pare) <- colnames(coefs)
       } ## }}} 
+      res <- list(estimates=coefs, type=attr(object,"Type"),h=e,vare=vare,vartot=vartot)
 
-      res <- list(estimates=coefs, type=attr(object,"Type"),h=e,par=pare,vare=vare,vartot=vartot)
-  } else res <- list(estimates=coefs, type=attr(object,"Type"))
+  } else {
+	 if (var.link==1) { ## {{{ 
+	     if (model=="or") {
+		or <-  lava::estimate(coef=object$theta,vcov=object$var.theta,f=function(p) exp(p),labels=rownames(theta))
+	        res <- list(estimates=coefs,or=or,type=attr(object,"Type"))
+	     } else {
+	        vargam <-  lava::estimate(coef=object$theta,vcov=object$var.theta,f=function(p) exp(p),labels=rownames(theta))
+###             names(vargam) <- colnames(coefs) 
+                res <- list(estimates=coefs,vargam=vargam, type=attr(object,"Type"))
+	     }
+      } else {
+	     if (model=="or") {
+             lor <- lava::estimate(coef=object$theta,vcov=object$var.theta,f=function(p) log(p),labels=rownames(theta))
+###          names(lor) <- colnames(coefs) 
+	     res <- list(estimates=coefs,log.or=lor,type=attr(object,"Type"))
+	     } else  {
+             res <- list(estimates=coefs,type=attr(object,"Type"))
+	     }
+      } ## }}} 
+  }
 
   class(res) <- "summary.mets.twostage"
   res
@@ -1257,13 +1297,11 @@ if (var.par==1)
 coef.mets.twostage <- function(object,var.link=NULL,response="survival",...)
 { ## {{{
   pt <- attr(object,"ptheta")
-  theta <- object$theta[seq(1,pt)]
+  theta <- object$theta[seq(pt),1]
 
   if (is.null(object$robvar.theta)) var.theta  <-  object$var.theta[seq(1,pt),seq(1,pt),drop=FALSE] else 
 	                            var.theta  <-   object$robvar.theta[seq(1,pt),seq(1,pt),drop=FALSE]
   se <- diag(var.theta)^.5
-
-###  print(theta); print(se)
 
   if (is.null(var.link))
      if (attr(object,"var.link")==1) vlink <- 1 else vlink <- 0

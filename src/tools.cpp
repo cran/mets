@@ -161,8 +161,12 @@ void fastpattern(const umat &y, umat &pattern, uvec &group, unsigned categories 
   unsigned k = y.n_cols;
 
   uvec mygroup(n);
-  unsigned npattern = (unsigned) pow((double) categories,(double) k);
-  umat mypattern(npattern,k);
+  double lognpattern = k*std::log((double) categories);
+  unsigned npattern = n;
+  if (lognpattern<std::log((double)npattern)) {
+    npattern = (unsigned) pow((double) categories,(double) k);
+  }   
+  umat mypattern(npattern,k); 
   mypattern.fill(1);
   unsigned K=0;
 

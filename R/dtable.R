@@ -37,10 +37,10 @@
 ##' dtable(sTRACE,status+vf+sex~diabetes|age>60, level=2, prop=2, total=TRUE)
 ##' dtable(sTRACE,status+vf+sex~diabetes|age>60, level=2, prop=1:2, summary=summary)
 ##'
-##' @aliases dtable
+##' @aliases dtable dtab
 ##' @export
 dtable <- function(data,y=NULL,x=NULL,...,level=-1,response=NULL,flat=TRUE,total=FALSE,prop=FALSE,summary=NULL) {
-    daggregate(data,y,x,...,
+       	daggregate(data,y,x,...,
                fun=function(z) {
                    res <- sum <- c()
                    if (level==1 || ncol(z)==1) {
@@ -117,6 +117,9 @@ dtable <- function(data,y=NULL,x=NULL,...,level=-1,response=NULL,flat=TRUE,total
 }
 
 ##' @export
+dtab <- function(data,y=NULL,x=NULL,...) dtable(data,y=NULL,x=NULL,...)
+
+##' @export
 print.dtable <- function(x,sep="\n",...) {
     cat(sep)
     if (inherits(x$table, c("table","ftable"))) {
@@ -133,3 +136,4 @@ print.dtable <- function(x,sep="\n",...) {
     }
 
 }
+

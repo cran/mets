@@ -8,8 +8,9 @@
 ##'
 ##' The reported standard errors are based on a cluster corrected score equations from the 
 ##' pairwise likelihoods assuming that the marginals are known. This gives correct standard errors
-##' in the case of the Plackett distribution (OR model for dependence), but incorrect standard
-##' errors for the Clayton-Oakes types model. For the additive gamma version of the stanard errors
+##' in the case of the Odds-Ratio model (Plackett distribution) for dependence, but incorrect standard
+##' errors for the Clayton-Oakes types model (that is also called "gamma"-frailty). For the additive gamma version of the 
+##' standard errors
 ##' are adjusted for the uncertainty in the marginal models via an iid deomposition using the iid() function of
 ##' lava. For the clayton oakes model that is not speicifed via the random effects these can be 
 ##' fixed subsequently using the iid influence functions for the marginal model, but typically this does not
@@ -22,7 +23,7 @@
 ##' }
 ##' therefore conditional on the random effect the probability of the event is 
 ##' \deqn{
-##' logit(P(Y=1|X,Z)) = exp( - Laplace^{-1}(lamtot,lamtot,P(Y=1|x)) )  
+##' logit(P(Y=1|X,Z)) = exp( -Z \cdot Laplace^{-1}(lamtot,lamtot,P(Y=1|x)) )  
 ##' }
 ##'
 ##' Can also fit a structured additive gamma random effects model, such
@@ -197,8 +198,9 @@ binomial.twostage <- function(margbin,data=sys.parent(),
 { ## {{{
     ## {{{ seting up design and variables
     rate.sim <- 1; sym=1; 
-    if (model=="clayton.oakes") dep.model <- 1 else if (model=="plackett") dep.model <- 2 else stop("Model must by either clayton.oakes or plackett \n"); 
+    if (model=="clayton.oakes"  || model=="gamma") dep.model <- 1 else if (model=="plackett" || model=="or") dep.model <- 2 else stop("Model must by either clayton.oakes or plackett \n"); 
     antpers <- NROW(data); 
+    if (!is.null(pairs)) nn <- NROW(pairs) else nn <- 1
 
 ### marginal prediction and binomial response, two types of calls ## {{{
     if (class(margbin)[1]=="glm") {
@@ -283,8 +285,11 @@ binomial.twostage <- function(margbin,data=sys.parent(),
 ###    else theta.des<-as.matrix(theta.des); 
 ###    ptheta<-ncol(theta.des); 
 ###    if (nrow(theta.des)!=antpers) stop("Theta design does not have correct dim");
+
+  if (!is.null(pairs)) { pair.structure <- 1; } else  pair.structure <- 0;  
   if (length(dim(theta.des))==3) ptheta<-dim(theta.des)[2] else if (length(dim(theta.des))==2) ptheta<-ncol(theta.des)
-  if (nrow(theta.des)!=antpers & dep.model!=3 ) stop("Theta design does not have correct dim");
+  if  (nrow(theta.des)!=antpers & dep.model!=3 & pair.structure==0 ) stop("Theta design does not have correct dim");
+  if  (nrow(theta.des)!=nn      & dep.model!=3 & pair.structure==1 ) stop("Theta design does not have correct dim");
 
    if (length(dim(theta.des))!=3) theta.des <- as.matrix(theta.des)
 ###   theta.des <- as.matrix(theta.des)
@@ -300,11 +305,11 @@ binomial.twostage <- function(margbin,data=sys.parent(),
 
     if (maxclust==1) stop("No clusters, maxclust size=1\n"); 
 
-  antpairs <- 1; ### to define 
+    antpairs <- 1; ### to define 
 
   if (is.null(additive.gamma.sum)) additive.gamma.sum <- matrix(1,dim.rv,ptheta)
 
-  if (!is.null(pairs)) { pair.structure <- 1; } else  pair.structure <- 0;  
+
   if (pair.structure==1 & dep.model==3) { ## {{{ 
 ### something with dimensions of rv.des 
 ### theta.des
@@ -378,6 +383,7 @@ binomial.twostage <- function(margbin,data=sys.parent(),
 		
       if (pair.structure==0 | dep.model!=3) Xtheta <- as.matrix(theta.des) %*% matrix(c(par[seq(1,ptheta)]),nrow=ptheta,ncol=1);
       if (pair.structure==1 & dep.model==3) Xtheta <- matrix(0,antpers,1); ## not needed 
+      if (pair.structure==1 & dep.model!=3) Xtheta <- as.matrix(theta.des) %*% matrix(c(par[seq(1,ptheta)]),nrow=ptheta,ncol=1);
       DXtheta <- array(0,c(1,1,1));
 
       if (twostage==0) epar <- par[seq(1,ptheta)] else epar <- par
@@ -447,7 +453,8 @@ binomial.twostage <- function(margbin,data=sys.parent(),
 		    mm <- mm/sp^4
 		 } else mm  <- numDeriv::hessian(var.func,par)
 	      } else {
-	          if (var.link==0) mm <- diag(length(epar)) else mm <- diag(c(epar))
+	          if (var.link==0) mm <- diag(length(epar)) else 
+			  mm <- diag(length(c(epar)))*c(epar)
 	      }
               if (twostage==0) {  ### beta for logistic regression also part of model
 		      mm0 <- diag(length(par))
@@ -633,8 +640,8 @@ binomial.twostage <- function(margbin,data=sys.parent(),
   if (iid==1) var.theta <- robvar.theta else var.theta <- -hessi
   if (!is.null(colnames(theta.des))) thetanames <- colnames(theta.des) else thetanames <- paste("dependence",1:length(theta),sep="")
 ### fix names !!!
-###    theta <- matrix(theta,length(theta),1)
-###    if (length(thetanames)==nrow(theta)) { rownames(theta) <- thetanames; rownames(var.theta) <- colnames(var.theta) <- thetanames; }
+###    theta <- matrix(theta,length(c(theta)),1)
+   if (length(thetanames)==nrow(theta)) { rownames(theta) <- thetanames; rownames(var.theta) <- colnames(var.theta) <- thetanames; }
 
     ud <- list(theta=theta,score=score,hess=hess,hessi=hessi,var.theta=var.theta,model=model,robvar.theta=robvar.theta,
                theta.iid=theta.iid,thetanames=thetanames,
@@ -765,17 +772,19 @@ if (is.null(ags)) ags <- matrix(1,ncol(rv1),length(theta));
        if (var.par==1) pp <- pp/sum(pp)^2
        p11 <- p11.binomial.twostage.RV(pp,rv1l,rv2l,pm,pm,theta.des,ags=ags,link=0)
        casewise <- p11/pm
-       return(c(p11,casewise,pm))
+       ret <- c(p11,casewise,pm)
+       names(ret) <- c("concordance","casewise concordance","marginal")
+       return(ret)
    }# }}}
 
-print(c(theta,beta)); print(var.tot)
 
+   nnn<-c("MZ","DZ")
    tabs <- list()
    for (i in 1:nn)
    {
       rv1l <- rv1[i,]
       rv2l <- rv2[i,]
-      tabs[[i]] <- lava::estimate(coef=c(theta,beta),vcov=var.tot,f=function(p) fp(p))
+      tabs<-c(tabs,setNames(list(tabs[[i]] <- lava::estimate(coef=c(theta,beta),vcov=var.tot,f=function(p) fp(p))), nnn[i]))
    }
 
    return(tabs)
@@ -1083,7 +1092,6 @@ easy.binomial.twostage <- function(margbin=NULL,data=sys.parent(),score.method="
         print(head(data.fam[,response]));
 	cat("\n")
     } 
-    print(head(data.fam))
 
     out <- binomial.twostage(data.fam[,response],data=data.fam,
                              clusters=data.fam$subfam,

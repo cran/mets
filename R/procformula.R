@@ -9,8 +9,9 @@ gsub2 <- function(pattern, replacement, x, ...) {
   result
 }
 
-procform <- function(formula, sep="\\|", nsep=1, return.formula=FALSE, data=NULL,
-             no.match=TRUE, regex=FALSE, return.list=TRUE, ...) {
+##' @export
+procform <- function(formula=NULL, sep="\\|", nsep=1, return.formula=FALSE, data=NULL,
+             no.match=TRUE, regex=FALSE, return.list=TRUE, specials=NULL,...) {# {{{
     res <- NULL
     if (is.null(formula)) {
         res <- colnames(data)
@@ -39,7 +40,7 @@ procform <- function(formula, sep="\\|", nsep=1, return.formula=FALSE, data=NULL
         return(list(response=res,predictor=NULL,filter=NULL))
     }
 
-    
+
     ## Add parantheses around quotes if it is not a function call
     if (inherits(formula,"formula")) {
 
@@ -92,7 +93,7 @@ procform <- function(formula, sep="\\|", nsep=1, return.formula=FALSE, data=NULL
                 x <- attributes(terms(f,data=data))$term.labels
                 pred <- x
             }
-            if (filter%in%c("1","0","-1")) { 
+            if (filter%in%c("1","0","-1")) {
                 filter <- list()
                 filter.expression <- NULL
             } else {
@@ -118,12 +119,36 @@ procform <- function(formula, sep="\\|", nsep=1, return.formula=FALSE, data=NULL
                 }
                 res <- unique(res)
             }
-        }        
+        }
         return(res)
     }
     res <- expandst(res)
     pred <- expandst(pred)
+    if (any(res==".")) {
+        diffset <- c(".",setdiff(pred,res))
+        res <- setdiff(union(res,colnames(data)),diffset)
+    }
     filter <- lapply(filter, expandst)
+    if (!is.null(specials)) {
+        foundspec <- replicate(length(specials),c())
+        names(foundspec) <- specials
+        rmidx <- c()
+        spec <- paste0("^",specials,"\\(")
+        val <- lapply(spec, function(x) which(grepl(x,pred)))
+        for (i in seq_along(val)) {
+            if (length(val[[i]])>0) { # special function found
+                rmidx <- c(rmidx,val[[i]])
+                cleanpred <- gsub("\\)$","",gsub(spec[i],"",pred[val[[i]]]))
+                foundspec[[i]] <- c(foundspec[[i]],cleanpred)
+            }
+        }
+        if (length(rmidx)>0)
+            pred <- pred[-rmidx]
+        if (length(pred)==0) pred <- NULL
+        specials <- foundspec
+        for (i in seq_along(specials)) if (is.null(specials[[i]])) specials[i] <- NULL
+        if (length(specials)==0) specials <- NULL
+    }
 
     if (return.formula) {
         if (foundsep && !is.null(filter)) {
@@ -133,8 +158,12 @@ procform <- function(formula, sep="\\|", nsep=1, return.formula=FALSE, data=NULL
             pred <- as.formula(paste0(c("~", paste0(pred,collapse="+"))))
         if (length(res)>0)
             res <- as.formula(paste0(c("~", paste0(res,collapse="+"))))
+        if (!is.null(specials)) {
+            specials <- lapply(specials,function(x)
+                              as.formula(paste0(c("~", paste0(x,collapse="+")))))
+        }
     }
-    res <- list(response=res, predictor=pred, filter=filter, filter.expression=filter.expression)
+    res <- list(response=res, predictor=pred, filter=filter, filter.expression=filter.expression, specials=specials)
     if (!return.list) return(unlist(unique(res)))
     return(res)
 }
@@ -158,12 +187,56 @@ procformdata <- function(formula,data,sep="\\|", na.action=na.pass, do.filter=TR
         else x <- model.frame(res$predictor,data=subset(data,eval(filter)),na.action=na.action)
 
     }
+    specials <- NULL
+    if (!is.null(res$specials)) {
+        specials <- lapply(res$specials,
+                      function(x) {
+                          if (is.null(filter)) model.frame(x,data=data,na.action=na.action)
+                          else model.frame(x,data=subset(data,eval(filter)),na.action=na.action)
+                      })
+    }
+
     if (!do.filter) {
         group <- lapply(res$filter, function(x) model.frame(x,data=data,na.action=na.action))
-        return(list(response=y,predictor=x,group=group))
+        return(list(response=y,predictor=x,group=group,specials=specials))
     }
-    return(list(response=y,predictor=x))
-}
+    return(list(response=y,predictor=x,specials=specials))
+}# }}}
+
+procform2 <- function(y,x=NULL,z=NULL,...) {# {{{
+    yx <- procform(y,return.formula=FALSE,...)
+    y <- yx$response
+    x0 <- yx$predictor
+    z0 <- NULL
+    if (length(yx$filter)>0) z0 <- yx$filter[[1]]
+    if (is.null(x) && length(y)>0) x <- x0
+    if (NCOL(x)==0) x <- NULL
+    if (length(y)==0) y <- x0
+    if (!is.null(x)) {
+        x <- unlist(procform(x,return.formula=FALSE,...))
+    }
+    if (is.null(z)) z <- z0
+    if (!is.null(z)) {
+        zz <- unlist(procform(z,return.formula=FALSE,...))
+    }
+    if (is.null(z)) z <- z0
+    return(list(y=y,x=x,z=z))
+}# }}}
+
+##' @export
+procform3 <- function(y,x=NULL,z=NULL,...) {# {{{
+    yx <- procform(y,return.formula=FALSE,...)
+    x0 <- yx$predictor
+    y  <- yx$response
+    if (is.null(yx$predictor)) { x0 <- yx$response ; y <- NULL} 
+
+    if (is.null(y)) 
+    if (!is.null(x)) {
+        x <- procform(x,return.formula=FALSE,...)
+        y <- c(x$predictor,x$response)
+    }
+    return(list(y=y,x=x0,z=z))
+}# }}}
 
 
 
@@ -183,12 +256,11 @@ procformdata <- function(formula,data,sep="\\|", na.action=na.pass, do.filter=TR
 ## split1=","
 ## split2="+"
 
-
 ## myspecials <- c("id","strata","f")
 ## f <- Event(leftime,time,cause) ~ id(~1+z+z2,cluster) + strata(~s1+s2) + f(a) + z*x
 ## ff <- Specials(f,"id",split2=",")
 
-Specials <- function(f,spec,split1=",",split2=NULL,...) {
+Specials <- function(f,spec,split1=",",split2=NULL,...) {# {{{
   tt <- terms(f,spec)
   pos <- attributes(tt)$specials[[spec]]
   if (is.null(pos)) return(NULL)
@@ -196,8 +268,8 @@ Specials <- function(f,spec,split1=",",split2=NULL,...) {
   st <- gsub(" ","",x) ## trim
 ##  res <- unlist(strsplit(st,"[()]"))
   spec <- unlist(strsplit(st,"[()]"))[[1]]
-  res <- substr(st,nchar(spec)+2,nchar(st)-1) 
-  if (!is.null(split1))    
+  res <- substr(st,nchar(spec)+2,nchar(st)-1)
+  if (!is.null(split1))
     res <- unlist(strsplit(res,split1))
   res <- as.list(res)
   for (i in seq(length(res))) {
@@ -205,17 +277,13 @@ Specials <- function(f,spec,split1=",",split2=NULL,...) {
       res[[i]] <- as.formula(res[[i]])
   }
   return(res)
-##  if (is.null(split2)) return(res)
-##  strsplit(res,"+",fixed=TRUE)
-}
+}# }}}
 
-decomp.specials <- function (x, pattern = "[()]", sep = ",", ...) 
+decomp.specials <- function (x, pattern = "[()]", sep = ",", ...)
   {
     st <- gsub(" ", "", x)
-    if (!is.null(pattern)) 
+    if (!is.null(pattern))
       st <- rev(unlist(strsplit(st, pattern, ...)))[1]
     unlist(strsplit(st, sep, ...))
   }
-
-
 

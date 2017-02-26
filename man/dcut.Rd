@@ -3,24 +3,27 @@
 \name{dcut}
 \alias{dcut}
 \alias{dcut<-}
-\alias{ddrop}
-\alias{ddrop<-}
-\alias{dkeep}
-\alias{dkeep<-}
+\alias{dunique}
+\alias{drm}
+\alias{drm<-}
 \alias{dnames}
 \alias{dnames<-}
 \alias{drename}
 \alias{drename<-}
-\alias{drm}
-\alias{drm<-}
-\alias{dunique}
+\alias{dkeep}
+\alias{dkeep<-}
+\alias{ddrop}
+\alias{ddrop<-}
 \title{Cutting, sorting, rm (removing), rename for data frames}
 \usage{
-dcut(data, x, breaks = 4, probs = NULL, equi = FALSE,
-  regex = mets.options()$regex, sep = NULL, ...)
+dcut(data, y = NULL, x = NULL, breaks = 4, probs = NULL, equi = FALSE,
+  regex = mets.options()$regex, sep = NULL, na.rm = TRUE, labels = NULL,
+  all = FALSE, ...)
 }
 \arguments{
 \item{data}{if x is formula or names for data frame then data frame is needed.}
+
+\item{y}{name of variable, or fomula, or names of variables on data frame.}
 
 \item{x}{name of variable, or fomula, or names of variables on data frame.}
 
@@ -33,6 +36,12 @@ dcut(data, x, breaks = 4, probs = NULL, equi = FALSE,
 \item{regex}{for regular expressions.}
 
 \item{sep}{seperator for naming of cut names.}
+
+\item{na.rm}{to remove NA for grouping variables.}
+
+\item{labels}{to use for cut groups}
+
+\item{all}{to do all variables, even when breaks are not unique}
 
 \item{...}{Optional additional arguments}
 }
@@ -49,6 +58,9 @@ sTRACE$age3 <- sTRACE$age^3
 mm <- dcut(sTRACE,~age+wmi)
 head(mm)
 
+mm <- dcut(sTRACE,catage4+wmi4~age+wmi)
+head(mm)
+
 mm <- dcut(sTRACE,~age+wmi,breaks=c(2,4))
 head(mm)
 
@@ -57,6 +69,7 @@ head(mm)
 
 mm <- dcut(sTRACE,~.)
 head(mm)
+
 mm <- dcut(sTRACE,c("age","wmi"),breaks=c(2,4))
 head(mm)
 
@@ -76,6 +89,7 @@ drm(mm) <- c("*.2","*.4")
 head(mm)
 
 dcut(mm) <- c("age","*m*")
+dcut(mm) <- ageg1+wmig1~age+wmi
 head(mm)
 
 ############################
@@ -83,7 +97,7 @@ head(mm)
 ############################
 
 head(mm)
-drename(mm, ~age+wmi) <- c("Wmi","Age")
+drename(mm, ~Age+Wmi) <- c("wmi","age")
 head(mm)
 mm1 <- mm
 
@@ -106,4 +120,3 @@ names(dd)
 \author{
 Klaus K. Holst and Thomas Scheike
 }
-

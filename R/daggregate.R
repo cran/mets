@@ -44,6 +44,15 @@ by2mat <- function(x,nam,...) {
 ##'
 ##' dsum(iris, .~Species, matrix=TRUE, missing=TRUE)
 ##'
+##' par(mfrow=c(1,2))
+##' data(iris)
+##' drename(iris) <- ~.
+##' daggregate(iris,'sepal*'~species|species!="virginica",fun=plot)
+##' daggregate(iris,'sepal*'~I(as.numeric(species))|I(as.numeric(species))!=1,fun=summary)
+##'
+##' dnumeric(iris) <- ~species
+##' daggregate(iris,'sepal*'~species.n|species.n!=1,fun=summary)
+##'
 ##' @export
 ##' @param data data.frame
 ##' @param y name of variable, or formula, or names of variables on data frame.
@@ -57,7 +66,9 @@ by2mat <- function(x,nam,...) {
 ##' @param matrix if TRUE a matrix is returned instead of an array
 ##' @param silent suppress messages
 ##' @param na.action How model.frame deals with 'NA's
-daggregate <- function(data,y=NULL,x=NULL,subset,...,fun="summary",regex=mets.options()$regex, missing=FALSE, remove.empty=FALSE, matrix=FALSE, silent=FALSE, na.action=na.pass)
+##' @param convert if TRUE try to coerce result into matrix. Can also be a user-defined function
+##' @aliases daggr
+daggregate <- function(data,y=NULL,x=NULL,subset,...,fun="summary",regex=mets.options()$regex, missing=FALSE, remove.empty=FALSE, matrix=FALSE, silent=FALSE, na.action=na.pass, convert=NULL)
 {# {{{
     if (is.vector(data)) data <- data.frame(data)
     subs <- substitute(subset)
@@ -102,14 +113,23 @@ daggregate <- function(data,y=NULL,x=NULL,subset,...,fun="summary",regex=mets.op
         if (length(xidx)>0) y <- y[,-xidx,drop=FALSE]
     }
     if (is.character(fun)) fun <- get(fun)
+    if (!is.null(convert) && is.logical(convert)) {
+        if (convert) convert <- as.matrix
+        else convert <- NULL
+    }
+    if (!is.null(convert)) {
+        fun_ <- fun
+        fun <- function(x,...) fun_(convert(x,...))
+    }
     if (!is.null(x)) {
         if (missing) {
             x[is.na(x)] <- 'NA'
         }
-        if (silent)
-            capture.output(res <- by(y,x,fun,...))
-        else
+        if (silent) {
+                capture.output(res <- by(y,x,fun,...))
+        } else {
             res <- by(y,x,fun,...)
+        }
         if (remove.empty) {
             # ... need to abandon 'by'?
         }
@@ -125,6 +145,9 @@ daggregate <- function(data,y=NULL,x=NULL,subset,...,fun="summary",regex=mets.op
     res
     structure(res, ngroupvar=0, class=c("daggregate",class(res)))
 }# }}}
+
+##' @export
+daggr <- function(data,...,convert=as.matrix) daggregate(data,...,convert=convert)
 
 ##' @export
 print.daggregate <- function(x,quote=FALSE,...) {
@@ -172,7 +195,7 @@ dunique <- function(data,y=NULL,x=NULL,...) invisible(daggregate(data,y,x,fun=fu
 ##' dcor(dt,time+wmi~vf+chf)
 ##'
 ##' dcor(dt,c("time*","wmi*"),~vf+chf)
-##' @aliases dsummary dstr dcor dsubset dquantile dcount dmean dscalar deval deval2 dsum dsd
+##' @aliases dsummary dstr dcor dsubset dquantile dcount dmean dmeansd dscalar deval deval2 dsum dsd
 ##' @export
 dcor <- function(data,y=NULL,x=NULL,...) daggregate(data,y,x,...,fun=function(z,...) stats::cor(z,...))
 
@@ -220,9 +243,15 @@ deval2 <- function(data,...,matrix=simplify,simplify=TRUE)  deval(data,matrix=TR
 
 ##' @export
 deval <- function(data,y=NULL,x=NULL,...,matrix=FALSE,fun=Summary,simplify=FALSE) {
+    if (is.list(fun)) {
+        newf <- function(x,...) {
+            unlist(lapply(fun,function(f) f(x,...), ...))
+        }
+    }
+    else newf <- fun
     res <- daggregate(data,y,x,matrix=matrix,...,
                      fun=function(z) lapply(z,function(x) {
-                         suppressWarnings(tryCatch(fun(x,...),error=function(e) return(NA)))
+                         suppressWarnings(tryCatch(newf(x,...),error=function(e) return(NA)))
                      }))
     if (simplify) {
         for (i in seq_len(ncol(res))) {
@@ -247,6 +276,13 @@ deval <- function(data,y=NULL,x=NULL,...,matrix=FALSE,fun=Summary,simplify=FALSE
         ## }
     }
     res
+}
+
+
+##' @export
+dmeansd <- function(data,...)  {
+	cbind(dscalar(data,fun=base::mean,...),
+	      dscalar(data,fun=stats::sd,...));
 }
 
 
