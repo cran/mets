@@ -1157,11 +1157,11 @@ if (!is.null(margsurv))  {
 	     marginal.surv=marginal.surv,marginal.trunc=marginal.trunc,baseline=out$baseline,
 	     se=diag(robvar.theta)^.5)
   class(ud) <- "mets.twostage" 
-  attr(ud, "response") <- "survival"
-  attr(ud, "Formula") <- formula
-  attr(ud, "clusters") <- clusters
-  attr(ud, "cluster.call") <- cluster.call
-  attr(ud, "secluster") <- c(se.clusters)
+  attr(ud,"response") <- "survival"
+  attr(ud,"Formula") <- formula
+  attr(ud,"clusters") <- clusters
+  attr(ud,"cluster.call") <- cluster.call
+  attr(ud,"secluster") <- c(se.clusters)
   attr(ud,"sym")<-sym; 
   attr(ud,"var.link")<-var.link; 
   attr(ud,"var.par")<-var.par; 
@@ -1169,15 +1169,16 @@ if (!is.null(margsurv))  {
   attr(ud,"ptheta")<-ptheta
   attr(ud,"antpers")<-antpers; 
   attr(ud,"antclust")<-antclust; 
-  attr(ud, "Type") <- model
-  attr(ud, "additive-gamma") <- (dep.model==3)*1
+  attr(ud,"Type") <- model
+  attr(ud,"twostage") <- two.stage
+  attr(ud,"additive-gamma") <- (dep.model==3)*1
   if (!is.null(marginal.trunc)) attr(ud,"trunclikeiid")<- out$trunclikeiid
   if (dep.model==3 & two.stage==0) attr(ud,"all.likepairs")<- all.likepairs
   if (dep.model==3 ) attr(ud,"additive.gamma.sum") <- additive.gamma.sum
-#likepairs=likepairs,##  if (dep.model==3 & pair.structure==1) attr(ud, "likepairs") <- c(out$likepairs)
-  if (dep.model==3 & pair.structure==0) attr(ud, "pardes") <- theta.des
+  #likepairs=likepairs,##  if (dep.model==3 & pair.structure==1) attr(ud, "likepairs") <- c(out$likepairs)
+  if (dep.model==3 & pair.structure==0) attr(ud, "pardes") <-    theta.des
   if (dep.model==3 & pair.structure==0) attr(ud, "theta.des") <- theta.des
-  if (dep.model==3 & pair.structure==1) attr(ud, "pardes") <- theta.des[,,1]
+  if (dep.model==3 & pair.structure==1) attr(ud, "pardes") <-    theta.des[,,1]
   if (dep.model==3 & pair.structure==1) attr(ud, "theta.des") <- theta.des[,,1]
   if (dep.model==3 & pair.structure==0) attr(ud, "rv1") <- random.design[1,]
   if (dep.model==3 & pair.structure==1) attr(ud, "rv1") <- random.design[,,1]
@@ -1224,6 +1225,7 @@ summary.mets.twostage <- function(object,digits = 3,silent=0,...)
       theta.des <- attr(object,"pardes"); 
       ags <- attr(object,"additive.gamma.sum"); 
       ptheta <- attr(object,"ptheta")
+      npar <- nrow(object$theta)
       theta <- object$theta[seq(1,ptheta),1,drop=FALSE]
 ###   print(theta.des); print(theta); print(theta.des %*% theta); print(rv1); 
       robvar.theta <- object$robvar.theta[seq(1,ptheta),seq(1,ptheta)]
@@ -1231,9 +1233,16 @@ summary.mets.twostage <- function(object,digits = 3,silent=0,...)
 
       if (model=="or" || model=="plackett") var.par<-1 ## same as var.par=0 for this model
 
+      if (attr(object,"twostage")==0) {
+         ###         cat("MLE estimates of marginal parameters\n"); 
+         var.gamma <- object$robvar.theta[seq(ptheta+1,npar),seq(ptheta+1,npar)]
+         obj.marginal <- list(gamma=object$theta[seq(ptheta+1,npar),1],var.gamma=var.gamma,robvar.gamma=var.gamma)
+	 marginal <- coefBase(obj.marginal)
+      }
+
       if (var.par==0) 
       if (var.link==1) { ## {{{ 
-	     fp <- function(p,d,t){  res <- exp(p*t)/(sum(rv1* c(theta.des %*% exp(p))))^d; 
+	     fp <- function(p,d,t){  res <- exp(p*t)/(sum(rv1* c(theta.des %*% matrix(exp(p),ncol=1))))^d; 
                                      if (t==0) res <- res[1]; return(res); }
              e      <-   lava::estimate(coef=theta,vcov=robvar.theta,f=function(p) fp(p,1,1),labels=rownames(theta))
              pare <-   lava::estimate(coef=theta,vcov=robvar.theta,f=function(p) exp(p),labels=rownames(theta))
@@ -1241,7 +1250,7 @@ summary.mets.twostage <- function(object,digits = 3,silent=0,...)
              vartot <- lava::estimate(coef=theta,vcov=robvar.theta,f=function(p) fp(p,1,0))
 ###	     names(e) <- names(vare) <- names(pare) <- colnames(coefs)
       } else {
-              fp <- function(p,d,t) {  res <- (p^t)/(sum(rv1* c(theta.des %*% p)))^d;
+              fp <- function(p,d,t) {  res <- (p^t)/(sum(rv1* c(theta.des %*% matrix(p,ncol=1))))^d;
                                      if (t==0) res <- res[1]; return(res); }
               e <-      lava::estimate(coef=theta,vcov=robvar.theta,f=function(p) fp(p,1,1),labels=rownames(theta))
               vare <-   lava::estimate(coef=theta,vcov=robvar.theta,f=function(p) fp(p,2,1),labels=rownames(theta))
@@ -1251,14 +1260,14 @@ summary.mets.twostage <- function(object,digits = 3,silent=0,...)
 
       if (var.par==1) 
       if (var.link==1) { ## {{{ 
-	     fp <- function(p,d,t){  res <- exp(p*t)/(sum(rv1* c(theta.des %*% exp(p))))^d; 
+	     fp <- function(p,d,t){  res <- exp(p*t)/(sum(rv1* c(theta.des %*% matrix(exp(p),ncol=1))))^d; 
                                      if (t==0) res <- res[1]; return(res); }
              e      <-   lava::estimate(coef=theta,vcov=robvar.theta,f=function(p) fp(p,1,1),labels=rownames(theta))
              vare   <-   lava::estimate(coef=theta,vcov=robvar.theta,f=function(p) exp(p),labels=rownames(theta))
              vartot <-   lava::estimate(coef=theta,vcov=robvar.theta,f=function(p) sum(exp(p)))
 ###	     names(e) <- names(vare) <- colnames(coefs)
       } else {
-              fp <- function(p,d,t) {  res <- (p^t)/(sum(rv1* c(theta.des %*% p)))^d;
+              fp <- function(p,d,t) {  res <- (p^t)/(sum(rv1* c(theta.des %*% matrix(p,ncol=1))))^d;
                                      if (t==0) res <- res[1]; return(res); }
               e     <-  lava::estimate(coef=theta,vcov=robvar.theta,f=function(p) fp(p,1,1),labels=rownames(theta))
               pare  <-  lava::estimate(coef=theta,vcov=robvar.theta,f=function(p) fp(p,2,1),labels=rownames(theta))
@@ -1289,6 +1298,7 @@ summary.mets.twostage <- function(object,digits = 3,silent=0,...)
       } ## }}} 
   }
 
+  if (attr(object,"twostage")==0)  res <- c(res,list(marginal=marginal))
   class(res) <- "summary.mets.twostage"
   res
 } ## }}}
@@ -1337,7 +1347,7 @@ coef.mets.twostage <- function(object,var.link=NULL,response="survival",...)
 ##' @export
 print.mets.twostage<-function(x,digits=3,...)
 { ## {{{
-  print(x$call); 
+###  print(x$call); 
   cat("\n")
   print(summary(x,silent=0)); 
 } ## }}} 

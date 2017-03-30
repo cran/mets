@@ -5,6 +5,13 @@
 #+PROPERTY: header-args:R+ :colnames yes :rownames no :hlines yes
 #+INCLUDE: header.org
 #+OPTIONS: toc:nil
+
+#+BEGIN_SRC emacs-lisp :results silent :exports results :eval
+(setq org-latex-listings t)
+(setq org-latex-compiler-file-string 
+"%%\\VignetteIndexEntry{Twin analysis of quantitative outcomes}\n%%\\VignetteEngine{R.rsp::tex}\n%%\\VignetteKeyword{R}\n%%\\VignetteKeyword{package}\n%%\\VignetteKeyword{vignette}\n%%\\VignetteKeyword{LaTeX}\n")
+#+END_SRC
+
 ----- 
 # +LaTeX: \clearpage
 
@@ -104,32 +111,34 @@ Next we plot the association within each zygosity group
 
 We here show the log-transformed data which is slightly more symmetric
 and more appropiate for the twin analysis (see Figure ref:fig:scatter1 and ref:fig:scatter2)
+
 #+NAME: scatter1
-#+BEGIN_SRC R :exports both :results output graphics :file scatter1.png 
+#+BEGIN_SRC R :exports both :results output graphics :file scatter1.jpg 
   mz <- log(subset(twinwide, zyg=="MZ")[,c("bmi1","bmi2")])
   scatterdens(mz)
 #+END_SRC
+
 
 #+BEGIN_marginfigure
 #+CAPTION: Scatter plot of logarithmic BMI measurements in MZ twins  label:fig:scatter1
 #+ATTR_LATEX: :width \textwidth :float nil :center t
 #+RESULTS: scatter1
-[[file:scatter1.png]]
+[[file:scatter1.jpg]]
 
 #+END_marginfigure
 
-
 #+NAME: scatter2
-#+BEGIN_SRC R :exports both :results output graphics :file scatter2.png
+#+BEGIN_SRC R :exports both :results output graphics :file scatter2.jpg
   dz <- log(subset(twinwide, zyg=="DZ")[,c("bmi1","bmi2")])
   scatterdens(dz)
 #+END_SRC
+
 
 #+BEGIN_marginfigure
 #+CAPTION: Scatter plot of logarithmic BMI measurements in DZ twins. label:fig:scatter2
 #+ATTR_LATEX: :width \textwidth :float nil :center t
 #+RESULTS: scatter2
-[[file:scatter2.png]]
+[[file:scatter2.jpg]]
 #+END_marginfigure
 
 The plots and raw association measures shows considerable stronger
@@ -174,10 +183,10 @@ independence)
 #+END_SRC
 
 #+RESULTS:
-:             Estimate Std.Err   2.5%  97.5%   P-value
-: (Intercept)   23.369 0.05453 23.262 23.476  0.00e+00
-: gendermale     1.407 0.07322  1.264  1.551  2.35e-82
-: I(age - 40)    0.118 0.00479  0.108  0.127 2.00e-133
+:             Estimate  Std.Err    2.5%   97.5%    P-value
+: (Intercept)  23.3687 0.054528 23.2619 23.4756  0.000e+00
+: gendermale    1.4075 0.073216  1.2640  1.5510  2.346e-82
+: I(age - 40)   0.1177 0.004788  0.1083  0.1271 1.996e-133
 
 #+BEGIN_SRC R
   library("splines")
@@ -189,7 +198,7 @@ independence)
 
 
 #+NAME: marg1
-#+BEGIN_SRC R :exports both :results output graphics :file marg1.png
+#+BEGIN_SRC R :exports both :results output graphics :file marg1.jpg
 	  dm <- Expand(twinbmi,
 		      bmi=0,
 		      gender=c("male"),
@@ -213,7 +222,8 @@ independence)
 #+CAPTION: ... label:fig:marg1
 #+ATTR_LATEX: :width \textwidth :float nil :center t
 #+RESULTS: marg1
-[[file:marg1.png]]
+[[file:marg1.jpg]]
+
 #+END_marginfigure
 
 ** Polygenic model
@@ -326,8 +336,8 @@ estimate(l,contr(5:6,6))
 #+END_SRC
 
 #+RESULTS:
-:                           Estimate Std.Err  2.5% 97.5% P-value
-: [1@atanh(rhoMZ)] - [4....    0.483  0.0418 0.401 0.565 6.4e-31
+:                           Estimate Std.Err  2.5%  97.5%   P-value
+: [1@atanh(rhoMZ)] - [4....   0.4829 0.04176 0.401 0.5647 6.403e-31
 : 
 :  Null Hypothesis: 
 :   [1@atanh(rhoMZ)] - [4@atanh(rhoDZ)] = 0
@@ -381,7 +391,7 @@ BIC: 58093.76
 * Time to event
 
 
-* backmatter :ignore:
+* backmatter                                                         :ignore:
 
-bibliography:huge.bib
-bibliographystyle:plain
+  bibliography:mets.bib
+  bibliographystyle:plain
