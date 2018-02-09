@@ -240,6 +240,7 @@ binomial.twostage <- function(margbin,data=sys.parent(),
     if (is.null(strata)==TRUE) strata<- rep(1,antpers); 
     if (length(strata)!=antpers) stop("Strata must have length equal to number of data points \n"); 
 
+# {{{ cluster setup 
     out.clust <- cluster.index(clusters);  
     clusters <- out.clust$clusters
     maxclust <- out.clust$maxclust 
@@ -249,11 +250,11 @@ binomial.twostage <- function(margbin,data=sys.parent(),
     call.secluster <- se.clusters
 
     if (is.null(se.clusters)) { se.clusters <- clusters; antiid <- nrow(clusterindex);} else  {
-                                    iids <-  unique(se.clusters); 
-                                    antiid <- length(iids); 
-                                    if (is.numeric(se.clusters)) se.clusters <-  fast.approx(iids,se.clusters)-1
-                                    else se.clusters <- as.integer(factor(se.clusters, labels = seq(antiid)))-1
-                                }
+	iids <-  unique(se.clusters); 
+	antiid <- length(iids); 
+	if (is.numeric(se.clusters)) se.clusters <-  fast.approx(iids,se.clusters)-1
+	 else se.clusters <- as.integer(factor(se.clusters, labels = seq(antiid)))-1
+        }
     if (length(se.clusters)!=length(clusters)) stop("Length of seclusters and clusters must be same\n"); 
 
     if ((!is.null(max.clust))) if (max.clust< antiid) {
@@ -265,10 +266,12 @@ binomial.twostage <- function(margbin,data=sys.parent(),
 	maxclust <- max.clust    
 	antiid <- max.clusters
     }                                                         
+# }}}
 
     ratesim<-rate.sim; 
+    if (is.null(beta)==TRUE & twostage==0) beta <- coef(margbin) else beta <- 0
 
-   if (!is.null(random.design)) { ### different parameters for Additive random effects 
+   if (!is.null(random.design)) { ### different parameters for Additive random effects # {{{
      dep.model <- 3
 ###     if (is.null(random.design)) random.design <- matrix(1,antpers,1); 
      dim.rv <- ncol(random.design); 
@@ -279,10 +282,8 @@ binomial.twostage <- function(margbin,data=sys.parent(),
 ###   stop("nrow(theta.des)!= ncol(random.design),\nspecifies restrictions on paramters, if theta.des not given =diag (free)\n"); 
  } else { random.design <- matrix(0,1,1);  dim.rv <- 1; }
 
-
     if (is.null(theta.des)==TRUE) ptheta<-1; 
-    if (is.null(theta.des)==TRUE) theta.des<-matrix(1,antpers,ptheta) 
-###    else theta.des<-as.matrix(theta.des); 
+    if (is.null(theta.des)==TRUE) theta.des<-matrix(1,antpers,ptheta) ###    else theta.des<-as.matrix(theta.des); 
 ###    ptheta<-ncol(theta.des); 
 ###    if (nrow(theta.des)!=antpers) stop("Theta design does not have correct dim");
 
@@ -294,7 +295,6 @@ binomial.twostage <- function(margbin,data=sys.parent(),
    if (length(dim(theta.des))!=3) theta.des <- as.matrix(theta.des)
 ###   theta.des <- as.matrix(theta.des)
 
-    if (is.null(beta)==TRUE & twostage==0) beta <- coef(margbin) else beta <- 0
     dimbeta <- length(beta); 
     if (is.null(theta)==TRUE) {
         if (var.link==1) theta<- rep(-0.7,ptheta);  
@@ -306,8 +306,7 @@ binomial.twostage <- function(margbin,data=sys.parent(),
     if (maxclust==1) stop("No clusters, maxclust size=1\n"); 
 
     antpairs <- 1; ### to define 
-
-  if (is.null(additive.gamma.sum)) additive.gamma.sum <- matrix(1,dim.rv,ptheta)
+    if (is.null(additive.gamma.sum)) additive.gamma.sum <- matrix(1,dim.rv,ptheta)
 
 
   if (pair.structure==1 & dep.model==3) { ## {{{ 
@@ -363,6 +362,7 @@ binomial.twostage <- function(margbin,data=sys.parent(),
 
     if (is.null(Dbeta.iid)) Dbeta.iid <- matrix(0,length(cause),1); 
     ptrunc <- rep(1,antpers); 
+# }}}
 
     ## }}}
 
@@ -421,7 +421,8 @@ binomial.twostage <- function(margbin,data=sys.parent(),
             icluster=clusters,iclustsize=clustsize,iclusterindex=clusterindex,
             ivarlink=var.link,iiid=iid,iweights=weights,isilent=silent,idepmodel=dep.model,
             itrunkp=ptrunc,istrata=strata,iseclusters=se.clusters,iantiid=antiid, 
-            irvdes=random.design,iags=additive.gamma.sum,ibetaiid=Dbeta.iid,pa=pair.ascertained,twostage=twostage)
+            irvdes=random.design,iags=additive.gamma.sum,ibetaiid=Dbeta.iid,pa=pair.ascertained,twostage=twostage,
+            PACKAGE="mets")
             ## }}}
       else outl<-.Call("twostageloglikebinpairs", ## {{{
             icause=cause,ipmargsurv=ps, 
@@ -432,7 +433,8 @@ binomial.twostage <- function(margbin,data=sys.parent(),
             irvdes=random.design,
             idimthetades=dim(theta.des),idimrvdes=dim(random.design),irvs=pairs.rvs,
             iags=additive.gamma.sum,ibetaiid=Dbeta.iid,pa=pair.ascertained,twostage=twostage,
-	    icasecontrol=case.control)
+	    icasecontrol=case.control,
+            PACKAGE="mets")
              ## }}} 
 
       if (detail==3) print(c(par,outl$loglike))
@@ -683,7 +685,7 @@ binomial.twostage <- function(margbin,data=sys.parent(),
 p11.binomial.twostage.RV <- function(theta,rv1,rv2,p1,p2,pardes,ags=NULL,link=0,i=1,j=1) { ## {{{ 
 	## computes p11 pij for additive gamma binary random effects model 
      if (is.null(ags)) ags <- matrix(1,dim(pardes))
-     out <- .Call("claytonoakesbinRV",theta,i,j,p1,p2,rv1,rv2,pardes,ags,link)$like
+     out <- .Call("claytonoakesbinRV",theta,i,j,p1,p2,rv1,rv2,pardes,ags,link,PACKAGE="mets")$like
  return(out)
 } ## }}} 
 
@@ -1026,7 +1028,7 @@ breaks=Inf,pairsonly=TRUE,fix.marg=NULL,cens.formula,cens.model="aalen",weights=
 ##' @param model model
 ##' @param marginal.p vector of marginal probabilities 
 ##' @param strata strata for fitting 
-##' @param max.clust max clusters
+##' @param max.clust max clusters used for i.i.d. decompostion
 ##' @param se.clusters clusters for iid decomposition for roubst standard errors
 easy.binomial.twostage <- function(margbin=NULL,data=sys.parent(),score.method="fisher.scoring",
                                    response="response",id="id",

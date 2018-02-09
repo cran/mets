@@ -348,7 +348,6 @@ biprobit <- function(x, data, id, rho=~1, num=NULL, strata=NULL, eqmarg=TRUE,
                      allmarg=samecens&!is.null(weights),
                      control=list(trace=0),
                      messages=1, constrain=NULL,
-                     pair.ascertained=FALSE,
                      table=pairs.only,
                      p=NULL,
                      ...) {
@@ -409,7 +408,7 @@ biprobit <- function(x, data, id, rho=~1, num=NULL, strata=NULL, eqmarg=TRUE,
       if (table && NCOL(Z)<10 && length(unique(sample(Z,min(1000,length(Z)))))<10) { ## Not quantitative?
           if (!is.null(weights)) weights <- data[,weights]
           if (length(attr(yx,"x")>0)) X <- model.matrix(x,data);
-          return(biprobit.vector(data[,yx],X=X,Z=Z,id=data[,id],weights,biweight=biweight,eqmarg=eqmarg,pair.ascertained=pair.ascertained,add=list(formula=formula,rho.formula=rho),control=control,p=p,...))
+          return(biprobit.vector(data[,yx],X=X,Z=Z,id=data[,id],weights,biweight=biweight,eqmarg=eqmarg,add=list(formula=formula,rho.formula=rho),control=control,p=p,...))
       }
   }
   
@@ -494,29 +493,33 @@ biprobit <- function(x, data, id, rho=~1, num=NULL, strata=NULL, eqmarg=TRUE,
 
       if (randomeffect) {
           U <- with(MyData, .Call("biprobit2",
-                                  Mu,XX0,
-                                  Sigma,dS0*attributes(Sigma)$dvartr(p[plen]),Y0,W0,
-                                  !is.null(W0),TRUE,eqmarg,FALSE))
+                                 Mu,XX0,
+                                 Sigma,dS0*attributes(Sigma)$dvartr(p[plen]),Y0,W0,
+                                 !is.null(W0),TRUE,eqmarg,FALSE,
+                                 PACKAGE="mets"))
       } else {
           U <- with(MyData, .Call("biprobit2",
-                                  Mu,XX0,
-                                  Sigma$rho,Sigma$drho,
-                                  Y0,W0,
-                                  !is.null(W0),TRUE,eqmarg,TRUE))
+                                 Mu,XX0,
+                                 Sigma$rho,Sigma$drho,
+                                 Y0,W0,
+                                 !is.null(W0),TRUE,eqmarg,TRUE,
+                                 PACKAGE="mets"))
       }
       
       if (!is.null(MyData$Y0_marg)) {
           if (randomeffect) {
               U_marg <- with(MyData, .Call("uniprobit",
-                                           Mu_marg,XX0_marg,
-                                           Sigma[1,1],dS0_marg*attributes(Sigma)$dvartr(p[plen]),Y0_marg,
-                                           W0_marg,!is.null(W0_marg),TRUE))
+                                          Mu_marg,XX0_marg,
+                                          Sigma[1,1],dS0_marg*attributes(Sigma)$dvartr(p[plen]),Y0_marg,
+                                          W0_marg,!is.null(W0_marg),TRUE,
+                                          PACKAGE="mets"))
           } else {
               U_marg0 <- matrix(0,length(MyData$Y0_marg),ncol=plen)
               U_marg <- with(MyData, .Call("uniprobit",
-                                           Mu_marg,XX0_marg,
-                                           1,matrix(ncol=0,nrow=0),Y0_marg,
-                                           W0_marg,!is.null(W0_marg),TRUE))
+                                          Mu_marg,XX0_marg,
+                                          1,matrix(ncol=0,nrow=0),Y0_marg,
+                                          W0_marg,!is.null(W0_marg),TRUE,
+                                          PACKAGE="mets"))
               U_marg0[,seq(blen)] <-  U_marg[[1]]
               U_marg[[1]] <- U_marg0
           }
@@ -748,16 +751,18 @@ Ubiprobit <- function(p,Rho,eqmarg,nx,MyData,indiv=FALSE) {
     }
 
     U <- with(MyData, .Call("biprobit2",
-                            Mu,XX0,
-                            Sigma$rho,Sigma$drho,Y0,W0,
-                            !is.null(W0),TRUE,eqmarg,TRUE))
+                           Mu,XX0,
+                           Sigma$rho,Sigma$drho,Y0,W0,
+                           !is.null(W0),TRUE,eqmarg,TRUE,
+                           PACKAGE="mets"))
     
     if (!is.null(MyData$Y0_marg)) {
         U_marg0 <- matrix(0,length(MyData$Y0_marg),ncol=plen)
         U_marg <- with(MyData, .Call("uniprobit",
-                                     Mu_marg,XX0_marg,
-                                     1,matrix(ncol=0,nrow=0),Y0_marg,
-                                     W0_marg,!is.null(W0_marg),TRUE))
+                                    Mu_marg,XX0_marg,
+                                    1,matrix(ncol=0,nrow=0),Y0_marg,
+                                    W0_marg,!is.null(W0_marg),TRUE,
+                                    PACKAGE="mets"))
         U_marg0[,seq(blen)] <-  U_marg[[1]]
         U_marg[[1]] <- U_marg0
         

@@ -3,53 +3,47 @@
 \name{phreg}
 \alias{phreg}
 \alias{phreg.par}
+\alias{robust.phreg}
 \title{Fast Cox PH regression}
 \usage{
-phreg(formula, data, ...)
+phreg(formula, data, offset = NULL, weights = NULL, ...)
 }
 \arguments{
 \item{formula}{formula with 'Surv' outcome (see \code{coxph})}
 
 \item{data}{data frame}
 
+\item{offset}{offsets for cox model}
+
+\item{weights}{weights for Cox score equations}
+
 \item{...}{Additional arguments to lower level funtions}
 }
 \description{
 Fast Cox PH regression
+Robust variance is default variance with the summary.
 }
 \examples{
-simcox <- function(n=1000, seed=1, beta=c(1,1), entry=TRUE) {
-  if (!is.null(seed))
-    set.seed(seed)
-  library(lava)
-  m <- lvm()
-  regression(m,T~X1+X2) <- beta
-  distribution(m,~T+C) <- coxWeibull.lvm(scale=1/100)
-  distribution(m,~entry) <- coxWeibull.lvm(scale=1/10)
-  m <- eventTime(m,time~min(T,C=0),"status")
-  d <- sim(m,n);
-  if (!entry) d$entry <- 0
-  else d <- subset(d, time>entry,select=-c(T,C))
-  return(d)
-}
-\dontrun{
-n <- 10;
-d <- mets:::simCox(n); d$id <- seq(nrow(d)); d$group <- factor(rbinom(nrow(d),1,0.5))
+data(TRACE)
+dcut(TRACE) <- ~.
+out1 <- phreg(Surv(time,status==9)~vf+chf+strata(wmicat.4),data=TRACE)
+## tracesim <- timereg::sim.cox(out1,1000)
+## sout1 <- phreg(Surv(time,status==1)~vf+chf+strata(wmicat.4),data=tracesim)
+## robust standard errors default 
+summary(out1)
 
-(m1 <- phreg(Surv(entry,time,status)~X1+X2,data=d))
-(m2 <- coxph(Surv(entry,time,status)~X1+X2+cluster(id),data=d))
-(coef(m3 <-cox.aalen(Surv(entry,time,status)~prop(X1)+prop(X2),data=d)))
+par(mfrow=c(1,3))
+basehazplot.phreg(out1)
+## basehazplot.phreg(sout1,se=TRUE)
 
+## computing robust variance for baseline
+rob1 <- robust.phreg(out1)
+basehazplot.phreg(rob1,se=TRUE,robust=TRUE)
 
-(m1b <- phreg(Surv(entry,time,status)~X1+X2+strata(group),data=d))
-(m2b <- coxph(Surv(entry,time,status)~X1+X2+cluster(id)+strata(group),data=d))
-(coef(m3b <-cox.aalen(Surv(entry,time,status)~-1+group+prop(X1)+prop(X2),data=d)))
+## making iid decomposition of regression parameters
+betaiiid <- iid(out1)
 
-m <- phreg(Surv(entry,time,status)~X1*X2+strata(group)+cluster(id),data=d)
-m
-plot(m,ylim=c(0,1))
-}
 }
 \author{
-Klaus K. Holst
+Klaus K. Holst, Thomas Scheike
 }

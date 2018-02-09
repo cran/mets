@@ -69,7 +69,7 @@ survival.twostage(margsurv,data=sys.parent(),score.method="fisher.scoring",
 
 \item{numDeriv}{to get numDeriv version of second derivative, otherwise uses sum of squared score}
 
-\item{random.design}{random effect design for additive gamma modeli, when pairs are given this is
+\item{random.design}{random effect design for additive gamma model, when pairs are given this is
 a (pairs) x (2) x (max number random effects) matrix, see pairs.rvs below}
 
 \item{pairs}{matrix with rows of indeces (two-columns) for the pairs considered in the pairwise
@@ -155,8 +155,8 @@ For a cluster with two subjects, we let the random.design rows be
  \eqn{v_1} and \eqn{v_2}. 
 Such that the random effects for subject 
 1 is \deqn{v_1^T (Z_1,...,Z_d)}, for d random effects. Each random effect
-has an associated parameter \eqn{(\lambda_1,...,\lambda_d)}. By construction
-subjects 1's random effect are Gamma distributed with 
+has an associated parameter \eqn{(\lambda_1,...,\lambda_d)}. 
+By construction subjects 1's random effect are Gamma distributed with 
 mean \eqn{\lambda_j/v_1^T \lambda}
 and variance \eqn{\lambda_j/(v_1^T \lambda)^2}. Note that the random effect 
 \eqn{v_1^T (Z_1,...,Z_d)} has mean 1 and variance \eqn{1/(v_1^T \lambda)}.
@@ -338,7 +338,13 @@ Twostage modelling of additive gamma frailty models for survival data.
 Scheike and Holst, working paper 
 
 Additive Gamma frailty models for competing risks data, Biometrics (2015)
-Eriksson and Scheike (2015),
+Eriksson and Scheike (2015), 
+
+Shih and Louis (1995) Inference on the association parameter in copula models for bivariate
+survival data, Biometrics, (1995).
+
+Glidden (2000), A Two-Stage estimator of the dependence
+parameter for the Clayton Oakes model, LIDA, (2000).
 }
 \author{
 Thomas Scheike

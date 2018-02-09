@@ -10,11 +10,14 @@
 ##' @param left Left truncation
 ##' @param pairleft pairwise (1) left truncation or individual (0)
 ##' @param trunc.prob Truncation probability 
-##' @author Klaus K. Holst
+##' @param same if 1 then left-truncation is same also for univariate truncation
+##' @author Thomas Scheike and Klaus K. Holst
+##' @aliases simClaytonOakes
 ##' @export
-simClaytonOakes <- function(K,n,eta,beta,stoptime,left=0,pairleft=0,trunc.prob=0.5)  ## {{{ 
+simClaytonOakes <- function(K,n,eta,beta,stoptime,left=0,pairleft=0,trunc.prob=0.5,same=0)  ## {{{ 
 {
   ## K antal clustre, n=antal i clustre
+  ###	K <- 100; n=2; stoptime=2; eta=1/2; beta=0; left=0.5; trunc.prob=0.5; pairleft=0; same=0
   x<-array(c(runif(n*K),rep(0,n*K),rbinom(n*K,1,0.5)),dim=c(K,n,3))
   C<-matrix(stoptime,K,n);
   Gam1 <-matrix(rgamma(K,eta)/eta,K,n)
@@ -32,11 +35,13 @@ if (left>0) {
        trunk <- (lefttime > minstime)
        medleft <- rep(trunk,each=n)
      } else {
-###       lefttime <- rexp(n*K)*left
-       lefttime <- runif(K)*(stoptime-left)
-       left <- rbinom(n*K,1,trunc.prob) ## not trunation times!
-       lefttime <- apply(cbind(lefttime*left,3),1,min)
-       trunk <- (lefttime > ud[,1])
+       if (same==0) lefttime <- rexp(n*K)*left
+       if (same==1) lefttime <- rep(rexp(K)*left,each=n)
+###       lefttime <- runif(K)*(stoptime-left)
+       if (same==0) left <- rbinom(n*K,1,trunc.prob) ## not trunation times!
+       if (same==1) left <- rep(rbinom(K,1,trunc.prob),each=n)
+       lefttime <- lefttime*left
+       trunk <- ud[,1] > lefttime
        medleft <- trunk
      }
   } else { lefttime <- trunk <- rep(0,K);}
@@ -71,8 +76,8 @@ if (left>0) {
 ##' @param pairleft pairwise (1) left truncation or individual (0)
 ##' @author Klaus K. Holst 
 ##' @export
-simClaytonOakesWei <- function(K,n,eta,beta,stoptime,
-	       weiscale=1,weishape=2,left=0,pairleft=0)
+simClaytonOakesWei <- function(K,n,eta,beta,stoptime,weiscale=1,
+			       weishape=2,left=0,pairleft=0)
 { ## {{{ 
 cat(" not quite \n"); 
 ## K antal clustre, n=antal i clustre
@@ -360,40 +365,130 @@ return(ud)
 
 ##' @export
 simCompete.simple <- function(K,varr,beta,stoptime,lam0=c(0.2,0.3),
-		Cvar=0,left=0,pairleft=0,trunc.prob=0.5,overall=1,all.sum=1)  ## {{{ 
+	Cvar=0,left=0,pairleft=0,trunc.prob=0.5,overall=1,all.sum=1)  ## {{{ 
 {
   ## K antal clustre, n=antal i clustre
   n=2 # twins with ace structure
   ## length(lam0) competing risk with constant hazards lam0
   x<-array(c(runif(n*K),rep(0,n*K),rbinom(n*K,1,0.5)),dim=c(K,n,3))
   if (Cvar==0) C<-matrix(stoptime,K,n) else C<-matrix(Cvar*runif(K*n)*stoptime,K,n) 
-  ### total variance of gene and env. 
-  ### one for each cause and one shared (across causes)
-  ###  random effects with 
-  ###  means varg/(varg+varc) and variances varg/(varg+varc)^2
-  if (length(varr)==1) varr  <- rep(varr,length(lam0)+overall)
-  eta <- varr
+  ## variance and mean of additve gamma via paramenters 
+  sp <- sum(varr)
+  partheta <- varr/sp^2 
+
+  eta <- partheta
   etat <- sum(eta)
   ### total variance for each cause + overall
   nc <- length(lam0); 
+  print(eta)
+  print(etat)
 
   mz <- c(rep(1,K/2),rep(0,K/2)); dz <- 1-mz;
   ### ace overall 
   if (overall==1) {
   ###    if (all.sum==1) etal <-  etat else etal <- vargl+varcl
     etal <- etat
-    Gams1 <-cbind(rgamma(K,varr[nc+1])/etal)
+    Gams1 <-cbind(rgamma(K,eta[nc+1])/etal)
   Gamoa <- Gams1
   } else Gamoa <- 0
+
+###  print(apply(Gamoa,2,mean))
+###  print(apply(Gamoa,2,var))
 
   temp1 <- matrix(0,K,length(lam0))
   temp2 <- matrix(0,K,length(lam0))
   for (i in 1:nc)
   {
 	  etal <- etat
-  Gams1 <-cbind( rgamma(K,varr[i])/etal )
+	  Gams1 <-cbind(rgamma(K,eta[i])/etal)
+	  Gam1 <- Gams1+Gamoa
+	  Gam1 <- cbind(Gam1,Gam1)
+###  print("_________________")
+###  print(apply(Gam1,2,mean))
+###  print(apply(Gam1,2,var))
+	  occ <- (1:nc)[-i]
+	  for (j in  occ) {
+		  print(eta[j])
+	     Gamo <- cbind(rgamma(K,eta[j])/etal,rgamma(K,eta[j])/etal)
+###             print(apply(Gamo,2,mean))
+###             print(apply(Gamo,2,var))
+	     Gam1 <- Gam1+Gamo
+	  }
+  print(apply(Gam1,2,mean))
+  print(apply(Gam1,2,var))
+	  ttemp<-matrix(rexp(2*K),K,2)/(Gam1*exp(beta*x[,,3])*lam0[i])
+	  temp1[,i] <- ttemp[,1]
+	  temp2[,i] <- ttemp[,2]
+  }
+  temp <- cbind( apply(temp1,1,min), apply(temp2,1,min))
+  cause1 <- apply(temp1,1,which.min)
+  cause2 <- apply(temp2,1,which.min)
+###
+  x[,,2]<- ifelse(temp<=C,1,0)*cbind(cause1,cause2);
+  x[,,1]<-pmin(temp,C)
+  minstime <- apply(x[,,1],1,min)  
+  ud <- as.data.frame(cbind(apply(x,3,t),rep(1:K,each=n)))  
+  zyg <- c(rep("MZ",K),rep("DZ",K))
+
+if (left>0) { ## {{{ 
+     if (pairleft==1) {
+     lefttime <- runif(K)*(stoptime-left)
+     left <- rbinom(K,1,trunc.prob) ## not trunation times!
+     lefttime <- apply(cbind(lefttime*left,3),1,min)
+       trunk <- (lefttime > minstime)
+       medleft <- rep(trunk,each=n)
+     } else {
+###       lefttime <- rexp(n*K)*left
+       lefttime <- runif(K)*(stoptime-left)
+       left <- rbinom(n*K,1,trunc.prob) ## not trunation times!
+       lefttime <- apply(cbind(lefttime*left,3),1,min)
+       trunk <- (lefttime > ud[,1])
+       medleft <- trunk
+     }
+  } else { lefttime <- trunk <- rep(0,K);} ## }}} 
+  if (pairleft==1) ud <- cbind(ud,zyg,rep(minstime,each=n),rep(lefttime,each=n),rep(trunk,each=n))
+  else ud <- cbind(ud,zyg,rep(minstime,each=n),lefttime,trunk)
+
+names(ud)<-c("time","status","x","cluster","zyg","mintime","lefttime","truncated")
+return(ud)
+} ## }}} 
+
+##' @export
+simFrailty.simple <- function(K,varr,beta,stoptime,lam0=c(0.2),
+		Cvar=0,left=0,pairleft=0,trunc.prob=0.5,overall=1,all.sum=NULL)  ## {{{ 
+{
+  n=2 
+  ## length(lam0) competing risk with constant hazards lam0
+  x<-array(c(runif(n*K),rep(0,n*K),rbinom(n*K,1,0.5)),dim=c(K,n,3))
+  if (Cvar==0) C<-matrix(stoptime,K,n) else C<-matrix(Cvar*runif(K*n)*stoptime,K,n) 
+  if (length(varr)==1) varr  <- rep(varr,length(lam0)+overall)
+  eta <- varr
+  etat <- sum(varr)
+  if (!is.null(all.sum)) etat <- all.sum 
+  varr <- varr/etat 
+  ### total variance for each cause + overall
+  nc <- length(lam0); 
+
+  mz <- c(rep(1,K/2),rep(0,K/2)); dz <- 1-mz;
+  if (overall==1) {
+    etal <- etat
+    Gams1 <-cbind(rgamma(K,varr[nc+1])/etal)
+    Gamoa <- Gams1
+  } else Gamoa <- 0
+
+  print(etat); print(varr)
+  temp1 <- matrix(0,K,length(lam0))
+  temp2 <- matrix(0,K,length(lam0))
+  for (i in 1:nc)
+  {
+  etal <- etat
+  Gams1 <-cbind(rgamma(K,varr[i])/etal)
   Gam1 <- Gams1+Gamoa
   Gam1 <- cbind(Gam1,Gam1)
+  print(i); 
+  print(apply(Gam1,2,mean)); print(apply(Gam1,2,var)); 
+  print(apply(Gams1,2,mean)); print(apply(Gams1,2,var)); 
+  print(apply(as.matrix(Gamoa),2,mean)); print(apply(as.matrix(Gamoa),2,var)); 
   ttemp<-matrix(rexp(2*K),K,2)/(Gam1*exp(beta*x[,,3])*lam0[i])
   temp1[,i] <- ttemp[,1]
   temp2[,i] <- ttemp[,2]
@@ -430,6 +525,7 @@ if (left>0) { ## {{{
 names(ud)<-c("time","status","x","cluster","zyg","mintime","lefttime","truncated")
 return(ud)
 } ## }}} 
+
 
 ##' @export
 kendall.ClaytonOakes.twin.ace <- function(parg,parc,K=10000)  ## {{{ 

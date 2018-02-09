@@ -6,8 +6,9 @@
 \usage{
 lifecourse(formula, data, id = "id", group = NULL, type = "l", lty = 1,
   col = 1:10, alpha = 0.3, lwd = 1, recurrent.col = NULL,
-  legend = NULL, by = NULL, status.legend = NULL,
-  place.sl = "bottomright", xlab = "Time", ylab = "", add = FALSE, ...)
+  recurrent.lty = NULL, legend = NULL, pchlegend = NULL, by = NULL,
+  status.legend = NULL, place.sl = "bottomright", xlab = "Time",
+  ylab = "", add = FALSE, ...)
 }
 \arguments{
 \item{formula}{Formula (Event(start,slut,status) ~ ...)}
@@ -30,7 +31,11 @@ lifecourse(formula, data, id = "id", group = NULL, type = "l", lty = 1,
 
 \item{recurrent.col}{col of recurrence type}
 
+\item{recurrent.lty}{lty's of  of recurrence type}
+
 \item{legend}{position of optional id legend}
+
+\item{pchlegend}{point type legends}
 
 \item{by}{make separate plot for each level in 'by' (formula, name of column, or vector)}
 
@@ -64,5 +69,5 @@ ll = lifecourse(Event(start,slut,status)~id,data,id="id",group=~group,col=1:2,st
 
 }
 \author{
-Thomas Scheike Klaus K. Holst
+Thomas Scheike, Klaus K. Holst
 }

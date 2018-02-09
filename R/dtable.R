@@ -19,10 +19,15 @@
 ##' dtable(sTRACE,~status+vf)
 ##' dtable(sTRACE,~status+vf,level=1)
 ##' dtable(sTRACE,~status+vf,~chf+diabetes)
-#'
+##'
 ##' dtable(sTRACE,c("*f*","status"),~diabetes)
 ##' dtable(sTRACE,c("*f*","status"),~diabetes, level=2)
 ##' dtable(sTRACE,c("*f*","status"),level=1)
+##'
+##' dtable(sTRACE,~"*f*"+status,level=1)
+##' dtable(sTRACE,~"*f*"+status+I(wmi>1.4)|age>60,level=2)
+##' dtable(sTRACE,"*f*"+status~I(wmi>0.5)|age>60,level=1)
+##' dtable(sTRACE,status~dcut(age))
 ##'
 ##' dtable(sTRACE,~status+vf+sex|age>60)
 ##' dtable(sTRACE,status+vf+sex~+1|age>60, level=2)
@@ -47,6 +52,7 @@ dtable <- function(data,y=NULL,x=NULL,...,level=-1,response=NULL,flat=TRUE,total
                        for (i in seq_len(ncol(z))) {
                            nn <- colnames(z)[i]
                            val <- table(z[,i],...)
+			   if (prop[1]>0) val <- prop.table(val)
                            names(attr(val,"dimnames")) <- nn
                            val <- list(val)
                            names(val) <- nn

@@ -5,19 +5,20 @@
 ##' 
 ##' @title Life table
 ##' @param x time formula (Surv) or matrix/data.frame with columns time,status or entry,exit,status
-##' @param strata Strata
+##' @param strata strata
 ##' @param data data.frame
-##' @param breaks Time intervals
-##' @param confint If TRUE 95\% confidence limits are calculated
-##' @param ... Additional arguments to lower level functions
+##' @param breaks time intervals
+##' @param weights weights variable
+##' @param confint if TRUE 95\% confidence limits are calculated
+##' @param ... additional arguments to lower level functions
 ##' @author Klaus K. Holst
 ##' @aliases lifetable lifetable.matrix lifetable.formula
 ##' @usage
 ##'  \method{lifetable}{matrix}(x, strata = list(), breaks = c(),
-##'    confint = FALSE, ...)
+##'    weights=NULL, confint = FALSE, ...)
 ##'
 ##'  \method{lifetable}{formula}(x, data=parent.frame(), breaks = c(),
-##'    confint = FALSE, ...)
+##'    weights=NULL, confint = FALSE, ...)
 ##' @examples
 ##' library(timereg)
 ##' data(TRACE)
@@ -26,7 +27,7 @@
 ##' summary(glm(events ~ offset(log(atrisk))+factor(int.end)*vf + sex*vf,
 ##'             data=d,poisson))
 ##' @export
-lifetable.matrix <- function(x,strata=list(),breaks=c(),confint=FALSE,...) {
+lifetable.matrix <- function(x,strata=list(),breaks=c(),weights=NULL,confint=FALSE,...) {
     if (ncol(x)==3) {
         status <- x[,3]
         entry <- x[,1]
@@ -36,13 +37,20 @@ lifetable.matrix <- function(x,strata=list(),breaks=c(),confint=FALSE,...) {
         time <- x[,1]
         entry <- rep(0,length(time))
     }
-    LifeTable(time,status,entry,strata,breaks,confint,...)
+    LifeTable(time,status,entry,strata=strata,breaks=breaks,weights=weights,confint,...)
 }
 
 ##' @export
-lifetable.formula <- function(x,data=parent.frame(),breaks=c(),confint=FALSE,...) {
-    cl <- match.call()
-    mf <- model.frame(x,data)
+lifetable.formula <- function(x,data=parent.frame(),breaks=c(),weights=NULL,confint=FALSE,...) {
+    mf <- match.call(expand.dots = FALSE)
+    m <- match(c("x", "data", "weights"), names(mf), 0L)
+    mf <- mf[c(1L, m)]
+    mf$drop.unused.levels <- TRUE
+    mf[[1L]] <- quote(stats::model.frame)
+    names(mf)[which(names(mf)=="x")] <- "formula"    
+    mf <- eval(mf, parent.frame())
+    weights <- as.vector(model.weights(mf))    
+    ##mf <- model.frame(x,data)
     Y <- model.extract(mf, "response")
     Terms <- terms(x, data = data)
     if (!is.Surv(Y)) stop("Expected a 'Surv'-object")
@@ -62,7 +70,8 @@ lifetable.formula <- function(x,data=parent.frame(),breaks=c(),confint=FALSE,...
     if (ncol(X)>0) {
         strata <- as.list(model.frame(Terms,data)[,-1,drop=FALSE])
     }
-    LifeTable(exit,status,entry,strata,breaks,confint,...)       
+    LifeTable(exit,status,entry,
+              strata=strata,breaks=breaks,weights=weights,confint=confint,...)       
 }
 
 ## lifetable.data.table <- function(x,entry,exit,status,strata,breaks,...) {
@@ -106,8 +115,23 @@ lifetable.formula <- function(x,data=parent.frame(),breaks=c(),confint=FALSE,...
 ## }
 
 
-LifeTable <- function(time,status,entry=NULL,strata=list(),breaks=c(),confint=FALSE,interval=TRUE,mesg=FALSE) {    
+
+LifeTable <- function(time,status,entry=NULL,weights=NULL,strata=list(),breaks=c(),confint=FALSE,interval=TRUE,mesg=FALSE) {
     if (is.null(entry)) entry <- rep(0,NROW(time))
+    if (mesg) message(dim(time))
+    if ((is.matrix(time) || is.data.frame(time)) && ncol(time)>1) {
+        if (ncol(time)>=3L) {
+            if (ncol(time)==4L) weights <- time[,4]
+            status <- time[,3]
+            entry <- time[,1]
+            time <- time[,2]            
+        } else {
+            status <- time[,2]
+            time <- time[,1]
+            entry <- rep(0,length(time))
+        }
+    }
+
     if (mesg) message(dim(time))
     if ((is.matrix(time) || is.data.frame(time)) && ncol(time)>1) {
         if (ncol(time)==3) {
@@ -121,7 +145,7 @@ LifeTable <- function(time,status,entry=NULL,strata=list(),breaks=c(),confint=FA
         }
     }
     if (length(strata)>0) {
-        a <- by(cbind(entry,time,status), strata,
+        a <- by(cbind(entry,time,status,weights), strata,
                 FUN=LifeTable, breaks=breaks, confint=confint)
         cl <- lapply(strata,class)
         nulls <- which(unlist(lapply(a,is.null)))
@@ -154,18 +178,23 @@ LifeTable <- function(time,status,entry=NULL,strata=list(),breaks=c(),confint=FA
                   ncol=length(breaks)-1)
     dur <- ex-en
     dur[dur<=0] <- NA
-    enter <- colSums(!is.na(dur))
-    atrisk <- colSums(dur,na.rm=TRUE)
-    ##eventcens <- dur<endur
-    ##endur <- rbind(c(breaks,Inf))%x%cbind(rep(1,nrow(en)))-en
-    ##endur <- rbind(breaks[-1])%x%cbind(rep(1,nrow(en)))-en
-    ##eventcens <- rbind(apply(dur<endur,2,function(x) x*(status+1)))
     eventcens <- dur; eventcens[!is.na(dur)] <- 0
     lastobs <- apply(eventcens,1,function(x) tail(which(!is.na(x)),1))
     eventcens[cbind(seq(nrow(eventcens)),lastobs)] <- status+1
-    
-    lost <- colSums(eventcens==1,na.rm=TRUE)
-    events <- colSums(eventcens==2,na.rm=TRUE)
+    if (!is.null(weights)) {
+        W <- weights %x% rbind(rep(1,ncol(dur)))
+        W[is.na(dur)] <- NA
+        enter <- colSums(W,na.rm=TRUE)
+        atrisk <- colSums(dur*W,na.rm=TRUE)
+        Sum <- function(x) { res <- sum(x,na.rm=TRUE); ifelse(length(res)>0L, res, 0L) } 
+        lost <- apply(eventcens, 2, function(x) res <- Sum(weights[which(x==1)]))
+        events <- apply(eventcens, 2, function(x) res <- Sum(weights[which(x==2)]))
+    } else {
+        enter <- colSums(!is.na(dur))
+        atrisk <- colSums(dur,na.rm=TRUE)
+        lost <- colSums(eventcens==1,na.rm=TRUE)
+        events <- colSums(eventcens==2,na.rm=TRUE)
+    }
     rate <- events/atrisk; rate[is.nan(rate)] <- 0
     res <- subset(data.frame(enter=enter,
                              atrisk=atrisk,

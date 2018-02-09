@@ -93,7 +93,7 @@ procform <- function(formula=NULL, sep="\\|", nsep=1, return.formula=FALSE, data
                 x <- attributes(terms(f,data=data))$term.labels
                 pred <- x
             }
-            if (filter%in%c("1","0","-1")) {
+            if (filter%in%c("0","-1")) {
                 filter <- list()
                 filter.expression <- NULL
             } else {
@@ -168,6 +168,7 @@ procform <- function(formula=NULL, sep="\\|", nsep=1, return.formula=FALSE, data
     return(res)
 }
 
+##' @export
 procformdata <- function(formula,data,sep="\\|", na.action=na.pass, do.filter=TRUE, ...) {
     res <- procform(formula,sep=sep,data=data,return.formula=TRUE,...)
     if (inherits(res,"formula")) {
@@ -178,6 +179,10 @@ procformdata <- function(formula,data,sep="\\|", na.action=na.pass, do.filter=TR
     if (!do.filter) {
         filter <- NULL
     }
+    ### print(filter); print(missing(filter)); print(is.null(filter)); print(filter[[1]])
+    ### when filter.expression is expression(1) then also no filter, ts 
+    if ((!missing(filter))) if (!is.null(filter)) if (as.character(filter)=="1") filter <- NULL
+
     if (length(res$response)>0) {
         if (is.null(filter)) y <- model.frame(res$response,data=data,na.action=na.action)
         else y <- model.frame(res$response,data=subset(data,eval(filter)),na.action=na.action)
@@ -187,6 +192,7 @@ procformdata <- function(formula,data,sep="\\|", na.action=na.pass, do.filter=TR
         else x <- model.frame(res$predictor,data=subset(data,eval(filter)),na.action=na.action)
 
     }
+
     specials <- NULL
     if (!is.null(res$specials)) {
         specials <- lapply(res$specials,
@@ -237,7 +243,6 @@ procform3 <- function(y,x=NULL,z=NULL,...) {# {{{
     }
     return(list(y=y,x=x0,z=z))
 }# }}}
-
 
 
 ## Specials <- function(f,spec,split2="+",...) {

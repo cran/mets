@@ -7,21 +7,23 @@
 \title{Life table}
 \usage{
 \method{lifetable}{matrix}(x, strata = list(), breaks = c(),
-   confint = FALSE, ...)
+   weights=NULL, confint = FALSE, ...)
 
  \method{lifetable}{formula}(x, data=parent.frame(), breaks = c(),
-   confint = FALSE, ...)
+   weights=NULL, confint = FALSE, ...)
 }
 \arguments{
 \item{x}{time formula (Surv) or matrix/data.frame with columns time,status or entry,exit,status}
 
-\item{strata}{Strata}
+\item{strata}{strata}
 
-\item{breaks}{Time intervals}
+\item{breaks}{time intervals}
 
-\item{confint}{If TRUE 95\% confidence limits are calculated}
+\item{weights}{weights variable}
 
-\item{...}{Additional arguments to lower level functions}
+\item{confint}{if TRUE 95\% confidence limits are calculated}
+
+\item{...}{additional arguments to lower level functions}
 
 \item{data}{data.frame}
 }

@@ -11,7 +11,7 @@
 ##' @import stats splines timereg Rcpp
 ##' @importFrom lava iid estimate bootstrap compare score information twostage %++% %ni% addvar<- blockdiag cancel Col
 ##'                  confband constrain<- constraints covariance covariance<- coxWeibull.lvm devcoords distribution<-
-##'                  endogenous eventTime Expand getoutcome intercept<- Inverse kill<- latent latent<- lava.options lvm
+##'                  endogenous eventTime Expand getoutcome gof intercept<- Inverse kill<- latent latent<- lava.options lvm
 ##'                  Model multigroup parameter<- pars regression regression<- revdiag sim trim
 ##' @importFrom survival Surv is.Surv
 ##' @importFrom utils head tail getS3method glob2rx capture.output
@@ -135,23 +135,55 @@ NULL
 ##' @keywords utilities
 ##' @export
 ##' @aliases plotcr npc nonparcuminc simnordic corsim.prostate
-##' alpha2kendall alpha2spear coefmat piecewise.twostage surv.boxarea
-##' faster.reshape piecewise.data
-##' simBinPlack simBinFam simBinFam2 simSurvFam corsim.prostate.random
-##' simnordic.random simCox sim pmvn pbvn
-##' loglikMVN scoreMVN grouptable jumptimes folds
+##'  alpha2kendall alpha2spear coefmat piecewise.twostage surv.boxarea
+##'  faster.reshape piecewise.data
+##'  simBinPlack simBinFam simBinFam2 simSurvFam corsim.prostate.random
+##'  simnordic.random simCox sim 
+##'  grouptable jumptimes folds
 ##'  ace.family.design ascertained.pairs CCbinomial.twostage
-##'  coarse.clust      concordance.twin.ace concordance.twostage
-##'  fast.cluster      force.same.cens ilap
+##'  coarse.clust concordance.twin.ace concordance.twostage
+##'  fast.cluster force.same.cens ilap
 ##'  kendall.ClaytonOakes.twin.ace kendall.normal.twin.ace
 ##'  make.pairwise.design make.pairwise.design.competing
 ##'  matplot.mets.twostage object.defined p11.binomial.twostage.RV
 ##'  predictPairPlack simbinClaytonOakes.family.ace
 ##'  simbinClaytonOakes.pairs simbinClaytonOakes.twin.ace
-##'  simClaytonOakes.family.ace simClaytonOakes.twin.ace
+##'  simClaytonOakes.family.ace simClaytonOakes.twin.ace simFrailty.simple
 ##'  simCompete.simple simCompete.twin.ace twin.polygen.design
 ##'  twostage.fullse
-##'  procform procform3
+##'  procform procform3 procformdata
 NULL
 
+
+##' Rate for leaving HPN program for patients of Copenhagen 
+##'
+##' @name drcumhaz
+##' @docType data
+##' @keywords data
+##' @source Estimated data
+NULL
+
+##' rate of CRBSI for HPN patients of Copenhagen 
+##'
+##' @name base1cumhaz
+##' @docType data
+##' @keywords data
+##' @source Estimated data
+NULL
+
+##' rate of Mechanical (hole/defect) complication for catheter of HPN patients of Copenhagen 
+##'
+##' @name base4cumhaz
+##' @docType data
+##' @keywords data
+##' @source Estimated data
+NULL
+
+##' rate of Occlusion/Thrombosis complication for catheter of HPN patients of Copenhagen 
+##'
+##' @name base44cumhaz
+##' @docType data
+##' @keywords data
+##' @source Estimated data
+NULL
 

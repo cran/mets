@@ -14,7 +14,7 @@
 ##' @author Klaus K. Holst
 ##' @examples
 ##' set.seed(1)
-##' d <- subset(simClaytonOakes(500,4,2,1,stoptime=2,left=2),!truncated)
+##' d <- subset(simClaytonOakes(500,4,2,1,stoptime=2,left=2),truncated)
 ##' e <- ClaytonOakes(survival::Surv(lefttime,time,status)~x+cluster(~1,cluster),
 ##'                   cuts=c(0,0.5,1,2),data=d)
 ##' e
@@ -145,8 +145,8 @@ ClaytonOakes <- function(formula,data=parent.frame(),cluster,var.formula=~1,cuts
     res <- .Call("claytonoakes",
            ds=mydata$status,ts=mydata$T,es=mydata$entry,
            allcs=mydata$cluster,cs=ucluster, cuts=cuts,
-                 hs=exp(p),mulths=multhaz,
-                 var=theta0)$logLik    
+           hs=exp(p),mulths=multhaz,
+           var=theta0,PACKAGE="mets")$logLik    
     return(-res)
   }
   opt <- tryCatch(nlminb(p0,obj,control=control),error=function(x) NULL)

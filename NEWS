@@ -1,3 +1,17 @@
+# -*- mode: org -*-
+
+* Version 1.2.3 <2018-02-02 Mon>
+  - twinlm now supports ordinal outcomes
+  - optimized strata calculations in phreg  
+  - optimized robust standard errors in phreg  
+  - weights and offsets in phreg 
+  - weights argument added to lifetable
+  - gof of phreg with fast cumulative residuals (Lin, Wei, Ying) 
+  - graphical gof of phreg 
+  - recurrent events function for marginal mean with standard errors
+  - simulating recurrent events with possibly two recurrent events  and death 
+  - covariance calculation for recurrent events data and related bootstrap 
+
 * Version 1.2.2 <2017-03-18 Sat>
   - Vignettes updated
   - Compatibility with lava version 1.5
@@ -8,7 +22,7 @@
   - lifecourse plot function: lifecourse
   - block sampling function: dsample
 
-* Version 1.2 <2017-02-03 Fri>
+* Version 1.2.0 <2017-02-03 Fri>
   - Namespace cleaning (twostage)...
   - Dependency on R>=3.3 radix algorithm
   - Case-Control sampling for twostage model. 

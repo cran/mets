@@ -21,10 +21,6 @@
 \alias{simnordic.random}
 \alias{simCox}
 \alias{sim}
-\alias{pmvn}
-\alias{pbvn}
-\alias{loglikMVN}
-\alias{scoreMVN}
 \alias{grouptable}
 \alias{jumptimes}
 \alias{folds}
@@ -50,12 +46,14 @@
 \alias{simbinClaytonOakes.twin.ace}
 \alias{simClaytonOakes.family.ace}
 \alias{simClaytonOakes.twin.ace}
+\alias{simFrailty.simple}
 \alias{simCompete.simple}
 \alias{simCompete.twin.ace}
 \alias{twin.polygen.design}
 \alias{twostage.fullse}
 \alias{procform}
 \alias{procform3}
+\alias{procformdata}
 \title{For internal use}
 \description{
 For internal use

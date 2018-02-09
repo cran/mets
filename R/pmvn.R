@@ -14,13 +14,23 @@ pbvn <- function(upper,rho,sigma) {
 }
 
 
-## lower <- rbind(c(0,-Inf),(-Inf,0))
-## upper <- rbind(c(Inf,0),(0,Inf))
-## mu <- rbind(c(1,1),c(-1,1))
-## sigma <- diag(2)+1
-## pmvn(lower=lower,upper=upper,mu=mu,sigma=sigma)
-
+##' Multivariate normal distribution function
+##'
+##' Multivariate normal distribution function
+##' @aliases pmvn pbvn loglikMVN scoreMVN
+##' @seealso dmvn rmvn
 ##' @export
+##' @examples
+##' lower <- rbind(c(0,-Inf),c(-Inf,0))
+##' upper <- rbind(c(Inf,0),c(0,Inf))
+##' mu <- rbind(c(1,1),c(-1,1))
+##' sigma <- diag(2)+1
+##' pmvn(lower=lower,upper=upper,mu=mu,sigma=sigma)
+##' @param lower lower limits
+##' @param upper upper limits
+##' @param mu mean vector
+##' @param sigma variance matrix or vector of correlation coefficients
+##' @param cor if TRUE sigma is treated as standardized (correlation matrix)
 pmvn <- function(lower,upper,mu,sigma,cor=FALSE) {
     if (missing(sigma)) stop("Specify variance matrix 'sigma'")
     if (missing(lower)) {
@@ -39,11 +49,12 @@ pmvn <- function(lower,upper,mu,sigma,cor=FALSE) {
     if (ncol(rbind(lower))!=p || ncol(rbind(upper))!=p)
         stop("Incompatible integration bounds")    
     arglist <- list("pmvn0",
-                    lower=rbind(lower),
-                    upper=rbind(upper),
-                    mu=rbind(mu),
-                    sigma=rbind(sigma),
-                    cor=as.logical(cor[1]))
+                   lower=rbind(lower),
+                   upper=rbind(upper),
+                   mu=rbind(mu),
+                   sigma=rbind(sigma),
+                   cor=as.logical(cor[1]),
+                   PACKAGE="mets")
     res <- do.call(".Call",arglist)
     return(as.vector(res))
 }

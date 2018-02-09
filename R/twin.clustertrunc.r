@@ -5,6 +5,7 @@
 ##' @param data Data frame
 ##' @param theta.des design for dependence parameters in two-stage model 
 ##' @param clusters clustering variable for twins
+##' @param var.link exp link for theta
 ##' @param Nit number of iteration 
 ##' @param final.fitting TRUE to do final estimation with SE and ... arguments for marginal models 
 ##' @param ... Additional arguments to lower level functions
@@ -26,7 +27,7 @@
 ##'			 data=diabetes,clusters="id")
 ##' out$two        ## twostage output
 ##' plot(out$marg) ## marginal model output
-twin.clustertrunc <- function(survformula,data=sys.parent(),theta.des=NULL,clusters=NULL,
+twin.clustertrunc <- function(survformula,data=sys.parent(),theta.des=NULL,clusters=NULL,var.link=1,
 		      Nit=10,final.fitting=FALSE,...)
 { ## {{{ 
 ## {{{  adding names of covariates from survival model to data frame if needed
@@ -39,7 +40,6 @@ if (length(survnames)!=3) stop("Must give entry, exit and status")
 entry <- survnames[1]
 exit <- survnames[2]
 status <- survnames[3]
-
 
 tss <- terms(survformula)
 Znames <- attr(tss,"term.labels")
@@ -93,7 +93,7 @@ theta.des <- theta.des[data$dataid,]
 
 for (i in 1:Nit)
 { ## {{{ 
-  if (model=="cox.aalen") { aout <- cox.aalen(survformula,data=data,weights=1/pweight,robust=0,n.sim=0);
+  if (model=="cox.aalen") { aout <- cox.aalen(survformula,data=data,weights=1/pweight,robust=0,n.sim=0,beta=0);
                             beta <- c(aout$gamma,aout$cum[,-1])
   }  else  {
            aout <- aalen(survformula,data=data,weights=1/pweight,robust=0,n.sim=0);
@@ -102,44 +102,32 @@ for (i in 1:Nit)
   if (i==1) { 
    if (model=="cox.aalen") pbeta <- 0*c(aout$gamma,aout$cum[,-1]) else pbeta <- 0*aout$cum[,-1]
   } 
-  if (i>=2) tout <- two.stage(aout,data=data,clusters=nclusters,theta.des=theta.des,theta=ptheta)
-  else tout <- two.stage(aout,data=data,clusters=nclusters,theta.des=theta.des)
+  if (i>=2) tout <- twostage(aout,data=data,clusters=nclusters,theta.des=theta.des,theta=ptheta,var.link=var.link)
+  else tout <- twostage(aout,data=data,clusters=nclusters,theta.des=theta.des,var.link=var.link)
   if (!is.null(theta.des)) theta <- c(theta.des %*% tout$theta) else theta <- tout$theta
-  if (attr(tout, "var.link") == 1) theta <- exp(tout$theta) 
-###
+###  if (attr(tout, "var.link") == 1) theta <- exp(tout$theta) 
   data$thetades  <- c(theta)
+  data$delay <- tout$marginal.trunc
+  data$surv <-  tout$marginal.surv
+
   dd <- fast.reshape(data,id=clusters)
+
   v1 <- dd[,paste(entry,"1",sep="")]; 
   v2 <- dd[,paste(entry,"2",sep="")]
   time1 <- dd[,paste(exit,"1",sep="")]; 
   time2 <- dd[,paste(exit,"2",sep="")]
   status1 <- dd[,paste(status,"1",sep="")]; 
   status2 <- dd[,paste(status,"2",sep="")]
-  if (model=="cox.aalen")
-  { ## {{{  prediction using covariates of subject 1 and 2
-  Z1 <- as.matrix(dd[,paste(namesZ,"1",sep="")])
-  Z2 <- as.matrix(dd[,paste(namesZ,"2",sep="")])
-###  print(head(Z1)); print(head(Z2))
-  ptruncv1t2 <- predict.two.stage(tout,Z=Z1,Z2=Z2,times=v1,times2=time2,theta=theta)
-  ptrunct1v2 <- predict.two.stage(tout,Z=Z1,Z2=Z2,times=time1,times2=v2,theta=theta)
-  } else {
-  X1 <- as.matrix(dd[,paste(namesX,"1",sep="")])
-  X2 <- as.matrix(dd[,paste(namesX,"2",sep="")])
-###  print(head(X1)); print(head(X2))
-  ptruncv1t2 <- predict.two.stage(tout,X=X1,X2=X2,times=v1,times2=time2,theta=theta)
-  ptrunct1v2 <- predict.two.stage(tout,X=X1,X2=X2,times=time1,times2=v2,theta=theta)
-  } ## }}} 
   nn <- nrow(dd)
-  ppv1t2 <- .Call("claytonoakesR",1/dd$thetades1,rep(0,nn),status2,
-		  ptruncv1t2$S1,ptruncv1t2$S2)$like
-  ppt1v2 <- .Call("claytonoakesR",1/dd$thetades1,status1,rep(0,nn),
-		  ptrunct1v2$S1,ptrunct1v2$S2)$like
-  ppt1v2[status1==0] <- ppt1v2[status1==0]/ptrunct1v2$S1[status1==0]
-  ppv1t2[status2==0] <- ppv1t2[status2==0]/ptruncv1t2$S2[status2==0]
-###
+
+  ppv1t2 <- .Call("claytonoakesR",dd$thetades1,rep(0,nn),status2,dd$delay1,dd$surv2,var.link,PACKAGE="mets")$like
+  ppv1t2[status2==0] <- ppv1t2[dd$status2==0]/dd$surv2[status2==0]
+  ppt1v2 <- .Call("claytonoakesR",dd$thetades1,dd$status1,rep(0,nn),dd$surv1,dd$delay2,var.link,PACKAGE="mets")$like
+  ppt1v2[status1==0] <- ppt1v2[status1==0]/dd$surv1[status1==0]
   dd$weight1 <- c(ppt1v2)
   dd$weight2 <- c(ppv1t2)
-###  head(dd); dim(dd)
+  nn <- nrow(dd)
+
   dd2 <- fast.reshape(dd,labelnum=TRUE)
   pweight <- dd2$weight
   dtheta <- sum(abs(tout$theta-ptheta))
@@ -147,13 +135,12 @@ for (i in 1:Nit)
   if ((dtheta+dmarg) < 0.001) break; 
   ptheta <- tout$theta
   if (model=="aalen") pbeta <- aout$cum[,-1] else  pbeta <- c(aout$gamma,aout$cum[,-1])
-###  print(c(dtheta,dmarg))
 } ## }}} 
 
 if (final.fitting==TRUE) {  ## {{{ 
   if (model=="cox.aalen") aout <- cox.aalen(survformula,data=data,weights=1/pweight,n.sim=0,...) else 
            aout <- aalen(survformula,data=data,weights=1/pweight,n.sim=0,...)
-  tout <- two.stage(aout,data=data,clusters=nclusters,theta.des=theta.des)
+  tout <- twostage(aout,data=data,clusters=nclusters,theta.des=theta.des,var.link=var.link)
 } ## }}} 
 
 res <- list(marg=aout,two=tout,marg.weights=pweight,dtheta=dtheta,dmarg=dmarg,model=model)
