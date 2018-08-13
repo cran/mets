@@ -6,7 +6,7 @@
 \alias{recmarg}
 \title{Fast recurrent marginal mean when death is possible}
 \usage{
-recurrentMarginal(recurrent, death, fixbeta = NULL, ...)
+recurrentMarginal(recurrent, death, fixbeta = NULL, km = TRUE, ...)
 }
 \arguments{
 \item{recurrent}{phreg object with recurrent events}
@@ -14,6 +14,8 @@ recurrentMarginal(recurrent, death, fixbeta = NULL, ...)
 \item{death}{phreg object with deaths}
 
 \item{fixbeta}{to force the estimation of standard errors to think of regression coefficients as known/fixed}
+
+\item{km}{if true then uses Kaplan-Meier for death, otherwise exp(- Nelson-Aalen )}
 
 \item{...}{Additional arguments to lower level funtions}
 }
@@ -47,16 +49,16 @@ rr$strata <- floor((rr$id-0.01)/500)
 xr <- phreg(Surv(entry,time,status)~cluster(id),data=rr)
 dr <- phreg(Surv(entry,time,death)~cluster(id),data=rr)
 par(mfrow=c(1,3))
-basehazplot.phreg(dr,se=TRUE)
+bplot(dr,se=TRUE)
 title(main="death")
-basehazplot.phreg(xr,se=TRUE)
+bplot(xr,se=TRUE)
 ### robust standard errors 
 rxr <-   robust.phreg(xr,fixbeta=1)
-basehazplot.phreg(rxr,se=TRUE,robust=TRUE,add=TRUE,col=4)
+bplot(rxr,se=TRUE,robust=TRUE,add=TRUE,col=4)
 
 ## marginal mean of expected number of recurrent events 
 out <- recurrentMarginal(xr,dr)
-basehazplot.phreg(out,se=TRUE,ylab="marginal mean",col=2)
+bplot(out,se=TRUE,ylab="marginal mean",col=2)
 
 ########################################################################
 ###   with strata     ##################################################
@@ -64,14 +66,14 @@ basehazplot.phreg(out,se=TRUE,ylab="marginal mean",col=2)
 xr <- phreg(Surv(entry,time,status)~strata(strata)+cluster(id),data=rr)
 dr <- phreg(Surv(entry,time,death)~strata(strata)+cluster(id),data=rr)
 par(mfrow=c(1,3))
-basehazplot.phreg(dr,se=TRUE)
+bplot(dr,se=TRUE)
 title(main="death")
-basehazplot.phreg(xr,se=TRUE)
+bplot(xr,se=TRUE)
 rxr <-   robust.phreg(xr,fixbeta=1)
-basehazplot.phreg(rxr,se=TRUE,robust=TRUE,add=TRUE,col=1:2)
+bplot(rxr,se=TRUE,robust=TRUE,add=TRUE,col=1:2)
 
 out <- recurrentMarginal(xr,dr)
-basehazplot.phreg(out,se=TRUE,ylab="marginal mean",col=1:2)
+bplot(out,se=TRUE,ylab="marginal mean",col=1:2)
 
 ########################################################################
 ###   cox case        ##################################################
@@ -79,26 +81,26 @@ basehazplot.phreg(out,se=TRUE,ylab="marginal mean",col=1:2)
 xr <- phreg(Surv(entry,time,status)~x+cluster(id),data=rr)
 dr <- phreg(Surv(entry,time,death)~x+cluster(id),data=rr)
 par(mfrow=c(1,3))
-basehazplot.phreg(dr,se=TRUE)
+bplot(dr,se=TRUE)
 title(main="death")
-basehazplot.phreg(xr,se=TRUE)
+bplot(xr,se=TRUE)
 rxr <-   robust.phreg(xr)
-basehazplot.phreg(rxr,se=TRUE,robust=TRUE,add=TRUE,col=1:2)
+bplot(rxr,se=TRUE,robust=TRUE,add=TRUE,col=1:2)
 
 out <- recurrentMarginal(xr,dr)
-basehazplot.phreg(out,se=TRUE,ylab="marginal mean",col=1:2)
+bplot(out,se=TRUE,ylab="marginal mean",col=1:2)
 
 ########################################################################
 ###   CIF  #############################################################
 ########################################################################
 ### use of function to compute cumulative incidence (cif) with robust standard errors
-data(bmt)
-bmt$id <- 1:nrow(bmt)
-xr  <- phreg(Surv(time,cause==1)~cluster(id),data=bmt)
-dr  <- phreg(Surv(time,cause!=0)~cluster(id),data=bmt)
+ data(bmt)
+ bmt$id <- 1:nrow(bmt)
+ xr  <- phreg(Surv(time,cause==1)~cluster(id),data=bmt)
+ dr  <- phreg(Surv(time,cause!=0)~cluster(id),data=bmt)
 
-out <- recurrentMarginal(xr,dr)
-basehazplot.phreg(out,se=TRUE,ylab="cumulative incidence")
+ out <- recurrentMarginal(xr,dr,km=TRUE)
+ bplot(out,se=TRUE,ylab="cumulative incidence")
 
 }
 \references{

@@ -49,7 +49,7 @@ res <- cbind(obs,simcox$pval)
 colnames(res) <- c("Sup|U(t)|","pval")
 rownames(res) <- nnames 
 
-if (silent==1) {
+if (silent==0) {
 cat("Cumulative score process test for Proportionality:\n")
 prmatrix(round(res,digits=2))
 }
@@ -87,6 +87,18 @@ return(out)
 ##' 
 ##' m1 <- gofM.phreg(Surv(time,status==9)~strata(vf)+chf+wmi,data=TRACE,modelmatrix=mm) 
 ##' summary(m1)
+##' 
+##' ## cumulative sums in covariates, via design matrix mm 
+##' mm <- cumContr(TRACE$wmi,breaks=10,equi=TRUE)
+##' m1 <- gofM.phreg(Surv(time,status==9)~strata(vf)+chf+wmi,data=TRACE,
+##' 		  modelmatrix=mm,silent=0)
+##' summary(m1)
+##' 
+##' ## cumulative sums in covariates, via design matrix mm 
+##' m1 <- gofZ.phreg(Surv(time,status==9)~strata(vf)+chf+wmi,data=TRACE,vars="wmi")
+##' summary(m1)
+##' 
+##' @aliases cumContr gofZ.phreg
 ##' @export
 gofM.phreg  <- function(formula,data,offset=NULL,weights=NULL,modelmatrix=NULL,
 			n.sim=1000,silent=1,...)
@@ -116,7 +128,7 @@ simcox <-  .Call("ModelMatrixTestCox",U,Pt,betaiid,n.sim,obs,PACKAGE="mets")
 
 sup <-  simcox$supUsim
 res <- cbind(obs,simcox$pval)
-colnames(res) <- c("Sup|U(t)|","pval")
+colnames(res) <- c("Sup_t |U(t)|","pval")
 rownames(res) <- nnames 
 
 if (silent==0) {
@@ -124,12 +136,118 @@ if (silent==0) {
    prmatrix(round(res,digits=2))
 }
 
+ ## pvals efter z i model.matrix sup_z | M(z,tau) | 
+ Utlast <- max(abs(tail(Ut,1)))
+ maxlast <- apply(abs(simcox$last),1,max)
+ pval.last <- mean(maxlast>=Utlast)
+ res.last <- matrix(c(Utlast,pval.last),1,2)
+ colnames(res.last) <- c("Sup_z |U(tau,z)|","pval")
+ rownames(res.last) <- "matrixZ"
+
 out <- list(jumptimes=jumptimes,supUsim=simcox$supUsim,res=res,supU=obs,
-	    pvals=simcox$pval,score=Ut,simUt=simcox$simUt,type="modelmatrix")
+	    pvals=simcox$pval,score=Ut,simUt=simcox$simUt,
+	    simUtlast=simcox$last,Utlast=Utlast,pval.last=pval.last,
+	    res.last=res.last, type="modelmatrix")
 class(out) <- "gof.phreg"
 
 return(out)
 }# }}}
+
+##' @export
+gofZ.phreg  <- function(formula,data,vars,offset=NULL,weights=NULL,breaks=10,equi=TRUE,
+			n.sim=1000,silent=1,...)
+{# {{{
+
+ res <- matrix(0,length(vars),2)
+ colnames(res) <- c("Sup_z |U(tau,z)|","pval")
+ rownames(res) <- vars
+
+ i <- 1
+for (vv in vars) {
+ modelmatrix <- cumContr(data[,vv],breaks=breaks,equi=equi)
+
+cox1 <- phreg(formula,data,offset=NULL,weights=NULL,Z=modelmatrix,cumhaz=FALSE,...) 
+offsets <- as.matrix(cox1$model.frame[,names(cox1$coef)]) %*% cox1$coef
+if (!is.null(offset)) offsets <- offsets*offset
+
+if (!is.null(cox1$strata)) 
+     coxM <- phreg(cox1$model.frame[,1]~modelmatrix+strata(cox1$strata),data,offset=offsets,weights=weights,no.opt=TRUE,cumhaz=FALSE,...)
+else coxM <- phreg(cox1$model.frame[,1]~modelmatrix,data,offset=offsets,weights=weights,no.opt=TRUE,cumhaz=FALSE,...)
+nnames <- colnames(modelmatrix)
+
+Ut <- apply(coxM$U,2,cumsum)
+jumptimes <- coxM$jumptimes
+U <- coxM$U
+Ubeta <- cox1$U
+ii <- -solve(cox1$hessian)
+EE <- .Call("vecMatMat",coxM$E,cox1$E,PACKAGE="mets")$vXZ; 
+Pt <- cox1$ZX - EE
+Pt <- apply(Pt,2,cumsum)
+betaiid <- t(ii %*% t(Ubeta))
+obs <- apply(abs(Ut),2,max)
+simcox <-  .Call("ModelMatrixTestCox",U,Pt,betaiid,n.sim,obs,PACKAGE="mets")
+
+ ## pvals efter z i model.matrix sup_z | M(z,tau) | 
+ Utlast <- max(abs(tail(Ut,1)))
+ maxlast <- apply(abs(simcox$last),1,max)
+ pval.last <- mean(maxlast>=Utlast)
+ res[i,] <- c(Utlast,pval.last)
+ i <- i+1
+}
+
+out <- list(res=res, type="modelmatrix")
+class(out) <- "gof.phreg"
+
+return(out)
+}# }}}
+
+##' @export
+cumContr <- function(data, breaks = 4, probs = NULL,equi = TRUE,na.rm=TRUE,...)
+ {# {{{
+ if (is.vector(data)) {
+        if (is.list(breaks))
+            breaks <- unlist(breaks)
+        if (length(breaks) == 1) {
+            if (!is.null(probs)) {
+                breaks <- quantile(data, probs, na.rm = na.rm,...)
+	        breaks <- breaks[-1]
+            }
+            else {
+                if (!equi) {
+                  probs <- seq(0, 1, length.out = breaks + 1)
+                  breaks <- quantile(data, probs, na.rm = na.rm, ...)
+	          breaks <- breaks[-1]
+                }
+                if (equi) {
+                  rr <- range(data, na.rm = na.rm)
+                  breaks <- seq(rr[1], rr[2], length.out = breaks + 1)
+	          breaks <- breaks[-1]
+                }
+            }
+        }
+        if (sum(duplicated(breaks)) == 0) {
+		i <- 0; 
+		gm <- matrix(0,length(data),length(breaks))
+            for (bb in breaks)  {
+		    i <- i+1 
+		    gm[,i] <- (data <= bb)*1
+	    }
+	} else {
+            wd <- which(duplicated(breaks))
+            mb <- min(diff(breaks[-wd]))
+            breaks[wd] <- breaks[wd] + (mb/2) * seq(length(wd))/length(wd)
+            i <- 0; gm <- matrix(0,length(data),length(breaks))
+            for (bb in breaks)  {
+		    i <- i+1 
+		    gm[,i] <- (data <= bb)*1
+	    }
+            warning(paste("breaks duplicated"))
+        }
+        colnames(gm) <- paste("<=",breaks,sep="")
+	attr(gm,"breaks") <- breaks
+        return(gm)
+    }
+ }# }}}
 
 ##' Stratified baseline graphical GOF test for Cox covariates in PH regression
 ##'
@@ -140,6 +258,7 @@ return(out)
 ##' @param x phreg object
 ##' @param sim to simulate som variation from cox model to put on graph
 ##' @param silent to keep it absolutely silent 
+##' @param lm addd line to plot, regressing the cumulatives on each other  
 ##' @param ... Additional arguments to lower level funtions
 ##' @author THomas Scheike and Klaus K. Holst
 ##' @export
@@ -152,8 +271,10 @@ return(out)
 ##' gofG.phreg(m1)
 ##' gofG.phreg(m2)
 ##' 
+##' bplot(m1,log="y")
+##' bplot(m2,log="y")
 ##' @export
-gofG.phreg  <- function(x,sim=1,silent=1,...)
+gofG.phreg  <- function(x,sim=0,silent=1,lm=TRUE,...)
 {# {{{
 
 p <- length(x$coef)
@@ -172,6 +293,8 @@ if (is.null(cumhaz)) stop("Must run phreg with cumhaz=TRUE (default)");
 if (nstrata==1) stop("Stratified Cox to look at baselines");
 ###
 
+if (is.null(x$opt) | is.null(x$coef)) fixbeta<- 1 else fixbeta <- 0
+
 for (i in 0:(nstrata-2))
 for (j in (i+1):(nstrata-1)) { 
       iij <- which(strata %in% c(i,j))
@@ -181,12 +304,13 @@ for (j in (i+1):(nstrata-1)) {
       cumhazi <- Cpred(cumhaz[ii,],dijjumps,strict=FALSE)
       cumhazj <- Cpred(cumhaz[ij,],dijjumps,strict=FALSE)
 
-      plot(cumhazj[,2],cumhazi[,2],type="s",lwd=2,
-	   xlab=stratnames[j+1],ylab=stratnames[i+1])
+      plot(cumhazj[,2],cumhazi[,2],type="s",lwd=2,xlab=stratnames[j+1],ylab=stratnames[i+1])
       graphics::title(paste("Stratified baselines for",stratn))
-      graphics::legend("topleft",c("Nonparametric","lm","Stratified-Cox-Sim"),lty=1,col=1:3)
+      if ((fixbeta==0 | sim==0) & lm ) 
+      graphics::legend("topleft",c("Nonparametric","lm"),lty=1,col=1:2)
+###      graphics::legend("topleft",c("Nonparametric","Stratified-Cox-Sim"),lty=1,col=1:3)
       ab <- lm(cumhazi[,2]~-1+cumhazj[,2])
-      if (sim==1) {
+      if (sim==1 & fixbeta==0) {
              Pt <- DLambeta.t <- apply(x$E/c(x$S0),2,cumsumstrata,strata,nstrata)
              II <- -solve(x$hessian)
              betaiid <- t(II %*% t(x$U))
@@ -200,7 +324,7 @@ for (j in (i+1):(nstrata-1)) {
 	     }
       }
       lines(cumhazj[,2],cumhazi[,2],type="s",lwd=2,col=1)
-      abline(c(0,coef(ab)),col=2,lwd=2)
+      if (lm==TRUE) abline(c(0,coef(ab)),col=2,lwd=2)
 }
 
 }# }}}
@@ -217,7 +341,7 @@ rsU <- max(rsU,abs(x$score[,i]))
 plot(x$jumptimes,x$score[,i],type="s",ylim=c(-rsU,rsU),xlab="",ylab="")
 title(main=rownames(x$res)[i])
 matlines(x$jumptimes,simU,type="s",lwd=0.3,col=col)
-lines(x$jumptimes,x$score[,i],lwd=1.5)
+lines(x$jumptimes,x$score[,i],type="s",lwd=1.5)
 }
 
 }# }}}
@@ -229,6 +353,14 @@ if (object$type=="prop")
      cat("Cumulative score process test for Proportionality:\n")
 else cat("Cumulative residuals versus modelmatrix :\n")
 print(object$res)
+
+if (!is.null(object$res.last)) {
+   cat("\n")
+   cat("Cumulative score process versus covariates (discrete z via model.matrix):\n")
+   print(object$res.last)
+}
+
+
 } # }}}
 
 ##' @export
@@ -238,5 +370,12 @@ if (x$type=="prop")
      cat("Cumulative score process test for Proportionality:\n")
 else cat("Cumulative residuals versus modelmatrix :\n")
 print(x$res)
+
+if (!is.null(x$res.last)) {
+   cat("\n")
+   cat("Cumulative score process versus covariates (discrete z via model.matrix):\n")
+   print(x$res.last)
+}
+
 } # }}}
 

@@ -114,10 +114,12 @@ BEGIN_RCPP/*{{{*/
   arma::mat  Z     = Rcpp::as<arma::mat>(ZSEXP);
   arma::Col<int> strata= Rcpp::as<arma::Col<int> >(strataSEXP);
   arma::Col<int> Id= Rcpp::as<arma::Col<int> >(IdSEXP);
+//  arma::uvec idx = Rcpp::as<arma::Col<int> >(sortid);
 //  try {
 //    arma::Col<unsigned> Id    = Rcpp::as<arma::Col<unsigned> >(IdSEXP);
 //  }
 //  catch(...) {}
+
 
   colvec weights = Rcpp::as<colvec>(weightsSEXP);
   colvec offsets = Rcpp::as<colvec>(offsetsSEXP);
@@ -180,9 +182,25 @@ BEGIN_RCPP/*{{{*/
     Status = Status%(1+Sign);
   }
   //Rcout << "Status=" << Status << std::endl;
-  arma::uvec idx0 = sort_index(Status,"descend"); 
+  
+  // also sorting after id to use multiple phregs together
+  // ts 20/3-2018
+  arma::uvec idx00 = sort_index(Id,"ascend"); 
+  arma::uvec idx0 = stable_sort_index(Status.elem(idx00),"descend"); 
+  idx0 = idx00.elem(idx0);
   arma::uvec idx = stable_sort_index(Exit.elem(idx0),"ascend");
   idx = idx0.elem(idx);
+
+//  arma::uvec idx0 = stable_sort_index(Status.elem(idx00),"descend"); 
+
+//  arma::uvec idx0 = sort_index(Status,"descend"); 
+//  arma::uvec idx = stable_sort_index(Exit.elem(idx0),"ascend");
+//  idx = idx0.elem(idx);
+
+//  arma::uvec idx00 = stable_sort_index(Id.elem(idx),"ascend"); 
+//  idx = idx00.elem(idx);
+
+
   //Rcout << "idx=" << idx << std::endl;
   if (Truncation) {
     Sign = Sign.elem(idx);  
@@ -525,6 +543,7 @@ RcppExport SEXP cumsumstratasumR(SEXP ia,SEXP istrata, SEXP instrata) {/*{{{*/
 
   colvec tmpsum(nstrata); tmpsum.zeros(); 
   colvec ressum = a; 
+  colvec lagressum = a; 
   colvec ressqu = a; 
   double cumsum=0; 
   int first=0,ss; 
@@ -534,6 +553,7 @@ RcppExport SEXP cumsumstratasumR(SEXP ia,SEXP istrata, SEXP instrata) {/*{{{*/
     if ((first>0.1) & (i>=1)& (ss<nstrata) & (ss>=0))
        ressqu(i)=ressqu(i-1)+pow(a(i),2)+2*a(i)*tmpsum(ss);
     if ((ss<nstrata) & (ss>=0))  {
+       lagressum(i)=tmpsum(ss); 
        tmpsum(ss) += a(i); 
        cumsum+=a(i); 
        if (first<0.1) ressqu(i) = pow(a(i),2); 
@@ -545,6 +565,7 @@ RcppExport SEXP cumsumstratasumR(SEXP ia,SEXP istrata, SEXP instrata) {/*{{{*/
   List rres; 
   rres["sumsquare"]=ressqu; 
   rres["sum"]=ressum; 
+  rres["lagsum"]=lagressum; 
   return(rres);
 } /*}}}*/
 
@@ -558,6 +579,7 @@ RcppExport SEXP revcumsumstratasumR(SEXP ia,SEXP istrata, SEXP instrata) {/*{{{*
   tmpsum.zeros(); 
 //  colvec ressqu = a; colvec ressumu = a; 
   colvec ressum = a; 
+  colvec lagressum = a; 
   colvec ressqu = a; 
   double cumsum=0; 
   int first=0,ss; 
@@ -567,6 +589,7 @@ RcppExport SEXP revcumsumstratasumR(SEXP ia,SEXP istrata, SEXP instrata) {/*{{{*
     if ((first>0.1) & (i>=1)& (ss<nstrata) & (ss>=0))
        ressqu(n-i-1)=ressqu(n-i)+pow(a(n-i-1),2)+2*a(n-i-1)*tmpsum(ss);
     if ((ss<nstrata) & (ss>=0))  {
+       lagressum(ss)=tmpsum(ss); 
        tmpsum(ss) += a(n-i-1); 
        cumsum+=a(n-i-1); 
        if (first<0.1) ressqu(n-i-1) = pow(a(n-i-1),2); 
@@ -580,6 +603,7 @@ RcppExport SEXP revcumsumstratasumR(SEXP ia,SEXP istrata, SEXP instrata) {/*{{{*
   List rres; 
   rres["sumsquare"]=ressqu; 
   rres["sum"]=ressum; 
+  rres["sum"]=lagressum; 
   return(rres);
 } /*}}}*/
 
@@ -1523,6 +1547,7 @@ BEGIN_RCPP/*{{{*/
   mat Uti(n,mp); 
   mat betati(n,p); 
   mat sup(nsim,mp); 
+  mat last(nsim,mp); 
   mat simUti(n,50*mp); 
 
   GetRNGstate();  /* to use R random normals */
@@ -1539,6 +1564,7 @@ BEGIN_RCPP/*{{{*/
      Uthati=Uti-Uthati; //     if(j==0) Uthati.print("one sim"); 
 
      for (unsigned k=0;k<mp;k++)  {
+        last(j,k)=Uthati(n-1,k); 
         sup(j,k)=max(abs(Uthati.col(k))); 
         if ((sup(j,k)>=osup(k))) {pval(k)++;}
         if (j<50) { simUti.col(j*mp+k)=Uthati.col(k); }
@@ -1549,6 +1575,7 @@ BEGIN_RCPP/*{{{*/
   PutRNGstate();  /* to use R random normals */
 
   return(Rcpp::List::create(Rcpp::Named("supUsim")=sup,
+			    Rcpp::Named("last")=last,
 			    Rcpp::Named("simUt")=simUti,
 			    Rcpp::Named("pval")=pval)); 
 END_RCPP

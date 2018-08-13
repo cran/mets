@@ -1,8 +1,8 @@
 Package: mets
 Type: Package
 Title: Analysis of Multivariate Event Times
-Version: 1.2.3.1
-Date: 2018-04-30
+Version: 1.2.4
+Date: 2018-08-12
 Author: Klaus K. Holst and Thomas Scheike
 Maintainer: Klaus K. Holst <klaus@holst.it>
 Description: Implementation of various statistical models for multivariate
@@ -16,7 +16,7 @@ License: GPL (>= 2)
 LazyLoad: yes
 URL: https://github.com/kkholst/mets
 BugReports: https://github.com/kkholst/mets/issues
-Depends: R (>= 3.3), timereg (>= 1.9.2), lava (>= 1.6)
+Depends: R (>= 3.3), timereg (>= 1.9.2), lava (>= 1.6.3)
 Imports: numDeriv, compiler, Rcpp, splines, survival
 Suggests: lava.tobit (>= 0.4-7), prodlim, testthat (>= 0.11), ucminf,
         R.rsp (>= 0.40)
@@ -25,6 +25,6 @@ ByteCompile: yes
 LinkingTo: Rcpp, RcppArmadillo
 RoxygenNote: 6.0.1
 NeedsCompilation: yes
-Packaged: 2018-04-30 19:26:42 UTC; klaus
+Packaged: 2018-08-12 20:42:16 UTC; klaus
 Repository: CRAN
-Date/Publication: 2018-04-30 21:20:52 UTC
+Date/Publication: 2018-08-13 05:30:12 UTC

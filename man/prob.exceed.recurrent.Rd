@@ -2,6 +2,8 @@
 % Please edit documentation in R/recurrent.marginal.R
 \name{prob.exceed.recurrent}
 \alias{prob.exceed.recurrent}
+\alias{prob.exceedRecurrent}
+\alias{prob.exceedBiRecurrent}
 \title{Estimation of probability of more that k events for recurrent events process}
 \usage{
 prob.exceed.recurrent(data, type, status = "status", death = "death",
@@ -31,12 +33,11 @@ prob.exceed.recurrent(data, type, status = "status", death = "death",
 }
 \description{
 Estimation of probability of more that k events for recurrent events process
-where there is terminal event, based on this also estimate of variance of recurrent events.
+where there is terminal event, based on this also estimate of variance of recurrent events. The estimator is based on cumulative incidence of exceeding "k" events.
+In contrast the probability of exceeding k events can also be computed as a 
+counting process integral, and this is implemented in prob.exceedRecurrent
 }
 \examples{
-\donttest{
-### do not test to avoid dependence on prodlim 
-library(prodlim)
 
 ########################################
 ## getting some rates to mimick 
@@ -51,14 +52,40 @@ base4 <- base4cumhaz
 
 cor.mat <- corM <- rbind(c(1.0, 0.6, 0.9), c(0.6, 1.0, 0.5), c(0.9, 0.5, 1.0))
 rr <- simRecurrent(1000,base1,cumhaz2=base4,death.cumhaz=dr)
+rr <-  count.history(rr)
 dtable(rr,~death+status)
 
+oo <- prob.exceedRecurrent(rr,1)
+bplot(oo)
+
+par(mfrow=c(1,2))
+with(oo,plot(time,mu,col=2,type="l"))
+###
+with(oo,plot(time,varN,type="l"))
+
+
+### Bivariate probability of exceeding 
+oo <- prob.exceedBiRecurrent(rr,1,2,exceed1=c(1,5,10),exceed2=c(1,2,3))
+with(oo, matplot(time,pe1e2,type="s"))
+nc <- ncol(oo$pe1e2)
+legend("topleft",legend=colnames(oo$pe1e2),lty=1:nc,col=1:nc)
+
+
+\donttest{
+### do not test to avoid dependence on prodlim 
+### now estimation based on cumualative incidence, but do not test to avoid dependence on prodlim 
+library(prodlim)
 pp <- prob.exceed.recurrent(rr,1,status="status",death="death",start="entry",stop="time",id="id")
 with(pp, matplot(times,prob,type="s"))
 ###
 with(pp, matlines(times,se.lower,type="s"))
 with(pp, matlines(times,se.upper,type="s"))
 }
+}
+\references{
+Scheike, Eriksson, Tribler (2018) 
+            The mean, variance and correlation for bivariate recurrent events
+            with a terminal event,  work in progress
 }
 \author{
 Thomas Scheike
