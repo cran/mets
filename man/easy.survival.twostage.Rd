@@ -7,10 +7,10 @@
 easy.survival.twostage(margsurv = NULL, data = sys.parent(),
   score.method = "nlminb", status = "status", time = "time",
   entry = NULL, id = "id", Nit = 60, detail = 0, silent = 1,
-  weights = NULL, control = list(), theta = NULL, theta.formula = NULL,
-  desnames = NULL, deshelp = 0, var.link = 1, iid = 1, step = 0.5,
-  model = "plackett", marginal.surv = NULL, strata = NULL,
-  max.clust = NULL, se.clusters = NULL)
+  weights = NULL, control = list(), theta = NULL,
+  theta.formula = NULL, desnames = NULL, deshelp = 0, var.link = 1,
+  iid = 1, step = 0.5, model = "plackett", marginal.surv = NULL,
+  strata = NULL, se.clusters = NULL)
 }
 \arguments{
 \item{margsurv}{model}
@@ -57,8 +57,6 @@ easy.survival.twostage(margsurv = NULL, data = sys.parent(),
 
 \item{strata}{strata for fitting}
 
-\item{max.clust}{max clusters}
-
 \item{se.clusters}{clusters for iid decomposition for roubst standard errors}
 }
 \description{
@@ -75,16 +73,17 @@ The reported standard errors are based on the estimated information from the
 likelihood assuming that the marginals are known.
 }
 \examples{
-library("timereg")
-library("survival")
+library(mets)
 data("prt",package="mets")
-margp <- coxph(Surv(time,status==1)~factor(country),data=prt)
-fitco <- survival.twostage(margp,data=prt,clusters=prt$id)
+prtsam <- blocksample(prt,idvar="id",1e3,replace=FALSE)
+margp <- coxph(Surv(time,status==1)~factor(country),data=prtsam)
+fitco <- survival.twostage(margp,data=prtsam,clusters=prtsam$id)
 summary(fitco)
 
-des <- model.matrix(~-1+factor(zyg),data=prt); 
-fitco <- survival.twostage(margp,data=prt,theta.des=des,clusters=prt$id)
+des <- model.matrix(~-1+factor(zyg),data=prtsam); 
+fitco <- survival.twostage(margp,data=prtsam,theta.des=des,clusters=prtsam$id)
 summary(fitco)
+rm(prtsam)
 
 dfam <- simSurvFam(1000)
 dfam <- fast.reshape(dfam,var=c("x","time","status"))
@@ -98,9 +97,11 @@ c(pp,pc,cc)
 } 
 
 marg <- coxph(Surv(time,status)~factor(num),data=dfam)
-out3 <- easy.survival.twostage(marg,data=dfam,time="time",status="status",id="id",deshelp=0,
-                      score.method="fisher.scoring",theta.formula=desfs,
-                      desnames=c("parent-parent","parent-child","child-cild"))
+out3 <- easy.survival.twostage(marg,data=dfam,time="time",status="status",id="id",
+             deshelp=0,
+             score.method="fisher.scoring",theta.formula=desfs,
+             model="plackett",
+             desnames=c("parent-parent","parent-child","child-cild"),iid=1)
 summary(out3)
 
 }

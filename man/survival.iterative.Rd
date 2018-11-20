@@ -7,8 +7,8 @@
 survival.iterative(margsurv, data = sys.parent(),
   score.method = "fisher.scoring", Nit = 60, detail = 0,
   clusters = NULL, silent = 1, weights = NULL, control = list(),
-  theta = NULL, theta.des = NULL, var.link = 1, iid = 1, step = 0.5,
-  notaylor = 0, model = "clayton.oakes", marginal.trunc = NULL,
+  theta = NULL, theta.des = NULL, var.link = 1, iid = 1,
+  step = 0.5, model = "clayton.oakes", marginal.trunc = NULL,
   marginal.survival = NULL, marginal.status = NULL, strata = NULL,
   se.clusters = NULL, max.clust = NULL, numDeriv = 0,
   random.design = NULL, pairs = NULL, pairs.rvs = NULL,
@@ -44,8 +44,6 @@ survival.iterative(margsurv, data = sys.parent(),
 \item{iid}{Calculate i.i.d. decomposition}
 
 \item{step}{Step size}
-
-\item{notaylor}{Taylor expansion}
 
 \item{model}{model}
 
@@ -110,7 +108,7 @@ For all models the
 standard errors do not reflect this uncertainty of the baseline estimates, and might therefore be a bit to small.
 To remedy this one can do bootstrapping or use survival.twostage.fullse function when possible.
 
-If clusters contain more than two times, the algoritm uses a composite likelihood
+If clusters contain more than two times, we use a composite likelihood
 based on the pairwise bivariate models. Can also fit a additive gamma random
 effects model described in detail below.
 
@@ -156,9 +154,8 @@ with the function
 Given the random effects the survival distributions with a cluster are independent and
 on the form 
 \deqn{
-P(T > t| x,z) = exp( -Z \cdot Laplace^{-1}(lamtot,lamtot,S(t|x)) )  
+P(T > t| x,z) = exp( -Z  A(t) \exp( Z^t beta))
 }
-with the inverse laplace of the gamma distribution with mean 1 and variance lamtot.
 
 The parameters \eqn{(\lambda_1,...,\lambda_d)}
 are related to the parameters of the model

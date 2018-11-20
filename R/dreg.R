@@ -7,8 +7,8 @@
 ##' @param z name of variable, or fomula, or names of variables on data frame.
 ##' @param x.oneatatime x's one at a time
 ##' @param x.base.names base covarirates 
-##' @param z.arg what is Z
-##' @param fun. function 
+##' @param z.arg what is Z, c("clever","base","group","condition"), clever decides based on type of Z, base means that Z is used as fixed baseline covaraites for all X, group means the analyses is done based on groups of Z, and condition means that Z specifies a condition on the data
+##' @param fun. function  lm is default
 ##' @param summary. summary to use 
 ##' @param regex regex
 ##' @param convert convert
@@ -17,12 +17,12 @@
 ##' @param test development argument
 ##' @param ... Additional arguments for fun
 ##' @author Klaus K. Holst, Thomas Scheike
-##' @examples
-##'
+##' @examples##' 
 ##' data(iris)
-##' data=iris
+##' data <- iris
 ##' drename(iris) <- ~.
 ##' names(iris)
+##' set.seed(1)
 ##' iris$time <- runif(nrow(iris))
 ##' iris$time1 <- runif(nrow(iris))
 ##' iris$status <- rbinom(nrow(iris),1,0.5)
@@ -40,62 +40,59 @@
 ##' xs <- dreg(iris,y,fun.=phreg)
 ##' xs <- dreg(iris,y,fun.=survdiff)
 ##' 
-##' ### testing forskellige calls
 ##' y <- "S*"~"*.width"
 ##' xs <- dreg(iris,y,x.oneatatime=FALSE,fun.=phreg)
 ##' 
-##' ## under condition 
+##' ## under condition
 ##' y <- S1~"*.width"|I(species=="setosa" & sepal.width>3)
 ##' xs <- dreg(iris,y,z.arg="condition",fun.=phreg)
 ##' xs <- dreg(iris,y,fun.=phreg)
 ##' 
-##' ## under condition 
+##' ## under condition
 ##' y <- S1~"*.width"|species=="setosa"
 ##' xs <- dreg(iris,y,z.arg="condition",fun.=phreg)
 ##' xs <- dreg(iris,y,fun.=phreg)
 ##' 
-##' ## with baseline  after | 
+##' ## with baseline  after |
 ##' y <- S1~"*.width"|sepal.length
 ##' xs <- dreg(iris,y,fun.=phreg)
 ##' 
-##' ## by group by species, not working 
+##' ## by group by species, not working
 ##' y <- S1~"*.width"|species
 ##' ss <- split(iris,paste(iris$species,iris$status))
 ##' 
-##' 
 ##' xs <- dreg(iris,y,fun.=phreg)
 ##' 
-##' ## species as base, species is factor so assumes that this is grouping 
+##' ## species as base, species is factor so assumes that this is grouping
 ##' y <- S1~"*.width"|species
 ##' xs <- dreg(iris,y,z.arg="base",fun.=phreg)
 ##' 
-##' ##  background var after | and then one of x's at at time 
+##' ##  background var after | and then one of x's at at time
 ##' y <- S1~"*.width"|status+"sepal*"
 ##' xs <- dreg(iris,y,fun.=phreg)
 ##' 
-##' ##  background var after | and then one of x's at at time 
-##' y <- S1~"*.width"|status+"sepal*"
-##' xs <- dreg(iris,y,x.oneatatime=FALSE,fun.=phreg)
-##' xs <- dreg(iris,y,fun.=phreg)
+##' ##  background var after | and then one of x's at at time
+##' ##y <- S1~"*.width"|status+"sepal*"
+##' ##xs <- dreg(iris,y,x.oneatatime=FALSE,fun.=phreg)
+##' ##xs <- dreg(iris,y,fun.=phreg)
 ##' 
-##' ##  background var after | and then one of x's at at time 
-##' y <- S1~"*.width"+factor(species)
-##' xs <- dreg(iris,y,fun.=phreg)
-##' xs <- dreg(iris,y,fun.=phreg,x.oneatatime=FALSE)
+##' ##  background var after | and then one of x's at at time
+##' ##y <- S1~"*.width"+factor(species)
+##' ##xs <- dreg(iris,y,fun.=phreg)
+##' ##xs <- dreg(iris,y,fun.=phreg,x.oneatatime=FALSE)
 ##' 
 ##' y <- S1~"*.width"|factor(species)
 ##' xs <- dreg(iris,y,z.arg="base",fun.=phreg)
-##' 
 ##' 
 ##' y <- S1~"*.width"|cluster(id)+factor(species)
 ##' xs <- dreg(iris,y,z.arg="base",fun.=phreg)
 ##' xs <- dreg(iris,y,z.arg="base",fun.=coxph)
 ##' 
-##' ## under condition with groups  
+##' ## under condition with groups
 ##' y <- S1~"*.width"|I(sepal.length>4)
 ##' xs <- dreg(subset(iris,species=="setosa"),y,z.arg="group",fun.=phreg)
 ##' 
-##' ## under condition with groups  
+##' ## under condition with groups
 ##' y <- S1~"*.width"+I(log(sepal.length))|I(sepal.length>4)
 ##' xs <- dreg(subset(iris,species=="setosa"),y,z.arg="group",fun.=phreg)
 ##' 
@@ -107,12 +104,15 @@
 ##'  kmplot(ss,...)
 ##'  return(ss)
 ##' }
-##' 
+##'
+##' if (interactive()) {
 ##' dcut(iris) <- ~"*.width"
 ##' y <- S1~"*.4"|I(sepal.length>4)
 ##' par(mfrow=c(1,2))
 ##' xs <- dreg(iris,y,fun.=ff)
 ##' }
+##' }
+##' 
 ##' @export
 dreg <- function(data,y,x=NULL,z=NULL,x.oneatatime=TRUE,
 	 x.base.names=NULL,z.arg=c("clever","base","group","condition"),
