@@ -7,7 +7,6 @@
 using namespace arma;
 using namespace Rcpp;
 
-
 double claytonoakes(double theta,int status1,int status2,double cif1,double cif2,vec &dp) 
 { // {{{
   double valr=1,x,y,z;
@@ -53,6 +52,7 @@ RcppExport SEXP claytonoakesR(SEXP itheta,SEXP  iistatus1,SEXP  iistatus2,SEXP  
  if (varlink==1) theta=1/exp(theta); else theta=1/theta;
 
  colvec L=theta; 
+ colvec dL=theta; 
  colvec logL=theta; 
  colvec dlogL=theta; 
  int n=cif1.size(); 
@@ -72,6 +72,7 @@ RcppExport SEXP claytonoakesR(SEXP itheta,SEXP  iistatus1,SEXP  iistatus2,SEXP  
   valr=claytonoakes(x,status1,status2,y,z,vdp); 
   L(i)=valr;
   logL(i)=log(valr);
+  dL(i)=vdp(0);
   if (varlink==1) dlogL(i)=-pow(x,1)*vdp(0)/logL(i);  
   if (varlink==0) dlogL(i)=-1*pow(x,2)*vdp(0)/logL(i); 
 
@@ -79,6 +80,7 @@ RcppExport SEXP claytonoakesR(SEXP itheta,SEXP  iistatus1,SEXP  iistatus2,SEXP  
 
 List res; 
 res["like"]=L; 
+res["dlike"]=dL; 
 res["loglike"]=logL; 
 res["dloglike"]=dlogL; 
 
@@ -1924,7 +1926,7 @@ RcppExport SEXP twostageloglike(
 //  double Lit=1,Lkt=1,llt=1,deppar=1,ssf=0,thetak=0; 
   double dl1,dl2,ll1,ll2,ll=1,Li,Lk,sdj=0,diff=0,loglikecont=0;
   double Lit=1,Lkt=1,llt=1,deppar=1,ssf=0,thetak=0,dddl=0.000001; 
-  double d2,asign=-1; 
+  double d2=0,asign=-1; 
 //  double plack(); 
   int pt=theta.n_rows; 
   vec dplack(pt); dplack.fill(pt);
@@ -2045,7 +2047,8 @@ for (j=0;j<antclust;j++) if (clustsize(j)>=2) {
 	   // }}}
 	} else if (depmodel==2) { // plackett model  // {{{
 
-	if (varlink==1) d2=deppar;  if (varlink==0) d2=1; 
+	  if (varlink==1) { d2=deppar; }
+	  if (varlink==0) { d2=1; }
 
         if (trunkp(i)<1 || trunkp(k)<1) {	/*{{{*/
            Lit=trunkp(i); Lkt=trunkp(k); 
@@ -2116,6 +2119,7 @@ res["loglike"]=ssf;
 res["score"]=Utheta; 
 res["Dscore"]=DUtheta; 
 if (iid==1) { res["theta.iid"]=thetiid; 
+              res["score.iid"]=thetiid; 
 	      res["loglikeiid"]=loglikeiid; 
 	      res["D1thetal"]  = dp1; 
 	      res["D2thetal"]  = dp2; 
@@ -2236,12 +2240,12 @@ RcppExport SEXP twostageloglikeRV(
 
   int ci,ck,i,j,c,s=0,k,v,c1; 
 //  double ll=1,Li,Lk,diff=0,loglikecont=0,sdj=0;
-  double dl1,dl2,ll1,ll2,ll=1,Li,Lk,sdj=0,diff=0,loglikecont=0;
+  double dl1,dl2,ll1,ll2,ll=1,Li,Lk,diff=0,loglikecont=0,sdj;
   double Lit=1,Lkt=1,llt=1,deppar=1,ssf=0,thetak=0,dddl=0.000001; 
 //  double plack(); 
  
   int pt=theta.n_rows; 
-  double d2,asign=-1; if (ascertained==2) asign=1; 
+  double d2=0,asign=-1; if (ascertained==2) asign=1; 
   vec dplack(pt); dplack.fill(0);
   vec dplackt(pt); dplackt.fill(0);
   vec dplackt1(pt); dplackt1.fill(0);
@@ -2320,7 +2324,7 @@ for (j=0;j<antclust;j++) if (clustsize(j)>=2) {
 		   loglikecont=(log(ll)-log(llt));
 		   if (iid==1) { // approx parital derivatives for iid {{{
    		           ll1=claytonoakes(deppar,ci,ck,Li-dddl,Lk,dplackt1);
-			   ll2=claytonoakes(deppar,ci,ck,Li,Lk-dddl,dplackt1);
+			   ll2=claytonoakes(deppar,ci,ck,Li,Lk-dddl,dplackt2);
 			   dplackt1=(dplack-dplackt1)/dddl; 
 			   dplackt2=(dplack-dplackt2)/dddl; 
 			   dl1=(ll-ll1)/dddl;
@@ -2399,7 +2403,7 @@ for (j=0;j<antclust;j++) if (clustsize(j)>=2) {
 		   }/*}}}*/
 		   // }}}
 	   } else {
-      ll=claytonoakesRVC(etheta,thetades,ags,ci,ck,Li,Lk,rv1,rv2,dplackt,wwc);
+                ll=claytonoakesRVC(etheta,thetades,ags,ci,ck,Li,Lk,rv1,rv2,dplackt,wwc);
                 ssf+=weights(i)*log(ll); 
 	        loglikecont=log(ll);
 	        vthetascore=dplackt/ll; 
@@ -2417,7 +2421,8 @@ for (j=0;j<antclust;j++) if (clustsize(j)>=2) {
 	   // }}}
 	} else if (depmodel==2) { // plackett model  // {{{
 
-	if (varlink==1) d2=deppar;  if (varlink==0) d2=1; 
+	  if (varlink==1) { d2=deppar; }
+	  if (varlink==0) { d2=1; }
 
         if (trunkp(i)<1 || trunkp(k)<1) {	/*{{{*/
            Lit=trunkp(i); Lkt=trunkp(k); 
@@ -2503,7 +2508,9 @@ List res;
 res["loglike"]=ssf; 
 res["score"]=Utheta; 
 res["Dscore"]=DUtheta; 
-if (iid==1) { res["theta.iid"]=thetiid; 
+if (iid==1) { 
+	res["theta.iid"]=thetiid; 
+	res["score.iid"]=thetiid; 
 	      res["loglikeiid"]=loglikeiid; 
 	      res["trunclikeiid"]=trunclikeiid; 
 	      res["D1thetal"]  = dp1; 
@@ -2636,7 +2643,7 @@ mat rvdes=mat(rvdesvec.begin(),arrayDims2[0],arrayDims2[1]*arrayDD[2],false);
   int ci,ck,i,j,s=0,k,c1; 
   double dl1,dl2,ll1,ll2,ll=1,Li,Lk,sdj=0,diff=0,loglikecont=0;
   double Lit=1,Lkt=1,llt=1,deppar=1,ssf=0,thetak=0,dddl=0.000001; 
-  double d2,asign=-1; if (ascertained==2) asign=1; 
+  double d2=0,asign=-1; if (ascertained==2) asign=1; 
 //  double plack(); 
  
   vec dplack(pt); dplack.fill(0);
@@ -2839,7 +2846,8 @@ for (j=0;j<antclust;j++) {
 	   // }}} 
 	} else if (depmodel==2) { // plackett model  //  // {{{ 
 
-	if (varlink==1) d2=deppar;  if (varlink==0) d2=1; 
+	  if (varlink==1) { d2=deppar; }
+	  if (varlink==0) { d2=1; }
 
         if (trunkp(i)<1 || trunkp(k)<1) {	/*{{{*/
            Lit=trunkp(i); Lkt=trunkp(k); 
@@ -2927,6 +2935,7 @@ res["score"]=Utheta;
 res["Dscore"]=DUtheta; 
 
 if (iid==1) { res["theta.iid"]   =thetiid; 
+              res["score.iid"]=thetiid; 
 	      res["loglikeiid"]  =loglikeiid; 
               res["likepairs"]   =likepairs; 
               res["trunclikeiid"]=trunclikeiid; 
@@ -3238,6 +3247,7 @@ res["loglike"]=ssf;
 res["score"]=Utheta; 
 res["Dscore"]=DUtheta; 
 if (iid==1) { res["theta.iid"]=thetiid; 
+              res["score.iid"]=thetiid; 
 	      res["loglikeiid"]=loglikeiid; 
               res["likepairs"]=likepairs; 
 	      res["trunclikeiid"]=trunclikeiid; 

@@ -8,7 +8,7 @@
 ##' @docType package
 ##' @author Klaus K. Holst and Thomas Scheike
 ##' @useDynLib mets, .registration=TRUE
-##' @import stats splines timereg Rcpp
+##' @import stats splines timereg Rcpp mvtnorm
 ##' @importFrom lava iid estimate bootstrap compare score information twostage %++% %ni% addvar<- blockdiag cancel Col
 ##'                  confband constrain<- constraints covariance covariance<- coxWeibull.lvm devcoords distribution<-
 ##'                  endogenous eventTime Expand getoutcome gof intercept<- Inverse kill<- latent latent<- lava.options lvm
@@ -186,4 +186,31 @@ NULL
 ##' @keywords data
 ##' @source Estimated data
 NULL
+
+
+##' hapfreqs data set
+##'
+##' @name hapfreqs 
+##' @docType data
+##' @keywords data
+##' @source Simulated data
+NULL
+
+##' haploX  covariates and response for haplo survival discrete survival 
+##'
+##' @name haploX 
+##' @docType data
+##' @keywords data
+##' @source Simulated data
+NULL
+
+##' ghaplos  haplo-types for subjects of haploX data
+##'
+##' @name ghaplos 
+##' @docType data
+##' @keywords data
+##' @source Simulated data
+NULL
+
+
 

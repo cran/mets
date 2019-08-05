@@ -17,7 +17,7 @@
 ##'
 ##' ## with direct asignment
 ##' dsort(hubble) <- ~sigma-v
-##' @aliases dsort dsort<-
+##' @aliases dsort2 dsort dsort<-
 ##' @export
 dsort <- function(data,x,...,decreasing=FALSE,return.order=FALSE)
 {# {{{
@@ -27,6 +27,29 @@ dsort <- function(data,x,...,decreasing=FALSE,return.order=FALSE)
         decr <- unlist(lapply(xx,function(x) substr(trim(x),1,1)=="-"))
         if (any(decr)) decreasing <- decr
         x <- all.vars(x)
+    }
+    if (is.character(x) && length(x)<nrow(data)) x <- lapply(x,function(z) data[,z])
+    dots <- list(...)
+    args <- lapply(dots, function(x) {
+        if (length(x)==1 && is.character(x)) x <- data[,x]
+        x
+    })
+    if (!is.list(x)) x <- list(x)
+    ord <- do.call("order",c(c(x,args),list(decreasing=decreasing,method="radix")))
+    data[ord,]
+}# }}}
+
+##' @export
+dsort2 <- function(data,x,...,decreasing=FALSE,return.order=FALSE,regex=FALSE)
+{# {{{
+    if (missing(x)) return(data)
+    if (inherits(x,"formula")) {
+        xx <- lava::procformula(value=x)$res
+        yxzf <- procform(x,data=data,do.filter=FALSE,regex=regex)
+        decr <- unlist(lapply(xx,function(x) substr(trim(x),1,1)=="-"))
+        if (any(decr)) decreasing <- decr
+        x <- all.vars(x)
+	x <- yxzf$predictor
     }
     if (is.character(x) && length(x)<nrow(data)) x <- lapply(x,function(z) data[,z])
     dots <- list(...)

@@ -276,23 +276,23 @@ summary(ts)
 
 }
 \references{
-Estimating heritability for cause specific mortality based on twins studies
-Scheike, Holst, Hjelmborg (2014), LIDA  
-
-Measuring early or late dependence for bivariate twin data
-Scheike, Holst, Hjelmborg (2015), LIDA  
-
-Twostage modelling of additive gamma frailty models for survival data. 
-Scheike, working paper 
-
-Additive Gamma frailty models for competing risks data, Biometrics (2015)
-Eriksson and Scheike (2015), 
+Twostage estimation of additive gamma frailty models for survival data. 
+Scheike (2019), work in progress
 
 Shih and Louis (1995) Inference on the association parameter in copula models for bivariate
 survival data, Biometrics, (1995).
 
 Glidden (2000), A Two-Stage estimator of the dependence
 parameter for the Clayton Oakes model, LIDA, (2000).
+
+Measuring early or late dependence for bivariate twin data
+Scheike, Holst, Hjelmborg (2015), LIDA  
+
+Estimating heritability for cause specific mortality based on twins studies
+Scheike, Holst, Hjelmborg (2014), LIDA  
+
+Additive Gamma frailty models for competing risks data, Biometrics (2015)
+Eriksson and Scheike (2015),
 }
 \author{
 Thomas Scheike
