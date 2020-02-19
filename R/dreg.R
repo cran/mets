@@ -136,18 +136,17 @@ dreg <- function(data,y,x=NULL,z=NULL,x.oneatatime=TRUE,
 ###        fun_ <- fun
 ###        fun <- function(x, ...) fun_(convert(x, ...))
 ###    }
-
 ###    print(fun)
 ###    print(str(fun))
 
-
  yxzf <- procform(y,x=x,z=z,data=data,do.filter=FALSE,regex=regex)
  yxz <- procformdata(y,x=x,z=z,data=data,do.filter=FALSE,regex=regex)
+### print(yxz)
+### print(yxzf)
 
  ## remove blank, to able to use also 	+1 on right hand side
  if (any(yxzf$predictor=="")) 
     yxzf$predictor <- yxzf$predictor[-which(yxzf$predictor=="")]
-
 
  yy <- yxz$response
  xx <- yxz$predictor
@@ -174,6 +173,7 @@ dreg <- function(data,y,x=NULL,z=NULL,x.oneatatime=TRUE,
  if (z.arg[1]=="group")
      group <- interaction(zz) else group <- rep(1,nrow(data))
  if (z.arg[1]=="group")  levell <- levels(group) else levell <-1 
+
 
 
  res <- sum <- list()

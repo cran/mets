@@ -5,8 +5,8 @@
 \alias{cumContr}
 \title{GOF for Cox covariates in  PH regression}
 \usage{
-gofZ.phreg(formula, data, vars, offset = NULL, weights = NULL,
-  breaks = 20, equi = TRUE, n.sim = 1000, silent = 1, ...)
+gofZ.phreg(formula, data, vars = NULL, offset = NULL, weights = NULL,
+  breaks = 50, equi = FALSE, n.sim = 1000, silent = 1, ...)
 }
 \arguments{
 \item{formula}{formula for cox regression}
@@ -40,7 +40,8 @@ and resamples its asymptotic distribution.
 This will show if the residuals are consistent with the model evaulated in the z covariate. 
 M is here chosen based on a grid (z_1, ..., z_m) and the different columns are \eqn{I(Z_i \leq z_l)}.
 for \eqn{l=1,...,m}. 
-The process in z is resampled to find extreme values.
+The process in z is resampled to find extreme values.  The time-points of evuluation is by default
+50 points, chosen as 2%,4%,..., percentiles of the covariates.
 
 The p-value is valid but depends on the chosen grid. When the number of break points are high
 this will give the orginal test of Lin, Wei and Ying for linearity, that is also computed in 
@@ -54,8 +55,7 @@ TRACEsam <- blocksample(TRACE,idvar="id",replace=FALSE,100)
 
 ## cumulative sums in covariates, via design matrix mm
 \donttest{ ## Reduce Ex.Timings
-m1 <- gofZ.phreg(Surv(time,status==9)~strata(vf)+chf+wmi+age,data=TRACEsam,
-                 vars=c("wmi","age"))
+m1 <- gofZ.phreg(Surv(time,status==9)~strata(vf)+chf+wmi+age,data=TRACEsam)
 summary(m1) 
 plot(m1,type="z")
 }

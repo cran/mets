@@ -20,7 +20,7 @@ cifreg(formula, data = data, cause = 1, cens.code = 0,
 
 \item{offset}{offsets for cox model}
 
-\item{Gc}{censoring weights for time argument, default is to calculate these with a Kaplan-Meier estimator}
+\item{Gc}{censoring weights for time argument, default is to calculate these with a Kaplan-Meier estimator, should then give G_c(T_i-)}
 
 \item{propodds}{1 is logistic model, NULL is fine-gray model}
 
@@ -29,6 +29,21 @@ cifreg(formula, data = data, cause = 1, cens.code = 0,
 \description{
 CIF logistic for propodds=1 default
 CIF Fine-Gray (cloglog) regression for propodds=NULL
+}
+\details{
+For FG model: 
+\deqn{
+\int (X - E ) Y_1(t) w(t) dM_1
+}
+is computed and summed over clusters  and returned multiplied with inverse 
+of second derivative as iid.naive
+
+The iid decomposition of the beta's, however, also have a censoring term that is also
+is computed and added to UUiid (still scaled with inverse second derivative)
+\deqn{
+\int (X - E ) Y_1(t) w(t) dM_1 + \int q(s)/p(s) dM_c 
+}
+and returned as iid
 }
 \examples{
 ## data with no ties

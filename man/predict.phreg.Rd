@@ -23,7 +23,8 @@
 \usage{
 \method{predict}{phreg}(object, newdata, times = NULL,
   individual.time = FALSE, tminus = FALSE, se = TRUE,
-  robust = FALSE, conf.type = "log", conf.int = 0.95, ...)
+  robust = FALSE, conf.type = "log", conf.int = 0.95, km = FALSE,
+  ...)
 }
 \arguments{
 \item{object}{phreg object}
@@ -43,6 +44,8 @@
 \item{conf.type}{transformation for suvival estimates, default is log}
 
 \item{conf.int}{significance level}
+
+\item{km}{to use Kaplan-Meier for baseline \deqn{S_{s0}(t)= (1 - dA_{s0}(t))} where s is strata.}
 
 \item{...}{Additional arguments to plot functions}
 }

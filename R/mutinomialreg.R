@@ -1,21 +1,40 @@
 ##' Multinomial regression based on phreg regression
 ##'
-##' returns also influence functions (possibly robust) 
+##' Fits multinomial regression model 
+##' \deqn{ P_i = \frac{ \exp( X^\beta_i ) }{ \sum_{j=1}^K \exp( X^\beta_j ) }} 
+##' for \deqn{i=1,..,K}
+##' where \deqn{\beta_1 = 0}, such that \deqn{\sum_j P_j = 1} using phreg function. 
+##' Thefore the ratio \deqn{\frac{P_i}{P_1} = \exp( X^\beta_i )}
+##'
+##' Coefficients give log-Relative-Risk relative to baseline group (first level of factor, so that it can reset by relevel command).  
+##' Standard errors computed based on sandwhich form \deqn{ DU^-1  \sum U_i^2 DU^-1}.  
+##'
+##' Can also get influence functions (possibly robust) via iid() function, response should be a factor. 
 ##'
 ##' @param formula formula with outcome (see \code{coxph})
 ##' @param data data frame
-##' @param ref to set reference category (not working yet)
+##' @param weights for score equations 
+##' @param offset offsets for partial likelihood 
 ##' @param ... Additional arguments to lower level funtions
 ##' @author Thomas Scheike
 ##' @examples
 ##'
 ##' data(bmt)
-##' mreg <- mlogit(cause~tcell+platelet,bmt)
-##' summary(mreg,type="martingale")
+##' dfactor(bmt) <- cause1f~cause
+##' drelevel(bmt,ref=3) <- cause3f~cause
+##' dlevels(bmt)
+##'
+##' mreg <- mlogit(cause1f~tcell+platelet,bmt)
+##' summary(mreg)
 ##' 
+##' mreg3 <- mlogit(cause3f~tcell+platelet,bmt)
+##' summary(mreg3)
+##' 
+##' ## inverse information standard errors 
+##' estimate(coef=mreg3$coef,vcov=mreg3$II)
 ##' 
 ##' @export
-mlogit <- function(formula,data,ref=NULL,...)
+mlogit <- function(formula,data,offset=NULL,weights=NULL,...)
 {# {{{
 
   cl <- match.call()
@@ -26,16 +45,6 @@ mlogit <- function(formula,data,ref=NULL,...)
   m[[1]] <- as.name("model.frame")
   m <- eval(m, parent.frame())
   Y <- model.extract(m, "response")
-###  if (!is.Surv(Y)) stop("Expected a 'Surv'-object")
-###  if (ncol(Y)==2) {
-###    exit <- Y[,1]
-###    entry <- NULL ## rep(0,nrow(Y))
-###    status <- Y[,2]
-###  } else {
-###    entry <- Y[,1]
-###    exit <- Y[,2]
-###    status <- Y[,3]
-###  }
   id <- strata <- NULL
   if (!is.null(attributes(Terms)$specials$cluster)) {
     ts <- survival::untangle.specials(Terms, "cluster")
@@ -50,27 +59,23 @@ mlogit <- function(formula,data,ref=NULL,...)
     strata <- m[[ts$vars]]
     strata.name <- ts$vars
   }  else { strata.name <- NULL; pos.strata <- NULL}
-###  if (!is.null(attributes(Terms)$specials$offset)) {
-###    ts <- survival::untangle.specials(Terms, "offset")
-###    pos.offset <- ts$terms
-###    Terms  <- Terms[-ts$terms]
-###    offset <- m[[ts$vars]]
-###  }  else pos.offset <- NULL
   X <- model.matrix(Terms, m)
 ###  if (!is.null(intpos  <- attributes(Terms)$intercept))
 ###    X <- X[,-intpos,drop=FALSE]
   if (ncol(X)==0) X <- matrix(nrow=0,ncol=0)
 
-  res <- mlogit01(X,Y,id,strata,offset,weights,strata.name,ref,...) ###,
-###	   list(call=cl,model.frame=m,formula=formula,strata.pos=pos.strata,cluster.pos=pos.cluster))
+###  print(list(...))
+  res <- mlogit01(X,Y,id=id,strata=strata,offset=offset,weights=weights,strata.name=strata.name,...) ###,
+### list(call=cl,model.frame=m,formula=formula,strata.pos=pos.strata,cluster.pos=pos.cluster))
   return(res)
 }# }}}
 
 
 mlogit01 <- function(X,Y,id=NULL,strata=NULL,offset=NULL,weights=NULL,
-             strata.name=NULL,ref=NULL,cumhaz=FALSE,
+             strata.name=NULL,cumhaz=FALSE,
              beta,stderr=TRUE,method="NR",no.opt=FALSE,Z=NULL,propodds=NULL,AddGam=NULL,
 	     case.weights=NULL,...) {# {{{
+###  print(list(...))
   p <- ncol(X)
   if (missing(beta)) beta <- rep(0,p)
   if (p==0) X <- cbind(rep(0,length(Y)))
@@ -88,7 +93,6 @@ mlogit01 <- function(X,Y,id=NULL,strata=NULL,offset=NULL,weights=NULL,
   strata.call <- strata
   Zcall <- matrix(1,1,1) ## to not use for ZX products when Z is not given 
   if (!is.null(Z)) Zcall <- Z
-
   ## possible casewights to use for bootstrapping and other things
   if (is.null(case.weights)) case.weights <- rep(1,length(Y)) 
 
@@ -106,23 +110,28 @@ mlogit01 <- function(X,Y,id=NULL,strata=NULL,offset=NULL,weights=NULL,
   nlev <- length(types)
 
   nX <- nrow(X)
-  id <- rep(1:nX,each=nlev)
-  X <- X[id,,drop=FALSE]
-  Y <- Y[id]
+  idrow <- rep(1:nX,each=nlev)
+  X <- X[idrow,,drop=FALSE]
+  Y <- Y[idrow]
+  id <- id[idrow]
   status <- rep(0,nrow(X))
   nY <- as.numeric(Y)
+
+  refg <- 1  ### else refg <- match(ref,types)
+  nrefs <- (1:nlev)[-refg]
   for (i in 1:nlev) status[nY==i] <- rep(((1:nlev)==i),sum(nY==i)/nlev)
   time <- id
   strat <- rep(1:nlev,nX)
   XX <- c()
-  if (is.null(ref)) refg <- nlev else refg <- match(ref,types)
-  nrefs <- (1:nlev)[-refg]
   for (i in nrefs) XX <- cbind(XX,X*(strat==i))
   rownames(XX) <- NULL
 
-  datph=data.frame(time=time,status=status,XX=XX,id=id)
+  datph=data.frame(time=time,status=status,XX=XX,id=id,idrow=idrow)
+  loffset <- offset[idrow]
+  lweights<- weights[idrow]
 
-  res <- phreg(Surv(time,status)~XX+strata(id),datph)
+###  print(list(...))
+  res <- phreg(Surv(time,status)~XX+strata(idrow)+cluster(id),datph,weights=lweights,offset=loffset,...)
 
   return(res)
 }# }}}

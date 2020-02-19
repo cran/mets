@@ -16,7 +16,7 @@
 ##' @importFrom survival Surv is.Surv concordance
 ##' @importFrom utils head tail getS3method glob2rx capture.output
 ##' @importFrom graphics matplot lines plot polygon par points abline
-##'     title matlines
+##'     title matlines legend
 ##' @importFrom grDevices dev.list devAskNewPage dev.interactive
 ##' @keywords package
 ##' @examples
@@ -207,6 +207,14 @@ NULL
 ##' ghaplos  haplo-types for subjects of haploX data
 ##'
 ##' @name ghaplos 
+##' @docType data
+##' @keywords data
+##' @source Simulated data
+NULL
+
+##' ttpd discrete survival data on interval form 
+##'
+##' @name ttpd
 ##' @docType data
 ##' @keywords data
 ##' @source Simulated data

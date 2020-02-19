@@ -1,6 +1,5 @@
 ##' Finds subjects related to same cluster
 ##' 
-##' @aliases cluster.index 
 ##' @references
 ##' Cluster indeces 
 ##' @examples
@@ -13,7 +12,6 @@
 ##' print(d)
 ##' @seealso familycluster.index familyclusterWithProbands.index
 ##' @author Klaus Holst, Thomas Scheike
-##' @export
 ##' @param clusters  list of indeces
 ##' @param index.type if TRUE then already list of integers of index.type
 ##' @param num to get numbering according to num-type in separate columns
@@ -21,6 +19,8 @@
 ##' @param mat to return matrix of indeces
 ##' @param return.all return all arguments
 ##' @param code.na how to code missing values
+##' @aliases countID pairRisk mystrata
+##' @export
 cluster.index <- function(clusters,index.type=FALSE,num=NULL,Rindex=0,mat=NULL,return.all=FALSE,code.na=NA)
 { ## {{{
   n <- length(clusters)
@@ -51,9 +51,134 @@ cluster.index <- function(clusters,index.type=FALSE,num=NULL,Rindex=0,mat=NULL,r
   clustud
 } ## }}}
 
+##' @export
+countID <- function(data,id="id",names.count="Count",total.count="Total",index.name="index",reverse=TRUE,sep="",addid=TRUE)
+{# {{{
+
+clusters <- data[,id]
+if (is.numeric(clusters)) {
+   ## integeres from 0 to max.clust
+   uc <- unique(clusters)
+   max.clust <- length(uc)
+   clusters <- fast.approx(uc, clusters) - 1
+}
+else {
+     max.clust <- length(unique(clusters))
+     clusters <- as.integer(factor(clusters, labels = seq(max.clust))) - 1
+}
+
+###tabid <- table(clusters)
+nclust <- table(clusters)
+
+if (addid)  {
+name1 <- paste(names.count,id,sep=sep)
+name2 <- paste("index",id,sep=sep)
+name3 <- paste(total.count,id,sep=sep)
+} else {
+name1 <- names.count
+name2 <- index.name
+name3 <- total.count
+}
+
+out <- data[,id,drop=FALSE]
+out[,name1]=cumsumstrata(rep(1,nrow(data)),clusters,max.clust)
+out[,name2]=clusters 
+out[,name3]=nclust[clusters+1]
+
+attr(out,"max.clust") <- max.clust
+
+return(out)
+}# }}}
+
+##' @export
+pairRisk <- function(start,stop,status,expo,clust)
+{# {{{
+    n <- length(start)
+    id <- 1:n
+    nclust <- length(unique(clust))
+    sig <- c(rep(-1, each = n), rep(1, each = n))
+    clust.seq <- c(as.numeric(as.factor(clust)), as.numeric(as.factor(clust)))
+    clust <- c(clust, clust)
+    expo <- c(expo, expo)
+    id <- c(id, id)
+    sstatus <- c(rep(0, length(start)), status)
+    tts <- c(start, stop)
+    ot <- order(clust.seq, tts, -rank(sstatus))
+    tts <- tts[ot]
+    sstatus <- sstatus[ot]
+    sig <- sig[ot]
+    expo <- expo[ot]
+    clust <- clust[ot]
+    clust.seq <- clust.seq[ot]
+    id <- id[ot]
+    cbind(id,sig,start,stop,expo,sstatus)
+    cc <- c(mets::revcumsumstrata(sig * expo * 10 + sig * (expo == 0), clust.seq - 1, nclust))
+    ### both under risk when cc>10
+    pair.risk <- which(cc > 10)
+    clustpl <- clust[pair.risk]
+    weightpl <- cc[pair.risk] - 10
+    caseweightpl <- rep(-1, length(weightpl))
+    casepl <- expo[pair.risk]
+    caseweightpl[casepl == 1] <- weightpl[casepl == 1]
+    ttexit <- tts[pair.risk]
+    ttentry <- tts[pair.risk - 1]
+    ttid <- id[pair.risk]
+    tstatus <- sstatus[pair.risk]
+    timesout <- cbind(rep(ttentry, times = weightpl), rep(ttexit, times = weightpl))
+    whichnotsame <- which(timesout[, 1] != timesout[, 2])
+    caseweightrep <- rep(caseweightpl, times = weightpl) * (!duplicated(cbind(rep(ttexit,
+        times = weightpl), rep(clustpl, time = weightpl)))) * 1
+    weightstatusrep <- rep(tstatus, times = weightpl) * (caseweightrep != 0)
+    idout <- rep(ttid, times = weightpl) * (caseweightrep != 0)
+    clustplrep <- rep(clustpl, times = weightpl)
+    out <- data.frame(timesout, weightstatusrep, caseweightrep,
+        clustplrep, idout, stringsAsFactors = FALSE)[whichnotsame, ]
+    out <- out[order(out[, 5]), ]
+    return(out)
+}# }}}
+
+##' @export
+mystrata <- function(ll,sort=TRUE) {# {{{
+	for (j in seq(1,length(ll))) 
+	if (!is.factor(ll[[j]])) ll[[j]] <- factor(ll[[j]])
+
+	nll <- length(ll[[1]])
+        ss <- rep(0,nll)
+        nl <- unlist(lapply(ll,nlevels))
+        poss <- exp(revcumsum(log(nl))) 
+	for (j in seq(1,length(ll))) {
+	     ss <- ss+as.numeric(ll[[j]])*poss[j]
+	}
+	uss <- unique(ss)
+	nindex <- length(uss)
+        sindex <- fast.approx(uss,ss)
+        attr(sindex,"nlevel") <- nindex
+        attr(sindex,"levels") <- nl 
+	return(sindex)
+} # }}}
+
+###mystrata <- function(ll,sort=TRUE) {# {{{
+###	if (!is.factor(ll[[1]])) ll[[1]] <- factor(ll[[1]])
+###	id <- as.numeric(ll[[1]]) 
+###        ss <- id
+###	for (j in seq(2,length(ll))) {
+###	     if (!is.factor(ll[[j]])) ll[[j]] <- factor(ll[[j]])
+###             mm <- 1/nlevels(ll[[j]])
+###	     ## two decimals for each level
+###	     dec <- as.numeric(ll[[j]])/(nlevels(ll[[j]]))-mm/2
+###	     ss <- ss+dec/100^{j-2}
+###	}
+###	uss <- unique(ss)
+###	nindex <- length(uss)
+###        sindex <- fast.approx(uss,ss)
+###	dd <- data.frame(id=id,sindex=sindex)
+###        attr(dd,"nlevel") <- nindex
+###	return(dd)
+###} # }}}
+###
+
 ##' Finds all pairs within a cluster (family)
 ##' 
-##' @aliases familycluster.index 
 ##' @references
 ##' Cluster indeces 
 ##' @examples
@@ -62,11 +187,11 @@ cluster.index <- function(clusters,index.type=FALSE,num=NULL,Rindex=0,mat=NULL,r
 ##' print(d)
 ##' @seealso cluster.index familyclusterWithProbands.index
 ##' @author Klaus Holst, Thomas Scheike
-##' @export
 ##' @param clusters  list of indeces 
 ##' @param index.type argument of cluster index 
 ##' @param num num 
 ##' @param Rindex index starts with 1 in R, and 0 in C
+##' @export
 familycluster.index <- function(clusters,index.type=FALSE,num=NULL,Rindex=1)
 { ## {{{
   clusters <- cluster.index(clusters,Rindex=Rindex)
@@ -82,7 +207,6 @@ familycluster.index <- function(clusters,index.type=FALSE,num=NULL,Rindex=1)
 ##' 
 ##' second column of pairs are the probands and the first column the related subjects
 ##' 
-##' 
 ##' @references
 ##' Cluster indeces 
 ##' @examples
@@ -92,12 +216,12 @@ familycluster.index <- function(clusters,index.type=FALSE,num=NULL,Rindex=1)
 ##' print(d)
 ##' @author Klaus Holst, Thomas Scheike
 ##' @seealso familycluster.index cluster.index
-##' @export
 ##' @param clusters list of indeces giving the clusters (families)
 ##' @param probands list of 0,1 where 1 specifices which of the subjects that are probands 
 ##' @param index.type argument passed to other functions
 ##' @param num argument passed to other functions
 ##' @param Rindex index starts with 1, in C is it is 0
+##' @export
 familyclusterWithProbands.index <- function(clusters,probands,index.type=FALSE,num=NULL,Rindex=1)
 { ## {{{
     famc <-familycluster.index(clusters,index.type=index.type,num=num,Rindex=Rindex)
@@ -119,14 +243,6 @@ familyclusterWithProbands.index <- function(clusters,probands,index.type=FALSE,n
 
     invisible(famc)
 } ## }}}
-###library(mets)
-###clusters <-   c(1,1,2,2,1,3,3,3,4,4)
-###probands <-   c(0,1,0,1,0,1,0,0,0,0)
-###index.type=FALSE;num=NULL;Rindex=1
-###ilusters <- cluster.index(clusters,Rindex=1)
-###ud <- familycluster.index(clusters)
-###ud1 <- familyclusterWithProbands.index(clusters,probands)
-
 
 ##' @export
 coarse.clust <- function(clusters,max.clust=100)

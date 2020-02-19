@@ -4,26 +4,47 @@
 \alias{mlogit}
 \title{Multinomial regression based on phreg regression}
 \usage{
-mlogit(formula, data, ref = NULL, ...)
+mlogit(formula, data, offset = NULL, weights = NULL, ...)
 }
 \arguments{
 \item{formula}{formula with outcome (see \code{coxph})}
 
 \item{data}{data frame}
 
-\item{ref}{to set reference category (not working yet)}
+\item{offset}{offsets for partial likelihood}
+
+\item{weights}{for score equations}
 
 \item{...}{Additional arguments to lower level funtions}
 }
 \description{
-returns also influence functions (possibly robust)
+Fits multinomial regression model 
+\deqn{ P_i = \frac{ \exp( X^\beta_i ) }{ \sum_{j=1}^K \exp( X^\beta_j ) }} 
+for \deqn{i=1,..,K}
+where \deqn{\beta_1 = 0}, such that \deqn{\sum_j P_j = 1} using phreg function. 
+Thefore the ratio \deqn{\frac{P_i}{P_1} = \exp( X^\beta_i )}
+}
+\details{
+Coefficients give log-Relative-Risk relative to baseline group (first level of factor, so that it can reset by relevel command).  
+Standard errors computed based on sandwhich form \deqn{ DU^-1  \sum U_i^2 DU^-1}.
+
+Can also get influence functions (possibly robust) via iid() function, response should be a factor.
 }
 \examples{
 
 data(bmt)
-mreg <- mlogit(cause~tcell+platelet,bmt)
-summary(mreg,type="martingale")
+dfactor(bmt) <- cause1f~cause
+drelevel(bmt,ref=3) <- cause3f~cause
+dlevels(bmt)
 
+mreg <- mlogit(cause1f~tcell+platelet,bmt)
+summary(mreg)
+
+mreg3 <- mlogit(cause3f~tcell+platelet,bmt)
+summary(mreg3)
+
+## inverse information standard errors 
+estimate(coef=mreg3$coef,vcov=mreg3$II)
 
 }
 \author{

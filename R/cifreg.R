@@ -3,13 +3,28 @@
 ##' CIF logistic for propodds=1 default
 ##' CIF Fine-Gray (cloglog) regression for propodds=NULL
 ##'
+##' For FG model: 
+##' \deqn{
+##' \int (X - E ) Y_1(t) w(t) dM_1
+##' }
+##' is computed and summed over clusters  and returned multiplied with inverse 
+##' of second derivative as iid.naive
+##'
+##' The iid decomposition of the beta's, however, also have a censoring term that is also
+##' is computed and added to UUiid (still scaled with inverse second derivative)
+##' \deqn{
+##' \int (X - E ) Y_1(t) w(t) dM_1 + \int q(s)/p(s) dM_c 
+##' }
+##' and returned as iid 
+##'
+##'
 ##' @param formula formula with 'Event' outcome 
 ##' @param data data frame
 ##' @param cause of interest 
 ##' @param cens.code code of censoring 
 ##' @param offset offsets for cox model
 ##' @param weights weights for Cox score equations
-##' @param Gc censoring weights for time argument, default is to calculate these with a Kaplan-Meier estimator 
+##' @param Gc censoring weights for time argument, default is to calculate these with a Kaplan-Meier estimator, should then give G_c(T_i-) 
 ##' @param propodds 1 is logistic model, NULL is fine-gray model 
 ##' @param ... Additional arguments to lower level funtions
 ##' @author Thomas Scheike
@@ -80,15 +95,15 @@ cifreg <- function(formula,data=data,cause=1,cens.code=0,
     X <- X[,-intpos,drop=FALSE]
   if (ncol(X)==0) X <- matrix(nrow=0,ncol=0)
 
-  if (!is.null(id)) {
-	  ids <- sort(unique(id))
-	  nid <- length(ids)
-      if (is.numeric(id)) id <-  fast.approx(ids,id)-1 else  {
-      id <- as.integer(factor(id,labels=seq(nid)))-1
-     }
-   } else id <- as.integer(seq_along(exit))-1; 
-  ### id from call coded as numeric 1 -> 
-  id.orig <- id; 
+###  if (!is.null(id)) {
+###	  ids <- sort(unique(id))
+###	  nid <- length(ids)
+###      if (is.numeric(id)) id <-  fast.approx(ids,id)-1 else  {
+###      id <- as.integer(factor(id,labels=seq(nid)))-1
+###     }
+###   } else id <- as.integer(seq_along(exit))-1; 
+###  ### id from call coded as numeric 1 -> 
+###  id.orig <- id; 
 
 # }}}
 
@@ -125,6 +140,7 @@ cifreg01 <- function(data,X,exit,status,id=NULL,strata=NULL,offset=NULL,weights=
       strata <- as.integer(factor(strata,labels=seq(nstrata)))-1
     }
   }
+
  if (!trunc) entry <- rep(0,length(exit))
  if (is.null(offset)) offset <- rep(0,length(exit)) 
  if (is.null(weights)) weights <- rep(1,length(exit)) 
@@ -141,6 +157,7 @@ cifreg01 <- function(data,X,exit,status,id=NULL,strata=NULL,offset=NULL,weights=
    } else id <- as.integer(seq_along(entry))-1; 
    ## orginal id coding into integers 1:...
    id.orig <- id+1; 
+
 # }}}
 
  ### censoring weights constructed
@@ -196,6 +213,7 @@ cifreg01 <- function(data,X,exit,status,id=NULL,strata=NULL,offset=NULL,weights=
 	 where <- fast.approx(c(0,timeo),jumptimes,type="right")
  }# }}}
 
+
 obj <- function(pp,all=FALSE) {# {{{
 
 if (length(other)>=1) {
@@ -222,10 +240,11 @@ S2oo <- S2oo[jumps,,drop=FALSE]
 S0 <- c(S0oo+S0no*Gjumps)
 E <-   (S1oo+S1no*Gjumps)/S0
 weightsJ <- xx2$weights[jumps]
+caseweightsJ <- xx2$caseweights[jumps]
 strataJ <- xx2$strata[jumps]
 rr2now <- rr2now[jumps]
 U <- (Xj-E)
-ploglik <- (log(rr2now)-log(S0))*weightsJ; 
+ploglik <- (log(rr2now)-log(S0))*weightsJ*caseweightsJ; 
 
 if (!is.null(propodds)) {
    pow <- c(.Call("cumsumstrataPOR",weightsJ,S0,strataJ,nstrata,propodds,rr2now,PACKAGE="mets")$pow); 
@@ -234,7 +253,7 @@ if (!is.null(propodds)) {
    DUadj  <- .Call("vecMatMat",Dwbeta,U,PACKAGE="mets")$vXZ 
 }
 
-Ut <- weightsJ*U
+Ut <- caseweightsJ*weightsJ*U
 ## E^2, as n x (pxp)
 Et2 <-  .Call("vecMatMat",E,E,PACKAGE="mets")$vXZ
 S2S0 <- (S2oo+S2no*Gjumps)/S0
@@ -254,15 +273,15 @@ if (!is.null(propodds)) {
 }
 
 U  <- apply(Ut,2,sum)
-DUt <- weightsJ*DUt
+DUt <- caseweightsJ*weightsJ*DUt
 DU <- -matrix(apply(DUt,2,sum),p,p)
 
 ploglik <- sum(ploglik)
 
 out <- list(ploglik=ploglik,gradient=U,hessian=-DU,cox.prep=xx2,
-	    hessiantime=DUt,weightsJ=weightsJ,
+	    hessiantime=DUt,weightsJ=weightsJ,caseweightsJ=caseweightsJ,
 	    jumptimes=jumptimes,strata=strataJ,nstrata=nstrata,
-	    time=jumptimes,S0=S0/weightsJ,S2S0=S2S0,E=E,U=Ut,X=Xj,Gjumps=Gjumps)
+	    time=jumptimes,S0=S0/(caseweightsJ*weightsJ),S2S0=S2S0,E=E,U=Ut,X=Xj,Gjumps=Gjumps)
 
 if (all) return(out) else with(out,structure(-ploglik, gradient=-gradient, hessian=-hessian))
 }# }}}
@@ -286,6 +305,7 @@ if (all) return(out) else with(out,structure(-ploglik, gradient=-gradient, hessi
   } else {
       val <- obj(0,all=TRUE)
   }# }}}
+
 
 ### opt <- lava::NR(beta,obj); beta.s <- opt$par 
  beta.s <- val$coef 
@@ -357,7 +377,8 @@ if ((length(other)>=1) & (length(whereC)>0)) {
  ###
  q <- -(Xos*rcumhazGt-rEdLam0Gt*rro)
 
- cens.mgs = phreg(Surv(exit,status==0)~+cluster(id),data=data,no.opt=TRUE)
+ idloc__ <- id
+ cens.mgs = phreg(Surv(exit,status==0)~+cluster(idloc__),data=data,no.opt=TRUE)
  cxx <- cens.mgs$cox.prep
  ###
  Gt <- S0i <-  S0i2 <- rep(0,length(cxx$strata))
@@ -401,13 +422,14 @@ if ((length(other)>=1) & (length(whereC)>0)) {
  colnames(se.cumhaz) <- c("time","se.cumhaz")
 
 
-out <- list(coef=beta.s,var=varm,se.coef=diag(varm)^.5,UUiid=UUiid,Uiid=Uiid,
+out <- list(coef=beta.s,var=varm,se.coef=diag(varm)^.5,iid.naive=UUiid,
+	    iid=Uiid,
 	    ihessian=iH,hessian=opt$hessian,var1=var1,se1.coef=diag(var1)^.5,
 	    ploglik=opt$ploglik,gradient=opt$gradient,
 	    cumhaz=cumhaz, se.cumhaz=se.cumhaz,
 	    strata=xx2$strata,nstrata=nstrata,strata.name=strata.name,
 	    strata.level=strata.level,propodds=propodds,
-	    S0=opt$S0,E=opt$E,S2S0=opt$S2S0,time=opt$time,
+	    S0=opt$S0,E=opt$E,S2S0=opt$S2S0,time=opt$time,Ut=opt$U,
             jumps=jumps,II=iH,exit=exit,p=p,opt=opt,n=nrow(X),nevent=length(jumps)
 	    )
 

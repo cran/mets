@@ -34,11 +34,16 @@
 ##' @param no.opt optimization TRUE/FALSE 
 ##' @param method NR, nlm 
 ##' @param stderr to return only estimate 
-##' @param designMatrix  designMatrix not implemented 
+##' @param designMatrix  gives response and designMatrix directly not implemented (mush contain: p, id, idhap)
+##' @param response gives response and design directly designMatrix not implemented 
+##' @param idhap name of id-hap variable to specify different haplotypes for different id 
 ##' @param design.only to return only design matrices for haplo-type analyses. 
 ##' @param covnames names of covariates to extract from object for regression
 ##' @param fam family of models, now binomial default and only option 
-##' @param ... Additional arguments to lower level funtions lava:::NR  optimizer or nlm
+##' @param weights weights following id for GLM 
+##' @param offsets following id  for GLM
+##' @param idhapweights weights following id-hap for GLM (WIP)
+##' @param ... Additional arguments to lower level funtions lava::NR  optimizer or nlm
 ##' @author Thomas Scheike
 ##' @examples
 ##' ## some haplotypes of interest
@@ -78,20 +83,17 @@
 ##'          Haplos=Haplos,desnames=desnames,designfunc=designftypes) 
 ##' names(out$coef) <- c(desnames,types)
 ##' out$coef
-##' 
-##' @aliases simGlm  predictSurvd plotSurvd
+##'  summary(out)
+##' @aliases simTTP  predictSurvd plotSurvd 
 ##' @export
-haplo.surv.discrete <- function (
-###	formula = formula(data),data=sys.parent(),
-    X=NULL,y="y",time.name="time",Haplos=NULL,id="id", desnames=NULL, designfunc=NULL,beta=NULL, 
-    no.opt=FALSE,method="NR",stderr=TRUE, designMatrix=NULL,design.only=FALSE,
-###    geno.type = NULL, geno.setup=NULL,haplo.freq = NULL,
-###    haplo.design=NULL,haplo.baseline=NULL,alpha=NULL, 
-    covnames=NULL,fam=binomial,...)
+haplo.surv.discrete <- function (X=NULL,y="y",time.name="time",Haplos=NULL,id="id",desnames=NULL,designfunc=NULL,
+    beta=NULL,no.opt=FALSE,method="NR",stderr=TRUE,designMatrix=NULL,response=NULL,idhap=NULL,design.only=FALSE,
+    covnames=NULL,fam=binomial,weights=NULL,offsets=NULL,idhapweights=NULL,...)
 { ## {{{ 
+  cond=NULL
 
-###	browser()
-
+if (is.null(designMatrix)) { 
+if (!is.null(Haplos)) { ## with haplo-types {{{
   ## X: y, Xdes, id
   ## Haplos, haplo1, haplo2, id, p (HgivenG)
   bothid <- intersect(X$id,Haplos$id)
@@ -99,8 +101,9 @@ haplo.surv.discrete <- function (
   Haplos <- subset(Haplos,id %in% bothid)
   ## new iid starts at 1 
   Haplos$id <- fast.approx(bothid,Haplos$id) 
-  iid <- Haplos$id-1
+  iiid <- Haplos$id-1
   X$id <- fast.approx(bothid,X$id) 
+  Xo <- X
 
   Xhap <- merge(X,Haplos,by.x="id",by.y="id")
   Xhap <- dsort2(Xhap,~id+"haplo*"+time)
@@ -116,170 +119,170 @@ haplo.surv.discrete <- function (
 
   mm <-  grep("haplo*",names(Xhap))
   Xhaps <- Xhap[,mm]
-  X <- as.matrix(apply(Xhap[,mm],1,designfunc))
-  ###
-  if (ncol(X)==nrow(Xhap))  X <- t(X)
-  colnames(X) <- paste("haplo",1:ncol(X),sep="")
-  X <- as.matrix(cbind(Xhap[,desnames],X))
+  if (!is.null(designfunc)) {
+	  Xo <- X <- as.matrix(apply(Xhap[,mm],1,designfunc))
+	  if (ncol(X)==nrow(Xhap))  X <- t(X)
+	  colnames(X) <- paste("haplo",1:ncol(X),sep="")
+	  X <- as.matrix(cbind(Xhap[,desnames],X))
+  } else Xo <- X <- as.matrix(Xhap[,desnames])
 
   ## X(i)^T %*% X(i) for each row 
   X2  <- .Call("vecMatMat",X,X)$vXZ
 
 ## creates sub-index for haplo-types within each id
    nmm <- names(Xhap)[mm]
-   lll <- lapply(Xhap[,c("id",nmm)],as.numeric)
-   stratidhap <-    as.numeric(survival::strata(lll))
-###   stratidhap <- fast.approx(unique(stratidhap),stratidhap) 
-###   print(cbind(Xhap$id,stratidhap))
-
-   nidhap <- length(unique(stratidhap))
+###   lll <- lapply(Xhap[,c("id",nmm)],as.numeric)
+###   stratidhap <-    as.numeric(survival::strata(lll))
+   ms <- mystrata(Xhap[,c("id",nmm)])
+	   stratidhap <- ms
+###nidhap <- length(unique(stratidhap))
+   nidhap <- attr(ms,"nlevel")
    nid <- length(unique(Haplos$id))
 
+  ## weights will follow id 
+  if (is.null(weights))  wiid <- rep(1,nid)  else wiid <- weights
+  ## idhap weights will follow id-hap
+  if (is.null(idhapweights))  whapiid <- rep(1,nidhap)  else whapiid <- idhapweights
+  ## offsets can follow both Haplo or X design and will then appear in mixed design
+  if (is.null(offsets))  offiid <- rep(0,nrow(X)) else offiid <- offsets
+
+  ### to make the optimizer more flexible and use for interval censored data 
+  if (is.null(cond)) cond <- rep(0,nidhap)
+
    hgiveng <- Haplos$p
+# }}}
+} else {  ## standard glm {{{ 
+  ## X: y, Xdes, id
+
+  id.name <- id
+  ## id going from 1 to #id's
+  id <- X$id <- fast.approx(unique(X[,id]),X[,id]) 
+  Xhap <- Xo <- X
+  iiid <- unique(X$id)-1
+  nid <- length(iiid)
+  stratidhap <- id 
+  nidhap <- length(unique(stratidhap))
+
+  ###
+  response <- Xhap[,y]
+  yn <- match(y,names(Xhap))
+  Xhap <- Xhap[,-yn]
+
+  X <- as.matrix(Xhap[,desnames])
+  ## X(i)^T %*% X(i) for each row 
+  X2  <- .Call("vecMatMat",X,X)$vXZ
+
+  ## weights will follow id 
+  if (is.null(weights))  wiid <- rep(1,nid)  else wiid <- weights
+  ## idhap weights will follow id-hap
+  if (is.null(idhapweights))  wph <- rep(1,nidhap)  else wph <- idhapweights
+  ## offsets can follow both Haplo or X design and will then appear in mixed design
+  if (is.null(offsets))  offiid <- rep(0,nrow(X)) else offiid <- offsets
+
+  if (is.null(cond)) cond <- rep(0,nidhap)
+  hgiveng <- rep(1,nid)
+
+}# }}}
+} else {# {{{
+	hgiveng <- designMatrix$p
+	X <- designMatrix[,desnames]
+	id <- designMatrix[,id]
+        iiid <- unique(id)-1
+
+        stratidhap <- designMatrix[,idhap]
+        nidhap <- length(unique(stratidhap))
+        nid <- length(iiid)
+	design.only <- FALSE
+
+        ## weights will follow id 
+        if (is.null(weights))  wiid <- rep(1,nid)  else wiid <- weights
+        ## idhap weights will follow id-hap
+        if (is.null(idhapweights))  wph <- rep(1,nidhap)  else wph <- idhapweights
+        ## offsets can follow both Haplo or X design and will then appear in mixed design
+        if (is.null(offsets))  offiid <- rep(0,nrow(X)) else offiid <- offsets
+
+        if (is.null(cond)) cond <- rep(0,nidhap)
+
+}# }}}
 
 if (!design.only) {
 
-if (is.null(beta)) beta <- rep(0,ncol(X))
+	if (is.null(beta)) beta <- rep(0,ncol(X))
+	expit  <- function(z) 1/(1+exp(-z)) ## expit
 
-expit  <- function(z) 1/(1+exp(-z)) ## expit
+	obj <- function(pp,all=FALSE)
+	{ # {{{
 
+	lp <- X %*% pp 
+	## plp <- family$linkinv(lp)
+	plp <- expit(lp+ offiid)
+	nplp <- 1-plp
+	###lognp <- log(nplp)
 
-obj <- function(pp,all=FALSE)
-{ # {{{
+	### logpht <-  (response - plp)/family$variance(plp)
+	logpht <- log(plp)*response+log(nplp)*(1-response)
+	pht <-c(exp(logpht))
+	Dlogpht <-  X* c(response-plp)
+	D2logpht <- c(plp/(1+exp(lp)))*X2
 
-lp <- X %*% pp
-## plp <- family$linkinv(lp)
-plp <- expit(lp)
-nplp <- 1-plp
-###lognp <- log(nplp)
+	ph <- c(exp(sumstrata(logpht,stratidhap-1,nidhap)))
+	pg <- c(sumstrata(ph*hgiveng,iiid,nid))
+	logl <- wiid*log(pg)
 
-### logpht <-  (response - plp)/family$variance(plp)
-logpht <- log(plp)*response+log(nplp)*(1-response)
-pht <-c(exp(logpht))
-Dlogpht <-  X* c(response-plp)
-D2logpht <- c(plp/(1+exp(lp)))*X2
+	## Derivative 
+	Dlogph  <- apply(Dlogpht,2,sumstrata,stratidhap-1,nidhap)
+	Dph  <- c(ph)*Dlogph
+	Dpg <- apply(Dph*hgiveng,2,sumstrata,iiid,nid)# {{{}}}
+	Dlogl    <- wiid*Dpg/pg
+	DpgDpg  <- .Call("vecMatMat",Dpg,Dpg)$vXZ
 
-ph <- c(exp(sumstrata(logpht,stratidhap-1,nidhap)))
-pg <- c(sumstrata(ph*hgiveng,iid,nid))
-logl <- log(pg)
+	## 2nd Derivative 
+	D2logph <- apply(D2logpht,2,sumstrata,stratidhap-1,nidhap)
+	DphDlogph <- .Call("vecMatMat",Dph,Dlogph)$vXZ
+	D2ph <- ph*D2logph+DphDlogph
+	D2pg <-apply(D2ph*hgiveng,2,sumstrata,iiid,nid)
+	D2logi <- wiid*(pg*D2pg-DpgDpg)/pg^2
+	D2log <- apply(D2logi,2,sum)
+	D2log <- matrix(D2log,ncol(X),ncol(X))
 
-## Derivative 
-Dlogph  <- apply(Dlogpht,2,sumstrata,stratidhap-1,nidhap)
-Dph  <- c(ph)*Dlogph
-Dpg <- apply(Dph*hgiveng,2,sumstrata,iid,nid)
-Dlogl    <- Dpg/pg
-DpgDpg  <- .Call("vecMatMat",Dpg,Dpg)$vXZ
+	ploglik <- sum(logl)
+	gradient <- apply(Dlogl,2,sum)
+	hessian <- D2log
 
-## 2nd Derivative 
-D2logph <- apply(D2logpht,2,sumstrata,stratidhap-1,nidhap)
-DphDlogph <- .Call("vecMatMat",Dph,Dlogph)$vXZ
-D2ph <- ph*D2logph+DphDlogph
-D2pg <-apply(D2ph*hgiveng,2,sumstrata,iid,nid)
-D2logi <- (pg*D2pg-DpgDpg)/pg^2
-D2log <- apply(D2logi,2,sum)
-D2log <- matrix(D2log,ncol(X),ncol(X))
+	  if (all) {
+	      ihess <- solve(hessian)
+	      beta.iid <- Dlogl %*% ihess ## %*% t(Dlogl) 
+	      robvar <- crossprod(beta.iid)
+	      val <- list(par=pp,ploglik=ploglik,gradient=gradient,hessian=hessian,ihessian=ihess,
+			  iid=beta.iid,robvar=robvar,var=ihess,
+			  id=iiid,
+			  se=diag(ihess)^.5,se.robust=diag(robvar)^.5)
+	      return(val)
+	  }  
+	 structure(-ploglik,gradient=-gradient,hessian=hessian)
+	}# }}}
 
-
-ploglik <- sum(logl)
-gradient <- apply(Dlogl,2,sum)
-hessian <- D2log
-
-  if (all) {
-      ihess <- solve(hessian)
-      beta.iid <- Dlogl %*% ihess ## %*% t(Dlogl) 
-      robvar <- crossprod(beta.iid)
-      val <- list(par=pp,ploglik=ploglik,gradient=gradient,hessian=hessian,ihessian=ihess,
-		  iid=beta.iid,robvar=robvar,var=ihess,
-		  se=diag(ihess)^.5,se.robust=diag(robvar)^.5)
-      return(val)
-  }  
- structure(-ploglik,gradient=-gradient,hessian=hessian)
-}# }}}
-
-  p <- ncol(X)
-  opt <- NULL
-  if (p>0) {
-  if (no.opt==FALSE) {
-      if (tolower(method)=="nr") {
-          tim <- system.time(opt <- lava::NR(beta,obj,...))
-          opt$timing <- tim
-          opt$estimate <- opt$par
-      } else {
-          opt <- nlm(obj,beta,...)
-          opt$method <- "nlm"
-      }
-      cc <- opt$estimate; 
-      if (!stderr) return(cc)
-      val <- c(list(coef=cc),obj(opt$estimate,all=TRUE))
-      } else val <- c(list(coef=beta),obj(beta,all=TRUE))
-  } else {
-      val <- obj(0,all=TRUE)
-  }
+	  p <- ncol(X)
+	  opt <- NULL
+	  if (p>0) {
+	  if (no.opt==FALSE) {
+	      if (tolower(method)=="nr") {
+		  tim <- system.time(opt <- lava::NR(beta,obj,...))
+		  opt$timing <- tim
+		  opt$estimate <- opt$par
+	      } else {
+		  opt <- nlm(obj,beta,...)
+		  opt$method <- "nlm"
+	      }
+	      cc <- opt$estimate; 
+	      if (!stderr) return(cc)
+	      val <- c(list(coef=cc),obj(opt$estimate,all=TRUE))
+	      } else val <- c(list(coef=beta),obj(beta,all=TRUE))
+	  } else {
+	      val <- obj(0,all=TRUE)
+	  }
 
 
-###
-###  ## {{{ defining names with haplostuff
-###  ## best guess  for standard designs  
-###  haploX.names<-c()
-###  if (px!=dimxih) {
-###    haploef.x<-dimxih-px; 
-###    if (haploef.x>0) haploX.names<-rep("Haplo effect",haploef.x)
-###  }
-###  haploZ.names<-c()
-###  if (pz!=dimzih) {
-###    haploef.z<-dimzih-pz; 
-###    if (haploef.z>0) haploZ.names<-rep("Haplo effect",haploef.z)
-###  }
-###  ## }}}
-###
-###
-###  ## {{{ adding names 
-###  if (is.null(covnames)==TRUE)  covnamesXuse<-c(covnamesXin,haploX.names)  
-###  else covnamesXuse<-c(covnamesX)
-###
-###  if (is.null(covnamesZ)==TRUE)  covnamesZuse<-c(covnamesZin,haploZ.names)  
-###  else covnamesZuse<-c(covnamesZ)
-####print(covnamesZuse); print(covnamesXuse)
-###
-###  if (length(covnamesXuse)==dimxih) {
-###     colnames(ud$cum)<-colnames(ud$var.cum) <-
-###     colnames(ud$robvar.cum) <-c("time",covnamesXuse); 
-###  }
-###
-###  if ((length(covnamesZuse)==dimzih))  {
-###      names(ud$score)<-covnamesZuse;
-###      if (fix.beta==0) colnames(ud$test.procProp)<-c("time",covnamesZuse)
-###      if (resample.iid==1) colnames(gamiid)<-covnamesZuse; 
-###      if ((sim>=1) &  (fix.beta==0)) names(ud$pval.Prop)<-covnamesZuse
-###  }
-###  if ((sim>=1) & (length(covnamesXuse)==dimxih)) {
-###    names(ud$conf.band)<- names(ud$pval.testBeq0)<-
-###    names(ud$pval.testBeqC)<- names(ud$obs.testBeq0)<- 
-###    names(ud$obs.testBeqC)<- colnames(ud$sim.testBeq0)<-covnamesXuse 
-###  } 
-###  if (sim==0) {
-###    ud$pval.Prop<- ud$conf.band<- ud$pval.testBeq0<- ud$pval.testBeqC<-
-###      ud$obs.testBeq0<- ud$obs.testBeqC<- ud$sim.testBeq0<- NULL 
-###  }
-###
-###  if ((length(covnamesZuse)==dimzih)) {
-###     rownames(ud$gamma)<-covnamesZuse;
-###     colnames(ud$gamma)<-"estimate"; 
-###
-###     if (fix.beta==1) {
-###        namematrix(ud$var.gamma,covnamesZuse); 
-###        namematrix(ud$robvar.gamma,covnamesZuse); 
-###        namematrix(ud$D2linv,covnamesZuse); 
-###     }
-###  } 
-###  if (fix.beta==1) {  ud$var.gamma<-matrix(0,pz,pz); 
-###                      ud$robvar.gamma<-matrix(0,pz,pz);
-###                    }
-###  ## }}}
-###
-###  attr(ud, "Call") <- sys.call()
-###  attr(ud, "Formula") <- formula
-###  attr(ud, "id") <- id.call
 }  else val <- NULL
 
   val <- c(list(Xhap=Xhap,X=X,Haplos=Haplos),val)
@@ -288,7 +291,19 @@ hessian <- D2log
 } ## }}} 
 
 ##' @export
-simGlm <- function(coef=NULL,n=100,Xglm=NULL,times=NULL)
+summary.survd <- function(object,...) return(lava::estimate(object,...)) 
+
+##' @export
+print.survd <- function(x,...) return(lava::estimate(x,...)) 
+
+##' @export
+vcov.survd <- function(object,...) return(object$var) 
+
+##' @export
+coef.survd <- function(object,...) return(object$coef)
+
+##' @export
+simTTP <- function(coef=NULL,n=100,Xglm=NULL,times=NULL)
 {# {{{
 	  
   Z <- Xglm  
@@ -348,6 +363,10 @@ predictSurvd <- function(ds,Z,times=1:6,se=FALSE,type="prob")
 	  if (type=="prob") pred <- 1-survt
 	  if (type=="surv") pred <- survt
 	  if (type=="hazard") pred <- p
+	  if (type=="rrm") { ## restricted residual mean 
+		  ll <- length(survt)
+	        pred <- cumsum(c(1,survt[-ll]))
+	  }
 	  preds <- cbind(preds,pred)
 # }}}
   } else {# {{{
@@ -361,6 +380,10 @@ predictSurvd <- function(ds,Z,times=1:6,se=FALSE,type="prob")
 	   if (type=="prob") st <- 1-st 
 	   if (type=="surv") st <- st 
 	   if (type=="hazard") st <- lam
+           if (type=="rrm") { ## restricted residual mean 
+		ll <- length(st)
+	        st <- cumsum(c(1,st[-ll]))
+	   }
 	   return(st)
     }
 
@@ -437,7 +460,7 @@ plotSurvd <- function(ds,ids=NULL,add=FALSE,se=FALSE,cols=NULL,ltys=NULL,...)
 ###   ###
 ###   X <- t(apply(cbind(hap1,hap2),1,designftypes))
 ###   X <- data.frame(X,id=1:n)
-###   sud <- simGlm(coef=tcoef,Xglm=X,n=n,times=1:6)
+###   sud <- simTTP(coef=tcoef,Xglm=X,n=n,times=1:6)
 ###   ## known haplotypes
 ###   ssud <- glm(y~factor(times)+X1+X2+X3+X4+X5,data=sud,family=binomial())
 ###
@@ -506,6 +529,652 @@ plotSurvd <- function(ds,ids=NULL,add=FALSE,se=FALSE,cols=NULL,ltys=NULL,...)
 ###} ## }}} 
 ###
 
+##' Discrete time to event interval censored data 
+##'
+##' \deqn{
+##'    logit(P(T >t | x)) = log(G(t)) + x \beta
+##' }
+##' \deqn{
+##'    P(T >t | x) =  \frac{1}{1 + G(t) exp( x \beta) }
+##' }
+##' 
+##' Input are intervals given by ]t_l,t_r] where t_r can be infinity for right-censored intervals 
+##' When truly discrete ]0,1] will be an observation at 1, and  ]j,j+1] will be an observation at j+1
+##' 
+##' Likelihood is maximized:
+##' \deqn{
+##'  \prod  P(T_i >t_{il} | x) - P(T_I> t_{ir}| x) 
+##' }
+##' 
+##' @param formula  formula
+##' @param data  data 
+##' @param beta starting values 
+##' @param no.opt optimization TRUE/FALSE 
+##' @param method NR, nlm 
+##' @param stderr to return only estimate 
+##' @param weights weights following id for GLM 
+##' @param offsets following id  for GLM
+##' @param exp.link parametrize increments exp(alpha) > 0
+##' @param increment using increments dG(t)=exp(alpha) as parameters
+##' @param ... Additional arguments to lower level funtions lava::NR  optimizer or nlm
+##' @author Thomas Scheike
+##' @examples
+##' data(ttpd) 
+##' out <- interval.logitsurv.discrete(Interval(entry,time2)~X1+X2+X3+X4,ttpd)
+##' summary(out)
+##' 
+##' n <- 100
+##' Z <- matrix(rbinom(n*4,1,0.5),n,4)
+##' outsim <- simlogitSurvd(out$coef,Z)
+##' outsim <- transform(outsim,left=time,right=time+1)
+##' outsim <- dtransform(outsim,right=Inf,status==0)
+##' 
+##' outss <- interval.logitsurv.discrete(Interval(left,right)~+X1+X2+X3+X4,outsim)
+##' 
+##' Z <- matrix(0,5,4)
+##' Z[2:5,1:4] <- diag(4)
+##' pred <- predictlogitSurvd(out,se=FALSE)
+##' plotSurvd(pred)
+##' 
+##' ## simulations 
+##' n <- 100
+##' Z <- matrix(rbinom(n*4,1,0.5),n,4)
+##' outsim <- simlogitSurvd(out$coef,Z)
+##' ###
+##' outsim <- transform(outsim,left=time,right=time+1)
+##' outsim <- dtransform(outsim,right=Inf,status==0)
+##' 
+##' out$coef
+##' outss <- interval.logitsurv.discrete(Interval(left,right)~+X1+X2+X3+X4,outsim)
+##' summary(outss)
+##' 
+##' @aliases Interval dInterval simlogitSurvd predictlogitSurvd
+##' @export
+interval.logitsurv.discrete <- function (formula,data,beta=NULL,no.opt=FALSE,method="NR",
+	   stderr=TRUE,weights=NULL,offsets=NULL,exp.link=1,increment=1,...)
+{ ## {{{ 
+
+  cl <- match.call()
+  m <- match.call(expand.dots = TRUE)[1:3]
+  special <- c("strata", "cluster","offset")
+  Terms <- terms(formula, special, data = data)
+  m$formula <- Terms
+  m[[1]] <- as.name("model.frame")
+  m <- eval(m, parent.frame())
+  Y <- model.extract(m, "response")
+
+ if (ncol(Y)==2) {
+	time2 <- eventtime <- Y[,2]
+	entrytime <- Y[,1]
+	left <- 0
+    } else {
+	time2 <- eventtime <- Y[,2]
+	status <- delta  <- Y[,3]
+	entrytime <- Y[,1]
+	left <- 1
+	if (max(entrytime)==0) left <- 0
+    }
+
+  id <- strata <- NULL
+  if (!is.null(attributes(Terms)$specials$cluster)) {
+    ts <- survival::untangle.specials(Terms, "cluster")
+    pos.cluster <- ts$terms
+    Terms  <- Terms[-ts$terms]
+    id <- m[[ts$vars]]
+  } else pos.cluster <- NULL
+  if (!is.null(attributes(Terms)$specials$strata)) {
+    ts <- survival::untangle.specials(Terms, "strata")
+    pos.strata <- ts$terms
+    Terms  <- Terms[-ts$terms]
+    strata <- m[[ts$vars]]
+    strata.name <- ts$vars
+  }  else { strata.name <- NULL; pos.strata <- NULL}
+
+  X <- model.matrix(Terms, m)
+  if (!is.null(intpos  <- attributes(Terms)$intercept))
+  X <- X[,-intpos,drop=FALSE]
+  if (ncol(X)>0) X.names <- colnames(X) else X.names <- NULL
+###  if (ncol(X)==0) X <- NULL 
+
+  ## times 1 -> mutimes , 0 til start
+  utimes <- sort(unique(c(time2,entrytime)))
+### time2 <- fast.approx(utimes,time2)-1
+### entrytime <- fast.approx(utimes,entrytime)-1
+  mutimes <- max(utimes[utimes<Inf])
+  n <- length(time2)
+  
+  ## setting up designs for t_l and t_r
+  tR <- tL <- matrix(0,n,mutimes)
+
+  ## design for [t_l,t_r], for t_l=0,t_r=inf, row is  0
+  if (increment==0) {
+	  tL <- matdoubleindex(tL,1:n,entrytime,rep(1,n))
+	  tR <- matdoubleindex(tL,1:n,time2,rep(1,n))
+  } else {
+	  ### to appear 
+	  for (i in 1:mutimes) {
+		  tL[,i] <- (i <= entrytime) 
+		  tR[,i] <- (i <= time2) 
+	  }
+  }
+
+  ## computing X^2 
+  if (ncol(X)>0) {
+  X2  <- .Call("vecMatMat",X,X)$vXZ
+  XtL  <- .Call("vecMatMat",X,tL)$vXZ
+  XtR  <- .Call("vecMatMat",X,tR)$vXZ
+  }
+  tL2  <- .Call("vecMatMat",tL,tL)$vXZ
+  tR2  <- .Call("vecMatMat",tR,tR)$vXZ
 
 
+  ## weights/offets will follow id 
+  if (is.null(weights))  weights <- rep(1,n); #  else wiid <- weights
+  if (is.null(offsets))  offsets <- rep(0,n); # else offsets <- offsets
+  if (is.null(beta)) beta <- rep(0,ncol(X)+mutimes)
+  expit  <- function(z) 1/(1+exp(-z)) ## expit
+  logit  <- function(p) log(p/(1-p))  ## logit
+
+  beta[1:mutimes] <- (1:mutimes)*exp(logit( (sum(time2<Inf)/(nrow(X)*mutimes))))
+
+obj <- function(pp,all=FALSE)
+{ # {{{
+
+if (exp.link==1) theta <- exp(pp[1:mutimes]) else theta  <-  pp[1:mutimes]
+
+if (ncol(X)>0) {
+betal   <- pp[-c(1:mutimes)]
+Zbeta <- c(X %*% betal+offsets)
+} else {Zbeta <- offsets }
+xltheta <-  c(tL %*% theta)
+xrtheta <-  c(tR %*% theta)
+EZbeta <- exp(Zbeta)
+GEl <- xltheta * EZbeta
+GEr <- xrtheta * EZbeta
+Stl <- 1/(1+GEl) 
+Str <- 1/(1+GEr) 
+
+############################################
+## likelihood
+############################################
+# {{{
+p <- Stl-Str*(time2<Inf)
+logp <- log(p)
+logl <- weights*logp 
+# }}}
+############################################
+## Derivative 
+############################################
+# {{{
+if (ncol(X)>0) {
+DbetaStl <- -X*GEl*Stl^2
+DbetaStr <- -(time2<Inf)*X*GEr*Str^2
+Dbetalogp <- (DbetaStl-DbetaStr)/p
+} 
+DgStl <- -tL*EZbeta*Stl^2
+DgStr <- -(time2<Inf)*tR*EZbeta*Str^2
+Dglogp <- (DgStl-DgStr)/p
+
+if (ncol(X)>0) {
+Dlogliid  <- cbind(Dglogp*weights,Dbetalogp*weights)
+Dlogl  <- apply(Dlogliid,2,sum)
+} else {
+	Dlogliid  <- Dglogp*weights
+        Dlogl  <- apply(Dlogliid,2,sum)
+}
+if (exp.link==1) {
+Dlogliid[,1:mutimes] <- t( t(Dlogliid[,1:mutimes])*theta)
+Dlogl[1:mutimes] <- Dlogl[1:mutimes]*theta
+}
+# }}}
+############################################
+## 2nd Derivative 
+############################################
+# {{{
+if (ncol(X)>0) {
+D2betaStl <- X2*(GEl^2-GEl)*Stl^3
+D2betaStr <- X2*(time2<Inf)*(GEr^2-GEr)*Str^3
+DbetagStl <- XtL*            (EZbeta*(GEl-1))*Stl^3
+DbetagStr <- XtR*(time2<Inf)*(EZbeta*(GEr-1))*Str^3
+}
+D2gStl <-             2*tL2*EZbeta^2*Stl^3
+D2gStr <- 2*tR2*(time2<Inf)*EZbeta^2*Str^3
+
+DglpDglp       <- .Call("vecMatMat",Dglogp,Dglogp)$vXZ
+D2glogp <-    (D2gStl-D2gStr)/p  - DglpDglp
+D2g <-    apply(weights*D2glogp,2,sum)
+
+## cross products of derivatives
+if (ncol(X)>0) {
+DbetalpDbetalp <- .Call("vecMatMat",Dbetalogp,Dbetalogp)$vXZ
+DbetalpDglp    <- .Call("vecMatMat",Dbetalogp,Dglogp)$vXZ
+
+D2betalogp <- (D2betaStl-D2betaStr)/p - DbetalpDbetalp
+Dbetaglogp <- (DbetagStl-DbetagStr)/p  - DbetalpDglp
+D2beta <- apply(weights*D2betalogp,2,sum)
+Dbetag <- apply(weights*Dbetaglogp,2,sum)
+}
+
+D2log <- matrix(0,length(pp),length(pp))
+D2log[1:mutimes,1:mutimes] <- D2g
+
+if (ncol(X)>0) {
+###D2log[1:mutimes,(mutimes+1):length(pp)] <- Dbetag
+D2log[(mutimes+1):length(pp),1:mutimes] <- Dbetag
+D2log[1:mutimes,(mutimes+1):length(pp)] <- t(D2log[(mutimes+1):length(pp),1:mutimes])
+D2log[(mutimes+1):length(pp),(mutimes+1):length(pp)] <- D2beta
+}
+
+if (exp.link==1) {
+D2log[1:mutimes,1:mutimes] <- diag(Dlogl[1:mutimes]) + D2log[1:mutimes,1:mutimes]*(theta %o% theta)  
+if (ncol(X)>0) {
+D2log[(mutimes+1):length(pp),1:mutimes] <- Dbetag*rep(theta,each=length(betal))
+###D2log[(mutimes+1):length(pp),1:mutimes] <- Dbetag*rep(theta,length(betal))
+D2log[1:mutimes,(mutimes+1):length(pp)] <- t(D2log[(mutimes+1):length(pp),1:mutimes])
+}
+}
+
+# }}}
+############################################
+
+ploglik <- sum(logl)
+gradient <- Dlogl 
+hessian <- D2log
+
+  if (all) {
+      ihess <- solve(hessian)
+      beta.iid <- Dlogliid %*% ihess ## %*% t(Dlogl) 
+      robvar <- crossprod(beta.iid)
+      val <- list(par=pp,ploglik=ploglik,gradient=gradient,hessian=hessian,ihessian=ihess,
+		  iid=beta.iid,robvar=robvar,var=-ihess,
+		  se=diag(-ihess)^.5,se.robust=diag(robvar)^.5)
+      return(val)
+  }  
+ structure(-ploglik,gradient=-gradient,hessian=-hessian)
+}# }}}
+
+  p <- ncol(X)
+  opt <- NULL
+  if (no.opt==FALSE) {
+      if (tolower(method)=="nr") {
+	  tim <- system.time(opt <- lava::NR(beta,obj,...))
+	  opt$timing <- tim
+	  opt$estimate <- opt$par
+      } else {
+	  opt <- nlm(obj,beta,...)
+	  opt$method <- "nlm"
+      }
+      cc <- opt$estimate; 
+      if (!stderr) return(cc)
+      val <- c(list(coef=cc),obj(opt$estimate,all=TRUE))
+  } else val <- c(list(coef=beta),obj(beta,all=TRUE))
+
+  uu <- utimes[utimes<Inf]
+  Xnames <- c(paste("time",uu[-1],sep=""),X.names)
+  if (length(val$coef)==length(Xnames)) names(val$coef) <- Xnames
+
+  val <- c(list(increment=increment,exp.link=exp.link,ntimes=mutimes,utimes=utimes),val)
+
+  class(val) <- c("survd","logistic.survd")
+###  class(val) <- "logit.survd"
+  return(val)
+} ## }}} 
+
+###interval.logitsurv.discrete <- function (formula,data,beta=NULL,no.opt=FALSE,method="NR",
+###	   stderr=TRUE,weights=NULL,offsets=NULL,exp.link=1,increment=1,...)
+###{ ## {{{ 
+###
+###  cl <- match.call()
+###  m <- match.call(expand.dots = TRUE)[1:3]
+###  special <- c("strata", "cluster","offset")
+###  Terms <- terms(formula, special, data = data)
+###  m$formula <- Terms
+###  m[[1]] <- as.name("model.frame")
+###  m <- eval(m, parent.frame())
+###  Y <- model.extract(m, "response")
+###
+### if (ncol(Y)==2) {
+###	time2 <- eventtime <- Y[,2]
+###	entrytime <- Y[,1]
+###	left <- 0
+###    } else {
+###	time2 <- eventtime <- Y[,2]
+###	status <- delta  <- Y[,3]
+###	entrytime <- Y[,1]
+###	left <- 1
+###	if (max(entrytime)==0) left <- 0
+###    }
+###
+###  id <- strata <- NULL
+###  if (!is.null(attributes(Terms)$specials$cluster)) {
+###    ts <- survival::untangle.specials(Terms, "cluster")
+###    pos.cluster <- ts$terms
+###    Terms  <- Terms[-ts$terms]
+###    id <- m[[ts$vars]]
+###  } else pos.cluster <- NULL
+###  if (!is.null(attributes(Terms)$specials$strata)) {
+###    ts <- survival::untangle.specials(Terms, "strata")
+###    pos.strata <- ts$terms
+###    Terms  <- Terms[-ts$terms]
+###    strata <- m[[ts$vars]]
+###    strata.name <- ts$vars
+###  }  else { strata.name <- NULL; pos.strata <- NULL}
+###
+###  X <- model.matrix(Terms, m)
+###  if (!is.null(intpos  <- attributes(Terms)$intercept))
+###  X <- X[,-intpos,drop=FALSE]
+###  if (ncol(X)>0) X.names <- colnames(X) else X.names <- NULL
+######  if (ncol(X)==0) X <- NULL 
+###
+###  ## times 1 -> mutimes , 0 til start
+###  utimes <- sort(unique(c(time2,entrytime)))
+###### time2 <- fast.approx(utimes,time2)-1
+###### entrytime <- fast.approx(utimes,entrytime)-1
+###  mutimes <- max(utimes[utimes<Inf])
+###  n <- length(time)
+###  
+###  ## setting up designs for t_l and t_r
+###  tR <- tL <- matrix(0,n,mutimes)
+###
+###  ## design for [t_l,t_r], for t_l=0,t_r=inf, row is  0
+###  if (increment==0) {
+###	  tL <- matdoubleindex(tL,1:n,entrytime,rep(1,n))
+###	  tR <- matdoubleindex(tL,1:n,time2,rep(1,n)))
+###  } else {
+###	  ### to appear 
+###	  for (i in 1:mutimes) {
+###		  tL[,i] <- (i <= entrytime) 
+###		  tR[,i] <- (i <= time2) 
+###	  }
+###  }
+###
+###  ## computing X^2 
+###  if (ncol(X)>0) {
+###  X2  <- .Call("vecMatMat",X,X)$vXZ
+###  XtL  <- .Call("vecMatMat",X,tL)$vXZ
+###  XtR  <- .Call("vecMatMat",X,tR)$vXZ
+###  }
+###  tL2  <- .Call("vecMatMat",tL,tL)$vXZ
+###  tR2  <- .Call("vecMatMat",tR,tR)$vXZ
+###
+###
+###  ## weights/offets will follow id 
+###  if (is.null(weights))  weights <- rep(1,n); #  else wiid <- weights
+###  if (is.null(offsets))  offsets <- rep(0,n); # else offsets <- offsets
+###  if (is.null(beta)) beta <- rep(0,ncol(X)+mutimes)
+###  expit  <- function(z) 1/(1+exp(-z)) ## expit
+###
+###  beta[1:mutimes] <- (1:mutimes)*exp(logit( (sum(time2<Inf)/(nrow(X)*mutimes))))
+###
+###obj <- function(pp,all=FALSE)
+###{ # {{{
+###
+###if (exp.link==1) theta <- exp(pp[1:mutimes]) else theta  <-  pp[1:mutimes]
+###betal   <- pp[-c(1:mutimes)]
+###
+###if (ncol(X)>0) {
+###Zbeta <- c(X %*% betal+offsets)
+###} else {Zbeta <- offsets }
+###xltheta <-  c(tL %*% theta)
+###xrtheta <-  c(tR %*% theta)
+###EZbeta <- exp(Zbeta)
+###GEl <- xltheta * EZbeta
+###GEr <- xrtheta * EZbeta
+###Stl <- 1/(1+GEl) 
+###Str <- 1/(1+GEr) 
+###
+###############################################
+##### likelihood
+###############################################
+#### {{{
+###p <- Stl-Str*(time2<Inf)
+###logp <- log(p)
+###logl <- weights*logp 
+#### }}}
+###############################################
+##### Derivative 
+###############################################
+#### {{{
+###if (ncol(X)>0) {
+###DbetaStl <- -X*GEl*Stl^2
+###DbetaStr <- -(time2<Inf)*X*GEr*Str^2
+###Dbetalogp <- (DbetaStl-DbetaStr)/p
+###} 
+###DgStl <- -tL*EZbeta*Stl^2
+###DgStr <- -(time2<Inf)*tR*EZbeta*Str^2
+###Dglogp <- (DgStl-DgStr)/p
+###
+###if (ncol(X)>0) {
+###Dlogl  <- c(apply(Dglogp*weights,2,sum),apply(Dbetalogp*weights,2,sum))
+###} else Dlogl  <- c(apply(Dglogp*weights,2,sum))
+###if (exp.link==1) {
+###Dlogl[1:mutimes] <- Dlogl[1:mutimes]*theta
+###}
+#### }}}
+###############################################
+##### 2nd Derivative 
+###############################################
+#### {{{
+###if (ncol(X)>0) {
+###D2betaStl <- X2*(GEl^2-GEl)*Stl^3
+###D2betaStr <- X2*(time2<Inf)*(GEr^2-GEr)*Str^3
+###DbetagStl <- XtL*            (EZbeta*(GEl-1))*Stl^3
+###DbetagStr <- XtR*(time2<Inf)*(EZbeta*(GEr-1))*Str^3
+###}
+###D2gStl <-             2*tL2*EZbeta^2*Stl^3
+###D2gStr <- 2*tR2*(time2<Inf)*EZbeta^2*Str^3
+###
+###DglpDglp       <- .Call("vecMatMat",Dglogp,Dglogp)$vXZ
+###D2glogp <-    (D2gStl-D2gStr)/p  - DglpDglp
+###D2g <-    apply(weights*D2glogp,2,sum)
+###
+##### cross products of derivatives
+###if (ncol(X)>0) {
+###DbetalpDbetalp <- .Call("vecMatMat",Dbetalogp,Dbetalogp)$vXZ
+###DbetalpDglp    <- .Call("vecMatMat",Dbetalogp,Dglogp)$vXZ
+###
+###D2betalogp <- (D2betaStl-D2betaStr)/p - DbetalpDbetalp
+###Dbetaglogp <- (DbetagStl-DbetagStr)/p  - DbetalpDglp
+###D2beta <- apply(weights*D2betalogp,2,sum)
+###Dbetag <- apply(weights*Dbetaglogp,2,sum)
+###}
+###
+###
+###
+###D2log <- matrix(0,length(pp),length(pp))
+###D2log[1:mutimes,1:mutimes] <- D2g
+###
+###if (ncol(X)>0) {
+######D2log[1:mutimes,(mutimes+1):length(pp)] <- Dbetag
+###D2log[(mutimes+1):length(pp),1:mutimes] <- Dbetag
+###D2log[1:mutimes,(mutimes+1):length(pp)] <- t(D2log[(mutimes+1):length(pp),1:mutimes])
+###D2log[(mutimes+1):length(pp),(mutimes+1):length(pp)] <- D2beta
+###}
+###
+###if (exp.link==1) {
+###D2log[1:mutimes,1:mutimes] <- diag(Dlogl[1:mutimes]) + D2log[1:mutimes,1:mutimes]*(theta %o% theta)  
+###if (ncol(X)>0) {
+###D2log[(mutimes+1):length(pp),1:mutimes] <- Dbetag*rep(theta,each=length(betal))
+######D2log[(mutimes+1):length(pp),1:mutimes] <- Dbetag*rep(theta,length(betal))
+###D2log[1:mutimes,(mutimes+1):length(pp)] <- t(D2log[(mutimes+1):length(pp),1:mutimes])
+###}
+###}
+###
+#### }}}
+###############################################
+###
+###ploglik <- sum(logl)
+###gradient <- Dlogl 
+###hessian <- D2log
+###
+###  if (all) {
+###      ihess <- solve(hessian)
+###      beta.iid <- Dlogl %*% ihess ## %*% t(Dlogl) 
+###      robvar <- crossprod(beta.iid)
+###      val <- list(par=pp,ploglik=ploglik,gradient=gradient,hessian=hessian,ihessian=ihess,
+###		  iid=beta.iid,robvar=robvar,var=-ihess,
+###		  se=diag(-ihess)^.5,se.robust=diag(robvar)^.5)
+###      return(val)
+###  }  
+### structure(-ploglik,gradient=-gradient,hessian=-hessian)
+###}# }}}
+###
+###  p <- ncol(X)
+###  opt <- NULL
+###  if (p>0) {
+###  if (no.opt==FALSE) {
+###      if (tolower(method)=="nr") {
+###	  tim <- system.time(opt <- lava::NR(beta,obj,...))
+###	  opt$timing <- tim
+###	  opt$estimate <- opt$par
+###      } else {
+###	  opt <- nlm(obj,beta,...)
+###	  opt$method <- "nlm"
+###      }
+###      cc <- opt$estimate; 
+###      if (!stderr) return(cc)
+###      val <- c(list(coef=cc),obj(opt$estimate,all=TRUE))
+###      } else val <- c(list(coef=beta),obj(beta,all=TRUE))
+###  } else {
+###      val <- obj(0,all=TRUE)
+###  }
+###
+###  uu <- utimes[utimes<Inf]
+###  Xnames <- c(paste("time",uu[-1],sep=""),X.names)
+###  if (length(val$coef)==length(Xnames)) names(val$coef) <- Xnames
+###
+###  val <- c(list(increment=increment,exp.link=exp.link,ntimes=mutimes,utimes=utimes),val)
+###
+###  class(val) <- "survd"
+######  class(val) <- "logit.survd"
+###  return(val)
+###} ## }}} 
+
+##' @export
+Interval <- function (time, time2 , ...)
+{# {{{
+    out <- cbind(time, time2 )
+    colnames(out) <- c("entry", "time2")
+    class(out) <- "Interval"
+    return(out)
+}# }}}
+
+##' @export
+dInterval <- function (time, time2 ,cuts=NULL,cut.first=0,show=FALSE, ...) 
+{# {{{
+if (is.null(cuts)) cuts <-  sort(unique(time,time2))
+if (min(cuts)> 0)  cuts <- c(cut.first,cuts)
+###
+lleft <- fast.approx(cuts,time,type="left")
+rright <- fast.approx(cuts,time2,type="right")
+
+out <- data.frame(time=time,time2=time2,left=lleft-1,right=rright-1)
+attr(out,"cuts") <- cuts 
+out$leftd <- cuts[lleft]
+out$rightd <- cuts[rright]
+
+if (max(cuts)==Inf) out$right[out$rightd==Inf] <- Inf
+
+if (any(out$time<out$leftd)) warning("left not in [leftd,rightd]\n")
+if (any(out$time2>out$rightd)) warning("right  not in [leftd,rightd]\n") 
+
+if (show) {
+	mtime <- mmtime <- max(cuts[cuts<Inf])
+	n <- length(time)
+	if (max(cuts)==Inf) mtime <- mmtime+1
+	plot(0,0,xlim=c(0,mtime),ylim=c(0,n),type="n")
+	abline(v=cuts,col=3)
+	lines(c(min(cuts),mmtime),c(-1,-1),lwd=2)
+	if (max(cuts)==Inf) lines(c(mtime,mmtime),c(-1,-1),lwd=2,col=2)
+	for (i in 1:n)
+	{
+	lines(c(out$time[i],min(out$time2[i],mtime)),rep(i,2),col=1)
+	lines(c(out$leftd[i],min(out$rightd[i],mtime)),rep(i+0.5,2),col=2)
+	}
+}
+
+return(out)
+}# }}}
+
+##' @export
+simlogitSurvd <- function(coef,Z,n=NULL,times=0:6)
+{# {{{
+  if (missing(Z)) Z <- NULL
+  if (!is.null(Z)) n <- nrow(Z) 
+  Z <- as.matrix(Z)
+
+  g <- coef[times[-1]]
+  beta <- coef[-(times[-1])]
+  Gt <- cumsum(c(0,exp(g)))
+  if (!is.null(Z)) EZbeta <-  c(exp(Z %*% beta)) else EZbeta <- rep(1,n)
+  EZbeta <- rep(EZbeta,each=length(times))
+  Gti <- rep(Gt,n)
+  GE <- Gti*EZbeta
+  Ft <- GE/(1+GE)
+
+  ru <- runif(n)
+  out <- data.frame(.Call("wherestrataR",ru,Ft,rep(0:(n-1),each=length(times)),n))
+  status <- rep(1,n)
+  names(out)[1] <- "time"
+  status[out$time==(length(times)-1)] <- 0
+  out$status <- status
+  out <- cbind(out,Z)
+
+return(out)
+}# }}}
+
+##' @export
+predictlogitSurvd <- function(x,Z,n=NULL,times=NULL,se=FALSE,type="prob")
+{# {{{
+
+if (missing(Z)) Z <- NULL
+  if (!is.null(Z))  {
+	  n <- nrow(Z)
+	  Z <- as.matrix(Z)
+  } else { if (is.null(n)) n <- 1; }
+  ccc <- x$coef
+
+  ntimes <- x$ntimes
+  g <- ccc[1:ntimes]
+  beta <- ccc[-(1:ntimes)]
+  if (is.null(times)) times <- 0:ntimes 
+
+  Gt <- cumsum(c(0,exp(g)))
+  if (!is.null(Z)) EZbeta <-  c(exp(Z %*% beta)) else EZbeta <- rep(1,n)
+
+  if (!se) {# {{{
+	  EZbeta <- rep(EZbeta,each=length(times))
+	  id <- rep(1:n,each=length(times))
+	  Gti <- rep(Gt,n)
+	  GE <- Gti*EZbeta
+	  Gt <- 1/(1+GE)
+	  preds <- data.frame(pred=Gt,id=id,times=rep(times,n))
+# }}}
+  } else {# {{{
+
+    Ft <- function(p,Zi=1)
+    {# {{{
+         g <- p[1:ntimes]
+         beta <- p[-(1:ntimes)]
+         Gt <- cumsum(c(0,exp(g)))
+	 if (length(beta)>0) EZ <- exp(sum(Zi*beta)) else EZ <- 1
+	 pred <- 1/(1+Gt*EZ)
+	 return(pred)
+    }# }}}
+
+  preds <- c()
+  for (i in 1:length(EZbeta)) {
+     if (is.null(x$var)) covv <- vcov(x)  else covv <- x$var
+     eud <- estimate(coef=x$coef,vcov=covv,f=function(p) Ft(p,Zi=Z[i,]))
+     cmat <- data.frame(eud$coefmat)
+     cmat$id <- i
+     cmat$times <- times
+     names(cmat)[1:4] <- c("pred","se","lower","upper")
+     preds <- rbind(preds,cmat)
+  } 
+
+  }# }}}
+
+return(preds)
+} ## }}} 
 
