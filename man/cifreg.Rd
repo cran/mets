@@ -2,10 +2,24 @@
 % Please edit documentation in R/cifreg.R
 \name{cifreg}
 \alias{cifreg}
+\alias{vecAllStrata}
+\alias{diffstrata}
+\alias{iid.baseline.cifreg}
+\alias{FGprediid}
 \title{CIF regression}
 \usage{
-cifreg(formula, data = data, cause = 1, cens.code = 0,
-  weights = NULL, offset = NULL, Gc = NULL, propodds = 1, ...)
+cifreg(
+  formula,
+  data = data,
+  cause = 1,
+  cens.code = 0,
+  cens.model = ~1,
+  weights = NULL,
+  offset = NULL,
+  Gc = NULL,
+  propodds = 1,
+  ...
+)
 }
 \arguments{
 \item{formula}{formula with 'Event' outcome}
@@ -16,9 +30,11 @@ cifreg(formula, data = data, cause = 1, cens.code = 0,
 
 \item{cens.code}{code of censoring}
 
-\item{weights}{weights for Cox score equations}
+\item{cens.model}{for stratified Cox model without covariates}
 
-\item{offset}{offsets for cox model}
+\item{weights}{weights for FG score equations}
+
+\item{offset}{offsets for FG  model}
 
 \item{Gc}{censoring weights for time argument, default is to calculate these with a Kaplan-Meier estimator, should then give G_c(T_i-)}
 
@@ -31,19 +47,25 @@ CIF logistic for propodds=1 default
 CIF Fine-Gray (cloglog) regression for propodds=NULL
 }
 \details{
-For FG model: 
+For FG model:
 \deqn{
 \int (X - E ) Y_1(t) w(t) dM_1
 }
-is computed and summed over clusters  and returned multiplied with inverse 
-of second derivative as iid.naive
+is computed and summed over clusters  and returned multiplied with inverse
+of second derivative as iid.naive. Where \deqn{w(t) = G(t) (I(T_i \wedge t < C_i)/G_c(T_i \wedge t))} and
+\deqn{E(t) = S_1(t)/S_0(t)} and \deqn{S_j(t) = \sum X_i^j Y_{i1}(t) w_i(t) \exp(X_i^T \beta)}
+
 
 The iid decomposition of the beta's, however, also have a censoring term that is also
 is computed and added to UUiid (still scaled with inverse second derivative)
 \deqn{
-\int (X - E ) Y_1(t) w(t) dM_1 + \int q(s)/p(s) dM_c 
+\int (X - E ) Y_1(t) w(t) dM_1 + \int q(s)/p(s) dM_c
 }
 and returned as iid
+
+For logistic link standard errors are slightly to small since uncertainty from recursive baseline is not considered, so for smaller
+data-sets it is recommended to use the prop.odds.subdist of timereg that is also more efficient due to use of different weights for
+the estimating equations. Alternatively, one can also bootstrap the standard errors.
 }
 \examples{
 ## data with no ties
@@ -53,17 +75,28 @@ bmt$id <- 1:nrow(bmt)
 
 ## logistic link  OR interpretation
 ll=cifreg(Event(time,cause)~tcell+platelet+age,data=bmt,cause=1)
-bplot(ll)
+summary(ll)
+plot(ll)
 nd <- data.frame(tcell=c(1,0),platelet=0,age=0)
 pll <- predict(ll,nd)
 plot(pll)
 
 ## Fine-Gray model
-llfg=cifreg(Event(time,cause)~tcell+platelet+age,data=bmt,cause=1,propodds=NULL)
-bplot(ll)
+fg=cifreg(Event(time,cause)~tcell+platelet+age,data=bmt,cause=1,propodds=NULL)
+summary(fg)
+plot(fg)
 nd <- data.frame(tcell=c(1,0),platelet=0,age=0)
-pll <- predict(ll,nd)
-plot(pll)
+pfg <- predict(fg,nd)
+plot(pfg)
+
+sfg <- cifreg(Event(time,cause)~strata(tcell)+platelet+age,data=bmt,cause=1,propodds=NULL)
+summary(sfg)
+plot(sfg)
+
+### predictions with CI based on iid decomposition of baseline and beta
+# fg <- cifreg(Event(time,cause)~tcell+platelet+age,data=bmt,cause=1,propodds=NULL,cox.prep=TRUE)
+# Biid <- iid.baseline.cifreg(Biid,time=20)
+# FGprediid(Biid,bmt[1:5,])
 
 }
 \author{

@@ -6,15 +6,21 @@
 \alias{dInterval}
 \alias{simlogitSurvd}
 \alias{predictlogitSurvd}
-\title{## uses HaploSurvival package of github install via devtools
-## devtools::install_github("scheike/HaploSurvival")
-## this is only used for simulations 
-## out <- simHaplo(1,100,tcoef,hapfreqs)
-Discrete time to event interval censored data}
+\title{Discrete time to event interval censored data}
 \usage{
-interval.logitsurv.discrete(formula, data, beta = NULL, no.opt = FALSE,
-  method = "NR", stderr = TRUE, weights = NULL, offsets = NULL,
-  exp.link = 1, increment = 1, ...)
+interval.logitsurv.discrete(
+  formula,
+  data,
+  beta = NULL,
+  no.opt = FALSE,
+  method = "NR",
+  stderr = TRUE,
+  weights = NULL,
+  offsets = NULL,
+  exp.link = 1,
+  increment = 1,
+  ...
+)
 }
 \arguments{
 \item{formula}{formula}
@@ -53,11 +59,12 @@ When truly discrete ]0,1] will be an observation at 1, and  ]j,j+1] will be an o
 
 Likelihood is maximized:
 \deqn{
- \prod  P(T_i >t_{il} | x) - P(T_I> t_{ir}| x) 
+ \prod  P(T_i >t_{il} | x) - P(T_i> t_{ir}| x) 
 }
 }
 \examples{
 data(ttpd) 
+dtable(ttpd,~entry+time2)
 out <- interval.logitsurv.discrete(Interval(entry,time2)~X1+X2+X3+X4,ttpd)
 summary(out)
 

@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+<meta name="author" content="Klaus Holst &amp; Thomas Scheike" />
+
+<meta name="date" content="2020-08-27" />
+
+<title>Haplotype Discrete Survival Models</title>
+
+<script>// Hide empty <a> tag within highlighted CodeBlock for screen reader accessibility (see https://github.com/jgm/pandoc/issues/6352#issuecomment-626106786) -->
+// v0.0.1
+// Written by JooYoung Seo (jooyoung@psu.edu) and Atsushi Yasumoto on June 1st, 2020.
+
+document.addEventListener('DOMContentLoaded', function() {
+  const codeList = document.getElementsByClassName("sourceCode");
+  for (var i = 0; i < codeList.length; i++) {
+    var linkList = codeList[i].getElementsByTagName('a');
+    for (var j = 0; j < linkList.length; j++) {
+      if (linkList[j].innerHTML === "") {
+        linkList[j].setAttribute('aria-hidden', 'true');
+      }
+    }
+  }
+});
+</script>
+
+
+<style type="text/css">code{white-space: pre;}</style>
+<style type="text/css" data-origin="pandoc">
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+    color: #aaaaaa;
+  }
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+code span.at { color: #7d9029; } /* Attribute */
+code span.bn { color: #40a070; } /* BaseN */
+code span.bu { } /* BuiltIn */
+code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+code span.ch { color: #4070a0; } /* Char */
+code span.cn { color: #880000; } /* Constant */
+code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+code span.dt { color: #902000; } /* DataType */
+code span.dv { color: #40a070; } /* DecVal */
+code span.er { color: #ff0000; font-weight: bold; } /* Error */
+code span.ex { } /* Extension */
+code span.fl { color: #40a070; } /* Float */
+code span.fu { color: #06287e; } /* Function */
+code span.im { } /* Import */
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+code span.op { color: #666666; } /* Operator */
+code span.ot { color: #007020; } /* Other */
+code span.pp { color: #bc7a00; } /* Preprocessor */
+code span.sc { color: #4070a0; } /* SpecialChar */
+code span.ss { color: #bb6688; } /* SpecialString */
+code span.st { color: #4070a0; } /* String */
+code span.va { color: #19177c; } /* Variable */
+code span.vs { color: #4070a0; } /* VerbatimString */
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+
+</style>
+<script>
+// apply pandoc div.sourceCode style to pre.sourceCode instead
+(function() {
+  var sheets = document.styleSheets;
+  for (var i = 0; i < sheets.length; i++) {
+    if (sheets[i].ownerNode.dataset["origin"] !== "pandoc") continue;
+    try { var rules = sheets[i].cssRules; } catch (e) { continue; }
+    for (var j = 0; j < rules.length; j++) {
+      var rule = rules[j];
+      // check if there is a div.sourceCode rule
+      if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") continue;
+      var style = rule.style.cssText;
+      // check if color or background-color is set
+      if (rule.style.color === '' && rule.style.backgroundColor === '') continue;
+      // replace div.sourceCode by a pre.sourceCode rule
+      sheets[i].deleteRule(j);
+      sheets[i].insertRule('pre.sourceCode{' + style + '}', j);
+    }
+  }
+})();
+</script>
+
+
+
+<style type="text/css">body {
+background-color: #fff;
+margin: 1em auto;
+max-width: 800px;
+overflow: visible;
+padding-left: 2em;
+padding-right: 2em;
+font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+font-size: 14px;
+line-height: 20px;
+}
+#header {
+text-align: center;
+}
+#TOC {
+clear: both;
+margin: 0 0 10px 0;
+padding: 4px;
+border: 1px solid #CCCCCC;
+border-radius: 5px;
+background-color: #f6f6f6;
+font-size: 13px;
+line-height: 1.3;
+}
+#TOC .toctitle {
+font-weight: bold;
+font-size: 15px;
+margin-left: 5px;
+}
+#TOC ul {
+padding-left: 40px;
+margin-left: -1.5em;
+margin-top: 5px;
+margin-bottom: 5px;
+}
+#TOC ul ul {
+margin-left: -2em;
+}
+#TOC li {
+line-height: 16px;
+}
+table:not([class]) {
+margin: auto;
+min-width: 40%;
+border-width: 1px;
+border-color: #DDDDDD;
+border-style: outset;
+border-collapse: collapse;
+}
+table[summary="R argblock"] {
+width: 100%;
+border: none;
+}
+table:not([class]) th {
+border-width: 2px;
+padding: 5px;
+border-style: inset;
+}
+table:not([class]) td {
+border-width: 1px;
+border-style: inset;
+line-height: 18px;
+padding: 5px 5px;
+}
+table:not([class]), table:not([class]) th, table:not([class]) td {
+border-left-style: none;
+border-right-style: none;
+}
+table:not([class]) tr.odd {
+background-color: #f7f7f7;
+}
+p {
+margin: 0.5em 0;
+}
+blockquote {
+background-color: #f6f6f6;
+padding: 13px;
+padding-bottom: 1px;
+}
+hr {
+border-style: solid;
+border: none;
+border-top: 1px solid #777;
+margin: 28px 0;
+}
+dl {
+margin-left: 0;
+}
+dl dd {
+margin-bottom: 13px;
+margin-left: 13px;
+}
+dl dt {
+font-weight: bold;
+}
+ul {
+margin-top: 0;
+}
+ul li {
+list-style: circle outside;
+}
+ul ul {
+margin-bottom: 0;
+}
+pre, code {
+background-color: #f5f5f5;
+border-radius: 3px;
+color: #333;
+}
+pre {
+overflow-x: auto;
+border-radius: 3px;
+margin: 5px 0 10px 0;
+padding: 10px;
+}
+pre:not([class]) {
+background-color: white;
+border: #f5f5f5 1px solid;
+}
+pre:not([class]) code {
+color: #444;
+background-color: white;
+}
+code {
+font-family: monospace;
+font-size: 90%;
+}
+p > code, li > code {
+padding: 2px 4px;
+color: #d14;
+border: 1px solid #e1e1e8;
+white-space: inherit;
+}
+div.figure {
+text-align: center;
+}
+table > caption, div.figure p.caption {
+font-style: italic;
+}
+table > caption span, div.figure p.caption span {
+font-style: normal;
+font-weight: bold;
+}
+p {
+margin: 0 0 10px;
+}
+table:not([class]) {
+margin: auto auto 10px auto;
+}
+img:not([class]) {
+background-color: #FFFFFF;
+padding: 2px;
+border-radius: 3px;
+border: 1px solid #CCCCCC;
+margin: 0 5px;
+max-width: 100%;
+}
+h1 {
+margin-top: 0;
+font-size: 35px;
+line-height: 40px;
+}
+h2 {
+border-bottom: 4px solid #f5f5f5;
+padding-top: 10px;
+padding-bottom: 2px;
+font-size: 145%;
+}
+h3 {
+border-bottom: 2px solid #f5f5f5;
+padding-top: 10px;
+font-size: 120%;
+}
+h4 {
+border-bottom: 1px solid #f5f5f5;
+margin-left: 8px;
+font-size: 105%;
+}
+h5, h6 {
+border-bottom: 1px solid #ccc;
+font-size: 105%;
+}
+a {
+color: #0033dd;
+text-decoration: none;
+}
+a:hover {
+color: #6666ff; }
+a:visited {
+color: #800080; }
+a:visited:hover {
+color: #BB00BB; }
+a[href^="http:"] {
+text-decoration: underline; }
+a[href^="https:"] {
+text-decoration: underline; }
+div.r-help-page {
+background-color: #f9f9f9;
+border-bottom: #ddd 1px solid;
+margin-bottom: 10px;
+padding: 10px;
+}
+div.r-help-page:hover {
+background-color: #f4f4f4;
+}
+
+code > span.kw { color: #555; font-weight: bold; } 
+code > span.dt { color: #902000; } 
+code > span.dv { color: #40a070; } 
+code > span.bn { color: #d14; } 
+code > span.fl { color: #d14; } 
+code > span.ch { color: #d14; } 
+code > span.st { color: #d14; } 
+code > span.co { color: #888888; font-style: italic; } 
+code > span.ot { color: #007020; } 
+code > span.al { color: #ff0000; font-weight: bold; } 
+code > span.fu { color: #900; font-weight: bold; } 
+code > span.er { color: #a61717; background-color: #e3d2d2; } 
+</style>
+
+
+
+
+</head>
+
+<body>
+
+
+
+
+<h1 class="title toc-ignore">Haplotype Discrete Survival Models</h1>
+<h4 class="author">Klaus Holst &amp; Thomas Scheike</h4>
+<h4 class="date">2020-08-27</h4>
+
+
+
+<div id="haplotype-analysis-for-discrete-ttp" class="section level1">
+<h1>Haplotype Analysis for discrete TTP</h1>
+<p>Cycle-specific logistic regression of haplo-type effects with known haplo-type probabilities. Given observed genotype G and unobserved haplotypes H we here mix out over the possible haplotypes using that <span class="math inline">\(P(H|G)\)</span> is given as input.</p>
+<p><span class="math display">\[\begin{align*}
+   S(t|x,G) &amp; = E( S(t|x,H) | G)  = \sum_{h \in G} P(h|G) S(t|z,h)    
+\end{align*}\]</span> so survival can be computed by mixing out over possible h given g.</p>
+<p>Survival is based on logistic regression for the discrete hazard function of the form <span class="math display">\[\begin{align*}
+      \mbox{logit}(P(T=t| T &gt;= t, x,h)) &amp; = \alpha_t + x(h) beta         
+\end{align*}\]</span> where x(h) is a regression design of x and haplotypes <span class="math inline">\(h=(h_1,h_2)\)</span></p>
+<p>For standard errors we assume that haplotype probabilities are known.</p>
+<p>We are particularly interested in the types haplotypes:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1"></a>types &lt;-<span class="st"> </span><span class="kw">c</span>(<span class="st">&quot;DCGCGCTCACG&quot;</span>,<span class="st">&quot;DTCCGCTGACG&quot;</span>,<span class="st">&quot;ITCAGTTGACG&quot;</span>,<span class="st">&quot;ITCCGCTGAGG&quot;</span>)</span>
+<span id="cb1-2"><a href="#cb1-2"></a></span>
+<span id="cb1-3"><a href="#cb1-3"></a><span class="co">## some haplotypes frequencies for simulations </span></span>
+<span id="cb1-4"><a href="#cb1-4"></a><span class="kw">data</span>(hapfreqs)</span>
+<span id="cb1-5"><a href="#cb1-5"></a><span class="kw">print</span>(hapfreqs)</span>
+<span id="cb1-6"><a href="#cb1-6"></a><span class="co">#&gt;             index   haplotype     freq</span></span>
+<span id="cb1-7"><a href="#cb1-7"></a><span class="co">#&gt; DCGAGCTCACG     1 DCGAGCTCACG 0.010681</span></span>
+<span id="cb1-8"><a href="#cb1-8"></a><span class="co">#&gt; DCGCGCTCACG     2 DCGCGCTCACG 0.138387</span></span>
+<span id="cb1-9"><a href="#cb1-9"></a><span class="co">#&gt; DTGAGCTCACG     3 DTGAGCTCACG 0.000310</span></span>
+<span id="cb1-10"><a href="#cb1-10"></a><span class="co">#&gt; DTGAGCTCACA     4 DTGAGCTCACA 0.006800</span></span>
+<span id="cb1-11"><a href="#cb1-11"></a><span class="co">#&gt; DTGAGCTCGCG     5 DTGAGCTCGCG 0.034517</span></span>
+<span id="cb1-12"><a href="#cb1-12"></a><span class="co">#&gt; DTGACCTCACG     6 DTGACCTCACG 0.001336</span></span>
+<span id="cb1-13"><a href="#cb1-13"></a><span class="co">#&gt; DTGCGCTCACG     7 DTGCGCTCACG 0.009969</span></span>
+<span id="cb1-14"><a href="#cb1-14"></a><span class="co">#&gt; DTGCGCTCACA     8 DTGCGCTCACA 0.011833</span></span>
+<span id="cb1-15"><a href="#cb1-15"></a><span class="co">#&gt; DTGCGCTCGCG     9 DTGCGCTCGCG 0.302389</span></span>
+<span id="cb1-16"><a href="#cb1-16"></a><span class="co">#&gt; DTGCGCCCGCG    10 DTGCGCCCGCG 0.001604</span></span>
+<span id="cb1-17"><a href="#cb1-17"></a><span class="co">#&gt; DTGCCCTCACG    11 DTGCCCTCACG 0.003912</span></span>
+<span id="cb1-18"><a href="#cb1-18"></a><span class="co">#&gt; DTCAGCTGACG    12 DTCAGCTGACG 0.001855</span></span>
+<span id="cb1-19"><a href="#cb1-19"></a><span class="co">#&gt; DTCCGCTGACG    13 DTCCGCTGACG 0.103394</span></span>
+<span id="cb1-20"><a href="#cb1-20"></a><span class="co">#&gt; DTCCCCTGACG    14 DTCCCCTGACG 0.000310</span></span>
+<span id="cb1-21"><a href="#cb1-21"></a><span class="co">#&gt; ITCAGTTGACG    15 ITCAGTTGACG 0.048124</span></span>
+<span id="cb1-22"><a href="#cb1-22"></a><span class="co">#&gt; ITCCGCTGAGG    16 ITCCGCTGAGG 0.291273</span></span>
+<span id="cb1-23"><a href="#cb1-23"></a><span class="co">#&gt; ITCCGTTGACG    17 ITCCGTTGACG 0.031089</span></span>
+<span id="cb1-24"><a href="#cb1-24"></a><span class="co">#&gt; ITCCGTCGACG    18 ITCCGTCGACG 0.001502</span></span>
+<span id="cb1-25"><a href="#cb1-25"></a><span class="co">#&gt; ITCCCCTGAGG    19 ITCCCCTGAGG 0.000653</span></span></code></pre></div>
+<p>Among the types of interest we look up the frequencies and choose a baseline</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1"></a>www &lt;-<span class="kw">which</span>(hapfreqs<span class="op">$</span>haplotype <span class="op">%in%</span><span class="st"> </span>types)</span>
+<span id="cb2-2"><a href="#cb2-2"></a>hapfreqs<span class="op">$</span>freq[www]</span>
+<span id="cb2-3"><a href="#cb2-3"></a><span class="co">#&gt; [1] 0.138387 0.103394 0.048124 0.291273</span></span>
+<span id="cb2-4"><a href="#cb2-4"></a></span>
+<span id="cb2-5"><a href="#cb2-5"></a>baseline=hapfreqs<span class="op">$</span>haplotype[<span class="dv">9</span>]</span>
+<span id="cb2-6"><a href="#cb2-6"></a>baseline</span>
+<span id="cb2-7"><a href="#cb2-7"></a><span class="co">#&gt; [1] &quot;DTGCGCTCGCG&quot;</span></span></code></pre></div>
+<p>We have cycle specific data with <span class="math inline">\(id\)</span> and outcome <span class="math inline">\(y\)</span></p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1"></a><span class="kw">data</span>(haploX)</span>
+<span id="cb3-2"><a href="#cb3-2"></a><span class="kw">dlist</span>(haploX,.<span class="op">~</span>id<span class="op">|</span>id <span class="op">%in%</span><span class="st"> </span><span class="kw">c</span>(<span class="dv">1</span>,<span class="dv">4</span>,<span class="dv">7</span>))</span>
+<span id="cb3-3"><a href="#cb3-3"></a><span class="co">#&gt; id: 1</span></span>
+<span id="cb3-4"><a href="#cb3-4"></a><span class="co">#&gt;   y X1 X2 X3 X4 times lbnr__id Count1</span></span>
+<span id="cb3-5"><a href="#cb3-5"></a><span class="co">#&gt; 1 0 0  0  0  0  1     1        0     </span></span>
+<span id="cb3-6"><a href="#cb3-6"></a><span class="co">#&gt; 2 0 0  0  0  0  2     2        0     </span></span>
+<span id="cb3-7"><a href="#cb3-7"></a><span class="co">#&gt; 3 0 0  0  0  0  3     3        0     </span></span>
+<span id="cb3-8"><a href="#cb3-8"></a><span class="co">#&gt; 4 0 0  0  0  0  4     4        0     </span></span>
+<span id="cb3-9"><a href="#cb3-9"></a><span class="co">#&gt; 5 0 0  0  0  0  5     5        0     </span></span>
+<span id="cb3-10"><a href="#cb3-10"></a><span class="co">#&gt; 6 0 0  0  0  0  6     6        0     </span></span>
+<span id="cb3-11"><a href="#cb3-11"></a><span class="co">#&gt; attr(,&quot;class&quot;)</span></span>
+<span id="cb3-12"><a href="#cb3-12"></a><span class="co">#&gt; [1] matrix array </span></span>
+<span id="cb3-13"><a href="#cb3-13"></a><span class="co">#&gt; ------------------------------------------------------------ </span></span>
+<span id="cb3-14"><a href="#cb3-14"></a><span class="co">#&gt; id: 4</span></span>
+<span id="cb3-15"><a href="#cb3-15"></a><span class="co">#&gt;    y X1 X2 X3 X4 times lbnr__id Count1</span></span>
+<span id="cb3-16"><a href="#cb3-16"></a><span class="co">#&gt; 19 1 0  0  0  0  1     1        0     </span></span>
+<span id="cb3-17"><a href="#cb3-17"></a><span class="co">#&gt; attr(,&quot;class&quot;)</span></span>
+<span id="cb3-18"><a href="#cb3-18"></a><span class="co">#&gt; [1] matrix array </span></span>
+<span id="cb3-19"><a href="#cb3-19"></a><span class="co">#&gt; ------------------------------------------------------------ </span></span>
+<span id="cb3-20"><a href="#cb3-20"></a><span class="co">#&gt; id: 7</span></span>
+<span id="cb3-21"><a href="#cb3-21"></a><span class="co">#&gt;    y X1 X2 X3 X4 times lbnr__id Count1</span></span>
+<span id="cb3-22"><a href="#cb3-22"></a><span class="co">#&gt; 37 0 1  0  0  0  1     1        0     </span></span>
+<span id="cb3-23"><a href="#cb3-23"></a><span class="co">#&gt; 38 0 1  0  0  0  2     2        0     </span></span>
+<span id="cb3-24"><a href="#cb3-24"></a><span class="co">#&gt; 39 1 1  0  0  0  3     3        0     </span></span>
+<span id="cb3-25"><a href="#cb3-25"></a><span class="co">#&gt; attr(,&quot;class&quot;)</span></span>
+<span id="cb3-26"><a href="#cb3-26"></a><span class="co">#&gt; [1] matrix array</span></span></code></pre></div>
+<p>and a list of possible haplo-types for each id and how likely they are <span class="math inline">\(p\)</span> (the sum of within each id is 1):</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1"></a><span class="kw">data</span>(hHaplos) <span class="co">## loads ghaplos </span></span>
+<span id="cb4-2"><a href="#cb4-2"></a><span class="kw">head</span>(ghaplos)</span>
+<span id="cb4-3"><a href="#cb4-3"></a><span class="co">#&gt;    id      haplo1      haplo2          p</span></span>
+<span id="cb4-4"><a href="#cb4-4"></a><span class="co">#&gt; 1   1 DTGCGCTCGCG DTGAGCTCGCG 1.00000000</span></span>
+<span id="cb4-5"><a href="#cb4-5"></a><span class="co">#&gt; 19  2 ITCCGTTGACG DTGAGCTCGCG 0.06867716</span></span>
+<span id="cb4-6"><a href="#cb4-6"></a><span class="co">#&gt; 21  2 ITCAGTTGACG DTGCGCTCGCG 0.93132284</span></span>
+<span id="cb4-7"><a href="#cb4-7"></a><span class="co">#&gt; 51  3 ITCCGTTGACG DTGAGCTCGCG 0.06867716</span></span>
+<span id="cb4-8"><a href="#cb4-8"></a><span class="co">#&gt; 53  3 ITCAGTTGACG DTGCGCTCGCG 0.93132284</span></span>
+<span id="cb4-9"><a href="#cb4-9"></a><span class="co">#&gt; 66  4 DTGCGCTCGCG DTGCGCTCGCG 1.00000000</span></span></code></pre></div>
+<p>The first id=1 has the haplotype fully observed, but id=2 has two possible haplotypes consistent with the observed genotype for this id, the probabiblities are 7% and 93%, respectively.</p>
+<p>With the baseline given above we can specify a regression design that gives an effect if a “type” is present (sm=0), or an additive effect of haplotypes (sm=1):</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1"></a>designftypes &lt;-<span class="st"> </span><span class="cf">function</span>(x,<span class="dt">sm=</span><span class="dv">0</span>) {</span>
+<span id="cb5-2"><a href="#cb5-2"></a>hap1=x[<span class="dv">1</span>]</span>
+<span id="cb5-3"><a href="#cb5-3"></a>hap2=x[<span class="dv">2</span>]</span>
+<span id="cb5-4"><a href="#cb5-4"></a><span class="cf">if</span> (sm<span class="op">==</span><span class="dv">0</span>) y &lt;-<span class="st"> </span><span class="dv">1</span><span class="op">*</span>( (hap1<span class="op">==</span>types) <span class="op">|</span><span class="st"> </span>(hap2<span class="op">==</span>types))</span>
+<span id="cb5-5"><a href="#cb5-5"></a><span class="cf">if</span> (sm<span class="op">==</span><span class="dv">1</span>) y &lt;-<span class="st"> </span><span class="dv">1</span><span class="op">*</span>(hap1<span class="op">==</span>types) <span class="op">+</span><span class="st"> </span><span class="dv">1</span><span class="op">*</span>(hap2<span class="op">==</span>types)</span>
+<span id="cb5-6"><a href="#cb5-6"></a><span class="kw">return</span>(y)</span>
+<span id="cb5-7"><a href="#cb5-7"></a>}</span></code></pre></div>
+<p>To fit the model we start by constructing a time-design (named X) and takes the haplotype distributions for each id</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1"></a>haploX<span class="op">$</span>time &lt;-<span class="st"> </span>haploX<span class="op">$</span>times</span>
+<span id="cb6-2"><a href="#cb6-2"></a>Xdes &lt;-<span class="st"> </span><span class="kw">model.matrix</span>(<span class="op">~</span><span class="kw">factor</span>(time),haploX)</span>
+<span id="cb6-3"><a href="#cb6-3"></a><span class="kw">colnames</span>(Xdes) &lt;-<span class="st"> </span><span class="kw">paste</span>(<span class="st">&quot;X&quot;</span>,<span class="dv">1</span><span class="op">:</span><span class="kw">ncol</span>(Xdes),<span class="dt">sep=</span><span class="st">&quot;&quot;</span>)</span>
+<span id="cb6-4"><a href="#cb6-4"></a>X &lt;-<span class="st"> </span><span class="kw">dkeep</span>(haploX,<span class="op">~</span>id<span class="op">+</span>y<span class="op">+</span>time)</span>
+<span id="cb6-5"><a href="#cb6-5"></a>X &lt;-<span class="st"> </span><span class="kw">cbind</span>(X,Xdes)</span>
+<span id="cb6-6"><a href="#cb6-6"></a>Haplos &lt;-<span class="st"> </span><span class="kw">dkeep</span>(ghaplos,<span class="op">~</span>id<span class="op">+</span><span class="st">&quot;haplo*&quot;</span><span class="op">+</span>p)</span>
+<span id="cb6-7"><a href="#cb6-7"></a>desnames=<span class="kw">paste</span>(<span class="st">&quot;X&quot;</span>,<span class="dv">1</span><span class="op">:</span><span class="dv">6</span>,<span class="dt">sep=</span><span class="st">&quot;&quot;</span>)   <span class="co"># six X&#39;s related to 6 cycles </span></span>
+<span id="cb6-8"><a href="#cb6-8"></a><span class="kw">head</span>(X)</span>
+<span id="cb6-9"><a href="#cb6-9"></a><span class="co">#&gt;   id y time X1 X2 X3 X4 X5 X6</span></span>
+<span id="cb6-10"><a href="#cb6-10"></a><span class="co">#&gt; 1  1 0    1  1  0  0  0  0  0</span></span>
+<span id="cb6-11"><a href="#cb6-11"></a><span class="co">#&gt; 2  1 0    2  1  1  0  0  0  0</span></span>
+<span id="cb6-12"><a href="#cb6-12"></a><span class="co">#&gt; 3  1 0    3  1  0  1  0  0  0</span></span>
+<span id="cb6-13"><a href="#cb6-13"></a><span class="co">#&gt; 4  1 0    4  1  0  0  1  0  0</span></span>
+<span id="cb6-14"><a href="#cb6-14"></a><span class="co">#&gt; 5  1 0    5  1  0  0  0  1  0</span></span>
+<span id="cb6-15"><a href="#cb6-15"></a><span class="co">#&gt; 6  1 0    6  1  0  0  0  0  1</span></span></code></pre></div>
+<p>Now we can fit the model with the design given by the designfunction</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1"></a>out &lt;-<span class="st"> </span><span class="kw">haplo.surv.discrete</span>(<span class="dt">X=</span>X,<span class="dt">y=</span><span class="st">&quot;y&quot;</span>,<span class="dt">time.name=</span><span class="st">&quot;time&quot;</span>,</span>
+<span id="cb7-2"><a href="#cb7-2"></a>      <span class="dt">Haplos=</span>Haplos,<span class="dt">desnames=</span>desnames,<span class="dt">designfunc=</span>designftypes) </span>
+<span id="cb7-3"><a href="#cb7-3"></a><span class="kw">names</span>(out<span class="op">$</span>coef) &lt;-<span class="st"> </span><span class="kw">c</span>(desnames,types)</span>
+<span id="cb7-4"><a href="#cb7-4"></a>out<span class="op">$</span>coef</span>
+<span id="cb7-5"><a href="#cb7-5"></a><span class="co">#&gt;          X1          X2          X3          X4          X5          X6 </span></span>
+<span id="cb7-6"><a href="#cb7-6"></a><span class="co">#&gt; -1.82153345 -0.61608261 -0.17143057 -1.27152045 -0.28635976 -0.19349091 </span></span>
+<span id="cb7-7"><a href="#cb7-7"></a><span class="co">#&gt; DCGCGCTCACG DTCCGCTGACG ITCAGTTGACG ITCCGCTGAGG </span></span>
+<span id="cb7-8"><a href="#cb7-8"></a><span class="co">#&gt;  0.79753613  0.65747412  0.06119231  0.31666905</span></span>
+<span id="cb7-9"><a href="#cb7-9"></a><span class="kw">summary</span>(out)</span>
+<span id="cb7-10"><a href="#cb7-10"></a><span class="co">#&gt;             Estimate Std.Err     2.5%   97.5%   P-value</span></span>
+<span id="cb7-11"><a href="#cb7-11"></a><span class="co">#&gt; X1          -1.82153  0.1619 -2.13892 -1.5041 2.355e-29</span></span>
+<span id="cb7-12"><a href="#cb7-12"></a><span class="co">#&gt; X2          -0.61608  0.1895 -0.98748 -0.2447 1.149e-03</span></span>
+<span id="cb7-13"><a href="#cb7-13"></a><span class="co">#&gt; X3          -0.17143  0.1799 -0.52398  0.1811 3.406e-01</span></span>
+<span id="cb7-14"><a href="#cb7-14"></a><span class="co">#&gt; X4          -1.27152  0.2631 -1.78719 -0.7559 1.346e-06</span></span>
+<span id="cb7-15"><a href="#cb7-15"></a><span class="co">#&gt; X5          -0.28636  0.2030 -0.68425  0.1115 1.584e-01</span></span>
+<span id="cb7-16"><a href="#cb7-16"></a><span class="co">#&gt; X6          -0.19349  0.2134 -0.61184  0.2249 3.647e-01</span></span>
+<span id="cb7-17"><a href="#cb7-17"></a><span class="co">#&gt; DCGCGCTCACG  0.79754  0.1494  0.50465  1.0904 9.445e-08</span></span>
+<span id="cb7-18"><a href="#cb7-18"></a><span class="co">#&gt; DTCCGCTGACG  0.65747  0.1621  0.33971  0.9752 5.007e-05</span></span>
+<span id="cb7-19"><a href="#cb7-19"></a><span class="co">#&gt; ITCAGTTGACG  0.06119  0.2145 -0.35931  0.4817 7.755e-01</span></span>
+<span id="cb7-20"><a href="#cb7-20"></a><span class="co">#&gt; ITCCGCTGAGG  0.31667  0.1361  0.04989  0.5834 1.999e-02</span></span></code></pre></div>
+<p>Haplotypes “DCGCGCTCACG” “DTCCGCTGACG” gives increased hazard of pregnancy</p>
+<p>The data was generated with these true coefficients</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1"></a>tcoef=<span class="kw">c</span>(<span class="op">-</span><span class="fl">1.93110204</span>,<span class="op">-</span><span class="fl">0.47531630</span>,<span class="op">-</span><span class="fl">0.04118204</span>,<span class="op">-</span><span class="fl">1.57872602</span>,<span class="op">-</span><span class="fl">0.22176426</span>,<span class="op">-</span><span class="fl">0.13836416</span>,</span>
+<span id="cb8-2"><a href="#cb8-2"></a><span class="fl">0.88830288</span>,<span class="fl">0.60756224</span>,<span class="fl">0.39802821</span>,<span class="fl">0.32706859</span>)</span>
+<span id="cb8-3"><a href="#cb8-3"></a></span>
+<span id="cb8-4"><a href="#cb8-4"></a><span class="kw">cbind</span>(out<span class="op">$</span>coef,tcoef)</span>
+<span id="cb8-5"><a href="#cb8-5"></a><span class="co">#&gt;                               tcoef</span></span>
+<span id="cb8-6"><a href="#cb8-6"></a><span class="co">#&gt; X1          -1.82153345 -1.93110204</span></span>
+<span id="cb8-7"><a href="#cb8-7"></a><span class="co">#&gt; X2          -0.61608261 -0.47531630</span></span>
+<span id="cb8-8"><a href="#cb8-8"></a><span class="co">#&gt; X3          -0.17143057 -0.04118204</span></span>
+<span id="cb8-9"><a href="#cb8-9"></a><span class="co">#&gt; X4          -1.27152045 -1.57872602</span></span>
+<span id="cb8-10"><a href="#cb8-10"></a><span class="co">#&gt; X5          -0.28635976 -0.22176426</span></span>
+<span id="cb8-11"><a href="#cb8-11"></a><span class="co">#&gt; X6          -0.19349091 -0.13836416</span></span>
+<span id="cb8-12"><a href="#cb8-12"></a><span class="co">#&gt; DCGCGCTCACG  0.79753613  0.88830288</span></span>
+<span id="cb8-13"><a href="#cb8-13"></a><span class="co">#&gt; DTCCGCTGACG  0.65747412  0.60756224</span></span>
+<span id="cb8-14"><a href="#cb8-14"></a><span class="co">#&gt; ITCAGTTGACG  0.06119231  0.39802821</span></span>
+<span id="cb8-15"><a href="#cb8-15"></a><span class="co">#&gt; ITCCGCTGAGG  0.31666905  0.32706859</span></span></code></pre></div>
+<p>The design fitted can be found in the output</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1"></a><span class="kw">head</span>(out<span class="op">$</span>X,<span class="dv">10</span>)</span>
+<span id="cb9-2"><a href="#cb9-2"></a><span class="co">#&gt;    X1 X2 X3 X4 X5 X6 haplo1 haplo2 haplo3 haplo4</span></span>
+<span id="cb9-3"><a href="#cb9-3"></a><span class="co">#&gt; 1   1  0  0  0  0  0      0      0      0      0</span></span>
+<span id="cb9-4"><a href="#cb9-4"></a><span class="co">#&gt; 2   1  1  0  0  0  0      0      0      0      0</span></span>
+<span id="cb9-5"><a href="#cb9-5"></a><span class="co">#&gt; 3   1  0  1  0  0  0      0      0      0      0</span></span>
+<span id="cb9-6"><a href="#cb9-6"></a><span class="co">#&gt; 4   1  0  0  1  0  0      0      0      0      0</span></span>
+<span id="cb9-7"><a href="#cb9-7"></a><span class="co">#&gt; 5   1  0  0  0  1  0      0      0      0      0</span></span>
+<span id="cb9-8"><a href="#cb9-8"></a><span class="co">#&gt; 6   1  0  0  0  0  1      0      0      0      0</span></span>
+<span id="cb9-9"><a href="#cb9-9"></a><span class="co">#&gt; 8   1  0  0  0  0  0      0      0      1      0</span></span>
+<span id="cb9-10"><a href="#cb9-10"></a><span class="co">#&gt; 10  1  1  0  0  0  0      0      0      1      0</span></span>
+<span id="cb9-11"><a href="#cb9-11"></a><span class="co">#&gt; 12  1  0  1  0  0  0      0      0      1      0</span></span>
+<span id="cb9-12"><a href="#cb9-12"></a><span class="co">#&gt; 14  1  0  0  1  0  0      0      0      1      0</span></span></code></pre></div>
+</div>
+<div id="sessioninfo" class="section level1">
+<h1>SessionInfo</h1>
+<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1"></a><span class="kw">sessionInfo</span>()</span>
+<span id="cb10-2"><a href="#cb10-2"></a><span class="co">#&gt; R version 4.0.2 (2020-06-22)</span></span>
+<span id="cb10-3"><a href="#cb10-3"></a><span class="co">#&gt; Platform: x86_64-redhat-linux-gnu (64-bit)</span></span>
+<span id="cb10-4"><a href="#cb10-4"></a><span class="co">#&gt; Running under: Fedora 32 (Workstation Edition)</span></span>
+<span id="cb10-5"><a href="#cb10-5"></a><span class="co">#&gt; </span></span>
+<span id="cb10-6"><a href="#cb10-6"></a><span class="co">#&gt; Matrix products: default</span></span>
+<span id="cb10-7"><a href="#cb10-7"></a><span class="co">#&gt; BLAS/LAPACK: /usr/lib64/libopenblas-r0.3.9.so</span></span>
+<span id="cb10-8"><a href="#cb10-8"></a><span class="co">#&gt; </span></span>
+<span id="cb10-9"><a href="#cb10-9"></a><span class="co">#&gt; locale:</span></span>
+<span id="cb10-10"><a href="#cb10-10"></a><span class="co">#&gt;  [1] LC_CTYPE=en_US.UTF-8       LC_NUMERIC=C              </span></span>
+<span id="cb10-11"><a href="#cb10-11"></a><span class="co">#&gt;  [3] LC_TIME=en_US.UTF-8        LC_COLLATE=en_US.UTF-8    </span></span>
+<span id="cb10-12"><a href="#cb10-12"></a><span class="co">#&gt;  [5] LC_MONETARY=en_US.UTF-8    LC_MESSAGES=en_US.UTF-8   </span></span>
+<span id="cb10-13"><a href="#cb10-13"></a><span class="co">#&gt;  [7] LC_PAPER=en_US.UTF-8       LC_NAME=C                 </span></span>
+<span id="cb10-14"><a href="#cb10-14"></a><span class="co">#&gt;  [9] LC_ADDRESS=C               LC_TELEPHONE=C            </span></span>
+<span id="cb10-15"><a href="#cb10-15"></a><span class="co">#&gt; [11] LC_MEASUREMENT=en_US.UTF-8 LC_IDENTIFICATION=C       </span></span>
+<span id="cb10-16"><a href="#cb10-16"></a><span class="co">#&gt; </span></span>
+<span id="cb10-17"><a href="#cb10-17"></a><span class="co">#&gt; attached base packages:</span></span>
+<span id="cb10-18"><a href="#cb10-18"></a><span class="co">#&gt; [1] stats     graphics  grDevices utils     datasets  methods   base     </span></span>
+<span id="cb10-19"><a href="#cb10-19"></a><span class="co">#&gt; </span></span>
+<span id="cb10-20"><a href="#cb10-20"></a><span class="co">#&gt; other attached packages:</span></span>
+<span id="cb10-21"><a href="#cb10-21"></a><span class="co">#&gt; [1] mets_1.2.8     lava_1.6.7     timereg_1.9.6  survival_3.2-3</span></span>
+<span id="cb10-22"><a href="#cb10-22"></a><span class="co">#&gt; </span></span>
+<span id="cb10-23"><a href="#cb10-23"></a><span class="co">#&gt; loaded via a namespace (and not attached):</span></span>
+<span id="cb10-24"><a href="#cb10-24"></a><span class="co">#&gt;  [1] Rcpp_1.0.5          mvtnorm_1.1-1       lattice_0.20-41    </span></span>
+<span id="cb10-25"><a href="#cb10-25"></a><span class="co">#&gt;  [4] ucminf_1.1-4        digest_0.6.25       grid_4.0.2         </span></span>
+<span id="cb10-26"><a href="#cb10-26"></a><span class="co">#&gt;  [7] magrittr_1.5        evaluate_0.14       rlang_0.4.7        </span></span>
+<span id="cb10-27"><a href="#cb10-27"></a><span class="co">#&gt; [10] stringi_1.4.6       Matrix_1.2-18       rmarkdown_2.3      </span></span>
+<span id="cb10-28"><a href="#cb10-28"></a><span class="co">#&gt; [13] splines_4.0.2       tools_4.0.2         stringr_1.4.0      </span></span>
+<span id="cb10-29"><a href="#cb10-29"></a><span class="co">#&gt; [16] numDeriv_2016.8-1.1 xfun_0.15           yaml_2.2.1         </span></span>
+<span id="cb10-30"><a href="#cb10-30"></a><span class="co">#&gt; [19] compiler_4.0.2      htmltools_0.5.0     knitr_1.29</span></span></code></pre></div>
+</div>
+
+<script type="text/javascript">
+window.onload = function() {
+  var i, fig = 1, caps = document.getElementsByClassName('caption');
+  for (i = 0; i < caps.length; i++) {
+    var cap = caps[i];
+    if (cap.parentElement.className !== 'figure' || cap.nodeName !== 'P')
+      continue;
+    cap.innerHTML = '<span>Figure ' + fig + ':</span> ' + cap.innerHTML;
+    fig++;
+  }
+  fig = 1;
+  caps = document.getElementsByTagName('caption');
+  for (i = 0; i < caps.length; i++) {
+    var cap = caps[i];
+    if (cap.parentElement.nodeName !== 'TABLE') continue;
+    cap.innerHTML = '<span>Table ' + fig + ':</span> ' + cap.innerHTML;
+    fig++;
+  }
+}
+</script>
+
+
+<!-- code folding -->
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>

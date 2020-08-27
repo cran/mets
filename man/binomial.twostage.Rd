@@ -3,29 +3,53 @@
 \name{binomial.twostage}
 \alias{binomial.twostage}
 \alias{binomial.twostage.time}
-\title{Fits Clayton-Oakes or bivariate Plackett (OR) models for binary data 
-using marginals that are on logistic form. 
+\title{Fits Clayton-Oakes or bivariate Plackett (OR) models for binary data
+using marginals that are on logistic form.
 If clusters contain more than two times, the algoritm uses a compososite likelihood
 based on all pairwise bivariate models.}
 \usage{
-binomial.twostage(margbin, data = sys.parent(),
-  score.method = "fisher.scoring", Nit = 60, detail = 0,
-  clusters = NULL, silent = 1, weights = NULL, control = list(),
-  theta = NULL, theta.des = NULL, var.link = 0, var.par = 1,
-  var.func = NULL, iid = 1, step = 1, notaylor = 1,
-  model = "plackett", marginal.p = NULL, beta.iid = NULL,
-  Dbeta.iid = NULL, strata = NULL, max.clust = NULL,
-  se.clusters = NULL, numDeriv = 0, random.design = NULL,
-  pairs = NULL, pairs.rvs = NULL, additive.gamma.sum = NULL,
-  pair.ascertained = 0, case.control = 0, twostage = 1,
-  beta = NULL)
+binomial.twostage(
+  margbin,
+  data = parent.frame(),
+  method = "nr",
+  Nit = 60,
+  detail = 0,
+  clusters = NULL,
+  silent = 1,
+  weights = NULL,
+  control = list(),
+  theta = NULL,
+  theta.des = NULL,
+  var.link = 0,
+  var.par = 1,
+  var.func = NULL,
+  iid = 1,
+  step = 1,
+  notaylor = 1,
+  model = "plackett",
+  marginal.p = NULL,
+  beta.iid = NULL,
+  Dbeta.iid = NULL,
+  strata = NULL,
+  max.clust = NULL,
+  se.clusters = NULL,
+  numDeriv = 0,
+  random.design = NULL,
+  pairs = NULL,
+  dim.theta = NULL,
+  additive.gamma.sum = NULL,
+  pair.ascertained = 0,
+  case.control = 0,
+  twostage = 1,
+  beta = NULL
+)
 }
 \arguments{
 \item{margbin}{Marginal binomial model}
 
 \item{data}{data frame}
 
-\item{score.method}{Scoring method default is "fisher.scoring" among "fisher.scoring","nlminb","optimize","nlm"}
+\item{method}{Scoring method default is  "nr"}
 
 \item{Nit}{Number of iterations}
 
@@ -41,7 +65,8 @@ binomial.twostage(margbin, data = sys.parent(),
 
 \item{theta}{Starting values for variance components}
 
-\item{theta.des}{design for dependence parameters, when pairs are given this is could be a (pairs) x (numer of parameters)  x (max number random effects) matrix}
+\item{theta.des}{design for dependence parameters, when pairs are given the indeces of the
+theta-design for this pair, is given in pairs as column 5}
 
 \item{var.link}{Link function for variance}
 
@@ -71,11 +96,12 @@ binomial.twostage(margbin, data = sys.parent(),
 
 \item{numDeriv}{uses Fisher scoring aprox of second derivative if 0, otherwise numerical derivatives}
 
-\item{random.design}{random effect design for additive gamma model, when pairs are given this is a (pairs) x (2) x (max number random effects) matrix, see pairs.rvs below}
+\item{random.design}{random effect design for additive gamma model, when pairs are given the
+indeces of the pairs random.design rows are given as columns 3:4}
 
 \item{pairs}{matrix with rows of indeces (two-columns) for the pairs considered in the pairwise composite score, useful for case-control sampling when marginal is known.}
 
-\item{pairs.rvs}{for additive gamma model and random.design and theta.des are given as arrays, this specifice number of random effects for each pair.}
+\item{dim.theta}{dimension of theta when pairs and pairs specific design is given. That is when pairs has 6 columns.}
 
 \item{additive.gamma.sum}{this is specification of the lamtot in the models via a matrix that is multiplied onto the parameters theta (dimensions=(number random effects x number of theta parameters), when null then sums all parameters. Default is a matrix of 1's}
 
@@ -92,39 +118,39 @@ The pairwise pairwise odds ratio model provides an alternative to the alternatin
 regression (ALR).
 }
 \details{
-The reported standard errors are based on a cluster corrected score equations from the 
+The reported standard errors are based on a cluster corrected score equations from the
 pairwise likelihoods assuming that the marginals are known. This gives correct standard errors
 in the case of the Odds-Ratio model (Plackett distribution) for dependence, but incorrect standard
-errors for the Clayton-Oakes types model (that is also called "gamma"-frailty). For the additive gamma version of the 
+errors for the Clayton-Oakes types model (that is also called "gamma"-frailty). For the additive gamma version of the
 standard errors
 are adjusted for the uncertainty in the marginal models via an iid deomposition using the iid() function of
-lava. For the clayton oakes model that is not speicifed via the random effects these can be 
+lava. For the clayton oakes model that is not speicifed via the random effects these can be
 fixed subsequently using the iid influence functions for the marginal model, but typically this does not
 change much.
 
-For the Clayton-Oakes version of the model, given the gamma distributed random effects it is 
-assumed that the probabilities are indpendent, and that the marginal survival functions are on logistic form 
+For the Clayton-Oakes version of the model, given the gamma distributed random effects it is
+assumed that the probabilities are indpendent, and that the marginal survival functions are on logistic form
 \deqn{
 logit(P(Y=1|X)) = \alpha + x^T \beta
 }
-therefore conditional on the random effect the probability of the event is 
+therefore conditional on the random effect the probability of the event is
 \deqn{
-logit(P(Y=1|X,Z)) = exp( -Z \cdot Laplace^{-1}(lamtot,lamtot,P(Y=1|x)) )  
+logit(P(Y=1|X,Z)) = exp( -Z \cdot Laplace^{-1}(lamtot,lamtot,P(Y=1|x)) )
 }
 
 Can also fit a structured additive gamma random effects model, such
 the ACE, ADE model for survival data:
 
 Now random.design specificies the random effects for each subject within a cluster. This is
-a matrix of 1's and 0's with dimension n x d.  With d random effects. 
-For a cluster with two subjects, we let the random.design rows be 
- \eqn{v_1} and \eqn{v_2}. 
-Such that the random effects for subject 
+a matrix of 1's and 0's with dimension n x d.  With d random effects.
+For a cluster with two subjects, we let the random.design rows be
+ \eqn{v_1} and \eqn{v_2}.
+Such that the random effects for subject
 1 is \deqn{v_1^T (Z_1,...,Z_d)}, for d random effects. Each random effect
 has an associated parameter \eqn{(\lambda_1,...,\lambda_d)}. By construction
-subjects 1's random effect are Gamma distributed with 
+subjects 1's random effect are Gamma distributed with
 mean \eqn{\lambda_j/v_1^T \lambda}
-and variance \eqn{\lambda_j/(v_1^T \lambda)^2}. Note that the random effect 
+and variance \eqn{\lambda_j/(v_1^T \lambda)^2}. Note that the random effect
 \eqn{v_1^T (Z_1,...,Z_d)} has mean 1 and variance \eqn{1/(v_1^T \lambda)}.
 It is here asssumed that  \eqn{lamtot=v_1^T \lambda} is fixed over all clusters
 as it would be for the ACE model below.
@@ -134,39 +160,39 @@ The DEFAULT parametrization uses the variances of the random effecs (var.par=1)
 \theta_j  = \lambda_j/(v_1^T \lambda)^2
 }
 
-For alternative parametrizations (var.par=0) one can specify how the parameters relate 
+For alternative parametrizations (var.par=0) one can specify how the parameters relate
 to \eqn{\lambda_j} with the function
 
-Based on these parameters the relative contribution (the heritability, h) is 
+Based on these parameters the relative contribution (the heritability, h) is
 equivalent to  the expected values of the random effects  \eqn{\lambda_j/v_1^T \lambda}
 
-Given the random effects the probabilities  are independent and on the form 
+Given the random effects the probabilities  are independent and on the form
 \deqn{
-logit(P(Y=1|X)) = exp( - Laplace^{-1}(lamtot,lamtot,P(Y=1|x)) )  
+logit(P(Y=1|X)) = exp( - Laplace^{-1}(lamtot,lamtot,P(Y=1|x)) )
 }
 with the inverse laplace of the gamma distribution with mean 1 and variance lamtot.
 
 The parameters \eqn{(\lambda_1,...,\lambda_d)}
 are related to the parameters of the model
-by a regression construction \eqn{pard} (d x k), that links the \eqn{d} 
+by a regression construction \eqn{pard} (d x k), that links the \eqn{d}
 \eqn{\lambda} parameters
-with the (k) underlying \eqn{\theta} parameters 
+with the (k) underlying \eqn{\theta} parameters
 \deqn{
-\lambda = theta.des  \theta 
+\lambda = theta.des  \theta
 }
 here using theta.des to specify these low-dimension association. Default is a diagonal matrix.
 }
 \examples{
 library("timereg")
 data("twinstut",package="mets")
-twinstut0 <- subset(twinstut, tvparnr<2300000)
+twinstut0 <- subset(twinstut, tvparnr<11000)
 twinstut <- twinstut0
 twinstut$binstut <- (twinstut$stutter=="yes")*1
 theta.des <- model.matrix( ~-1+factor(zyg),data=twinstut)
 margbin <- glm(binstut~factor(sex)+age,data=twinstut,family=binomial())
 bin <- binomial.twostage(margbin,data=twinstut,var.link=1,
 		         clusters=twinstut$tvparnr,theta.des=theta.des,detail=0,
-	                 score.method="fisher.scoring")
+	                 method="nr")
 summary(bin)
 
 twinstut$cage <- scale(twinstut$age)
@@ -197,10 +223,10 @@ out3 <- easy.binomial.twostage(binstut~factor(sex)+age,
       theta.formula=desfs,desnames=c("mz","dz","os"))
 summary(out3)
 
-### use of clayton oakes binomial additive gamma model 
+### use of clayton oakes binomial additive gamma model
 ###########################################################
 \donttest{ ## Reduce Ex.Timings
-data <- simbinClaytonOakes.family.ace(10000,2,1,beta=NULL,alpha=NULL)  
+data <- simbinClaytonOakes.family.ace(10000,2,1,beta=NULL,alpha=NULL)
 margbin <- glm(ybin~x,data=data,family=binomial())
 margbin
 
@@ -226,7 +252,7 @@ head(out$des.rv)
 margbin <- glm(ybin~x,data=data,family=binomial())
 
 bintwin <- binomial.twostage(margbin,data=data,
-     clusters=data$cluster,detail=1,var.par=1,
+     clusters=data$cluster,var.par=1,
      theta=c(2,1),random.design=out$des.rv,theta.des=out$pardes)
 summary(bintwin)
 concordanceTwinACE(bintwin)

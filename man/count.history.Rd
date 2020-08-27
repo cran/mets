@@ -2,10 +2,17 @@
 % Please edit documentation in R/recurrent.marginal.R
 \name{count.history}
 \alias{count.history}
+\alias{count.historyVar}
 \title{Counts the number of previous events of two types for recurrent events processes}
 \usage{
-count.history(data, status = "status", id = "id", types = 1:2,
-  names.count = "Count", lag = TRUE)
+count.history(
+  data,
+  status = "status",
+  id = "id",
+  types = 1:2,
+  names.count = "Count",
+  lag = TRUE
+)
 }
 \arguments{
 \item{data}{data-frame}

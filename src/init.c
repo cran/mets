@@ -22,7 +22,7 @@ extern SEXP FastApprox(SEXP, SEXP, SEXP, SEXP);
 extern SEXP FastCluster(SEXP);
 extern SEXP FastCoxPL(SEXP, SEXP, SEXP, SEXP, SEXP);
 extern SEXP FastCoxPLstrata(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP,SEXP,SEXP,SEXP,SEXP);
-extern SEXP FastCoxPLstrataPO(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP,SEXP,SEXP,SEXP,SEXP); 
+extern SEXP FastCoxPLstrataPO(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP,SEXP,SEXP,SEXP,SEXP);
 extern SEXP FastCoxPLstrataAddGam(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP,SEXP,SEXP,
 		SEXP, SEXP, SEXP, SEXP,
 		SEXP, SEXP, SEXP, SEXP, SEXP );
@@ -30,10 +30,11 @@ extern SEXP FastCoxPrep(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
 extern SEXP FastCoxPrepStrata(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP,SEXP,SEXP,SEXP,SEXP,SEXP);
 extern SEXP FastLong2(SEXP, SEXP, SEXP, SEXP);
 extern SEXP FastPattern(SEXP, SEXP, SEXP);
+//extern SEXP indexstrataR(SEXP, SEXP, SEXP,SEXP,SEXP,SEXP);
 extern SEXP MatxCube(SEXP, SEXP, SEXP);
 extern SEXP _mets_ApplyBy(SEXP, SEXP, SEXP);
 extern SEXP _mets_ApplyBy2(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
-extern SEXP _mets_loglikMVN(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
+extern SEXP _mets_loglikMVN(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
 extern SEXP _mets_RcppExport_registerCCallable();
 extern SEXP pBhat(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
 extern SEXP pmvn0(SEXP, SEXP, SEXP, SEXP, SEXP);
@@ -41,11 +42,28 @@ extern SEXP Dpmvn(SEXP, SEXP, SEXP, SEXP, SEXP);
 extern SEXP survivalRV(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
 extern SEXP RsurvivalRVCmarg(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
 extern SEXP survivalRV2(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
-extern SEXP survivalloglikeRVpairs(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
-extern SEXP twostageloglikebin(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
-extern SEXP twostageloglikebinpairs(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
-extern SEXP twostageloglikeRV(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
-extern SEXP twostageloglikeRVpairs(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
+extern SEXP survivalloglikeRVpairs(SEXP, SEXP, SEXP, SEXP, SEXP,
+				   SEXP, SEXP, SEXP, SEXP, SEXP,
+				   SEXP, SEXP, SEXP, SEXP, SEXP,
+				   SEXP, SEXP, SEXP, SEXP);
+extern SEXP twostageloglikebin(SEXP, SEXP, SEXP, SEXP, SEXP,
+		SEXP, SEXP, SEXP, SEXP, SEXP,
+		SEXP, SEXP, SEXP, SEXP, SEXP,
+		SEXP, SEXP, SEXP, SEXP, SEXP,
+		SEXP);
+extern SEXP twostageloglikebinpairs(SEXP, SEXP, SEXP, SEXP, SEXP,
+		SEXP, SEXP, SEXP, SEXP, SEXP,
+		SEXP, SEXP, SEXP, SEXP, SEXP,
+		SEXP, SEXP, SEXP, SEXP, SEXP,
+		SEXP, SEXP);
+extern SEXP twostageloglikeRV(SEXP, SEXP, SEXP, SEXP, SEXP,
+		SEXP, SEXP, SEXP, SEXP, SEXP,
+		SEXP, SEXP, SEXP, SEXP, SEXP,
+		SEXP, SEXP, SEXP, SEXP);
+extern SEXP twostageloglikeRVpairs(SEXP, SEXP, SEXP, SEXP, SEXP,
+		SEXP, SEXP, SEXP, SEXP, SEXP,
+		SEXP, SEXP, SEXP, SEXP, SEXP,
+		SEXP, SEXP, SEXP, SEXP);
 extern SEXP Uhat(SEXP, SEXP, SEXP, SEXP, SEXP);
 extern SEXP uniprobit(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
 extern SEXP CubeVec(SEXP, SEXP);
@@ -55,22 +73,30 @@ extern SEXP MatxCube(SEXP, SEXP, SEXP);
 extern SEXP Matdoubleindex(SEXP, SEXP, SEXP,SEXP,SEXP,SEXP);
 extern SEXP CubeMat(SEXP, SEXP);
 extern SEXP PropTestCox(SEXP, SEXP,SEXP,SEXP);
-extern SEXP PropTestCoxClust(SEXP, SEXP, SEXP, SEXP,SEXP,SEXP, SEXP, SEXP, SEXP, SEXP,SEXP,SEXP, SEXP);
+extern SEXP PropTestCoxClust(SEXP, SEXP, SEXP, SEXP,SEXP,SEXP, SEXP, SEXP, SEXP, SEXP,SEXP,SEXP, SEXP,SEXP);
 extern SEXP ModelMatrixTestCox(SEXP,SEXP,SEXP,SEXP,SEXP);
 //extern SEXP simBandCumHazCox(SEXP,SEXP,SEXP,SEXP,SEXP,SEXP);
 extern SEXP revcumsumR(SEXP);
 extern SEXP revcumsumstrataR(SEXP,SEXP, SEXP);
+extern SEXP revcumsum2strataR(SEXP,SEXP, SEXP,SEXP,SEXP);
+extern SEXP cumsum2strataR(SEXP,SEXP,SEXP,SEXP,SEXP,SEXP,SEXP);
+extern SEXP revcumsum2stratafdNR(SEXP,SEXP,SEXP,SEXP,SEXP,SEXP,SEXP,SEXP);
+extern SEXP S0_FG_GcR(SEXP,SEXP,SEXP,SEXP,SEXP,SEXP);
+extern SEXP vecAllStrataR(SEXP,SEXP, SEXP);
 extern SEXP tailstrataR(SEXP,SEXP, SEXP);
+extern SEXP headstrataR(SEXP,SEXP, SEXP);
 extern SEXP revcumsumstratasumR(SEXP,SEXP, SEXP);
 extern SEXP revcumsumidstratasumR(SEXP,SEXP, SEXP,SEXP, SEXP);
 extern SEXP revcumsumidstratasumCovR(SEXP,SEXP,SEXP, SEXP,SEXP, SEXP);
 extern SEXP cumsumstrataR(SEXP,SEXP, SEXP);
+extern SEXP diffstrataR(SEXP,SEXP, SEXP);
+//extern SEXP RevCumsumstrataTwoR(SEXP,SEXP,SEXP,SEXP,SEXP);
 extern SEXP cumsumstrataPOR(SEXP,SEXP,SEXP,SEXP,SEXP,SEXP);
 extern SEXP cumsumstrataDFGR(SEXP,SEXP,SEXP,SEXP,SEXP,SEXP);
 extern SEXP cumsumstrataDFGRestrictR(SEXP,SEXP,SEXP,SEXP,SEXP,SEXP,SEXP);
 extern SEXP DLambetaR(SEXP,SEXP,SEXP,SEXP,SEXP,SEXP,SEXP,SEXP);
 extern SEXP DLambetaDFGR(SEXP,SEXP,SEXP,SEXP,SEXP,SEXP,SEXP,SEXP);
-extern SEXP riskstrataR(SEXP,SEXP,SEXP); 
+extern SEXP riskstrataR(SEXP,SEXP,SEXP);
 extern SEXP meanriskR(SEXP,SEXP,SEXP,SEXP,SEXP);
 extern SEXP wherestrataR(SEXP,SEXP,SEXP,SEXP);
 extern SEXP maxminidR(SEXP,SEXP,SEXP);
@@ -106,29 +132,35 @@ static const R_CallMethodDef CallEntries[] = {
     {"FastApprox",                        (DL_FUNC) &FastApprox,                         4},
     {"FastCluster",                       (DL_FUNC) &FastCluster,                        1},
     {"FastCoxPL",                         (DL_FUNC) &FastCoxPL,                          5},
-    {"FastCoxPLstrata",                  (DL_FUNC) &FastCoxPLstrata,                     11},
-    {"FastCoxPLstrataPO",                (DL_FUNC) &FastCoxPLstrataPO,                   11},
-    {"FastCoxPLstrataAddGam",            (DL_FUNC) &FastCoxPLstrataAddGam,               18},
+    {"FastCoxPLstrata",                   (DL_FUNC) &FastCoxPLstrata,                   11},
+    {"FastCoxPLstrataPO",                 (DL_FUNC) &FastCoxPLstrataPO,                 11},
+    {"FastCoxPLstrataAddGam",             (DL_FUNC) &FastCoxPLstrataAddGam,             18},
     {"FastCoxPrep",                       (DL_FUNC) &FastCoxPrep,                        6},
-    {"FastCoxPrepStrata",                 (DL_FUNC) &FastCoxPrepStrata,                  11},
+    {"FastCoxPrepStrata",                 (DL_FUNC) &FastCoxPrepStrata,                 11},
     {"FastLong2",                         (DL_FUNC) &FastLong2,                          4},
     {"FastPattern",                       (DL_FUNC) &FastPattern,                        3},
+//    {"indexstrataR",                      (DL_FUNC) &indexstrataR,                       6},
     {"MatxCube",                          (DL_FUNC) &MatxCube,                           3},
-    {"meanriskR",                        (DL_FUNC) &meanriskR,                           5},
-    {"wherestrataR",                     (DL_FUNC) &wherestrataR,                        4},
-    {"maxminidR",                        (DL_FUNC) &maxminidR,                           3},
-    {"Matdoubleindex",                   (DL_FUNC) &Matdoubleindex,                     6},
-    {"_mets_ApplyBy",                    (DL_FUNC) &_mets_ApplyBy,                     3},
-    {"_mets_ApplyBy2",                   (DL_FUNC) &_mets_ApplyBy2,                    8},
-    {"_mets_loglikMVN",                  (DL_FUNC) &_mets_loglikMVN,                   13},
-    {"_mets_RcppExport_registerCCallable", (DL_FUNC) &_mets_RcppExport_registerCCallable,0},
+    {"meanriskR",                         (DL_FUNC) &meanriskR,                          5},
+    {"wherestrataR",                      (DL_FUNC) &wherestrataR,                       4},
+    {"maxminidR",                         (DL_FUNC) &maxminidR,                          3},
+    {"Matdoubleindex",                    (DL_FUNC) &Matdoubleindex,                     6},
+    {"_mets_ApplyBy",                     (DL_FUNC) &_mets_ApplyBy,                      3},
+    {"_mets_ApplyBy2",                    (DL_FUNC) &_mets_ApplyBy2,                     8},
+    {"_mets_loglikMVN",                   (DL_FUNC) &_mets_loglikMVN,                   14},
+    {"_mets_RcppExport_registerCCallable",(DL_FUNC) &_mets_RcppExport_registerCCallable, 0},
     {"pBhat",                             (DL_FUNC) &pBhat,                              6},
     {"PropTestCox",                       (DL_FUNC) &PropTestCox,                        4},
-    {"PropTestCoxClust",                  (DL_FUNC) &PropTestCoxClust,                  13},
+    {"PropTestCoxClust",                  (DL_FUNC) &PropTestCoxClust,                  14},
     {"ModelMatrixTestCox",                (DL_FUNC) &ModelMatrixTestCox,                 5},
     {"pmvn0",                             (DL_FUNC) &pmvn0,                              5},
     {"revcumsumR",                        (DL_FUNC) &revcumsumR,                         1},
     {"revcumsumstrataR",                  (DL_FUNC) &revcumsumstrataR,                   3},
+    {"revcumsum2strataR",                 (DL_FUNC) &revcumsum2strataR,                  5},
+    {"revcumsum2stratafdNR",              (DL_FUNC) &revcumsum2stratafdNR,               7},
+    {"cumsum2strataR",                    (DL_FUNC) &cumsum2strataR,                     7},
+    {"S0_FG_GcR",                         (DL_FUNC) &S0_FG_GcR,                          6},
+    {"vecAllStrataR",                     (DL_FUNC) &vecAllStrataR,                      3},
     {"riskstrataR",                       (DL_FUNC) &riskstrataR,                        3},
     {"revcumsumstratasumR",               (DL_FUNC) &revcumsumstratasumR,                3},
     {"cumsumstratasumR",                  (DL_FUNC) &cumsumstratasumR,                   3},
@@ -138,26 +170,29 @@ static const R_CallMethodDef CallEntries[] = {
     {"DLambetaR",                         (DL_FUNC) &DLambetaR,                          8},
     {"DLambetaDFGR",                      (DL_FUNC) &DLambetaDFGR,                       8},
     {"cumsumidstratasumR",                (DL_FUNC) &cumsumidstratasumR,                 5},
-    {"cumsumASR",                         (DL_FUNC) &cumsumidstratasumR,                 3},
+    {"cumsumASR",                         (DL_FUNC) &cumsumASR,                 3},
     {"tailstrataR",                       (DL_FUNC) &tailstrataR,                        3},
+    {"headstrataR",                       (DL_FUNC) &headstrataR,                        3},
     {"cumsumidstratasumCovR",             (DL_FUNC) &cumsumidstratasumCovR,              6},
     {"revcumsumidstratasumR",             (DL_FUNC) &revcumsumidstratasumR,              5},
     {"revcumsumidstratasumCovR",          (DL_FUNC) &revcumsumidstratasumCovR,           6},
     {"covrfR",                            (DL_FUNC) &covrfR,                             4},
     {"covrfstrataR",                      (DL_FUNC) &covrfstrataR,                       6},
     {"covrfstrataCovR",                   (DL_FUNC) &covrfstrataCovR,                    8},
+//    {"RevCumsumstrataTwoR",             (DL_FUNC) &RevCumsumstrataTwoR,              5},
     {"cumsumstrataR",                     (DL_FUNC) &cumsumstrataR,                      3},
+    {"diffstrataR",                       (DL_FUNC) &diffstrataR,                        3},
     {"sumstrataR",                        (DL_FUNC) &sumstrataR,                         3},
     {"Dpmvn",                             (DL_FUNC) &Dpmvn,                              5},
-//    {"simBandCumHazCox",                  (DL_FUNC) &simBandCumHazCox,                   5},
+//    {"simBandCumHazCox",                  (DL_FUNC) &simBandCumHazCox,                 5},
     {"RsurvivalRVCmarg",                  (DL_FUNC) &RsurvivalRVCmarg,                   7},
     {"survivalRV",                        (DL_FUNC) &survivalRV,                        10},
     {"survivalRV2",                       (DL_FUNC) &survivalRV2,                       10},
-    {"survivalloglikeRVpairs",            (DL_FUNC) &survivalloglikeRVpairs,            25},
-    {"twostageloglikebin",                (DL_FUNC) &twostageloglikebin,                24},
-    {"twostageloglikebinpairs",           (DL_FUNC) &twostageloglikebinpairs,           28},
-    {"twostageloglikeRV",                 (DL_FUNC) &twostageloglikeRV,                 22},
-    {"twostageloglikeRVpairs",            (DL_FUNC) &twostageloglikeRVpairs,            25},
+    {"survivalloglikeRVpairs",            (DL_FUNC) &survivalloglikeRVpairs,            19},
+    {"twostageloglikebin",                (DL_FUNC) &twostageloglikebin,                21},
+    {"twostageloglikebinpairs",           (DL_FUNC) &twostageloglikebinpairs,           22},
+    {"twostageloglikeRV",                 (DL_FUNC) &twostageloglikeRV,                 19},
+    {"twostageloglikeRVpairs",            (DL_FUNC) &twostageloglikeRVpairs,            19},
     {"Uhat",                              (DL_FUNC) &Uhat,                               5},
     {"uniprobit",                         (DL_FUNC) &uniprobit,                          8},
     {"vecMatMat",                         (DL_FUNC) &vecMatMat,                          2},
@@ -168,7 +203,7 @@ static const R_CallMethodDef CallEntries[] = {
 };
 
 void R_init_mets(DllInfo *dll)
-{ 
+{
     R_registerRoutines(dll,
                        NULL,	       /* slot for .C */
                        CallEntries,    /* slot for .Call */
