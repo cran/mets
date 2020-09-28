@@ -12,7 +12,7 @@
 
 <meta name="author" content="Klaus Holst &amp; Thomas Scheike" />
 
-<meta name="date" content="2020-08-27" />
+<meta name="date" content="2020-09-25" />
 
 <title>Cumulative Incidence Regression</title>
 
@@ -356,7 +356,7 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 
 <h1 class="title toc-ignore">Cumulative Incidence Regression</h1>
 <h4 class="author">Klaus Holst &amp; Thomas Scheike</h4>
-<h4 class="date">2020-08-27</h4>
+<h4 class="date">2020-09-25</h4>
 
 
 
@@ -374,7 +374,7 @@ F_2(t,X) &amp; = P(T\leq t, \epsilon=2|X)= ( 1 - exp(-\Lambda_2(t) \exp(X^T \bet
               \cdot (1 - F_1(\infty,X))  
 \end{align}\]</span> where the baselines are given as <span class="math inline">\(\Lambda_j(t) = \rho_j (1- exp(-t/\nu_j))\)</span> for <span class="math inline">\(j=1,2\)</span>, and the <span class="math inline">\(X\)</span> being two independent binomials. Alternatively, one can also replace the FG-model with a logistic link <span class="math inline">\(\mbox{expit}( \Lambda_j(t) + \exp(X^T \beta_j))\)</span>.</p>
 <p>The advantage of the model is that it is easy to fit and to get standard errors, and that it is quite flexible essentially being a Cox-model. On the downside is that the coefficients are quite hard to interpret since they are the <span class="math inline">\(cloglog\)</span> coefficients of <span class="math inline">\(1-F_1(t,X)\)</span>. Specifically, <span class="math display">\[\begin{align}
-\log(-\log( \frac{1-F_1(t,X_1+1,X_2)}{1-F_1(t,X_1,X_2)})) &amp; =  \beta_1,
+\log(-\log( 1-F_1(t,X_1+1,X_2))) - \log(-\log( 1-F_1(t,X_1,X_2))) &amp; =  \beta_1,
 \end{align}\]</span> so the effect is <span class="math inline">\(\beta_1\)</span> of <span class="math inline">\(X_1\)</span> is on <span class="math inline">\(1-F_1(t,X)\)</span> on the <span class="math inline">\(cloglog\)</span> scale.</p>
 <div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1"></a> <span class="kw">library</span>(mets)</span>
 <span id="cb1-2"><a href="#cb1-2"></a> <span class="kw">options</span>(<span class="dt">warn=</span><span class="op">-</span><span class="dv">1</span>)</span>
@@ -425,20 +425,24 @@ F_2(t,X) &amp; = P(T\leq t, \epsilon=2|X)= ( 1 - exp(-\Lambda_2(t) \exp(X^T \bet
 <div id="comparison" class="section level1">
 <h1>Comparison</h1>
 <p>We compare with the cmprsk function but without running it to avoid dependencies:</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1"></a><span class="co">### library(cmprsk)</span></span>
-<span id="cb4-2"><a href="#cb4-2"></a><span class="co">### mm &lt;- model.matrix(~Z1+Z2,dats)[,-1]</span></span>
-<span id="cb4-3"><a href="#cb4-3"></a><span class="co">### cr &lt;- with(dats,crr(time,status,mm))</span></span>
-<span id="cb4-4"><a href="#cb4-4"></a><span class="co">### </span></span>
-<span id="cb4-5"><a href="#cb4-5"></a><span class="co">### cbind(cr$coef,diag(cr$var)^.5,fg$coef,fg$se.coef,cr$coef-fg$coef,diag(cr$var)^.5-fg$se.coef)</span></span>
-<span id="cb4-6"><a href="#cb4-6"></a><span class="co">#           [,1]       [,2]        [,3]       [,4]         [,5]          [,6]</span></span>
-<span id="cb4-7"><a href="#cb4-7"></a><span class="co"># Z1  0.06882201 0.08184642  0.06882199 0.08184642 1.398233e-08 -9.805955e-11</span></span>
-<span id="cb4-8"><a href="#cb4-8"></a><span class="co"># Z2 -0.36807861 0.16606441 -0.36807951 0.16606444 9.045060e-07 -2.529264e-08</span></span>
-<span id="cb4-9"><a href="#cb4-9"></a></span>
-<span id="cb4-10"><a href="#cb4-10"></a><span class="co">### fg0 &lt;- cifreg(Event(time,status)~Z1+Z2,data=dats,cause=1,propodds=NULL,beta=cr$coef,no.opt=TRUE)</span></span>
-<span id="cb4-11"><a href="#cb4-11"></a><span class="co">### cbind(diag(cr$var)^.5,fg0$se.coef,diag(cr$var)^.5-fg0$se.coef)</span></span>
-<span id="cb4-12"><a href="#cb4-12"></a><span class="co">#            [,1]       [,2]          [,3]</span></span>
-<span id="cb4-13"><a href="#cb4-13"></a><span class="co"># [1,] 0.08184642 0.08184642 -8.975096e-11</span></span>
-<span id="cb4-14"><a href="#cb4-14"></a><span class="co"># [2,] 0.16606441 0.16606441 -1.091264e-10</span></span></code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1"></a>run &lt;-<span class="st"> </span><span class="dv">0</span></span>
+<span id="cb4-2"><a href="#cb4-2"></a><span class="cf">if</span> (run<span class="op">==</span><span class="dv">1</span>) {</span>
+<span id="cb4-3"><a href="#cb4-3"></a> <span class="kw">library</span>(cmprsk)</span>
+<span id="cb4-4"><a href="#cb4-4"></a> mm &lt;-<span class="st"> </span><span class="kw">model.matrix</span>(<span class="op">~</span>Z1<span class="op">+</span>Z2,dats)[,<span class="op">-</span><span class="dv">1</span>]</span>
+<span id="cb4-5"><a href="#cb4-5"></a> cr &lt;-<span class="st"> </span><span class="kw">with</span>(dats,<span class="kw">crr</span>(time,status,mm))</span>
+<span id="cb4-6"><a href="#cb4-6"></a> <span class="kw">cbind</span>(cr<span class="op">$</span>coef,<span class="kw">diag</span>(cr<span class="op">$</span>var)<span class="op">^</span>.<span class="dv">5</span>,fg<span class="op">$</span>coef,fg<span class="op">$</span>se.coef,cr<span class="op">$</span>coef<span class="op">-</span>fg<span class="op">$</span>coef,<span class="kw">diag</span>(cr<span class="op">$</span>var)<span class="op">^</span>.<span class="dv">5</span><span class="op">-</span>fg<span class="op">$</span>se.coef)</span>
+<span id="cb4-7"><a href="#cb4-7"></a>}</span>
+<span id="cb4-8"><a href="#cb4-8"></a><span class="co">#           [,1]       [,2]        [,3]       [,4]         [,5]          [,6]</span></span>
+<span id="cb4-9"><a href="#cb4-9"></a><span class="co"># Z1  0.06882201 0.08184642  0.06882199 0.08184642 1.398233e-08 -9.805955e-11</span></span>
+<span id="cb4-10"><a href="#cb4-10"></a><span class="co"># Z2 -0.36807861 0.16606441 -0.36807951 0.16606444 9.045060e-07 -2.529264e-08</span></span>
+<span id="cb4-11"><a href="#cb4-11"></a></span>
+<span id="cb4-12"><a href="#cb4-12"></a><span class="cf">if</span> (run<span class="op">==</span><span class="dv">1</span>) {</span>
+<span id="cb4-13"><a href="#cb4-13"></a> fg0 &lt;-<span class="st"> </span><span class="kw">cifreg</span>(<span class="kw">Event</span>(time,status)<span class="op">~</span>Z1<span class="op">+</span>Z2,<span class="dt">data=</span>dats,<span class="dt">cause=</span><span class="dv">1</span>,<span class="dt">propodds=</span><span class="ot">NULL</span>,<span class="dt">beta=</span>cr<span class="op">$</span>coef,<span class="dt">no.opt=</span><span class="ot">TRUE</span>)</span>
+<span id="cb4-14"><a href="#cb4-14"></a> <span class="kw">cbind</span>(<span class="kw">diag</span>(cr<span class="op">$</span>var)<span class="op">^</span>.<span class="dv">5</span>,fg0<span class="op">$</span>se.coef,<span class="kw">diag</span>(cr<span class="op">$</span>var)<span class="op">^</span>.<span class="dv">5</span><span class="op">-</span>fg0<span class="op">$</span>se.coef)</span>
+<span id="cb4-15"><a href="#cb4-15"></a>}</span>
+<span id="cb4-16"><a href="#cb4-16"></a><span class="co">#            [,1]       [,2]          [,3]</span></span>
+<span id="cb4-17"><a href="#cb4-17"></a><span class="co"># [1,] 0.08184642 0.08184642 -8.975096e-11</span></span>
+<span id="cb4-18"><a href="#cb4-18"></a><span class="co"># [2,] 0.16606441 0.16606441 -1.091264e-10</span></span></code></pre></div>
 <p>Estimates and SE’s are slightly different.</p>
 <p>We also remove all censorings from the data to compare the estimates with those based on coxph, and observe that the estimates as well as the standard errors agree</p>
 <div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1"></a>datsnc &lt;-<span class="st"> </span><span class="kw">dtransform</span>(dats,<span class="dt">status=</span><span class="dv">2</span>,status<span class="op">==</span><span class="dv">0</span>)</span>
@@ -467,13 +471,15 @@ F_2(t,X) &amp; = P(T\leq t, \epsilon=2|X)= ( 1 - exp(-\Lambda_2(t) \exp(X^T \bet
 <span id="cb5-24"><a href="#cb5-24"></a><span class="co">#&gt; Z1 2.341183e-14  4.260481e-15</span></span>
 <span id="cb5-25"><a href="#cb5-25"></a><span class="co">#&gt; Z2 5.834222e-14 -1.521006e-14</span></span></code></pre></div>
 <p>the cmprsk gives something slightly-slightly different</p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1"></a><span class="co">### library(cmprsk)</span></span>
-<span id="cb6-2"><a href="#cb6-2"></a><span class="co">### mm &lt;- model.matrix(~Z1+Z2,datsnc)[,-1]</span></span>
-<span id="cb6-3"><a href="#cb6-3"></a><span class="co">### cr &lt;- with(datsnc,crr(time,status,mm))</span></span>
-<span id="cb6-4"><a href="#cb6-4"></a><span class="co">### cbind(cifnc$coef-cr$coef, diag(cr$var)^.5-cifnc$se.coef)</span></span>
-<span id="cb6-5"><a href="#cb6-5"></a><span class="co">#             [,1]          [,2]</span></span>
-<span id="cb6-6"><a href="#cb6-6"></a><span class="co"># Z1  1.194188e-10 -6.742754e-11</span></span>
-<span id="cb6-7"><a href="#cb6-7"></a><span class="co"># Z2 -8.828051e-07 -2.488335e-08</span></span></code></pre></div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1"></a><span class="cf">if</span> (run<span class="op">==</span><span class="dv">1</span>) {</span>
+<span id="cb6-2"><a href="#cb6-2"></a> <span class="kw">library</span>(cmprsk)</span>
+<span id="cb6-3"><a href="#cb6-3"></a> mm &lt;-<span class="st"> </span><span class="kw">model.matrix</span>(<span class="op">~</span>Z1<span class="op">+</span>Z2,datsnc)[,<span class="op">-</span><span class="dv">1</span>]</span>
+<span id="cb6-4"><a href="#cb6-4"></a> cr &lt;-<span class="st"> </span><span class="kw">with</span>(datsnc,<span class="kw">crr</span>(time,status,mm))</span>
+<span id="cb6-5"><a href="#cb6-5"></a> <span class="kw">cbind</span>(cifnc<span class="op">$</span>coef<span class="op">-</span>cr<span class="op">$</span>coef, <span class="kw">diag</span>(cr<span class="op">$</span>var)<span class="op">^</span>.<span class="dv">5</span><span class="op">-</span>cifnc<span class="op">$</span>se.coef)</span>
+<span id="cb6-6"><a href="#cb6-6"></a>}</span>
+<span id="cb6-7"><a href="#cb6-7"></a><span class="co">#             [,1]          [,2]</span></span>
+<span id="cb6-8"><a href="#cb6-8"></a><span class="co"># Z1  1.194188e-10 -6.742754e-11</span></span>
+<span id="cb6-9"><a href="#cb6-9"></a><span class="co"># Z2 -8.828051e-07 -2.488335e-08</span></span></code></pre></div>
 </div>
 <div id="strata-dependent-censoring-weights" class="section level1">
 <h1>Strata dependent Censoring weights</h1>
@@ -517,10 +523,10 @@ F_2(t,X) &amp; = P(T\leq t, \epsilon=2|X)= ( 1 - exp(-\Lambda_2(t) \exp(X^T \bet
              &amp; = \phi_i^{FG,1}  + \phi_i^{FG,2},
 \end{align*}\]</span> where the first term is what would be achieved for a known censoring distribution, and the second term is due to the variability from the Kaplan-Meier estimator. Where <span class="math inline">\(M_{ic}(t) = N_{ic}(t) - \int_0^t Y_i(s) d\Lambda_c (s)\)</span> with <span class="math inline">\(M_{ic}\)</span> the standard censoring martingale.</p>
 <p>The function <span class="math inline">\(q(t)\)</span> that reflects that the censoring only affects the terms related to cause “2” jumps, can be written as (see Appendix B2) <span class="math display">\[\begin{align*} 
-    q(t) &amp; =   E( H(t,X) I(T  \leq t, \epsilon=2)/G_c(T)) = E( H(t,X) F_2(t,X) ), 
+    q(t) &amp; =   E( H(t,X) I(T  \leq t, \epsilon=2) I(C &gt; T)/G_c(T)) = E( H(t,X) F_2(t,X) ), 
 \end{align*}\]</span> with <span class="math inline">\(H(t,X) = \int_t^{\infty} (X- e(s)) G(s) d \Lambda_1(s,X)\)</span> and since <span class="math inline">\(\pi(t)=E(Y(t))=S(t) G_c(t)\)</span>.</p>
 <p>In the case where the censoring weights are stratified (based on <span class="math inline">\(X\)</span>) we get the influence functions related to the censoring term with <span class="math display">\[\begin{align*} 
-    q(t,X) &amp; =   E( H(t,X) I(T  \leq t, \epsilon=2)/G_c(T) | X) = H(t,X) F_2(t,X), 
+    q(t,X) &amp; =   E( H(t,X) I(T  \leq t, \epsilon=2) I(T &lt; C)/G_c(T,X) | X) = H(t,X) F_2(t,X), 
 \end{align*}\]</span> so that the influence function becomes <span class="math display">\[\begin{align*}
 \int (X-e(t)) w(t) dM_1(t,X) +  \int H(t,X) \frac{F_2(t,X)}{S(t,X)} \frac{1}{G_c(t,X)} dM_c(t,X).
 \end{align*}\]</span> with <span class="math inline">\(H(t,X) = \int_t^{\infty} (X- e(s)) G(s,X) d \Lambda_1(s,X)\)</span>.</p>
@@ -537,13 +543,13 @@ F_2(t,X) &amp; = P(T\leq t, \epsilon=2|X)= ( 1 - exp(-\Lambda_2(t) \exp(X^T \bet
 <span id="cb8-7"><a href="#cb8-7"></a><span class="co">#&gt;  4000 clusters</span></span>
 <span id="cb8-8"><a href="#cb8-8"></a><span class="co">#&gt; log-coeffients:</span></span>
 <span id="cb8-9"><a href="#cb8-9"></a><span class="co">#&gt;     Estimate      S.E.   dU^-1/2 P-value</span></span>
-<span id="cb8-10"><a href="#cb8-10"></a><span class="co">#&gt; Z1  0.085343  0.078117  0.082735  0.2746</span></span>
-<span id="cb8-11"><a href="#cb8-11"></a><span class="co">#&gt; Z2 -0.271442  0.156681  0.166221  0.0832</span></span>
+<span id="cb8-10"><a href="#cb8-10"></a><span class="co">#&gt; Z1  0.085343  0.078087  0.082735  0.2744</span></span>
+<span id="cb8-11"><a href="#cb8-11"></a><span class="co">#&gt; Z2 -0.271442  0.156652  0.166221  0.0831</span></span>
 <span id="cb8-12"><a href="#cb8-12"></a><span class="co">#&gt; </span></span>
 <span id="cb8-13"><a href="#cb8-13"></a><span class="co">#&gt; exp(coeffients):</span></span>
 <span id="cb8-14"><a href="#cb8-14"></a><span class="co">#&gt;      Estimate  Std.Err     2.5%    97.5% P-value</span></span>
-<span id="cb8-15"><a href="#cb8-15"></a><span class="co">#&gt; [Z1] 1.089091 0.085077 0.922343 1.255839  0.2950</span></span>
-<span id="cb8-16"><a href="#cb8-16"></a><span class="co">#&gt; [Z2] 0.762280 0.119435 0.528191 0.996368  0.0466</span></span>
+<span id="cb8-15"><a href="#cb8-15"></a><span class="co">#&gt; [Z1] 1.089091 0.085044 0.922409 1.255773  0.2948</span></span>
+<span id="cb8-16"><a href="#cb8-16"></a><span class="co">#&gt; [Z2] 0.762280 0.119412 0.528236 0.996324  0.0465</span></span>
 <span id="cb8-17"><a href="#cb8-17"></a></span>
 <span id="cb8-18"><a href="#cb8-18"></a>  fgaugS2 &lt;-<span class="st"> </span><span class="kw">FG_AugmentCifstrata</span>(<span class="kw">Event</span>(time,status)<span class="op">~</span>Z1<span class="op">+</span>Z2<span class="op">+</span><span class="kw">strata</span>(Z1,Z2),<span class="dt">data=</span>dats,<span class="dt">cause=</span><span class="dv">1</span>,<span class="dt">E=</span>fgaugS<span class="op">$</span>E)</span>
 <span id="cb8-19"><a href="#cb8-19"></a>  <span class="kw">summary</span>(fgaugS2)</span>
@@ -554,13 +560,13 @@ F_2(t,X) &amp; = P(T\leq t, \epsilon=2|X)= ( 1 - exp(-\Lambda_2(t) \exp(X^T \bet
 <span id="cb8-24"><a href="#cb8-24"></a><span class="co">#&gt;  4000 clusters</span></span>
 <span id="cb8-25"><a href="#cb8-25"></a><span class="co">#&gt; log-coeffients:</span></span>
 <span id="cb8-26"><a href="#cb8-26"></a><span class="co">#&gt;     Estimate      S.E.   dU^-1/2 P-value</span></span>
-<span id="cb8-27"><a href="#cb8-27"></a><span class="co">#&gt; Z1  0.085497  0.078155  0.082736  0.2740</span></span>
-<span id="cb8-28"><a href="#cb8-28"></a><span class="co">#&gt; Z2 -0.270548  0.156638  0.166211  0.0841</span></span>
+<span id="cb8-27"><a href="#cb8-27"></a><span class="co">#&gt; Z1  0.085497  0.078116  0.082736  0.2737</span></span>
+<span id="cb8-28"><a href="#cb8-28"></a><span class="co">#&gt; Z2 -0.270548  0.156632  0.166211  0.0841</span></span>
 <span id="cb8-29"><a href="#cb8-29"></a><span class="co">#&gt; </span></span>
 <span id="cb8-30"><a href="#cb8-30"></a><span class="co">#&gt; exp(coeffients):</span></span>
 <span id="cb8-31"><a href="#cb8-31"></a><span class="co">#&gt;      Estimate  Std.Err     2.5%    97.5% P-value</span></span>
-<span id="cb8-32"><a href="#cb8-32"></a><span class="co">#&gt; [Z1] 1.089258 0.085131 0.922404 1.256112  0.2944</span></span>
-<span id="cb8-33"><a href="#cb8-33"></a><span class="co">#&gt; [Z2] 0.762961 0.119509 0.528728 0.997194  0.0473</span></span>
+<span id="cb8-32"><a href="#cb8-32"></a><span class="co">#&gt; [Z1] 1.089258 0.085089 0.922487 1.256029  0.2942</span></span>
+<span id="cb8-33"><a href="#cb8-33"></a><span class="co">#&gt; [Z2] 0.762961 0.119504 0.528737 0.997185  0.0473</span></span>
 <span id="cb8-34"><a href="#cb8-34"></a></span>
 <span id="cb8-35"><a href="#cb8-35"></a>  fgaugS3 &lt;-<span class="st"> </span><span class="kw">FG_AugmentCifstrata</span>(<span class="kw">Event</span>(time,status)<span class="op">~</span>Z1<span class="op">+</span>Z2<span class="op">+</span><span class="kw">strata</span>(Z1,Z2),<span class="dt">data=</span>dats,<span class="dt">cause=</span><span class="dv">1</span>,<span class="dt">E=</span>fgaugS2<span class="op">$</span>E)</span>
 <span id="cb8-36"><a href="#cb8-36"></a>  <span class="kw">summary</span>(fgaugS3)</span>
@@ -571,13 +577,13 @@ F_2(t,X) &amp; = P(T\leq t, \epsilon=2|X)= ( 1 - exp(-\Lambda_2(t) \exp(X^T \bet
 <span id="cb8-41"><a href="#cb8-41"></a><span class="co">#&gt;  4000 clusters</span></span>
 <span id="cb8-42"><a href="#cb8-42"></a><span class="co">#&gt; log-coeffients:</span></span>
 <span id="cb8-43"><a href="#cb8-43"></a><span class="co">#&gt;     Estimate      S.E.   dU^-1/2 P-value</span></span>
-<span id="cb8-44"><a href="#cb8-44"></a><span class="co">#&gt; Z1  0.085498  0.078156  0.082736  0.2740</span></span>
-<span id="cb8-45"><a href="#cb8-45"></a><span class="co">#&gt; Z2 -0.270540  0.156638  0.166211  0.0841</span></span>
+<span id="cb8-44"><a href="#cb8-44"></a><span class="co">#&gt; Z1  0.085498  0.078116  0.082736  0.2737</span></span>
+<span id="cb8-45"><a href="#cb8-45"></a><span class="co">#&gt; Z2 -0.270540  0.156632  0.166211  0.0841</span></span>
 <span id="cb8-46"><a href="#cb8-46"></a><span class="co">#&gt; </span></span>
 <span id="cb8-47"><a href="#cb8-47"></a><span class="co">#&gt; exp(coeffients):</span></span>
 <span id="cb8-48"><a href="#cb8-48"></a><span class="co">#&gt;      Estimate  Std.Err     2.5%    97.5% P-value</span></span>
-<span id="cb8-49"><a href="#cb8-49"></a><span class="co">#&gt; [Z1] 1.089260 0.085132 0.922405 1.256115  0.2944</span></span>
-<span id="cb8-50"><a href="#cb8-50"></a><span class="co">#&gt; [Z2] 0.762967 0.119510 0.528732 0.997202  0.0473</span></span></code></pre></div>
+<span id="cb8-49"><a href="#cb8-49"></a><span class="co">#&gt; [Z1] 1.089260 0.085089 0.922488 1.256032  0.2942</span></span>
+<span id="cb8-50"><a href="#cb8-50"></a><span class="co">#&gt; [Z2] 0.762967 0.119505 0.528742 0.997193  0.0473</span></span></code></pre></div>
 <p>Again we note slightly smaller standard errors when augmenting the estimator.</p>
 <p>The function  compute the augmentation term for fixed <span class="math inline">\(E(t)\)</span> based on the current <span class="math inline">\(\hat \beta\)</span> <span class="math display">\[\begin{align*}
  U_n^{A} = \sum_{i=1}^n \int_{0}^{+\infty}  \frac{F_2(t,X_i)}{S(t,X_i)G_c(t,X_i)}  
@@ -586,7 +592,7 @@ F_2(t,X) &amp; = P(T\leq t, \epsilon=2|X)= ( 1 - exp(-\Lambda_2(t) \exp(X^T \bet
  U_n^{A}(\beta_p)  + U^{FG}_{n}(\beta) = 0. 
 \end{align*}\]</span></p>
 <p>Then we may iterate to get a solution to the augmented score equation <span class="math display">\[\begin{align*}
- U_n^{A}(\beta_\infty)  + U^{FG}_{n}(\beta_\infty) = 0 
+ U_n^{A}(\beta_\infty)  + U^{FG}_{n}(\beta_\infty) = 0.
 \end{align*}\]</span></p>
 <p>The censoring model here is one overall Kaplan-Meier.</p>
 <p>The influence funtion for the augmented estimator is <span class="math display">\[\begin{align*}
@@ -634,7 +640,7 @@ F_2(t,X) &amp; = P(T\leq t, \epsilon=2|X)= ( 1 - exp(-\Lambda_2(t) \exp(X^T \bet
 <span id="cb11-4"><a href="#cb11-4"></a><span class="co">#&gt; Running under: Fedora 32 (Workstation Edition)</span></span>
 <span id="cb11-5"><a href="#cb11-5"></a><span class="co">#&gt; </span></span>
 <span id="cb11-6"><a href="#cb11-6"></a><span class="co">#&gt; Matrix products: default</span></span>
-<span id="cb11-7"><a href="#cb11-7"></a><span class="co">#&gt; BLAS/LAPACK: /usr/lib64/libopenblas-r0.3.9.so</span></span>
+<span id="cb11-7"><a href="#cb11-7"></a><span class="co">#&gt; BLAS/LAPACK: /usr/lib64/libopenblas-r0.3.10.so</span></span>
 <span id="cb11-8"><a href="#cb11-8"></a><span class="co">#&gt; </span></span>
 <span id="cb11-9"><a href="#cb11-9"></a><span class="co">#&gt; locale:</span></span>
 <span id="cb11-10"><a href="#cb11-10"></a><span class="co">#&gt;  [1] LC_CTYPE=en_US.UTF-8       LC_NUMERIC=C              </span></span>
@@ -648,7 +654,7 @@ F_2(t,X) &amp; = P(T\leq t, \epsilon=2|X)= ( 1 - exp(-\Lambda_2(t) \exp(X^T \bet
 <span id="cb11-18"><a href="#cb11-18"></a><span class="co">#&gt; [1] stats     graphics  grDevices utils     datasets  methods   base     </span></span>
 <span id="cb11-19"><a href="#cb11-19"></a><span class="co">#&gt; </span></span>
 <span id="cb11-20"><a href="#cb11-20"></a><span class="co">#&gt; other attached packages:</span></span>
-<span id="cb11-21"><a href="#cb11-21"></a><span class="co">#&gt; [1] mets_1.2.8     lava_1.6.7     timereg_1.9.6  survival_3.2-3</span></span>
+<span id="cb11-21"><a href="#cb11-21"></a><span class="co">#&gt; [1] mets_1.2.8.1   lava_1.6.8     timereg_1.9.6  survival_3.2-3</span></span>
 <span id="cb11-22"><a href="#cb11-22"></a><span class="co">#&gt; </span></span>
 <span id="cb11-23"><a href="#cb11-23"></a><span class="co">#&gt; loaded via a namespace (and not attached):</span></span>
 <span id="cb11-24"><a href="#cb11-24"></a><span class="co">#&gt;  [1] Rcpp_1.0.5          mvtnorm_1.1-1       lattice_0.20-41    </span></span>

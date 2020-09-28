@@ -38,6 +38,9 @@ out <- recurrentMarginal(xr,dr)
 bplot(out,se=TRUE,ylab="marginal mean",col=2)
 
 ## -----------------------------------------------------------------------------
+summary(out,times=c(1000,2000))
+
+## -----------------------------------------------------------------------------
 xr <- phreg(Surv(entry,time,status)~strata(strata)+cluster(id),data=rr)
 dr <- phreg(Surv(entry,time,death)~strata(strata)+cluster(id),data=rr)
 par(mfrow=c(1,3))
@@ -82,6 +85,17 @@ par(mfrow=c(1,2))
 with(oo,plot(time,mu,col=2,type="l"))
 #
 with(oo,plot(time,varN,type="l"))
+
+## -----------------------------------------------------------------------------
+ oop <- prob.exceed.recurrent(rr,1)
+ bplot(oo)
+ matlines(oop$times,oop$prob,type="l")
+ summaryTimeobject(oop$times,oop$prob,se.mu=oop$se.prob,times=1000)
+
+## -----------------------------------------------------------------------------
+matplot(oop$times,oop$prob,type="l")
+for (i in seq(ncol(oop$prob))) 
+	plotConfRegion(oop$times,cbind(oop$se.lower[,i],oop$se.upper[,i]),col=i)
 
 ## -----------------------------------------------------------------------------
 rr <- simRecurrent(1000,base1,cumhaz2=base4,death.cumhaz=ddr)
