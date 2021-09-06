@@ -3,19 +3,35 @@
 title: Twin models
 author: Klaus Holst & Thomas Scheike
 output:
-  bookdown::html_document2:
-    toc: yes
-    toc_float: true
-    number_sections: true
-    fig_width: 7
-    fig_caption: true
-    theme: spacelab
-    highlight: pygments
+  rmarkdown::html_vignette:
+    fig_caption: yes
+    fig_width: 7.15
+    fig_height: 5.5
 vignette: >
   %\VignetteIndexEntry{Twin models}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
+
+<!-- output: -->
+  <!-- tufte::tufte_html: default -->
+
+  <!-- prettydoc::html_pretty: -->
+  <!--   theme: leonids -->
+  <!--   toc: true -->
+  <!--   toc_depth: 2     -->
+  <!--   highlight: github -->
+
+<!-- output: -->
+<!--   bookdown::html_document2: -->
+<!--     toc: yes -->
+<!--     toc_float: true -->
+<!--     number_sections: true -->
+<!--     fig_width: 7 -->
+<!--     fig_caption: true -->
+<!--     theme: spacelab -->
+<!--     highlight: pygments -->
+
 
 This document provides a brief tutorial to analyzing twin data using
 the **`mets`** package:
@@ -25,6 +41,8 @@ options(warn=-1, family="Times")
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>",
+  #dev="png",
+  #dpi=72,
   out.width = "70%")
 library("mets")
 ```
@@ -37,7 +55,7 @@ library("mets")
 \newcommand{\unitfrac}[2]{#1/#2}
 \newcommand{\n}{}
 \)
-'
+
 The development version may be installed from *github*:
 
 ```{r  install, eval=FALSE }
@@ -54,6 +72,7 @@ on self-reported BMI-values from a random sample of 11,411 same-sex
 twins. First, we will load data
 
 ```{r  twinbmi }
+library(mets)
 data("twinbmi")
 head(twinbmi)
 ```
@@ -222,12 +241,42 @@ E_i \sim\mathcal{N}(0,\sigma_E^2)
 
 ```{r   }
 dd <- na.omit(twinbmi)
-l0 <- twinlm(bmi ~ age+gender, data=dd,
-            DZ="DZ", zyg="zyg", id="tvparnr", type="sat")
+l0 <- twinlm(bmi ~ age+gender, data=dd, DZ="DZ", zyg="zyg", id="tvparnr", type="sat")
 
+# different marginals (but within pair)
+lf <- twinlm(bmi ~ age+gender, data=dd,DZ="DZ", zyg="zyg", id="tvparnr", type="flex")
+
+# same marginals but free correlation with MZ, DZ 
+lu <- twinlm(bmi ~ age+gender, data=dd, DZ="DZ", zyg="zyg", id="tvparnr", type="u")
+estimate(lu,contr(5:6,6))
+estimate(lu)
+
+lf <- twinlm(bmi ~ zyg, data=dd, DZ="DZ", zyg="zyg", id="tvparnr", type="flex")
+coef(lf)
+
+
+###sink("lu-est-summary.txt")
+lu <- twinlm(bmi ~ zyg, data=dd, DZ="DZ", zyg="zyg", id="tvparnr", type="u")
+summary(lu)
+estimate(lu)
+crossprod(iid(lu))^.5
+###sink()
+
+vcov(lu)
+
+estimate(lu)
+dim(iid(lu))
+
+estimate(lu,contr(4:5,5))
+
+estimate(coef=coef(lu),vcov=vcov(lu),contr(4:5,5))
+
+wald.test(coef=coef(lu),vcov=vcov(lu),contrast=c(0,0,0,1,-1))
 ```
 
+
 ```{r   }
+
 l <- twinlm(bmi ~ ns(age,1)+gender, data=twinbmi,
            DZ="DZ", zyg="zyg", id="tvparnr", type="cor", missing=TRUE)
 summary(l)
@@ -245,6 +294,12 @@ l <- twinlm(bmi ~ ns(age,1)+gender, data=twinbmi,
 summary(l)
 ```
 
+We also consider the ACE model 
+
+```{r   }
+ace0 <- twinlm(bmi ~ age+gender, data=dd, DZ="DZ", zyg="zyg", id="tvparnr", type="ace")
+```
+
 
 # Twin analysis, censored outcomes
 
@@ -252,7 +307,6 @@ summary(l)
 # Twin analysis,  binary traits
 
 
-# Time to event
 
 # Bibliography
 <a id="korkeila_bmi_1991"></a>[korkeila_bmi_1991] Korkeila, Kaprio, Rissanen & Koskenvuo, Effects of gender and age on the heritability of body mass index, <i>Int J Obes</i>, <b>15(10)</b>, 647-654 (1991). [↩](#b71edfd9bc946c317f4a732845bcaf93)

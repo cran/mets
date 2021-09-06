@@ -3,8 +3,10 @@ title: "Haplotype Discrete Survival Models"
 author: Klaus Holst & Thomas Scheike
 date: "`r Sys.Date()`"
 output:
-  knitr:::html_vignette:
+  rmarkdown::html_vignette:
     fig_caption: yes
+    fig_width: 7.15
+    fig_height: 5.5        
 vignette: >
   %\VignetteIndexEntry{Discrete Survival Models}
   %\VignetteEngine{knitr::rmarkdown}

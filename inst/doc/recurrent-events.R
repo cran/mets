@@ -1,6 +1,7 @@
 ## ---- include = FALSE---------------------------------------------------------
 knitr::opts_chunk$set(
   collapse = TRUE,
+  #dev="png",
   comment = "#>"
 )
 library(mets)
@@ -72,8 +73,48 @@ outX <- recmarg(xr,dr,Xr=1,Xd=1)
 bplot(outX,add=TRUE,col=3)
 
 ## -----------------------------------------------------------------------------
+rr <- simRecurrentII(5000,base1,base4,death.cumhaz=ddr,cens=3/5000,dependence=4,var.z=1)
+rr <-  count.history(rr)
+
+# cox case
+xr <- phreg(Surv(entry,time,status==1)~cluster(id),data=rr)
+dr <- phreg(Surv(entry,time,death)~cluster(id),data=rr)
+out <- recurrentMarginal(xr,dr)
+
+times <- 500*(1:10)
+     
+recEFF1 <- recurrentMarginalAIPCW(rr,times,start="entry",stop="time",status="status",death="death",cause=1,terms=1)
+recEFF14 <- recurrentMarginalAIPCW(rr,times,start="entry",stop="time",status="status",death="death",cause=1,terms=1:4)
+
+bplot(out,se=TRUE,ylab="marginal mean",col=2)
+k <- 1
+for (t in times) {
+	ci1 <- c(recEFF1$muPAt[k]-1.96*recEFF1$semuPAt[k],
+  	         recEFF1$muPAt[k]+1.96*recEFF1$semuPAt[k])
+	lines(rep(t,2)-20,ci1,col=1,lty=2)
+	ci14 <- c(recEFF14$muPAt[k]-1.96*recEFF14$semuPAt[k],
+  	          recEFF14$muPAt[k]+1.96*recEFF14$semuPAt[k])
+	lines(rep(t,2)+20,ci14,col=3,lty=3)
+	k <- k+1
+}
+legend("bottomright",c("Eff-small","Eff-large"),lty=2:3,col=c(1,3))
+
+with( recEFF14, cbind(times,muP,semuP,muPAt,semuPAt,semuPAt/semuP))
+with( recEFF1, cbind(times,muP,semuP,muPAt,semuPAt,semuPAt/semuP))
+
+
+## -----------------------------------------------------------------------------
+ rr <- mets:::simMarginalMeanCox(10000,cens=3/5000,Lam1=base1,LamD=ddr,beta1=c(0.3,-0.3),betad=c(-0.3,0.3))
+
+ out  <- recreg(EventCens(start,stop,statusG,cens)~X1+X2+cluster(id),data=rr,cause=1,death.code=2)
+ outs <- recreg(EventCens(start,stop,statusG,cens)~X1+X2+cluster(id),data=rr,cause=1,death.code=2,cens.model=~strata(X1g,X2g))
+
+ summary(out)$coef
+ summary(outs)$coef
+
+## -----------------------------------------------------------------------------
 ###cor.mat <- corM <- rbind(c(1.0, 0.6, 0.9), c(0.6, 1.0, 0.5), c(0.9, 0.5, 1.0))
-###rr <- simRecurrent(1000,base1,cumhaz2=base4,death.cumhaz=ddr)
+rr <- simRecurrentII(5000,base1,base4,death.cumhaz=ddr,cens=3/5000,dependence=4,var.z=1)
 rr <-  count.history(rr)
 dtable(rr,~death+status)
 

@@ -1,6 +1,6 @@
 ## ---- include = FALSE---------------------------------------------------------
 knitr::opts_chunk$set(
-  collapse = TRUE,
+                    collapse = TRUE,
   comment = "#>"
 )
 library(mets)
@@ -33,6 +33,15 @@ library(mets)
  dd <- expand.grid(Z1=c(-1,1),Z2=0:1)
  pfg <- predict(fg,dd)
  plot(pfg,ylim=c(0,0.2))
+
+## -----------------------------------------------------------------------------
+### predictions with CI based on iid decomposition of baseline and beta
+fg <- cifreg(Event(time,status)~Z1+Z2,data=dats,cause=1,propodds=NULL,cox.prep=TRUE)
+Biid <- mets:::iid.baseline.cifreg(fg,time=5)
+pfgse <- FGprediid(Biid,dd)
+pfgse
+plot(pfg,ylim=c(0,0.2))
+for (i in 1:4) lines(c(5,5)+i/10,pfgse[i,3:4],col=i,lwd=2)
 
 ## -----------------------------------------------------------------------------
 run <- 0

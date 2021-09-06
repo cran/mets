@@ -1,8 +1,8 @@
 Package: mets
 Type: Package
 Title: Analysis of Multivariate Event Times
-Version: 1.2.8.1
-Date: 2020-09-25
+Version: 1.2.9
+Date: 2021-09-05
 Authors@R: c(person("Klaus K.", "Holst", email="klaus@holst.it", role=c("aut", "cre")),
              person("Thomas Scheike", role=c("aut")))
 Author: Klaus K. Holst [aut, cre],
@@ -22,8 +22,8 @@ BugReports: https://github.com/kkholst/mets/issues
 Depends: R (>= 3.5), timereg (>= 1.9.4), lava (>= 1.6.6)
 Imports: mvtnorm, numDeriv, compiler, Rcpp, splines, survival (>=
         2.43-1),
-Suggests: prodlim, cmprsk, testthat (>= 0.11), ucminf, knitr, bookdown,
-        rmarkdown, ggplot2, cowplot
+Suggests: optimx, prodlim, cmprsk, testthat (>= 0.11), ucminf, knitr,
+        rmarkdown, ggplot2, cowplot, icenReg
 VignetteBuilder: knitr
 ByteCompile: yes
 LinkingTo: Rcpp, RcppArmadillo, mvtnorm
@@ -31,6 +31,6 @@ SystemRequirements: C++11
 Encoding: UTF-8
 RoxygenNote: 7.1.1
 NeedsCompilation: yes
-Packaged: 2020-09-25 12:19:26 UTC; klaus
+Packaged: 2021-09-05 17:19:03 UTC; klaus
 Repository: CRAN
-Date/Publication: 2020-09-28 22:10:02 UTC
+Date/Publication: 2021-09-06 07:20:02 UTC

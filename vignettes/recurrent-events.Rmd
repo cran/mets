@@ -3,8 +3,10 @@ title: "Recurrent events"
 author: Klaus Holst & Thomas Scheike
 date: "`r Sys.Date()`"
 output:
-  knitr:::html_vignette:
+  rmarkdown::html_vignette:
     fig_caption: yes
+    fig_width: 7.15
+    fig_height: 5.5 
 vignette: >
   %\VignetteIndexEntry{Recurrent events}
   %\VignetteEngine{knitr::rmarkdown}
@@ -14,6 +16,7 @@ vignette: >
 ```{r, include = FALSE}
 knitr::opts_chunk$set(
   collapse = TRUE,
+  #dev="png",
   comment = "#>"
 )
 library(mets)
@@ -29,6 +32,7 @@ studied. We here demonstrate how one can compute
  * the marginal mean 
  * the variance 
  * the probability of exceeding k events
+ * do a Cox type regression for the  marginal mean 
 
 In addition several tools can be used for simulating recurrent events and
 bivariate recurrent events data, in the case with a possible terminating event. 
@@ -40,6 +44,7 @@ dependence such as
  * directional dependence 
  * the bivariate probability of exceeding $(k_1,k_2)$ events
  
+We also show how to improve the efficiency of recurrents events marginal mean. 
 
 
 Simulation of recurrents events
@@ -234,6 +239,68 @@ bplot(outX,add=TRUE,col=3)
 ```
 
 
+Improving efficiency 
+======================
+
+We now simulate some data where there is strong heterogenity such that
+we can improve the efficiency for censored survival data.
+
+```{r}
+rr <- simRecurrentII(5000,base1,base4,death.cumhaz=ddr,cens=3/5000,dependence=4,var.z=1)
+rr <-  count.history(rr)
+
+# cox case
+xr <- phreg(Surv(entry,time,status==1)~cluster(id),data=rr)
+dr <- phreg(Surv(entry,time,death)~cluster(id),data=rr)
+out <- recurrentMarginal(xr,dr)
+
+times <- 500*(1:10)
+     
+recEFF1 <- recurrentMarginalAIPCW(rr,times,start="entry",stop="time",status="status",death="death",cause=1,terms=1)
+recEFF14 <- recurrentMarginalAIPCW(rr,times,start="entry",stop="time",status="status",death="death",cause=1,terms=1:4)
+
+bplot(out,se=TRUE,ylab="marginal mean",col=2)
+k <- 1
+for (t in times) {
+	ci1 <- c(recEFF1$muPAt[k]-1.96*recEFF1$semuPAt[k],
+  	         recEFF1$muPAt[k]+1.96*recEFF1$semuPAt[k])
+	lines(rep(t,2)-20,ci1,col=1,lty=2)
+	ci14 <- c(recEFF14$muPAt[k]-1.96*recEFF14$semuPAt[k],
+  	          recEFF14$muPAt[k]+1.96*recEFF14$semuPAt[k])
+	lines(rep(t,2)+20,ci14,col=3,lty=3)
+	k <- k+1
+}
+legend("bottomright",c("Eff-small","Eff-large"),lty=2:3,col=c(1,3))
+
+with( recEFF14, cbind(times,muP,semuP,muPAt,semuPAt,semuPAt/semuP))
+with( recEFF1, cbind(times,muP,semuP,muPAt,semuPAt,semuPAt/semuP))
+
+```
+
+Regression models for the marginal mean 
+========================================
+
+One can also do regression model, using the model
+\begin{align*}
+E(N_1(t) | X) &  = \Lambda_0(t)  \exp(X^T \beta)
+\end{align*}
+then Ghost-Lin suggested IPCW score equations that are implemented in the recreg function of mets. 
+
+First we generate data that from a cox model with $\beta=(-0.3,0.3)$
+```{r}
+ rr <- mets:::simMarginalMeanCox(10000,cens=3/5000,Lam1=base1,LamD=ddr,beta1=c(0.3,-0.3),betad=c(-0.3,0.3))
+
+ out  <- recreg(EventCens(start,stop,statusG,cens)~X1+X2+cluster(id),data=rr,cause=1,death.code=2)
+ outs <- recreg(EventCens(start,stop,statusG,cens)~X1+X2+cluster(id),data=rr,cause=1,death.code=2,cens.model=~strata(X1g,X2g))
+
+ summary(out)$coef
+ summary(outs)$coef
+```
+
+We note that for the extended censoring model we gain a little efficiency and that the estimates are close to the true values. 
+
+
+
 Other marginal properties 
 =========================
 
@@ -287,7 +354,7 @@ number of previous events of type "1" by the  count.history function
 
 ```{r}
 ###cor.mat <- corM <- rbind(c(1.0, 0.6, 0.9), c(0.6, 1.0, 0.5), c(0.9, 0.5, 1.0))
-###rr <- simRecurrent(1000,base1,cumhaz2=base4,death.cumhaz=ddr)
+rr <- simRecurrentII(5000,base1,base4,death.cumhaz=ddr,cens=3/5000,dependence=4,var.z=1)
 rr <-  count.history(rr)
 dtable(rr,~death+status)
 

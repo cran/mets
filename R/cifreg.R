@@ -61,11 +61,11 @@
 ##' plot(sfg)
 ##'
 ##' ### predictions with CI based on iid decomposition of baseline and beta
-##' # fg <- cifreg(Event(time,cause)~tcell+platelet+age,data=bmt,cause=1,propodds=NULL,cox.prep=TRUE)
-##' # Biid <- iid.baseline.cifreg(Biid,time=20)
-##' # FGprediid(Biid,bmt[1:5,])
+##' fg <- cifreg(Event(time,cause)~tcell+platelet+age,data=bmt,cause=1,propodds=NULL,cox.prep=TRUE)
+##' Biid <- mets:::iid.baseline.cifreg(fg,time=20)
+##' FGprediid(Biid,bmt[1:5,])
 ##'
-##' @aliases vecAllStrata diffstrata iid.baseline.cifreg FGprediid 
+##' @aliases vecAllStrata diffstrata iid.baseline.cifreg FGprediid indexstratarightR
 ##' @export
 cifreg <- function(formula,data=data,cause=1,cens.code=0,cens.model=~1,
             weights=NULL,offset=NULL,Gc=NULL,propodds=1,...)
@@ -185,7 +185,10 @@ cifreg01 <- function(data,X,exit,status,id=NULL,strata=NULL,offset=NULL,weights=
     data$statusC <- statusC
     cens.strata <- cens.nstrata <- NULL
 
-    if (length(whereC)>0) {
+###	strataC <- model.matrix(cens.model,data)
+###	print(strataC)
+
+    if (length(whereC)>0) {# {{{
     if (is.null(Gc)) {
         kmt <- TRUE
         if (class(cens.model)[1]=="formula") {
@@ -211,7 +214,8 @@ cifreg01 <- function(data,X,exit,status,id=NULL,strata=NULL,offset=NULL,weights=
         Pcens.model <- list(time=exit,surv=Gc,strata=0)
         nCstrata <- 1
 	cens.strata <- rep(0,length(exit))
-    }
+    }# }}}
+
 
     Zcall <- cbind(status,cens.strata,Stime) ## to keep track of status and Censoring strata
     ## setting up all jumps of type "cause", need S0, S1, S2 at jumps of "cause"
@@ -229,9 +233,9 @@ cifreg01 <- function(data,X,exit,status,id=NULL,strata=NULL,offset=NULL,weights=
         if (is.null(Gc)) {
             whereaJ <- fast.approx(c(0,cens.model$cumhaz[,1]),jumptimes,type="left")
             Gts <- vecAllStrata(cens.model$cumhaz[,2],cens.model$strata.jump,cens.model$nstrata)
-### back to km product-limit form
+            ### back to km product-limit form
             Gts <- apply(rbind(0,Gts),2,diff)
-### back to km
+            ### back to km
             GtsAl<- Gts <- apply(Gts,2,function(x) exp(cumsum(log(1-x))))
             Gts <- rbind(1,Gts)[whereaJ,]
             Gts[is.na(Gts)] <- 0
@@ -240,6 +244,7 @@ cifreg01 <- function(data,X,exit,status,id=NULL,strata=NULL,offset=NULL,weights=
     } else {
         Gts <-   Gjumps <- rep(1,length(jumptimes))
     }
+
 
     ## computing terms for those experiencing another cause, need S0, S1, S2
     if (length(other)>=1) {# {{{
@@ -252,7 +257,7 @@ cifreg01 <- function(data,X,exit,status,id=NULL,strata=NULL,offset=NULL,weights=
         entryo <- exit[other]
         ido <- id[other]
         stratao <- strata[other]
-###
+        ###
         if (nCstrata>1) {
 	    Cstratao <- cens.strata[other]
 	    Zcall <- matrix(Cstratao,length(other),1)
@@ -267,7 +272,10 @@ cifreg01 <- function(data,X,exit,status,id=NULL,strata=NULL,offset=NULL,weights=
         timeo  <- xx$time
         if (nCstrata>1) xxCstrata <- c(xx$Z) else xxCstrata <- rep(0,length(timeo))
         ## use right because we want S_0(T_jump)
-        where <- indexstrata(timeo,xx$strata,jumptimes,strata1jumptimes,nstrata,type="right")
+	### gives index of timeo related to jumptimes and same strata
+	### the value 0 means that jumptime has no point in time0, thus S0other=0
+        where <- indexstratarightR(timeo,xx$strata,jumptimes,strata1jumptimes,nstrata)
+###	print(cbind(where,strata1jumptimes, strata1jumptimes %in% xx$strata ))
     }# }}}
 
 
@@ -276,22 +284,22 @@ cifreg01 <- function(data,X,exit,status,id=NULL,strata=NULL,offset=NULL,weights=
         if (length(other)>=1)  {
             if (nCstrata==1) {# {{{
                 rr <- c(xx$sign*exp(xx$X %*% pp + xx$offset)*xx$weights)
-                S0no <- revcumsumstrata(rr,xx$strata,xx$nstrata)
-                S1no  <- apply(xx$X*rr,2,revcumsumstrata,xx$strata,xx$nstrata);
-                S2no  <- apply(xx$XX*rr,2,revcumsumstrata,xx$strata,xx$nstrata);
+                S0no <- c(0,revcumsumstrata(rr,xx$strata,xx$nstrata))
+                S1no  <- rbind(0,apply(xx$X*rr,2,revcumsumstrata,xx$strata,xx$nstrata))
+                S2no  <- rbind(0,apply(xx$XX*rr,2,revcumsumstrata,xx$strata,xx$nstrata));
                 Gjumps <- c(Gjumps)
 
-                S0no <- Gjumps*S0no[where]
-                S1no <- Gjumps*S1no[where,,drop=FALSE]
-                S2no <- Gjumps*S2no[where,,drop=FALSE]
+                S0no <- Gjumps*S0no[where+1]
+                S1no <- Gjumps*S1no[where+1,,drop=FALSE]
+                S2no <- Gjumps*S2no[where+1,,drop=FALSE]
                 ## }}}
             }  else {# {{{
 
                 ff <- function(x,strata,nstrata,strata2,nstrata2)
                 {# {{{
-                    x <- revcumsum2strata(x,strata,nstrata,strata2,nstrata2)$mres
-### take relevant S0sc (s=strata,c=cstrata) at jumptimes so that strata=s also match
-                    x <- x[where,]
+                    x <- rbind(0,revcumsum2strata(x,strata,nstrata,strata2,nstrata2)$mres)
+                    ### take relevant S0sc (s=strata,c=cstrata) at jumptimes so that strata=s also match
+                    x <- x[where+1,]
                     x <- apply(x*Gts,1,sum)
                     return(x)
                 }# }}}
@@ -385,17 +393,18 @@ cifreg01 <- function(data,X,exit,status,id=NULL,strata=NULL,offset=NULL,weights=
             val <- c(list(coef=cc),obj(opt$estimate,all=TRUE))
         } else val <- c(list(coef=beta),obj(beta,all=TRUE))
     } else {
+	no.opt <- TRUE
         val <- obj(0,all=TRUE)
     }# }}}
 
 
-###    browser()
-### opt <- lava::NR(beta,obj); beta.s <- opt$par
     beta.s <- val$coef
     if (is.null(beta.s)) beta.s <- 0
     ## getting final S's
     opt <-  val ## obj(beta.s,all=TRUE)
 
+
+    if (p>0) {
 ### iid version given G_c
     ## {{{
     ##iid robust phreg
@@ -419,7 +428,6 @@ cifreg01 <- function(data,X,exit,status,id=NULL,strata=NULL,offset=NULL,weights=
     mid <- max(xx2$id)
     UU <- apply(MGt,2,sumstrata,xx2$id,mid+1)
 
-
     if (length(other)>=1) { ## martingale part for type-2 after T
 
 ### xx2 data all data
@@ -435,17 +443,15 @@ cifreg01 <- function(data,X,exit,status,id=NULL,strata=NULL,offset=NULL,weights=
         Gcxx2 <- exp(cumsumstrata(log(1-S0iC),strataCxx2,nCstrata))
         Gstart <- rep(1,nCstrata)
 
-###
         dstrata <- mystrata(data.frame(strataCxx2,xx2$strata))
         ndstrata <- attr(dstrata,"nlevel")
         lastt <- tailstrata(dstrata-1,ndstrata)
         ll <-  cumsum2strata(Gcxx2,S0i,strataCxx2,nCstrata,xx2$strata,xx2$nstrata,Gstart)
-        Htsj <- ll$res[lastt][dstrata]-ll$lagres
-###  print(cbind(Gcxx2,Htsj,strataCxx2,xx2$strata,S0i,S0iC,statusxx2))
+        Htsj <- ll$res[lastt][dstrata]-ll$res
 
         fff <- function(x) {
             cx  <- cumsum2strata(Gcxx2,x*S0i,strataCxx2,nCstrata,xx2$strata,xx2$nstrata,Gstart)
-            cx <- cx$res[lastt][dstrata]-cx$lagres
+            cx <- cx$res[lastt][dstrata]-cx$res
             return(cx)
         }
         EHtsj  <- apply(E,2,fff)
@@ -462,8 +468,6 @@ cifreg01 <- function(data,X,exit,status,id=NULL,strata=NULL,offset=NULL,weights=
         Xos[otherxx2,] <- Z[otherxx2,]*rrx2
         rrx <- rep(0,nrow(Z))
         rrx[otherxx2] <- rrx2
-### rrsx <- cumsumstrata(rrx,dstrata-1,ndstrata)
-### Xos <- apply(Xos,2,cumsumstrata,dstrata-1,ndstrata)
         rrsx <- cumsumstrata(rrx,strataCxx2,nCstrata)
         Xos <- apply(Xos,2,cumsumstrata,strataCxx2,nCstrata)
         q2 <- (Xos*c(Htsj)-EHtsj*c(rrsx))
@@ -476,7 +480,7 @@ cifreg01 <- function(data,X,exit,status,id=NULL,strata=NULL,offset=NULL,weights=
         }
         EdLam0q2 <- apply(q2,2,fff)
 
-### Martingale  as a function of time and for all subjects to handle strata
+        ### Martingale  as a function of time and for all subjects to handle strata
         MGc <- q2*S0iC-EdLam0q2
         MGc <- apply(MGc,2,sumstrata,xx2$id,mid+1)
         ## }}}
@@ -487,6 +491,8 @@ cifreg01 <- function(data,X,exit,status,id=NULL,strata=NULL,offset=NULL,weights=
     UUiid <- UU %*% iH
     var1 <-  crossprod(UUiid)
     varmc <-  crossprod(Uiid)
+    ### end if (p>0)
+    } else {varmc <- var1 <- 0; MGc <- iH <- UUiid <- Uiid <- NULL}
     strata <- xx2$strata[jumps]
     cumhaz <- cbind(opt$time,cumsumstrata(1/opt$S0,strata,nstrata))
     colnames(cumhaz)    <- c("time","cumhaz")
@@ -508,10 +514,11 @@ cifreg01 <- function(data,X,exit,status,id=NULL,strata=NULL,offset=NULL,weights=
                 ihessian=iH,hessian=opt$hessian,var1=var1,se1.coef=diag(var1)^.5,
                 ploglik=opt$ploglik,gradient=opt$gradient,
                 cumhaz=cumhaz, se.cumhaz=se.cumhaz,MGciid=MGc,
-                strata=xx2$strata,nstrata=nstrata,strata.name=strata.name,
-                strata.level=strata.level,propodds=propodds,
+                strata=xx2$strata, nstrata=nstrata,strata.name=strata.name,strata.level=strata.level,
+		propodds=propodds,
                 S0=opt$S0,E=opt$E,S2S0=opt$S2S0,time=opt$time,Ut=opt$U,
-                jumps=jumps,exit=exit,p=p,opt=opt,##n=nrow(X),nevent=length(jumps),
+                jumps=jumps,exit=exit,p=p,
+		no.opt=no.opt,##n=nrow(X),nevent=length(jumps),
                 Pcens.model=Pcens.model,Gjumps=Gjumps,cens.code=cens.code,cause=cause
                 )
 
@@ -520,17 +527,28 @@ cifreg01 <- function(data,X,exit,status,id=NULL,strata=NULL,offset=NULL,weights=
     return(out)
 }# }}}
 
-S0_FG_Gct <- function(S0,Gct,strata,nstrata,strata2,nstrata2)
-{# {{{
-    if (any(strata<0) | any(strata>nstrata-1)) stop("strata index not ok\n");
-    if (any(strata2<0) | any(strata2>nstrata2-1)) stop("strata2 index not ok\n");
-    if (length(S0)!=length(strata))  stop("length of x and strata must be same\n");
-    if (length(S0)!=length(strata2)) stop("length of x and strata2 must be same\n");
-    if (length(Gct)!=length(S0)) stop("length of S0 and Gct must be same\n");
-    res <- .Call("S0_FG_GcR",as.double(S0),as.double(Gct),
-                 strata,nstrata,strata2,nstrata2,PACKAGE="mets")$res
-    return(res)
+##' @export
+indexstratarightR <- function(timeo,stratao,jump,js,nstrata,type="right")# {{{
+{
+  mm <- cbind(timeo,stratao,1:length(timeo),0)
+  mm <- rbind(mm,cbind(jump,js,1:length(jump),1))
+  ord <- order(mm[,1],mm[,4])
+  mm <- mm[ord,]
+  if (type=="right") right <- 1 else right <- 0
+  res <- .Call("indexstrataR",mm[,2],mm[,3],mm[,4],nstrata,right)$res
+  return(res[,1])
 }# }}}
+
+###S0_FG_Gct <- function(S0,Gct,strata,nstrata,strata2,nstrata2,Gcstart)
+###{# {{{
+###    if (any(strata<0) | any(strata>nstrata-1)) stop("strata index not ok\n");
+###    if (any(strata2<0) | any(strata2>nstrata2-1)) stop("strata2 index not ok\n");
+###    if (length(S0)!=length(strata))  stop("length of x and strata must be same\n");
+###    if (length(S0)!=length(strata2)) stop("length of x and strata2 must be same\n");
+###    if (length(Gct)!=length(S0)) stop("length of S0 and Gct must be same\n");
+###    res <- .Call("S0_FG_GcR",as.double(S0),as.double(Gct),strata,nstrata,strata2,nstrata2,as.double(Gcstart),PACKAGE="mets")$S0
+###    return(res)
+###}# }}}
 
 ##' @export
 iid.baseline.cifreg <- function(x,time=NULL,fixbeta=NULL,...)
@@ -545,7 +563,7 @@ iid.baseline.cifreg <- function(x,time=NULL,fixbeta=NULL,...)
   if (!is.null(x$propodds))  stop("Only for Fine-Gray-model") 
   ### sets fixbeta based on  wheter xr has been optimized in beta (so cox case)
   if (is.null(fixbeta)) 
-  if (is.null(x$opt) | is.null(x$coef)) fixbeta<- 1 else fixbeta <- 0
+  if ((x$no.opt) | is.null(x$coef)) fixbeta<- 1 else fixbeta <- 0
 
   if (is.null(x$cox.prep)) stop("call cifreg with cox.prep=TRUE\n"); 
 
@@ -593,6 +611,7 @@ iid.baseline.cifreg <- function(x,time=NULL,fixbeta=NULL,...)
     cumhazA <- cumsumstratasum(S0i,xx2$strata,xx2$nstrata,type="all")
     cumhaz <- c(cumhazA$sum)
 
+
     if (fixbeta==0) {
 	  EdLam0 <- apply(E*S0i,2,cumsumstrata,xx2$strata,xx2$nstrata)
 	  Ht <- apply(E*S0i*btimexx,2,cumsumstrata,xx2$strata,xx2$nstrata)
@@ -600,9 +619,11 @@ iid.baseline.cifreg <- function(x,time=NULL,fixbeta=NULL,...)
   if (fixbeta==0) rr <- c(xx2$sign*exp(Z %*% coef(x) + xx2$offset)) else rr <- c(xx2$sign*exp(xx2$offset))
 
 ### Martingale  as a function of time and for all subjects to handle strata
-    MGt <- U[,drop=FALSE]-(Z*cumhaz-EdLam0)*rr*c(xx2$weights)
     mid <- max(xx2$id)
+  if (fixbeta==0)  {
+    MGt <- U[,drop=FALSE]-(Z*cumhaz-EdLam0)*rr*c(xx2$weights)
     UU <- apply(MGt,2,sumstrata,xx2$id,mid+1)
+  } else  { MGt <- 0 ; UU <- 0}
 
     MGAiid <- NULL
     S0i2 <- rep(0,length(xx2$strata))
@@ -683,7 +704,7 @@ iid.baseline.cifreg <- function(x,time=NULL,fixbeta=NULL,...)
         ## }}}
     } else { MGc <- 0; MGBc <- 0}
 
-   betaiid <-  (UU+MGc) %*% x$ihessian
+  if (fixbeta==0) { betaiid <-  (UU+MGc) %*% x$ihessian} else betaiid <- NULL
    MGAiid.naive <- MGAiid
    MGAiid <- MGAiid+MGBc
 
@@ -704,15 +725,17 @@ iid.baseline.cifreg <- function(x,time=NULL,fixbeta=NULL,...)
 	     strata=strata,nstrata=xx2$nstrata,idstrata=idstrata,nid=nnewid,
 	     beta.iid=betaiid,
 	     coef=coef(x),cumhaz=x$cumhaz,cumhaz.strata=x$strata[x$jumps],
+             nstrata=x$nstrata,strata.name=x$strata.name,strata.level=x$strata.level,
 	     model.frame=x$model.frame,formula=x$formula))
 } # }}}
 
 ##' @export
 FGprediid <- function(iidBase,newdata,conf.type=c("log","cloglog","plain"))
 {# {{{
-   des <- readPhreg(iidBase,newdata)
-   X <- des$X
-   strata <- des$strata
+  des <- readPhreg(iidBase,newdata)
+  strata <- des$strata
+  if (!is.null(iidBase$beta.iid))  { fixbeta <- 0; beta.iid <- iidBase$beta.iid; X <- des$X} else { 
+	  fixbeta <- 1; beta.iid <- 0; X <- matrix(0,1,1); }
 
    At <- c()
    for (i in sort(unique(strata))) {
@@ -724,7 +747,7 @@ FGprediid <- function(iidBase,newdata,conf.type=c("log","cloglog","plain"))
    if (ncol(X)!=p) stop("X and coef does not match \n"); 
 
 
-   Ft <- function(p,Xi=rep(0,p),type="log") {
+   Ft <- function(p,Xi=rep(0,length(p)-1),type="log") {
        if (type=="log")     y <- log(1-exp(-p[1]*exp(sum(Xi*p[-1]))))
        if (type=="plain")   y <- 1-exp(-p[1]*exp(sum(Xi*p[-1])))
        if (type=="cloglog") y <- log(-log(1-exp(-p[1]*exp(sum(Xi*p[-1])))))
@@ -738,13 +761,16 @@ FGprediid <- function(iidBase,newdata,conf.type=c("log","cloglog","plain"))
        return(y)
    }
 
-preds <- matrix(0,nrow(X),4)
+preds <- matrix(0,length(strata),4)
 
+k <- 0
 for (i in sort(unique(strata))) {
+   k <- k+1
    wheres <- which(strata==i) 
+if (fixbeta==0)  {
    iidAB <- cbind(iidBase$base.iid,iidBase$beta.iid)[iidBase$strata==i,]
    covv <- crossprod(iidAB)
-   coeff <- c(At[i+1],iidBase$coef)
+   coeff <- c(At[k],iidBase$coef)
    Xs <- X[wheres,,drop=FALSE]
    for (j in seq(1,nrow(Xs)))  {
       Xj <- Xs[j,]
@@ -755,6 +781,17 @@ for (i in sort(unique(strata))) {
       cmat[c(1,3:4)] <- cicmat
       preds[wheres[j],] <- c(cmat)
    } 
+} else {
+      iidAB <- cbind(iidBase$base.iid)[iidBase$strata==i,]
+      covv <- crossprod(iidAB)
+      coeff <- c(At[k])
+      eud <- estimate(coef=coeff,vcov=covv,f=function(p) Ft(p,Xi=1,type=conf.type[1]))
+      cmat <- eud$coefmat
+      cmat <- c(cmat[,-5])
+      cicmat <- Ftback(cmat[c(1,3:4)],type=conf.type[1])
+      cmat[c(1,3:4)] <- cicmat
+      preds[wheres,] <- matrix(c(cmat),length(wheres),4,byrow=TRUE)
+}
 }
 
 colnames(preds) <- c("pred",paste("se",conf.type[1],sep="-"),"lower","upper")
@@ -991,9 +1028,15 @@ FG_AugmentCifstrata <- function(formula,data=data,E=NULL,cause=NULL,cens.code=0,
 
     ## G_c(t-)
     if (!km) {
-        cumhazD <- c(cumsumstratasum(S00i,xxstrataC,nstrataC)$lagsum)
-        Gc      <- exp(-cumhazD)
-    } else Gc <- c(exp(cumsumstratasum(log(1-S00i),xxstrataC,nstrataC)$lagsum))
+        cumhazD <- cumsumstratasum(S00i,xxstrataC,nstrataC)
+        Gc      <- exp(-c(cumhazD$sum))
+        Gcm      <- exp(-c(cumhazD$lagsum))
+    } else { 
+        logGc <- cumsumstratasum(log(1-S00i),xxstrataC,nstrataC)
+	Gcm <- c(exp(logGc$lagsum))
+	Gc  <- c(exp(logGc$sum))
+    }
+
     cif1 <- cumsumstrata(Stm*S01i,xxstrata,nstrata)
     cif2 <- cumsumstrata(Stm*S02i,xxstrata,nstrata)
     ## }}}
@@ -1002,6 +1045,8 @@ FG_AugmentCifstrata <- function(formula,data=data,E=NULL,cause=NULL,cens.code=0,
     Et[jumps1,] <- E
 
     Lam1fg <- -log(1-cif1)
+    ## to deal with cif1=1 in which case cif2=0
+    Lam1fg[is.na(Lam1fg)] <- 0
     laststrata <- tailstrata(xxstrata,nstrata)
     gtstart <- Lam1fg[laststrata]
     dLam1fg <- c(diffstrata(Lam1fg,xxstrata,nstrata))
@@ -1017,13 +1062,13 @@ FG_AugmentCifstrata <- function(formula,data=data,E=NULL,cause=NULL,cens.code=0,
 ### ## \int_t^\infty G_c^j(t) d\Lambda_1^k(t)
     G0start <- rep(1,nstrataC)
     cLam1fg  <- cumsum2strata(Gc,dLam1fg,xxstrataC,nstrataC,xxstrata,nstrata,G0start)
-    RLam1fg <- cLam1fg$res[lastt][dstrata]-cLam1fg$lagres
+    RLam1fg <- cLam1fg$res[lastt][dstrata]-cLam1fg$res
 
     ## E(s) from FG without strata
     ## \int_0^t  G_c^j(s) E(s) d\Lambda_1^k(s)
     fff <- function(x) {
         cx  <- cumsum2strata(Gc,x*dLam1fg,xxstrataC,nstrataC,xxstrata,nstrata,G0start)
-        return(cx$res[lastt][dstrata]-cx$lagres)
+        return(cx$res[lastt][dstrata]-cx$res)
     }
     ERLam1fg0  <- apply(Et,2,fff)
 
@@ -1089,8 +1134,7 @@ FG_AugmentCifstrata <- function(formula,data=data,E=NULL,cause=NULL,cens.code=0,
 
 
 ##' @export
-simul.cifs <- function(n,rho1,rho2,beta,rc=0.5,
-                depcens=0,rcZ=0.5,bin=1,
+simul.cifs <- function(n,rho1,rho2,beta,rc=0.5,depcens=0,rcZ=0.5,bin=1,
                 type=c("cloglog","logistic"),rate=1) {# {{{
     p=length(beta)/2
     tt <- seq(0,6,by=0.1)

@@ -78,8 +78,8 @@ pair.types <-  matrix(dataid[c(t(pair.new)),"type"],byrow=T,ncol=2)
 head(pair.new,7)
 head(pair.types,7)
 ###
-theta.des  <- rbind( c(rbind(c(1,0),c(1,0),c(0,1),c(0,0))),
-		c(rbind(c(0.5,0),c(0.5,0),c(0.5,0),c(0,1))))
+theta.des  <- rbind( c(rbind(c(1,0),  c(1,0),  c(0,1),  c(0,0))),
+		     c(rbind(c(0.5,0),c(0.5,0),c(0.5,0),c(0,1))))
 random.des <- rbind( 
         c(1,0,1,0),c(0,1,1,0),
         c(1,1,0,1),c(1,0,1,1))
@@ -100,12 +100,8 @@ tsdid2 <- binomial.twostage(aa,data=dataid,clusters=dataid$cluster, theta=c(2,1)
 summary(tsdid2)
 
 ## -----------------------------------------------------------------------------
-kinship  <- c()
-for (i in 1:nrow(pair.new))
-{
-if (pair.types[i,1]=="mother" & pair.types[i,2]=="father") pk1 <- 0 else pk1 <- 0.5
-kinship <- c(kinship,pk1)
-}
+kinship  <- rep(0.5,nrow(pair.types))
+kinship[pair.types[,1]=="mother" & pair.types[,2]=="father"] <- 0
 head(kinship,n=10)
 
 out <- make.pairwise.design(pair.new,kinship,type="ace") 
@@ -115,6 +111,33 @@ tsdid3 <- binomial.twostage(aa,data=dataid,clusters=dataid$cluster,
              theta=c(2,1)/9,random.design=out$random.design,
              theta.des=out$theta.des,pairs=out$new.pairs,dim.theta=2)
 summary(tsdid3)
+
+## -----------------------------------------------------------------------------
+library(mets)
+set.seed(1000)
+data <- simbinClaytonOakes.family.ace(10000,2,1,beta=NULL,alpha=NULL)
+head(data)
+data$number <- c(1,2,3,4)
+data$child <- 1*(data$number==3)
+
+mm <- familycluster.index(data$cluster)
+head(mm$familypairindex,n=20)
+pairs <- mm$pairs
+dim(pairs)
+head(pairs,12)
+
+## -----------------------------------------------------------------------------
+ dtypes <- interaction( data[pairs[,1],"type"], data[pairs[,2],"type"])
+ dtypes <- droplevels(dtypes)
+ table(dtypes)
+ dm <- model.matrix(~-1+factor(dtypes))
+
+## -----------------------------------------------------------------------------
+aa <- margbin <- glm(ybin~x,data=data,family=binomial())
+
+tsp <- binomial.twostage(aa,data=data, clusters=data$cluster,
+		 theta.des=dm,pairs=cbind(pairs,1:nrow(dm)))
+summary(tsp)
 
 ## -----------------------------------------------------------------------------
 tdp <-cbind( dataid[pair.new[,1],],dataid[pair.new[,2],])
@@ -127,9 +150,9 @@ dtable(tdp,~tt+obs.types)
 tdp <- model.matrix(~-1+factor(obs.types),tdp)
 
 ## -----------------------------------------------------------------------------
-porpair <- binomial.twostage(aa,data=dataid,clusters=dataid$cluster,
-           theta.des=tdp,pairs=pair.new,model="or",var.link=1)
-summary(porpair)
+###porpair <- binomial.twostage(aa,data=dataid,clusters=dataid$cluster,
+###           theta.des=tdp,pairs=pair.new,model="or",var.link=1)
+###summary(porpair)
 
 ## -----------------------------------------------------------------------------
 sessionInfo()

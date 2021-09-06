@@ -1,5 +1,5 @@
 dep.cif<-function(cif,data,cause=NULL,model="OR",cif2=NULL,times=NULL,
-                  cause1=1,cause2=1,cens.code=NULL,cens.model="KM",Nit=40,detail=0,
+                  cause1=1,cause2=1,cens.code=NULL,cens.model="KM",Nit=40,tol=1e-6,detail=0,
                   clusters=NULL,theta=NULL,theta.des=NULL,step=1,sym=1,weights=NULL,
 		  same.cens=FALSE,censoring.weights=NULL,silent=1,entry=NULL,estimator=1,
 		  trunkp=1,admin.cens=NULL,control=list(),par.func=NULL,dpar.func=NULL,dimpar=NULL,
@@ -280,7 +280,7 @@ dep.cif<-function(cif,data,cause=NULL,model="OR",cif2=NULL,times=NULL,
 	## do not update last iteration 
 	if (i<Nit) p <- p-delta* step
 	if (is.nan(sum(out$score))) break; 
-        if (sum(abs(out$score))<0.00001) break; 
+        if (sum(abs(out$score))<tol) break;
         if (max(delta)>20) { cat("NR increment > 20, lower step zize, increment= \n"); cat(delta); break; }
     }
     if (!is.nan(sum(p))) { ## {{{ iid decomposition
@@ -362,18 +362,6 @@ dep.cif<-function(cif,data,cause=NULL,model="OR",cif2=NULL,times=NULL,
   if (dep.model==5) attr(ud, "rv1") <- random.design[1,]
   return(ud);
 } ## }}}
-
-###mysolve <- function(A)
-###{
-###  ee <- eigen(A);
-###  threshold <- 1e-12
-###  idx <- ee$values>threshold
-###  ee$values[idx] <- 1/ee$values[idx];
-###  if (!all(idx))
-###    ee$values[!idx] <- 0
-###  V <- with(ee, vectors%*%diag(values)%*%t(vectors))
-###  return(V)
-###}
 
 ##' Fits a parametric model for the log-cross-odds-ratio for the 
 ##' predictive effect of for the cumulative incidence curves for \eqn{T_1} 
@@ -675,9 +663,7 @@ or.cif<-function(cif,data,cause=NULL,cif2=NULL,times=NULL,
 ##' Multivariate Competing Risks Data, Scheike and Sun (2012), work in progress.
 ##' @examples
 ##' \donttest{ ## Reduce Ex.Timings
-##'  library("timereg")
-##'  d <- simnordic.random(4000,delayed=TRUE,
-##'        cordz=0.5,cormz=2,lam0=0.3,country=TRUE)
+##'  d <- simnordic.random(5000,delayed=TRUE,cordz=0.5,cormz=2,lam0=0.3,country=TRUE)
 ##'  times <- seq(50,90,by=10)
 ##'  add1<-comp.risk(Event(time,cause)~-1+factor(country)+cluster(id),data=d,
 ##'  times=times,cause=1,max.clust=NULL)
@@ -696,7 +682,7 @@ or.cif<-function(cif,data,cause=NULL,cif2=NULL,times=NULL,
 ##' ##### 2 different causes
 ##' #########################################
 ##' 
-##'  add2<-comp.risk(Event(time,cause)~const(country)+cluster(id),data=d,
+##'  add2<-comp.risk(Event(time,cause)~-1+factor(country)+cluster(id),data=d,
 ##'                   times=times,cause=2,max.clust=NULL)
 ##'  out3<-random.cif(add1,data=d,cause1=1,cause2=2,cif2=add2,sym=1,same.cens=TRUE)
 ##'  summary(out3) ## negative dependence

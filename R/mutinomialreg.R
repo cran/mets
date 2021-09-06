@@ -11,10 +11,13 @@
 ##'
 ##' Can also get influence functions (possibly robust) via iid() function, response should be a factor. 
 ##'
+##' Can fit cumulative odds model as a special case of interval.logitsurv.discrete
+##'
 ##' @param formula formula with outcome (see \code{coxph})
 ##' @param data data frame
 ##' @param weights for score equations 
 ##' @param offset offsets for partial likelihood 
+##' @param fix.X to have same coefficients for all categories
 ##' @param ... Additional arguments to lower level funtions
 ##' @author Thomas Scheike
 ##' @examples
@@ -23,6 +26,9 @@
 ##' dfactor(bmt) <- cause1f~cause
 ##' drelevel(bmt,ref=3) <- cause3f~cause
 ##' dlevels(bmt)
+##'
+##' mreg <- mlogit(cause1f~+1,bmt)
+##' summary(mreg)
 ##'
 ##' mreg <- mlogit(cause1f~tcell+platelet,bmt)
 ##' summary(mreg)
@@ -33,8 +39,9 @@
 ##' ## inverse information standard errors 
 ##' estimate(coef=mreg3$coef,vcov=mreg3$II)
 ##' 
+##' 
 ##' @export
-mlogit <- function(formula,data,offset=NULL,weights=NULL,...)
+mlogit <- function(formula,data,offset=NULL,weights=NULL,fix.X=FALSE,...)
 {# {{{
 
   cl <- match.call()
@@ -64,36 +71,23 @@ mlogit <- function(formula,data,offset=NULL,weights=NULL,...)
 ###    X <- X[,-intpos,drop=FALSE]
   if (ncol(X)==0) X <- matrix(nrow=0,ncol=0)
 
-###  print(list(...))
-  res <- mlogit01(X,Y,id=id,strata=strata,offset=offset,weights=weights,strata.name=strata.name,...) ###,
-### list(call=cl,model.frame=m,formula=formula,strata.pos=pos.strata,cluster.pos=pos.cluster))
+  res <- mlogit01(X,Y,id=id,strata=strata,offset=offset,weights=weights,strata.name=strata.name,fix.X=fix.X,...) ###,
   return(res)
 }# }}}
 
 
 mlogit01 <- function(X,Y,id=NULL,strata=NULL,offset=NULL,weights=NULL,
-             strata.name=NULL,cumhaz=FALSE,
-             beta,stderr=TRUE,method="NR",no.opt=FALSE,Z=NULL,propodds=NULL,AddGam=NULL,
-	     case.weights=NULL,...) {# {{{
-###  print(list(...))
+       strata.name=NULL,cumhaz=FALSE,
+       beta,stderr=TRUE,method="NR",no.opt=FALSE,Z=NULL,
+       propodds=NULL,AddGam=NULL,case.weights=NULL,fix.X=FALSE,...) {# {{{
   p <- ncol(X)
   if (missing(beta)) beta <- rep(0,p)
   if (p==0) X <- cbind(rep(0,length(Y)))
-###  if (is.null(strata)) { strata <- rep(0,length(Y)); nstrata <- 1; strata.level <- NULL; } else {
-###	  strata.level <- levels(strata)
-###	  ustrata <- sort(unique(strata))
-###	  nstrata <- length(ustrata)
-###	  strata.values <- ustrata
-###      if (is.numeric(strata)) strata <-  fast.approx(ustrata,strata)-1 else  {
-###      strata <- as.integer(factor(strata,labels=seq(nstrata)))-1
-###    }
-###  }
   if (is.null(offset)) offset <- rep(0,length(Y)) 
   if (is.null(weights)) weights <- rep(1,length(Y)) 
   strata.call <- strata
   Zcall <- matrix(1,1,1) ## to not use for ZX products when Z is not given 
   if (!is.null(Z)) Zcall <- Z
-  ## possible casewights to use for bootstrapping and other things
   if (is.null(case.weights)) case.weights <- rep(1,length(Y)) 
 
   if (!is.null(id)) {
@@ -112,6 +106,7 @@ mlogit01 <- function(X,Y,id=NULL,strata=NULL,offset=NULL,weights=NULL,
   nX <- nrow(X)
   idrow <- rep(1:nX,each=nlev)
   X <- X[idrow,,drop=FALSE]
+  px <- ncol(X)
   Y <- Y[idrow]
   id <- id[idrow]
   status <- rep(0,nrow(X))
@@ -123,7 +118,23 @@ mlogit01 <- function(X,Y,id=NULL,strata=NULL,offset=NULL,weights=NULL,
   time <- id
   strat <- rep(1:nlev,nX)
   XX <- c()
-  for (i in nrefs) XX <- cbind(XX,X*(strat==i))
+  nn <- c()
+  namesX <- colnames(X); 
+  if (!fix.X) {
+     for (i in nrefs) { XX <- cbind(XX,X*(strat==i)); 
+                      nn<-c(nn, paste(namesX,i,sep=".")) 
+     }  
+     colnames(XX) <- nn; 
+  } else {
+     ### different intercepts
+     for (i in nrefs) { XX <- cbind(XX,cbind(X[,1]*(strat==i))); 
+                        nn<-c(nn, paste(namesX[1],i,sep=".")) 
+     }  
+     ### same covariate effects 
+     XX<- cbind(XX,X[,-1]*(strat!=1))
+     nn <- c(nn,colnames(X[,-1]))
+     colnames(XX) <- nn; 
+  }
   rownames(XX) <- NULL
 
   datph=data.frame(time=time,status=status,XX=XX,id=id,idrow=idrow)
@@ -133,6 +144,30 @@ mlogit01 <- function(X,Y,id=NULL,strata=NULL,offset=NULL,weights=NULL,
 ###  print(list(...))
   res <- phreg(Surv(time,status)~XX+strata(idrow)+cluster(id),datph,weights=lweights,offset=loffset,...)
 
+  res$px <- px
+  res$nlev <- nlev
   return(res)
 }# }}}
+
+
+###predmlogit(mreg,bmt[1:2,])
+###X <- cbind(1,0,0)
+###predmlogit <- function(object,X)
+###{# {{{
+###
+###  expit  <- function(z) 1/(1+exp(-z)) ## expit
+###
+###  refg <- 1  ### else refg <- match(ref,types)
+###  nrefs <- (1:(object$nlev-1))
+###  px <- ncol(X)
+###  Xbeta <- c()
+###  k <- 1
+###  for (i in nrefs) { Xbeta <- cbind(Xbeta,X %*% object$coef[(1:px)+px*(i-1)]);  }
+###  for (i in nrefs)  print(object$coef[(1:px)+px*(i-1)]); 
+###  head(X)
+###  Xbeta
+###
+###  return(res)
+###}# }}}
+
 

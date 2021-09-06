@@ -3,6 +3,8 @@ options(warn=-1, family="Times")
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>",
+  #dev="png",
+  #dpi=72,
   out.width = "70%")
 library("mets")
 
@@ -11,6 +13,7 @@ library("mets")
 #  remotes::install_github("kkholst/mets", dependencies="Suggests")
 
 ## ----twinbmi------------------------------------------------------------------
+library(mets)
 data("twinbmi")
 head(twinbmi)
 
@@ -89,11 +92,40 @@ legend("bottomright", c("Male","Female"),
 
 ## -----------------------------------------------------------------------------
 dd <- na.omit(twinbmi)
-l0 <- twinlm(bmi ~ age+gender, data=dd,
-            DZ="DZ", zyg="zyg", id="tvparnr", type="sat")
+l0 <- twinlm(bmi ~ age+gender, data=dd, DZ="DZ", zyg="zyg", id="tvparnr", type="sat")
 
+# different marginals (but within pair)
+lf <- twinlm(bmi ~ age+gender, data=dd,DZ="DZ", zyg="zyg", id="tvparnr", type="flex")
+
+# same marginals but free correlation with MZ, DZ 
+lu <- twinlm(bmi ~ age+gender, data=dd, DZ="DZ", zyg="zyg", id="tvparnr", type="u")
+estimate(lu,contr(5:6,6))
+estimate(lu)
+
+lf <- twinlm(bmi ~ zyg, data=dd, DZ="DZ", zyg="zyg", id="tvparnr", type="flex")
+coef(lf)
+
+
+###sink("lu-est-summary.txt")
+lu <- twinlm(bmi ~ zyg, data=dd, DZ="DZ", zyg="zyg", id="tvparnr", type="u")
+summary(lu)
+estimate(lu)
+crossprod(iid(lu))^.5
+###sink()
+
+vcov(lu)
+
+estimate(lu)
+dim(iid(lu))
+
+estimate(lu,contr(4:5,5))
+
+estimate(coef=coef(lu),vcov=vcov(lu),contr(4:5,5))
+
+wald.test(coef=coef(lu),vcov=vcov(lu),contrast=c(0,0,0,1,-1))
 
 ## -----------------------------------------------------------------------------
+
 l <- twinlm(bmi ~ ns(age,1)+gender, data=twinbmi,
            DZ="DZ", zyg="zyg", id="tvparnr", type="cor", missing=TRUE)
 summary(l)
@@ -105,4 +137,7 @@ estimate(l,contr(5:6,6))
 l <- twinlm(bmi ~ ns(age,1)+gender, data=twinbmi,
            DZ="DZ", zyg="zyg", id="tvparnr", type="cor", missing=TRUE)
 summary(l)
+
+## -----------------------------------------------------------------------------
+ace0 <- twinlm(bmi ~ age+gender, data=dd, DZ="DZ", zyg="zyg", id="tvparnr", type="ace")
 

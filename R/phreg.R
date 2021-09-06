@@ -170,8 +170,9 @@ phreg01 <- function(X,entry,exit,status,id=NULL,strata=NULL,
 	      val$strata <- dd$strata
 	      val$strata.jumps <- val$strata[val$jumps]
 	      return(val)
-	  } 
-	 with(val,structure(-ploglik,gradient=-gradient,hessian=-hessian))
+	  }
+     n <- length(dd$time)
+	 with(val,structure(-ploglik/n,gradient=-gradient/n,hessian=-hessian/n))
 	}# }}}
 
   opt <- NULL
@@ -187,20 +188,21 @@ phreg01 <- function(X,entry,exit,status,id=NULL,strata=NULL,
       }
       cc <- opt$estimate;  names(cc) <- colnames(X)
       if (!stderr) return(cc)
-      val <- c(list(coef=cc),obj(opt$estimate,all=TRUE))
-      } else val <- c(list(coef=beta),obj(beta,all=TRUE))
+      val <- c(list(coef=cc), obj(opt$estimate,all=TRUE))
+      } else val <- c(list(coef=beta), obj(beta,all=TRUE))
   } else {
       val <- obj(0,all=TRUE)
   }
 
   se.cumhaz <- lcumhaz <- lse.cumhaz <- NULL
   II <- NULL
+  if (no.opt==FALSE & p!=0) {
+         II <- - tryCatch(solve(val$hessian),error=
+             function(e) matrix(0,nrow(val$hessian),ncol(val$hessian)) )
+  } else II <- matrix(0,p,p)
+
   ### computes Breslow estimator 
   if (cumhaz==TRUE) { # {{{
-	 if (no.opt==FALSE & p!=0) {
-               II <- - tryCatch(solve(val$hessian),error=
-	              function(e) matrix(0,nrow(val$hessian),ncol(val$hessian)) )
-	 } else II <- matrix(0,p,p)
 	 strata <- val$strata[val$jumps]
 	 nstrata <- val$nstrata
 	 jumptimes <- val$jumptimes
@@ -222,19 +224,21 @@ phreg01 <- function(X,entry,exit,status,id=NULL,strata=NULL,
 
   res <- c(val,
            list(cox.prep=dd,
-		strata.call=strata.call, strata.level=strata.level,
+                strata.call=strata.call, strata.level=strata.level,
                 entry=entry,
                 exit=exit,
                 status=status,                
                 p=p,
                 X=X,
-		offsets=offset,
-		weights=weights,
+                offsets=offset,
+                weights=weights,
                 id=id.orig, call.id=call.id,
-		opt=opt, 
-		cumhaz=cumhaz, se.cumhaz=se.cumhaz,
-		lcumhaz=lcumhaz, lse.cumhaz=lse.cumhaz,
-		II=II,strata.name=strata.name,propodds=propodds))
+                opt=opt,
+                no.opt=no.opt,
+                cumhaz=cumhaz, se.cumhaz=se.cumhaz,
+                lcumhaz=lcumhaz, lse.cumhaz=lse.cumhaz,
+                ihessian=II,
+                II=II,strata.name=strata.name,propodds=propodds))
   class(res) <- "phreg"
   res
 }
@@ -383,8 +387,10 @@ readPhreg <- function (object, newdata, nr=TRUE, ...)
        ## remove strataTerm from design, and construct numeric version of strata
        if (length(strataTerm)>=1) { 
 	       strataNew <- X[,strataTerm,drop=FALSE]
+               whichstrata  <-  paste(object$strata.name,object$strata.level,sep="")
 	       if (length(strataTerm)>=1) { ## construct strata levels numeric
-                 strataNew <- c(strataNew %*% seq(1,length(strataTerm)))
+               mm <- match(colnames(X)[strataTerm], whichstrata)-1
+               strataNew <- c(strataNew %*% mm )
                }
 	       X <- X[,-strataTerm,drop=FALSE]
        } else strataNew <- rep(0,nrow(X))
@@ -788,7 +794,7 @@ iid.baseline.phreg <- function(x,time=NULL,ft=NULL,fixbeta=NULL,...)
   if (!is.null(x$propodds))  stop("Only for Cox model") 
   ### sets fixbeta based on  wheter xr has been optimized in beta (so cox case)
   if (is.null(fixbeta)) 
-  if (is.null(x$opt) | is.null(x$coef)) fixbeta<- 1 else fixbeta <- 0
+  if ((x$no.opt) | is.null(x$coef)) fixbeta<- 1 else fixbeta <- 0
 
   xx <- x$cox.prep
   btimexx <- c(1*(xx$time < time))
@@ -966,7 +972,7 @@ robust.basehaz.phreg  <- function(x,type="robust",fixbeta=NULL,...) {# {{{
 robust.phreg  <- function(x,fixbeta=NULL,...) {
 
   if (is.null(fixbeta)) 
-  if (is.null(x$opt) | is.null(x$coef)) fixbeta<- 1 else fixbeta <- 0
+  if ((x$no.opt) | is.null(x$coef)) fixbeta<- 1 else fixbeta <- 0
 
  if (fixbeta==0)  {
     gamma.iid <- iid.phreg(x) 
@@ -987,9 +993,9 @@ robust.phreg  <- function(x,fixbeta=NULL,...) {
 summary.phreg <- function(object,type=c("robust","martingale"),...) {
   expC <- cc <- ncluster <- V <- NULL
 
-   if (length(object$p)>0 & object$p>0 & !is.null(object$opt)) {
+   if (length(object$p)>0 & object$p>0 & (!object$no.opt)) {
     I <- -solve(object$hessian)
-    if ( (length(class(object))==2) && class(object)[2]=="cif.reg") {
+    if ( (length(class(object))==2) && ( class(object)[2]=="cif.reg" | class(object)[2]=="recreg")) {
 	    V <- object$var
 	    ncluster <- object$ncluster ## nrow(object$Uiid)
     } else  { 
@@ -1001,8 +1007,7 @@ summary.phreg <- function(object,type=c("robust","martingale"),...) {
     colnames(cc) <- c("Estimate","S.E.","dU^-1/2","P-value")
     if (length(class(object))==1) if (!is.null(ncluster <- attributes(V)$ncluster))
     rownames(cc) <- names(coef(object))
-    expC <- lava::estimate(coef=coef(object),vcov=V,f=function(p) exp(p),null=1)$coefmat
-
+    expC <- exp(lava::estimate(coef=coef(object),vcov=V)$coefmat[,c(1,3,4),drop=FALSE])
   } 
   Strata <- levels(object$strata)
 ###  if (!is.null(Strata)) {
@@ -1023,7 +1028,7 @@ summary.phreg <- function(object,type=c("robust","martingale"),...) {
 ##' @export
 print.summary.phreg  <- function(x,max.strata=5,...) {
 
-  if (length(class(x))==2 & class(x)[2]=="cifreg") cat("Competing risks regression \n"); 
+  if (length(class(x))==2 & class(x)[2]=="cif.reg") cat("Competing risks regression \n"); 
   if (!is.null(x$propodds)) { 
        cat("Proportional odds model, log-OR regression \n"); 
   } else cat("\n")
@@ -1039,13 +1044,31 @@ print.summary.phreg  <- function(x,max.strata=5,...) {
   print(nn,quote=FALSE)  
   if (!is.null(x$ncluster)) cat("\n ", x$ncluster, " clusters\n",sep="")
   if (!is.null(x$coef)) {
-    cat("log-coeffients:\n")
+    cat("coeffients:\n")
     printCoefmat(x$coef,...)
     cat("\n")
     cat("exp(coeffients):\n")
     printCoefmat(x$exp.coef,...)
   }
   cat("\n")
+
+ ## for binreg ATE
+ if (!is.null(x$ateDR)) {
+    cat("Average Treatment effects (G-formula) :\n")
+    printCoefmat(x$ateG,...)
+    cat("\n")
+
+    cat("Average Treatment effects (double robust) :\n")
+    printCoefmat(x$ateDR,...)
+    cat("\n")
+
+    cat("Average Treatment effects on Treated/Non-Treated (DR) :\n")
+    printCoefmat(x$attc,...)
+    cat("\n")
+
+  }
+  cat("\n")
+
 }
 
 ###}}} print.summary
@@ -1616,9 +1639,10 @@ predict.phreg <- function(object,newdata,times=NULL,individual.time=FALSE,tminus
    if (!robust) { 
 	   se.chaz <- object$se.cumhaz[,2] 
 	   varbeta <- object$ihessian  
-	   Pt <- apply(object$E/c(object$S0),2,cumsumstrata,strata,nstrata)
+	   if (!object$no.opt) Pt <- apply(object$E/c(object$S0),2,cumsumstrata,strata,nstrata)
+           else Pt <- 0
    } else {
-          if (is.null(object$opt) | is.null(object$coef)) fixbeta<- 1 else fixbeta <- 0
+          if ((object$no.opt) | is.null(object$coef)) fixbeta<- 1 else fixbeta <- 0
           IsdM <- squareintHdM(object,ft=NULL,fixbeta=fixbeta,...)
           ###
           se.chaz <-   IsdM$varInt[object$jumps]^.5
@@ -1660,7 +1684,7 @@ if (individual.time & length(times)==1) times <- rep(times,length(object$exit))
 		if (object$p>0) {
 			Ps <- Pt[strata==j,,drop=FALSE]
 			Ps <- rbind(0,Ps)[where,,drop=FALSE]
-                        ##  print(Xs); print(varbeta); print(dim(Ps)); print((Xs %*% varbeta))
+###                         print(Xs); print(varbeta); print(dim(Ps)); print((Xs %*% varbeta))
 			Xbeta <- Xs %*% varbeta
 			seXbeta <- rowSums(Xbeta*Xs)^.5
 			cov2 <- cov1 <- Xbeta %*% t(Ps*hazt[where])
@@ -1748,6 +1772,39 @@ if (!is.null(object$propodds)) pcumhaz <- -log(surv)
  class(out) <- c("predictphreg")
  if (length(class(object))==2) class(out) <- c("predictphreg",class(object)[2])
  return(out)
+}# }}}
+
+
+##' @export
+print.predictphreg  <- function(x,se=FALSE,...) {# {{{
+
+   if (is.null(x$se.cumhaz) & se==TRUE)  {
+       warning("predict.phreg must be with se=TRUE\n"); 
+       se <- FALSE
+   }
+  type <- "surv"
+  if ((length(class(x))==2) && (substr(class(x)[2],1,3)=="cif")) type <- "cif"
+
+  if (type[1]=="surv") { 
+	  xx <- x$surv 
+  } else if (type[1]=="cif") {
+     xx <- x$cif 
+  } else { xx <- x$cumhaz; names(xx) <- "cumhaz"}
+  ## colnames(xx) <- type
+
+  if (se) {
+     if (type[1]=="surv") {
+	     upper <- x$surv.upper; lower <- x$surv.lower
+     } else if (type[1]=="cif") {
+	     lower <- x$cif.lower; upper <- x$cif.upper
+     } else { upper <- NA; lower <- NA;}
+     ci <- cbind(lower,upper)
+     ## colnames(ci) <- c("lower","upper")
+     xx <- cbind(xx,ci)
+  }
+
+  print(xx)
+  invisible(xx)
 }# }}}
 
 
@@ -2016,14 +2073,14 @@ basehazplot.phreg  <- function(x,se=FALSE,time=NULL,add=FALSE,ylim=NULL,xlim=NUL
 }# }}}
 
 ##' @export
-plotConfRegion <- function(x,band,add=TRUE,polygon=TRUE,col=1,...)
+plotConfRegion <- function(x,band,add=TRUE,polygon=TRUE,col=1,type="s",...)
 {# {{{
 nl <- cbind(x,band[,1])
 ul <- cbind(x,band[,2])
 
   if (!polygon) {
-      lines(nl,type="s",...)
-      lines(ul,type="s",...)
+      lines(nl,type=type,...)
+      lines(ul,type=type,...)
       } else {
 	 ll <- length(nl[,1])
          timess <- nl[,1]
