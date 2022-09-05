@@ -12,29 +12,42 @@
 
 <meta name="author" content="Klaus Holst &amp; Thomas Scheike" />
 
-<meta name="date" content="2021-09-05" />
+<meta name="date" content="2022-09-03" />
 
 <title>Analysis of bivariate binomial data: Twin analysis</title>
 
-<script src="data:application/javascript;base64,Ly8gUGFuZG9jIDIuOSBhZGRzIGF0dHJpYnV0ZXMgb24gYm90aCBoZWFkZXIgYW5kIGRpdi4gV2UgcmVtb3ZlIHRoZSBmb3JtZXIgKHRvCi8vIGJlIGNvbXBhdGlibGUgd2l0aCB0aGUgYmVoYXZpb3Igb2YgUGFuZG9jIDwgMi44KS4KZG9jdW1lbnQuYWRkRXZlbnRMaXN0ZW5lcignRE9NQ29udGVudExvYWRlZCcsIGZ1bmN0aW9uKGUpIHsKICB2YXIgaHMgPSBkb2N1bWVudC5xdWVyeVNlbGVjdG9yQWxsKCJkaXYuc2VjdGlvbltjbGFzcyo9J2xldmVsJ10gPiA6Zmlyc3QtY2hpbGQiKTsKICB2YXIgaSwgaCwgYTsKICBmb3IgKGkgPSAwOyBpIDwgaHMubGVuZ3RoOyBpKyspIHsKICAgIGggPSBoc1tpXTsKICAgIGlmICghL15oWzEtNl0kL2kudGVzdChoLnRhZ05hbWUpKSBjb250aW51ZTsgIC8vIGl0IHNob3VsZCBiZSBhIGhlYWRlciBoMS1oNgogICAgYSA9IGguYXR0cmlidXRlczsKICAgIHdoaWxlIChhLmxlbmd0aCA+IDApIGgucmVtb3ZlQXR0cmlidXRlKGFbMF0ubmFtZSk7CiAgfQp9KTsK"></script>
+<script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
+// be compatible with the behavior of Pandoc < 2.8).
+document.addEventListener('DOMContentLoaded', function(e) {
+  var hs = document.querySelectorAll("div.section[class*='level'] > :first-child");
+  var i, h, a;
+  for (i = 0; i < hs.length; i++) {
+    h = hs[i];
+    if (!/^h[1-6]$/i.test(h.tagName)) continue;  // it should be a header h1-h6
+    a = h.attributes;
+    while (a.length > 0) h.removeAttribute(a[0].name);
+  }
+});
+</script>
 
 <style type="text/css">
-  code{white-space: pre-wrap;}
-  span.smallcaps{font-variant: small-caps;}
-  span.underline{text-decoration: underline;}
-  div.column{display: inline-block; vertical-align: top; width: 50%;}
-  div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
-  ul.task-list{list-style: none;}
-    </style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+span.underline{text-decoration: underline;}
+div.column{display: inline-block; vertical-align: top; width: 50%;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+</style>
+
 
 
 <style type="text/css">
-  code {
-    white-space: pre;
-  }
-  .sourceCode {
-    overflow: visible;
-  }
+code {
+white-space: pre;
+}
+.sourceCode {
+overflow: visible;
+}
 </style>
 <style type="text/css" data-origin="pandoc">
 pre > code.sourceCode { white-space: pre; position: relative; }
@@ -52,55 +65,54 @@ pre > code.sourceCode { white-space: pre-wrap; }
 pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
 }
 pre.numberSource code
-  { counter-reset: source-line 0; }
+{ counter-reset: source-line 0; }
 pre.numberSource code > span
-  { position: relative; left: -4em; counter-increment: source-line; }
+{ position: relative; left: -4em; counter-increment: source-line; }
 pre.numberSource code > span > a:first-child::before
-  { content: counter(source-line);
-    position: relative; left: -1em; text-align: right; vertical-align: baseline;
-    border: none; display: inline-block;
-    -webkit-touch-callout: none; -webkit-user-select: none;
-    -khtml-user-select: none; -moz-user-select: none;
-    -ms-user-select: none; user-select: none;
-    padding: 0 4px; width: 4em;
-    color: #aaaaaa;
-  }
-pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+{ content: counter(source-line);
+position: relative; left: -1em; text-align: right; vertical-align: baseline;
+border: none; display: inline-block;
+-webkit-touch-callout: none; -webkit-user-select: none;
+-khtml-user-select: none; -moz-user-select: none;
+-ms-user-select: none; user-select: none;
+padding: 0 4px; width: 4em;
+color: #aaaaaa;
+}
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa; padding-left: 4px; }
 div.sourceCode
-  {   }
+{ }
 @media screen {
 pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
 }
-code span.al { color: #ff0000; font-weight: bold; } /* Alert */
-code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
-code span.at { color: #7d9029; } /* Attribute */
-code span.bn { color: #40a070; } /* BaseN */
-code span.bu { } /* BuiltIn */
-code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
-code span.ch { color: #4070a0; } /* Char */
-code span.cn { color: #880000; } /* Constant */
-code span.co { color: #60a0b0; font-style: italic; } /* Comment */
-code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
-code span.do { color: #ba2121; font-style: italic; } /* Documentation */
-code span.dt { color: #902000; } /* DataType */
-code span.dv { color: #40a070; } /* DecVal */
-code span.er { color: #ff0000; font-weight: bold; } /* Error */
-code span.ex { } /* Extension */
-code span.fl { color: #40a070; } /* Float */
-code span.fu { color: #06287e; } /* Function */
-code span.im { } /* Import */
-code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
-code span.kw { color: #007020; font-weight: bold; } /* Keyword */
-code span.op { color: #666666; } /* Operator */
-code span.ot { color: #007020; } /* Other */
-code span.pp { color: #bc7a00; } /* Preprocessor */
-code span.sc { color: #4070a0; } /* SpecialChar */
-code span.ss { color: #bb6688; } /* SpecialString */
-code span.st { color: #4070a0; } /* String */
-code span.va { color: #19177c; } /* Variable */
-code span.vs { color: #4070a0; } /* VerbatimString */
-code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
-
+code span.al { color: #ff0000; font-weight: bold; } 
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.at { color: #7d9029; } 
+code span.bn { color: #40a070; } 
+code span.bu { color: #008000; } 
+code span.cf { color: #007020; font-weight: bold; } 
+code span.ch { color: #4070a0; } 
+code span.cn { color: #880000; } 
+code span.co { color: #60a0b0; font-style: italic; } 
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.do { color: #ba2121; font-style: italic; } 
+code span.dt { color: #902000; } 
+code span.dv { color: #40a070; } 
+code span.er { color: #ff0000; font-weight: bold; } 
+code span.ex { } 
+code span.fl { color: #40a070; } 
+code span.fu { color: #06287e; } 
+code span.im { color: #008000; font-weight: bold; } 
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.kw { color: #007020; font-weight: bold; } 
+code span.op { color: #666666; } 
+code span.ot { color: #007020; } 
+code span.pp { color: #bc7a00; } 
+code span.sc { color: #4070a0; } 
+code span.ss { color: #bb6688; } 
+code span.st { color: #4070a0; } 
+code span.va { color: #19177c; } 
+code span.vs { color: #4070a0; } 
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } 
 </style>
 <script>
 // apply pandoc div.sourceCode style to pre.sourceCode instead
@@ -127,7 +139,187 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 
 
 
-<link rel="stylesheet" href="data:text/css,body%20%7B%0Abackground%2Dcolor%3A%20%23fff%3B%0Amargin%3A%201em%20auto%3B%0Amax%2Dwidth%3A%20700px%3B%0Aoverflow%3A%20visible%3B%0Apadding%2Dleft%3A%202em%3B%0Apadding%2Dright%3A%202em%3B%0Afont%2Dfamily%3A%20%22Open%20Sans%22%2C%20%22Helvetica%20Neue%22%2C%20Helvetica%2C%20Arial%2C%20sans%2Dserif%3B%0Afont%2Dsize%3A%2014px%3B%0Aline%2Dheight%3A%201%2E35%3B%0A%7D%0A%23TOC%20%7B%0Aclear%3A%20both%3B%0Amargin%3A%200%200%2010px%2010px%3B%0Apadding%3A%204px%3B%0Awidth%3A%20400px%3B%0Aborder%3A%201px%20solid%20%23CCCCCC%3B%0Aborder%2Dradius%3A%205px%3B%0Abackground%2Dcolor%3A%20%23f6f6f6%3B%0Afont%2Dsize%3A%2013px%3B%0Aline%2Dheight%3A%201%2E3%3B%0A%7D%0A%23TOC%20%2Etoctitle%20%7B%0Afont%2Dweight%3A%20bold%3B%0Afont%2Dsize%3A%2015px%3B%0Amargin%2Dleft%3A%205px%3B%0A%7D%0A%23TOC%20ul%20%7B%0Apadding%2Dleft%3A%2040px%3B%0Amargin%2Dleft%3A%20%2D1%2E5em%3B%0Amargin%2Dtop%3A%205px%3B%0Amargin%2Dbottom%3A%205px%3B%0A%7D%0A%23TOC%20ul%20ul%20%7B%0Amargin%2Dleft%3A%20%2D2em%3B%0A%7D%0A%23TOC%20li%20%7B%0Aline%2Dheight%3A%2016px%3B%0A%7D%0Atable%20%7B%0Amargin%3A%201em%20auto%3B%0Aborder%2Dwidth%3A%201px%3B%0Aborder%2Dcolor%3A%20%23DDDDDD%3B%0Aborder%2Dstyle%3A%20outset%3B%0Aborder%2Dcollapse%3A%20collapse%3B%0A%7D%0Atable%20th%20%7B%0Aborder%2Dwidth%3A%202px%3B%0Apadding%3A%205px%3B%0Aborder%2Dstyle%3A%20inset%3B%0A%7D%0Atable%20td%20%7B%0Aborder%2Dwidth%3A%201px%3B%0Aborder%2Dstyle%3A%20inset%3B%0Aline%2Dheight%3A%2018px%3B%0Apadding%3A%205px%205px%3B%0A%7D%0Atable%2C%20table%20th%2C%20table%20td%20%7B%0Aborder%2Dleft%2Dstyle%3A%20none%3B%0Aborder%2Dright%2Dstyle%3A%20none%3B%0A%7D%0Atable%20thead%2C%20table%20tr%2Eeven%20%7B%0Abackground%2Dcolor%3A%20%23f7f7f7%3B%0A%7D%0Ap%20%7B%0Amargin%3A%200%2E5em%200%3B%0A%7D%0Ablockquote%20%7B%0Abackground%2Dcolor%3A%20%23f6f6f6%3B%0Apadding%3A%200%2E25em%200%2E75em%3B%0A%7D%0Ahr%20%7B%0Aborder%2Dstyle%3A%20solid%3B%0Aborder%3A%20none%3B%0Aborder%2Dtop%3A%201px%20solid%20%23777%3B%0Amargin%3A%2028px%200%3B%0A%7D%0Adl%20%7B%0Amargin%2Dleft%3A%200%3B%0A%7D%0Adl%20dd%20%7B%0Amargin%2Dbottom%3A%2013px%3B%0Amargin%2Dleft%3A%2013px%3B%0A%7D%0Adl%20dt%20%7B%0Afont%2Dweight%3A%20bold%3B%0A%7D%0Aul%20%7B%0Amargin%2Dtop%3A%200%3B%0A%7D%0Aul%20li%20%7B%0Alist%2Dstyle%3A%20circle%20outside%3B%0A%7D%0Aul%20ul%20%7B%0Amargin%2Dbottom%3A%200%3B%0A%7D%0Apre%2C%20code%20%7B%0Abackground%2Dcolor%3A%20%23f7f7f7%3B%0Aborder%2Dradius%3A%203px%3B%0Acolor%3A%20%23333%3B%0Awhite%2Dspace%3A%20pre%2Dwrap%3B%20%0A%7D%0Apre%20%7B%0Aborder%2Dradius%3A%203px%3B%0Amargin%3A%205px%200px%2010px%200px%3B%0Apadding%3A%2010px%3B%0A%7D%0Apre%3Anot%28%5Bclass%5D%29%20%7B%0Abackground%2Dcolor%3A%20%23f7f7f7%3B%0A%7D%0Acode%20%7B%0Afont%2Dfamily%3A%20Consolas%2C%20Monaco%2C%20%27Courier%20New%27%2C%20monospace%3B%0Afont%2Dsize%3A%2085%25%3B%0A%7D%0Ap%20%3E%20code%2C%20li%20%3E%20code%20%7B%0Apadding%3A%202px%200px%3B%0A%7D%0Adiv%2Efigure%20%7B%0Atext%2Dalign%3A%20center%3B%0A%7D%0Aimg%20%7B%0Abackground%2Dcolor%3A%20%23FFFFFF%3B%0Apadding%3A%202px%3B%0Aborder%3A%201px%20solid%20%23DDDDDD%3B%0Aborder%2Dradius%3A%203px%3B%0Aborder%3A%201px%20solid%20%23CCCCCC%3B%0Amargin%3A%200%205px%3B%0A%7D%0Ah1%20%7B%0Amargin%2Dtop%3A%200%3B%0Afont%2Dsize%3A%2035px%3B%0Aline%2Dheight%3A%2040px%3B%0A%7D%0Ah2%20%7B%0Aborder%2Dbottom%3A%204px%20solid%20%23f7f7f7%3B%0Apadding%2Dtop%3A%2010px%3B%0Apadding%2Dbottom%3A%202px%3B%0Afont%2Dsize%3A%20145%25%3B%0A%7D%0Ah3%20%7B%0Aborder%2Dbottom%3A%202px%20solid%20%23f7f7f7%3B%0Apadding%2Dtop%3A%2010px%3B%0Afont%2Dsize%3A%20120%25%3B%0A%7D%0Ah4%20%7B%0Aborder%2Dbottom%3A%201px%20solid%20%23f7f7f7%3B%0Amargin%2Dleft%3A%208px%3B%0Afont%2Dsize%3A%20105%25%3B%0A%7D%0Ah5%2C%20h6%20%7B%0Aborder%2Dbottom%3A%201px%20solid%20%23ccc%3B%0Afont%2Dsize%3A%20105%25%3B%0A%7D%0Aa%20%7B%0Acolor%3A%20%230033dd%3B%0Atext%2Ddecoration%3A%20none%3B%0A%7D%0Aa%3Ahover%20%7B%0Acolor%3A%20%236666ff%3B%20%7D%0Aa%3Avisited%20%7B%0Acolor%3A%20%23800080%3B%20%7D%0Aa%3Avisited%3Ahover%20%7B%0Acolor%3A%20%23BB00BB%3B%20%7D%0Aa%5Bhref%5E%3D%22http%3A%22%5D%20%7B%0Atext%2Ddecoration%3A%20underline%3B%20%7D%0Aa%5Bhref%5E%3D%22https%3A%22%5D%20%7B%0Atext%2Ddecoration%3A%20underline%3B%20%7D%0A%0Acode%20%3E%20span%2Ekw%20%7B%20color%3A%20%23555%3B%20font%2Dweight%3A%20bold%3B%20%7D%20%0Acode%20%3E%20span%2Edt%20%7B%20color%3A%20%23902000%3B%20%7D%20%0Acode%20%3E%20span%2Edv%20%7B%20color%3A%20%2340a070%3B%20%7D%20%0Acode%20%3E%20span%2Ebn%20%7B%20color%3A%20%23d14%3B%20%7D%20%0Acode%20%3E%20span%2Efl%20%7B%20color%3A%20%23d14%3B%20%7D%20%0Acode%20%3E%20span%2Ech%20%7B%20color%3A%20%23d14%3B%20%7D%20%0Acode%20%3E%20span%2Est%20%7B%20color%3A%20%23d14%3B%20%7D%20%0Acode%20%3E%20span%2Eco%20%7B%20color%3A%20%23888888%3B%20font%2Dstyle%3A%20italic%3B%20%7D%20%0Acode%20%3E%20span%2Eot%20%7B%20color%3A%20%23007020%3B%20%7D%20%0Acode%20%3E%20span%2Eal%20%7B%20color%3A%20%23ff0000%3B%20font%2Dweight%3A%20bold%3B%20%7D%20%0Acode%20%3E%20span%2Efu%20%7B%20color%3A%20%23900%3B%20font%2Dweight%3A%20bold%3B%20%7D%20%0Acode%20%3E%20span%2Eer%20%7B%20color%3A%20%23a61717%3B%20background%2Dcolor%3A%20%23e3d2d2%3B%20%7D%20%0A" type="text/css" />
+<style type="text/css">body {
+background-color: #fff;
+margin: 1em auto;
+max-width: 700px;
+overflow: visible;
+padding-left: 2em;
+padding-right: 2em;
+font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+font-size: 14px;
+line-height: 1.35;
+}
+#TOC {
+clear: both;
+margin: 0 0 10px 10px;
+padding: 4px;
+width: 400px;
+border: 1px solid #CCCCCC;
+border-radius: 5px;
+background-color: #f6f6f6;
+font-size: 13px;
+line-height: 1.3;
+}
+#TOC .toctitle {
+font-weight: bold;
+font-size: 15px;
+margin-left: 5px;
+}
+#TOC ul {
+padding-left: 40px;
+margin-left: -1.5em;
+margin-top: 5px;
+margin-bottom: 5px;
+}
+#TOC ul ul {
+margin-left: -2em;
+}
+#TOC li {
+line-height: 16px;
+}
+table {
+margin: 1em auto;
+border-width: 1px;
+border-color: #DDDDDD;
+border-style: outset;
+border-collapse: collapse;
+}
+table th {
+border-width: 2px;
+padding: 5px;
+border-style: inset;
+}
+table td {
+border-width: 1px;
+border-style: inset;
+line-height: 18px;
+padding: 5px 5px;
+}
+table, table th, table td {
+border-left-style: none;
+border-right-style: none;
+}
+table thead, table tr.even {
+background-color: #f7f7f7;
+}
+p {
+margin: 0.5em 0;
+}
+blockquote {
+background-color: #f6f6f6;
+padding: 0.25em 0.75em;
+}
+hr {
+border-style: solid;
+border: none;
+border-top: 1px solid #777;
+margin: 28px 0;
+}
+dl {
+margin-left: 0;
+}
+dl dd {
+margin-bottom: 13px;
+margin-left: 13px;
+}
+dl dt {
+font-weight: bold;
+}
+ul {
+margin-top: 0;
+}
+ul li {
+list-style: circle outside;
+}
+ul ul {
+margin-bottom: 0;
+}
+pre, code {
+background-color: #f7f7f7;
+border-radius: 3px;
+color: #333;
+white-space: pre-wrap; 
+}
+pre {
+border-radius: 3px;
+margin: 5px 0px 10px 0px;
+padding: 10px;
+}
+pre:not([class]) {
+background-color: #f7f7f7;
+}
+code {
+font-family: Consolas, Monaco, 'Courier New', monospace;
+font-size: 85%;
+}
+p > code, li > code {
+padding: 2px 0px;
+}
+div.figure {
+text-align: center;
+}
+img {
+background-color: #FFFFFF;
+padding: 2px;
+border: 1px solid #DDDDDD;
+border-radius: 3px;
+border: 1px solid #CCCCCC;
+margin: 0 5px;
+}
+h1 {
+margin-top: 0;
+font-size: 35px;
+line-height: 40px;
+}
+h2 {
+border-bottom: 4px solid #f7f7f7;
+padding-top: 10px;
+padding-bottom: 2px;
+font-size: 145%;
+}
+h3 {
+border-bottom: 2px solid #f7f7f7;
+padding-top: 10px;
+font-size: 120%;
+}
+h4 {
+border-bottom: 1px solid #f7f7f7;
+margin-left: 8px;
+font-size: 105%;
+}
+h5, h6 {
+border-bottom: 1px solid #ccc;
+font-size: 105%;
+}
+a {
+color: #0033dd;
+text-decoration: none;
+}
+a:hover {
+color: #6666ff; }
+a:visited {
+color: #800080; }
+a:visited:hover {
+color: #BB00BB; }
+a[href^="http:"] {
+text-decoration: underline; }
+a[href^="https:"] {
+text-decoration: underline; }
+
+code > span.kw { color: #555; font-weight: bold; } 
+code > span.dt { color: #902000; } 
+code > span.dv { color: #40a070; } 
+code > span.bn { color: #d14; } 
+code > span.fl { color: #d14; } 
+code > span.ch { color: #d14; } 
+code > span.st { color: #d14; } 
+code > span.co { color: #888888; font-style: italic; } 
+code > span.ot { color: #007020; } 
+code > span.al { color: #ff0000; font-weight: bold; } 
+code > span.fu { color: #900; font-weight: bold; } 
+code > span.er { color: #a61717; background-color: #e3d2d2; } 
+</style>
 
 
 
@@ -139,17 +331,21 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 
 
 
-<h1 class="title toc-ignore">Analysis of bivariate binomial data: Twin analysis</h1>
+<h1 class="title toc-ignore">Analysis of bivariate binomial data: Twin
+analysis</h1>
 <h4 class="author">Klaus Holst &amp; Thomas Scheike</h4>
-<h4 class="date">2021-09-05</h4>
+<h4 class="date">2022-09-03</h4>
 
 
 
 <div id="overview" class="section level1">
 <h1>Overview</h1>
-<p>When looking at bivariate binomial data with the aim of learning about the dependence that is present, possibly after correcting for some covariates many models are available.</p>
+<p>When looking at bivariate binomial data with the aim of learning
+about the dependence that is present, possibly after correcting for some
+covariates many models are available.</p>
 <ul>
-<li>Random-effects models logistic regression covered elsewhere (glmer in lme4).</li>
+<li>Random-effects models logistic regression covered elsewhere (glmer
+in lme4).</li>
 </ul>
 <p>in the mets package you can fit the</p>
 <ul>
@@ -157,16 +353,26 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <li><p>Bivariate Probit model</p>
 <ul>
 <li>With random effects</li>
-<li>Special functionality for polygenic random effects modelling such as ACE, ADE ,AE and so forth.</li>
+<li>Special functionality for polygenic random effects modelling such as
+ACE, ADE ,AE and so forth.</li>
 </ul></li>
 <li><p>Additive gamma random effects model</p>
 <ul>
-<li>Special functionality for polygenic random effects modelling such as ACE, ADE ,AE and so forth.</li>
+<li>Special functionality for polygenic random effects modelling such as
+ACE, ADE ,AE and so forth.</li>
 </ul></li>
 </ul>
-<p>Typically it can be hard or impossible to specify random effects models with special structure among the parameters of the random effects. This is possible in our models.</p>
-<p>To be concrete about the model structure assume that we have paired binomial data <span class="math inline">\((Y_1, Y_2, X_1, X_)2\)</span> where the responses are <span class="math inline">\(Y_1, Y_2\)</span> and we have covariates <span class="math inline">\(X_1, X_2\)</span>.</p>
-<p>We start by giving a brief description of these different models. First we for bivariate data one can specify the marginal probability using logistic regression models <span class="math display">\[
+<p>Typically it can be hard or impossible to specify random effects
+models with special structure among the parameters of the random
+effects. This is possible in our models.</p>
+<p>To be concrete about the model structure assume that we have paired
+binomial data <span class="math inline">\((Y_1, Y_2, X_1, X_)2\)</span>
+where the responses are <span class="math inline">\(Y_1, Y_2\)</span>
+and we have covariates <span class="math inline">\(X_1,
+X_2\)</span>.</p>
+<p>We start by giving a brief description of these different models.
+First we for bivariate data one can specify the marginal probability
+using logistic regression models <span class="math display">\[
 logit(P(Y_i=1|X_i)) = \alpha_i + X_i^T \beta  i=1,2.
 \]</span> These model can be estimated under working independence .</p>
 <p>A typical twin analysis will typically consist of looking at both</p>
@@ -174,78 +380,130 @@ logit(P(Y_i=1|X_i)) = \alpha_i + X_i^T \beta  i=1,2.
 <li><p>Pairwise odds ratio model</p></li>
 <li><p>Bivariate Probit model</p></li>
 </ul>
-<p>The additive gamma can be used for the same as the bivariate probit model but is more restrictive in terms of dependence structure, but is nevertheless still valuable to have also as a check of results of the bivariate probit model.</p>
+<p>The additive gamma can be used for the same as the bivariate probit
+model but is more restrictive in terms of dependence structure, but is
+nevertheless still valuable to have also as a check of results of the
+bivariate probit model.</p>
 </div>
 <div id="biprobit-with-random-effects" class="section level1">
 <h1>Biprobit with random effects</h1>
-<p>For these model we assume that given random effects <span class="math inline">\(Z\)</span> and a covariate vector <span class="math inline">\(V_{12}\)</span> we have independent logistic regression models <span class="math display">\[
+<p>For these model we assume that given random effects <span class="math inline">\(Z\)</span> and a covariate vector <span class="math inline">\(V_{12}\)</span> we have independent logistic
+regression models <span class="math display">\[
 probit(P(Y_i=1|X_i, Z)) = \alpha_i + X_i^T \beta + V_{12}^T Z  i=1,2.
-\]</span> where Z$ is a bivariate normal distribution with some covariance <span class="math inline">\(\Sigma\)</span>. The general covariance structure <span class="math inline">\(\Sigma\)</span> makes the model very flexible.</p>
+\]</span> where Z$ is a bivariate normal distribution with some
+covariance <span class="math inline">\(\Sigma\)</span>. The general
+covariance structure <span class="math inline">\(\Sigma\)</span> makes
+the model very flexible.</p>
 <p>We note that</p>
 <ul>
-<li>Paramters <span class="math inline">\(\beta\)</span> are subject specific</li>
-<li>The <span class="math inline">\(\Sigma\)</span> will reflect dependence</li>
+<li>Paramters <span class="math inline">\(\beta\)</span> are subject
+specific</li>
+<li>The <span class="math inline">\(\Sigma\)</span> will reflect
+dependence</li>
 </ul>
-<p>The more standard link function <span class="math inline">\(logit\)</span> rather than the <span class="math inline">\(probit\)</span> link is often used and implemented in for example . The advantage is that one now gets an odds-ratio interpretation of the subject specific effects, but one then needs numerical integration to fit the model.</p>
+<p>The more standard link function <span class="math inline">\(logit\)</span> rather than the <span class="math inline">\(probit\)</span> link is often used and implemented
+in for example . The advantage is that one now gets an odds-ratio
+interpretation of the subject specific effects, but one then needs
+numerical integration to fit the model.</p>
 <div id="pairwise-odds-ratio-model" class="section level2">
 <h2>Pairwise odds ratio model</h2>
-<p>Now the pairwise odds ratio model the specifies that given $ X_1, X_2 $ the marginal models are <span class="math display">\[
+<p>Now the pairwise odds ratio model the specifies that given $ X_1, X_2
+$ the marginal models are <span class="math display">\[
 logit(P(Y_i=1|X_i)) = \alpha_i + X_i^T \beta  i=1,2
 \]</span></p>
 <p>The primary object of interest are the odds ratio between <span class="math inline">\(Y_{1}\)</span> and <span class="math inline">\(Y_{2}\)</span> <span class="math display">\[
-\gamma_{12} = \frac{ P(  Y_{ki} =1 , Y_{kj} =1) P(  Y_{ki} =0 , Y_{kj} =0) }{ 
+\gamma_{12} = \frac{ P(  Y_{ki} =1 , Y_{kj} =1) P(  Y_{ki} =0 , Y_{kj}
+=0) }{
   P(  Y_{ki} =1 , Y_{kj} =0) P(  Y_{ki} =0 , Y_{kj} =1) }
 \]</span> given <span class="math inline">\(X_{ki}\)</span>, <span class="math inline">\(X_{kj}\)</span>, and <span class="math inline">\(Z_{kji}\)</span>.</p>
 <p>We model the odds ratio with the regression <span class="math display">\[
 \gamma_{12} = \exp( Z_{12}^T \lambda)
-\]</span> Where <span class="math inline">\(Z_{12}\)</span> are some covarites that may influence the odds-ratio between between <span class="math inline">\(Y_{1}\)</span> and <span class="math inline">\(Y_{2}\)</span> and contains the marginal covariates, . This odds-ratio is given covariates as well as marginal covariates. The odds-ratio and marginals specify the joint bivariate distribution via the so-called Placckett-distribution.</p>
-<p>One way of fitting this model is the ALR algoritm, the alternating logistic regression ahd this has been described in several papers . We here simply estimate the parameters in a two stage-procedure</p>
+\]</span> Where <span class="math inline">\(Z_{12}\)</span> are some
+covarites that may influence the odds-ratio between between <span class="math inline">\(Y_{1}\)</span> and <span class="math inline">\(Y_{2}\)</span> and contains the marginal
+covariates, . This odds-ratio is given covariates as well as marginal
+covariates. The odds-ratio and marginals specify the joint bivariate
+distribution via the so-called Placckett-distribution.</p>
+<p>One way of fitting this model is the ALR algoritm, the alternating
+logistic regression ahd this has been described in several papers . We
+here simply estimate the parameters in a two stage-procedure</p>
 <ul>
 <li>Estimating the marginal parameters via GEE</li>
 <li>Using marginal estimates, estimate dependence parameters</li>
 </ul>
-<p>This gives efficient estimates of the dependence parameters because of orthogonality, but some efficiency may be gained for the marginal parameters by using the full likelihood or iterative fitting such as for the ALR.</p>
-<p>The pairwise odds-ratio model is very useful, but one do not have a random effects model.</p>
+<p>This gives efficient estimates of the dependence parameters because
+of orthogonality, but some efficiency may be gained for the marginal
+parameters by using the full likelihood or iterative fitting such as for
+the ALR.</p>
+<p>The pairwise odds-ratio model is very useful, but one do not have a
+random effects model.</p>
 </div>
 <div id="additive-gamma-model" class="section level2">
 <h2>Additive gamma model</h2>
 <p>Again we operate under marginal logistic regression models are <span class="math display">\[
 logit(P(Y_i=1|X_i)) = \alpha_i + X_i^T \beta  i=1,2
 \]</span></p>
-<p>First with just one random effect <span class="math inline">\(Z\)</span> we assume that conditional on <span class="math inline">\(Z\)</span> the responses are independent and follow the model <span class="math display">\[
-logit(P(Y_i=1|X_i,Z)) = exp( -Z \cdot \Psi^{-1}(\lambda_{\bullet},\lambda_{\bullet},P(Y_i=1|X_i)) )  
-\]</span> where <span class="math inline">\(\Psi\)</span> is the laplace transform of <span class="math inline">\(Z\)</span> where we assume that <span class="math inline">\(Z\)</span> is gamma distributed with variance <span class="math inline">\(\lambda_{\bullet}^{-1}\)</span> and mean 1. In general <span class="math inline">\(\Psi(\lambda_1,\lambda_2)\)</span> is the laplace transform of a Gamma distributed random effect with <span class="math inline">\(Z\)</span> with mean <span class="math inline">\(\lambda_1/\lambda_2\)</span> and variance <span class="math inline">\(\lambda_1/\lambda_2^2\)</span>.</p>
+<p>First with just one random effect <span class="math inline">\(Z\)</span> we assume that conditional on <span class="math inline">\(Z\)</span> the responses are independent and
+follow the model <span class="math display">\[
+logit(P(Y_i=1|X_i,Z)) = exp( -Z \cdot
+\Psi^{-1}(\lambda_{\bullet},\lambda_{\bullet},P(Y_i=1|X_i)) )  
+\]</span> where <span class="math inline">\(\Psi\)</span> is the laplace
+transform of <span class="math inline">\(Z\)</span> where we assume that
+<span class="math inline">\(Z\)</span> is gamma distributed with
+variance <span class="math inline">\(\lambda_{\bullet}^{-1}\)</span> and
+mean 1. In general <span class="math inline">\(\Psi(\lambda_1,\lambda_2)\)</span> is the laplace
+transform of a Gamma distributed random effect with <span class="math inline">\(Z\)</span> with mean <span class="math inline">\(\lambda_1/\lambda_2\)</span> and variance <span class="math inline">\(\lambda_1/\lambda_2^2\)</span>.</p>
 <p>We fit this model by</p>
 <ul>
 <li>Estimating the marginal parameters via GEE</li>
 <li>Using marginal estimates, estimate dependence parameters</li>
 </ul>
-<p>To deal with multiple random effects we consider random effects <span class="math inline">\(Z_i i=1,...,d\)</span> such that <span class="math inline">\(Z_i\)</span> is gamma distributed with * mean: <span class="math inline">\(\lambda_j/\lambda_{\bullet}\)</span> * variance: <span class="math inline">\(\lambda_j/\lambda_{\bullet}^2\)</span>, where we define the scalar <span class="math inline">\(\lambda_{\bullet}\)</span> below.</p>
+<p>To deal with multiple random effects we consider random effects <span class="math inline">\(Z_i i=1,...,d\)</span> such that <span class="math inline">\(Z_i\)</span> is gamma distributed with * mean:
+<span class="math inline">\(\lambda_j/\lambda_{\bullet}\)</span> *
+variance: <span class="math inline">\(\lambda_j/\lambda_{\bullet}^2\)</span>, where we
+define the scalar <span class="math inline">\(\lambda_{\bullet}\)</span>
+below.</p>
 <p>Now given a cluster-specific design vector <span class="math inline">\(V_{12}\)</span> we assume that <span class="math display">\[
 V_{12}^T Z
-\]</span> is gamma distributed with mean 1 and variance <span class="math inline">\(\lambda_{\bullet}^{-1}\)</span> such that critically the random effect variance is the same for all clusters. That is <span class="math display">\[
- \lambda_{\bullet} = V_{12}^T (\lambda_1,...,\lambda_d)^T 
-\]</span> We return to some specific models below, and show how to fit the ACE and AE model using this set-up.</p>
-<p>One last option in the model-specification is to specify how the parameters <span class="math inline">\(\lambda_1,...,\lambda_d\)</span> are related. We thus can specify a matrix <span class="math inline">\(M\)</span> of dimension <span class="math inline">\(p \times d\)</span> such that <span class="math display">\[
- (\lambda_1,...,\lambda_d)^T  = M \theta
-\]</span> where <span class="math inline">\(\theta\)</span> is d-dimensional. If <span class="math inline">\(M\)</span> is diagonal we have no restrictions on parameters.</p>
-<p>This parametrization is obtained with the var.par=0 option that thus estimates <span class="math inline">\(\theta\)</span>.</p>
-<p>The DEFAULT parametrization instead estimates the variances of the random effecs (var.par=1) via the parameters <span class="math inline">\(\nu\)</span> <span class="math display">\[
- M \nu = ( \lambda_1/\lambda_{\bullet}^2, ...,\lambda_d/\lambda_{\bullet}^2)^T
+\]</span> is gamma distributed with mean 1 and variance <span class="math inline">\(\lambda_{\bullet}^{-1}\)</span> such that
+critically the random effect variance is the same for all clusters. That
+is <span class="math display">\[
+\lambda_{\bullet} = V_{12}^T (\lambda_1,...,\lambda_d)^T
+\]</span> We return to some specific models below, and show how to fit
+the ACE and AE model using this set-up.</p>
+<p>One last option in the model-specification is to specify how the
+parameters <span class="math inline">\(\lambda_1,...,\lambda_d\)</span>
+are related. We thus can specify a matrix <span class="math inline">\(M\)</span> of dimension <span class="math inline">\(p \times d\)</span> such that <span class="math display">\[
+(\lambda_1,...,\lambda_d)^T  = M \theta
+\]</span> where <span class="math inline">\(\theta\)</span> is
+d-dimensional. If <span class="math inline">\(M\)</span> is diagonal we
+have no restrictions on parameters.</p>
+<p>This parametrization is obtained with the var.par=0 option that thus
+estimates <span class="math inline">\(\theta\)</span>.</p>
+<p>The DEFAULT parametrization instead estimates the variances of the
+random effecs (var.par=1) via the parameters <span class="math inline">\(\nu\)</span> <span class="math display">\[
+M \nu = ( \lambda_1/\lambda_{\bullet}^2,
+...,\lambda_d/\lambda_{\bullet}^2)^T
 \]</span></p>
-<p>The basic modelling assumption is now that given random effects <span class="math inline">\(Z=(Z_1,...,Z_d)\)</span> we have independent probabilites <span class="math display">\[
-logit(P(Y_i=1|X_i,Z)) = exp( -V_{12,i}^T Z \cdot \Psi^{-1}(\lambda_{\bullet},\lambda_{\bullet},P(Y_i=1|X_i)) )   i=1,2
+<p>The basic modelling assumption is now that given random effects <span class="math inline">\(Z=(Z_1,...,Z_d)\)</span> we have independent
+probabilites <span class="math display">\[
+logit(P(Y_i=1|X_i,Z)) = exp( -V_{12,i}^T Z \cdot
+\Psi^{-1}(\lambda_{\bullet},\lambda_{\bullet},P(Y_i=1|X_i)) )   i=1,2
 \]</span></p>
 <p>We fit this model by</p>
 <ul>
 <li>Estimating the marginal parameters via GEE</li>
 <li>Using marginal estimates, estimate dependence parameters</li>
 </ul>
-<p>Even though the model not formaly in this formulation allows negative correlation in practice the paramters can be negative and this reflects negative correlation. An advanatage is that no numerical integration is needed.</p>
+<p>Even though the model not formaly in this formulation allows negative
+correlation in practice the paramters can be negative and this reflects
+negative correlation. An advanatage is that no numerical integration is
+needed.</p>
 </div>
 <div id="the-twin-stutter-data" class="section level2">
 <h2>The twin-stutter data</h2>
-<p>We consider the twin-stutter where for pairs of twins that are either dizygotic or monozygotic we have recorded whether the twins are stuttering </p>
+<p>We consider the twin-stutter where for pairs of twins that are either
+dizygotic or monozygotic we have recorded whether the twins are
+stuttering </p>
 <p>We here consider MZ and same sex DZ twins.</p>
 <p>Looking at the data</p>
 <div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(mets)</span>
@@ -264,8 +522,11 @@ logit(P(Y_i=1|X_i,Z)) = exp( -V_{12,i}^T Z \cdot \Psi^{-1}(\lambda_{\bullet},\la
 </div>
 <div id="pairwise-odds-ratio-model-1" class="section level2">
 <h2>Pairwise odds ratio model</h2>
-<p>We start by fitting an overall dependence OR for both MZ and DZ even though the dependence is expected to be different across zygosity.</p>
-<p>The first step is to fit the marginal model adjusting for marginal covariates. We here note that there is a rather strong gender effect in the risk of stuttering.</p>
+<p>We start by fitting an overall dependence OR for both MZ and DZ even
+though the dependence is expected to be different across zygosity.</p>
+<p>The first step is to fit the marginal model adjusting for marginal
+covariates. We here note that there is a rather strong gender effect in
+the risk of stuttering.</p>
 <div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>margbin <span class="ot">&lt;-</span> <span class="fu">glm</span>(binstut<span class="sc">~</span><span class="fu">factor</span>(sex)<span class="sc">+</span>age,<span class="at">data=</span>twinstut,<span class="at">family=</span><span class="fu">binomial</span>())</span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(margbin)</span>
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
@@ -292,7 +553,8 @@ logit(P(Y_i=1|X_i,Z)) = exp( -V_{12,i}^T Z \cdot \Psi^{-1}(\lambda_{\bullet},\la
 <span id="cb2-24"><a href="#cb2-24" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; AIC: 9123</span></span>
 <span id="cb2-25"><a href="#cb2-25" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
 <span id="cb2-26"><a href="#cb2-26" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Number of Fisher Scoring iterations: 6</span></span></code></pre></div>
-<p>Now estimating the OR parameter. We see a strong dependence with an OR at around 8 that is clearly significant.</p>
+<p>Now estimating the OR parameter. We see a strong dependence with an
+OR at around 8 that is clearly significant.</p>
 <div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>bina <span class="ot">&lt;-</span> <span class="fu">binomial.twostage</span>(margbin,<span class="at">data=</span>twinstut,<span class="at">var.link=</span><span class="dv">1</span>,</span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>                       <span class="at">clusters=</span>twinstut<span class="sc">$</span>tvparnr,<span class="at">detail=</span><span class="dv">0</span>)</span>
 <span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(bina)</span>
@@ -311,7 +573,11 @@ logit(P(Y_i=1|X_i,Z)) = exp( -V_{12,i}^T Z \cdot \Psi^{-1}(\lambda_{\bullet},\la
 <span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
 <span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; attr(,&quot;class&quot;)</span></span>
 <span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] &quot;summary.mets.twostage&quot;</span></span></code></pre></div>
-<p>Now, and more interestingly, we consider an OR that depends on zygosity and note that MZ have a much larger OR than DZ twins. This type of trait is somewhat complicated to interpret, but clearly, one option is that that there is a genetic effect, alternatively there might be a stronger environmental effect for MZ twins.</p>
+<p>Now, and more interestingly, we consider an OR that depends on
+zygosity and note that MZ have a much larger OR than DZ twins. This type
+of trait is somewhat complicated to interpret, but clearly, one option
+is that that there is a genetic effect, alternatively there might be a
+stronger environmental effect for MZ twins.</p>
 <div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co"># design for OR dependence </span></span>
 <span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>theta.des <span class="ot">&lt;-</span> <span class="fu">model.matrix</span>( <span class="sc">~-</span><span class="dv">1</span><span class="sc">+</span><span class="fu">factor</span>(zyg),<span class="at">data=</span>twinstut)</span>
 <span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>bin <span class="ot">&lt;-</span> <span class="fu">binomial.twostage</span>(margbin,<span class="at">data=</span>twinstut,<span class="at">var.link=</span><span class="dv">1</span>,</span>
@@ -334,7 +600,11 @@ logit(P(Y_i=1|X_i,Z)) = exp( -V_{12,i}^T Z \cdot \Psi^{-1}(\lambda_{\bullet},\la
 <span id="cb4-20"><a href="#cb4-20" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
 <span id="cb4-21"><a href="#cb4-21" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; attr(,&quot;class&quot;)</span></span>
 <span id="cb4-22"><a href="#cb4-22" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] &quot;summary.mets.twostage&quot;</span></span></code></pre></div>
-<p>We now consider further regression modelling of the OR structure by considering possible interactions between sex and zygozsity. We see that MZ has a much higher dependence and that males have a much lower dependence. We tested for interaction in this model and these were not significant.</p>
+<p>We now consider further regression modelling of the OR structure by
+considering possible interactions between sex and zygozsity. We see that
+MZ has a much higher dependence and that males have a much lower
+dependence. We tested for interaction in this model and these were not
+significant.</p>
 <div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>twinstut<span class="sc">$</span>cage <span class="ot">&lt;-</span> <span class="fu">scale</span>(twinstut<span class="sc">$</span>age)</span>
 <span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>theta.des <span class="ot">&lt;-</span> <span class="fu">model.matrix</span>( <span class="sc">~-</span><span class="dv">1</span><span class="sc">+</span><span class="fu">factor</span>(zyg)<span class="sc">+</span><span class="fu">factor</span>(sex),<span class="at">data=</span>twinstut)</span>
 <span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>bina <span class="ot">&lt;-</span> <span class="fu">binomial.twostage</span>(margbin,<span class="at">data=</span>twinstut,<span class="at">var.link=</span><span class="dv">1</span>,</span>
@@ -362,8 +632,11 @@ logit(P(Y_i=1|X_i,Z)) = exp( -V_{12,i}^T Z \cdot \Psi^{-1}(\lambda_{\bullet},\la
 </div>
 <div id="alternative-syntax" class="section level2">
 <h2>Alternative syntax</h2>
-<p>We now demonstrate how the models can fitted jointly and with anohter syntax, that ofcourse just fits the marginal model and subsequently fits the pairwise OR model.</p>
-<p>First noticing as before that MZ twins have a much higher dependence.</p>
+<p>We now demonstrate how the models can fitted jointly and with anohter
+syntax, that ofcourse just fits the marginal model and subsequently fits
+the pairwise OR model.</p>
+<p>First noticing as before that MZ twins have a much higher
+dependence.</p>
 <div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a> <span class="co"># refers to zygosity of first subject in eash pair : zyg1</span></span>
 <span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a> <span class="co"># could also use zyg2 (since zyg2=zyg1 within twinpair&#39;s)</span></span>
 <span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a> out <span class="ot">&lt;-</span> <span class="fu">easy.binomial.twostage</span>(stutter<span class="sc">~</span><span class="fu">factor</span>(sex)<span class="sc">+</span>age,<span class="at">data=</span>twinstut,</span>
@@ -387,7 +660,9 @@ logit(P(Y_i=1|X_i,Z)) = exp( -V_{12,i}^T Z \cdot \Psi^{-1}(\lambda_{\bullet},\la
 <span id="cb6-21"><a href="#cb6-21" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
 <span id="cb6-22"><a href="#cb6-22" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; attr(,&quot;class&quot;)</span></span>
 <span id="cb6-23"><a href="#cb6-23" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] &quot;summary.mets.twostage&quot;</span></span></code></pre></div>
-<p>Now considering all data and estimating separate effects for the OR for opposite sex DZ twins and same sex twins. We here find that os twins are not markedly different from the same sex DZ twins.</p>
+<p>Now considering all data and estimating separate effects for the OR
+for opposite sex DZ twins and same sex twins. We here find that os twins
+are not markedly different from the same sex DZ twins.</p>
 <div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a> <span class="co"># refers to zygosity of first subject in eash pair : zyg1</span></span>
 <span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a> <span class="co"># could also use zyg2 (since zyg2=zyg1 within twinpair&#39;s))</span></span>
 <span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a> </span>
@@ -433,7 +708,11 @@ logit(P(Y_i=1|X_i,Z)) = exp( -V_{12,i}^T Z \cdot \Psi^{-1}(\lambda_{\bullet},\la
 <span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 8        5  mz      no female  71  1       0</span></span>
 <span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 9        5  mz      no female  71  2       0</span></span>
 <span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 11       7  dz      no   male  71  1       0</span></span></code></pre></div>
-<p>First testing for same dependence in MZ and DZ that we recommend doing by comparing the correlations of MZ and DZ twins. Apart from regression correction in the mean this is an un-structured model, and the useful concordance and casewise concordance estimates can be reported from this analysis.</p>
+<p>First testing for same dependence in MZ and DZ that we recommend
+doing by comparing the correlations of MZ and DZ twins. Apart from
+regression correction in the mean this is an un-structured model, and
+the useful concordance and casewise concordance estimates can be
+reported from this analysis.</p>
 <div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>b1 <span class="ot">&lt;-</span> <span class="fu">bptwin</span>(binstut<span class="sc">~</span>sex,<span class="at">data=</span>twinstut,<span class="at">id=</span><span class="st">&quot;tvparnr&quot;</span>,<span class="at">zyg=</span><span class="st">&quot;zyg&quot;</span>,<span class="at">DZ=</span><span class="st">&quot;dz&quot;</span>,<span class="at">type=</span><span class="st">&quot;un&quot;</span>)</span>
 <span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(b1)</span>
 <span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
@@ -472,7 +751,13 @@ logit(P(Y_i=1|X_i,Z)) = exp( -V_{12,i}^T Z \cdot \Psi^{-1}(\lambda_{\bullet},\la
 </div>
 <div id="polygenic-modelling" class="section level2">
 <h2>Polygenic modelling</h2>
-<p>We now turn attention to specific polygenic modelling where special random effects are used to specify ACE, AE, ADE models and so forth. This is very easy with the bptwin function. The key parts of the output are the sizes of the genetic component A and the environmental component, and we can compare with the results of the unstructed model above. Also formally we can test if this submodel is acceptable by a likelihood ratio test.</p>
+<p>We now turn attention to specific polygenic modelling where special
+random effects are used to specify ACE, AE, ADE models and so forth.
+This is very easy with the bptwin function. The key parts of the output
+are the sizes of the genetic component A and the environmental
+component, and we can compare with the results of the unstructed model
+above. Also formally we can test if this submodel is acceptable by a
+likelihood ratio test.</p>
 <div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>b1 <span class="ot">&lt;-</span> <span class="fu">bptwin</span>(binstut<span class="sc">~</span>sex,<span class="at">data=</span>twinstut,<span class="at">id=</span><span class="st">&quot;tvparnr&quot;</span>,<span class="at">zyg=</span><span class="st">&quot;zyg&quot;</span>,<span class="at">DZ=</span><span class="st">&quot;dz&quot;</span>,<span class="at">type=</span><span class="st">&quot;ace&quot;</span>)</span>
 <span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(b1)</span>
 <span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
@@ -550,7 +835,11 @@ logit(P(Y_i=1|X_i,Z)) = exp( -V_{12,i}^T Z \cdot \Psi^{-1}(\lambda_{\bullet},\la
 </div>
 <div id="additive-gamma-random-effects" class="section level2">
 <h2>Additive gamma random effects</h2>
-<p>Fitting first a model with different size random effects for MZ and DZ. We note that as before in the OR and biprobit model the dependence is much stronger for MZ twins. We also test if these are the same by parametrizing the OR model with an intercept. This clearly shows a significant difference.</p>
+<p>Fitting first a model with different size random effects for MZ and
+DZ. We note that as before in the OR and biprobit model the dependence
+is much stronger for MZ twins. We also test if these are the same by
+parametrizing the OR model with an intercept. This clearly shows a
+significant difference.</p>
 <div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>theta.des <span class="ot">&lt;-</span> <span class="fu">model.matrix</span>( <span class="sc">~-</span><span class="dv">1</span><span class="sc">+</span><span class="fu">factor</span>(zyg),<span class="at">data=</span>twinstut)</span>
 <span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>margbin <span class="ot">&lt;-</span> <span class="fu">glm</span>(binstut<span class="sc">~</span>sex,<span class="at">data=</span>twinstut,<span class="at">family=</span><span class="fu">binomial</span>())</span>
 <span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>bintwin <span class="ot">&lt;-</span> <span class="fu">binomial.twostage</span>(margbin,<span class="at">data=</span>twinstut,<span class="at">model=</span><span class="st">&quot;gamma&quot;</span>,</span>
@@ -604,7 +893,13 @@ logit(P(Y_i=1|X_i,Z)) = exp( -V_{12,i}^T Z \cdot \Psi^{-1}(\lambda_{\bullet},\la
 </div>
 <div id="polygenic-modelling-1" class="section level2">
 <h2>Polygenic modelling</h2>
-<p>First setting up the random effects design for the random effects and the the relationship between variance parameters. We see that the genetic random effect has size one for MZ and 0.5 for DZ subjects, that have shared and non-shared genetic components with variance 0.5 such that the total genetic variance is the same for all subjects. The shared environmental effect is the samme for all. Thus two parameters with these bands.</p>
+<p>First setting up the random effects design for the random effects and
+the the relationship between variance parameters. We see that the
+genetic random effect has size one for MZ and 0.5 for DZ subjects, that
+have shared and non-shared genetic components with variance 0.5 such
+that the total genetic variance is the same for all subjects. The shared
+environmental effect is the samme for all. Thus two parameters with
+these bands.</p>
 <div class="sourceCode" id="cb13"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>out <span class="ot">&lt;-</span> <span class="fu">twin.polygen.design</span>(twinstut,<span class="at">id=</span><span class="st">&quot;tvparnr&quot;</span>,<span class="at">zygname=</span><span class="st">&quot;zyg&quot;</span>,<span class="at">zyg=</span><span class="st">&quot;dz&quot;</span>,<span class="at">type=</span><span class="st">&quot;ace&quot;</span>)</span>
 <span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(<span class="fu">cbind</span>(out<span class="sc">$</span>des.rv,twinstut<span class="sc">$</span>tvparnr),<span class="dv">10</span>)</span>
 <span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;    MZ DZ DZns1 DZns2 env   </span></span>
@@ -625,7 +920,10 @@ logit(P(Y_i=1|X_i,Z)) = exp( -V_{12,i}^T Z \cdot \Psi^{-1}(\lambda_{\bullet},\la
 <span id="cb13-18"><a href="#cb13-18" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [3,]  0.5    0</span></span>
 <span id="cb13-19"><a href="#cb13-19" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [4,]  0.5    0</span></span>
 <span id="cb13-20"><a href="#cb13-20" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [5,]  0.0    1</span></span></code></pre></div>
-<p>Now, fitting the ACE model, we see that the variance of the genetic, component, is 1.5 and the environmental variance is -0.5. Thus suggesting that the ACE model does not fit the data. When the random design is given we automatically use the gamma fralty model.</p>
+<p>Now, fitting the ACE model, we see that the variance of the genetic,
+component, is 1.5 and the environmental variance is -0.5. Thus
+suggesting that the ACE model does not fit the data. When the random
+design is given we automatically use the gamma fralty model.</p>
 <div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>margbin <span class="ot">&lt;-</span> <span class="fu">glm</span>(binstut<span class="sc">~</span>sex,<span class="at">data=</span>twinstut,<span class="at">family=</span><span class="fu">binomial</span>())</span>
 <span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>bintwin1 <span class="ot">&lt;-</span> <span class="fu">binomial.twostage</span>(margbin,<span class="at">data=</span>twinstut,</span>
 <span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>     <span class="at">clusters=</span>twinstut<span class="sc">$</span>tvparnr,<span class="at">detail=</span><span class="dv">0</span>,<span class="at">theta=</span><span class="fu">c</span>(<span class="fl">0.1</span>)<span class="sc">/</span><span class="dv">1</span>,<span class="at">var.link=</span><span class="dv">0</span>,</span>
@@ -635,40 +933,42 @@ logit(P(Y_i=1|X_i,Z)) = exp( -V_{12,i}^T Z \cdot \Psi^{-1}(\lambda_{\bullet},\la
 <span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Variance of Gamma distributed random effects</span></span>
 <span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; $estimates</span></span>
 <span id="cb14-9"><a href="#cb14-9" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;                  theta        se</span></span>
-<span id="cb14-10"><a href="#cb14-10" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; dependence1  1.5261839 0.2475041</span></span>
-<span id="cb14-11"><a href="#cb14-11" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; dependence2 -0.5447955 0.1942159</span></span>
+<span id="cb14-10"><a href="#cb14-10" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; dependence1  1.5261839 0.2475371</span></span>
+<span id="cb14-11"><a href="#cb14-11" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; dependence2 -0.5447955 0.1958921</span></span>
 <span id="cb14-12"><a href="#cb14-12" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
 <span id="cb14-13"><a href="#cb14-13" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; $type</span></span>
 <span id="cb14-14"><a href="#cb14-14" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] &quot;clayton.oakes&quot;</span></span>
 <span id="cb14-15"><a href="#cb14-15" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
 <span id="cb14-16"><a href="#cb14-16" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; $h</span></span>
 <span id="cb14-17"><a href="#cb14-17" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;             Estimate Std.Err    2.5%   97.5%   P-value</span></span>
-<span id="cb14-18"><a href="#cb14-18" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; dependence1   1.5551   0.187  1.1886  1.9217 9.107e-17</span></span>
-<span id="cb14-19"><a href="#cb14-19" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; dependence2  -0.5551   0.187 -0.9217 -0.1886 2.993e-03</span></span>
+<span id="cb14-18"><a href="#cb14-18" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; dependence1   1.5551  0.1906  1.1817  1.9286 3.318e-16</span></span>
+<span id="cb14-19"><a href="#cb14-19" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; dependence2  -0.5551  0.1906 -0.9286 -0.1817 3.577e-03</span></span>
 <span id="cb14-20"><a href="#cb14-20" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
 <span id="cb14-21"><a href="#cb14-21" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; $vare</span></span>
 <span id="cb14-22"><a href="#cb14-22" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; NULL</span></span>
 <span id="cb14-23"><a href="#cb14-23" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
 <span id="cb14-24"><a href="#cb14-24" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; $vartot</span></span>
 <span id="cb14-25"><a href="#cb14-25" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;    Estimate Std.Err   2.5% 97.5%   P-value</span></span>
-<span id="cb14-26"><a href="#cb14-26" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; p1   0.9814  0.1023 0.7809 1.182 8.292e-22</span></span>
+<span id="cb14-26"><a href="#cb14-26" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; p1   0.9814  0.1038 0.7778 1.185 3.383e-21</span></span>
 <span id="cb14-27"><a href="#cb14-27" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
 <span id="cb14-28"><a href="#cb14-28" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; attr(,&quot;class&quot;)</span></span>
 <span id="cb14-29"><a href="#cb14-29" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] &quot;summary.mets.twostage&quot;</span></span></code></pre></div>
-<p>For this model we estimate the concordance and casewise concordance as well as the marginal rates of stuttering for females.</p>
+<p>For this model we estimate the concordance and casewise concordance
+as well as the marginal rates of stuttering for females.</p>
 <div class="sourceCode" id="cb15"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="fu">concordanceTwinACE</span>(bintwin1,<span class="at">type=</span><span class="st">&quot;ace&quot;</span>)</span>
 <span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; $MZ</span></span>
 <span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;                      Estimate  Std.Err    2.5%   97.5%   P-value</span></span>
-<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; concordance           0.01822 0.001469 0.01534 0.02110 2.612e-35</span></span>
-<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; casewise concordance  0.50334 0.032558 0.43953 0.56716 6.486e-54</span></span>
-<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; marginal              0.03620 0.001877 0.03252 0.03988 7.148e-83</span></span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; concordance           0.01822 0.001773 0.01474 0.02169 9.075e-25</span></span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; casewise concordance  0.50334 0.033005 0.43865 0.56803 1.630e-52</span></span>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; marginal              0.03620 0.002859 0.03059 0.04180 9.821e-37</span></span>
 <span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
 <span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; $DZ</span></span>
-<span id="cb15-9"><a href="#cb15-9" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;                      Estimate   Std.Err     2.5%    97.5%   P-value</span></span>
-<span id="cb15-10"><a href="#cb15-10" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; concordance          0.002353 0.0005889 0.001199 0.003507 6.453e-05</span></span>
-<span id="cb15-11"><a href="#cb15-11" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; casewise concordance 0.065007 0.0158357 0.033970 0.096045 4.041e-05</span></span>
-<span id="cb15-12"><a href="#cb15-12" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; marginal             0.036197 0.0018769 0.032518 0.039876 7.148e-83</span></span></code></pre></div>
-<p>The E component was not consistent with the fit of the data and we now consider instead the AE model.</p>
+<span id="cb15-9"><a href="#cb15-9" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;                      Estimate   Std.Err    2.5%    97.5%   P-value</span></span>
+<span id="cb15-10"><a href="#cb15-10" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; concordance          0.002353 0.0006191 0.00114 0.003567 1.443e-04</span></span>
+<span id="cb15-11"><a href="#cb15-11" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; casewise concordance 0.065007 0.0160426 0.03356 0.096450 5.075e-05</span></span>
+<span id="cb15-12"><a href="#cb15-12" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; marginal             0.036197 0.0028591 0.03059 0.041801 9.821e-37</span></span></code></pre></div>
+<p>The E component was not consistent with the fit of the data and we
+now consider instead the AE model.</p>
 <div class="sourceCode" id="cb16"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>out <span class="ot">&lt;-</span> <span class="fu">twin.polygen.design</span>(twinstut,<span class="at">id=</span><span class="st">&quot;tvparnr&quot;</span>,<span class="at">zygname=</span><span class="st">&quot;zyg&quot;</span>,<span class="at">zyg=</span><span class="st">&quot;dz&quot;</span>,<span class="at">type=</span><span class="st">&quot;ae&quot;</span>)</span>
 <span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>bintwin <span class="ot">&lt;-</span> <span class="fu">binomial.twostage</span>(margbin,<span class="at">data=</span>twinstut,</span>
@@ -679,7 +979,7 @@ logit(P(Y_i=1|X_i,Z)) = exp( -V_{12,i}^T Z \cdot \Psi^{-1}(\lambda_{\bullet},\la
 <span id="cb16-8"><a href="#cb16-8" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Variance of Gamma distributed random effects</span></span>
 <span id="cb16-9"><a href="#cb16-9" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; $estimates</span></span>
 <span id="cb16-10"><a href="#cb16-10" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;                 theta         se</span></span>
-<span id="cb16-11"><a href="#cb16-11" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; dependence1 0.9094847 0.09536268</span></span>
+<span id="cb16-11"><a href="#cb16-11" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; dependence1 0.9094847 0.09770402</span></span>
 <span id="cb16-12"><a href="#cb16-12" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
 <span id="cb16-13"><a href="#cb16-13" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; $type</span></span>
 <span id="cb16-14"><a href="#cb16-14" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] &quot;clayton.oakes&quot;</span></span>
@@ -692,8 +992,8 @@ logit(P(Y_i=1|X_i,Z)) = exp( -V_{12,i}^T Z \cdot \Psi^{-1}(\lambda_{\bullet},\la
 <span id="cb16-21"><a href="#cb16-21" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; NULL</span></span>
 <span id="cb16-22"><a href="#cb16-22" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
 <span id="cb16-23"><a href="#cb16-23" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; $vartot</span></span>
-<span id="cb16-24"><a href="#cb16-24" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;    Estimate Std.Err   2.5% 97.5%   P-value</span></span>
-<span id="cb16-25"><a href="#cb16-25" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; p1   0.9095 0.09536 0.7226 1.096 1.469e-21</span></span>
+<span id="cb16-24"><a href="#cb16-24" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;    Estimate Std.Err  2.5% 97.5%   P-value</span></span>
+<span id="cb16-25"><a href="#cb16-25" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; p1   0.9095  0.0977 0.718 1.101 1.296e-20</span></span>
 <span id="cb16-26"><a href="#cb16-26" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
 <span id="cb16-27"><a href="#cb16-27" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; attr(,&quot;class&quot;)</span></span>
 <span id="cb16-28"><a href="#cb16-28" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] &quot;summary.mets.twostage&quot;</span></span></code></pre></div>
@@ -701,27 +1001,27 @@ logit(P(Y_i=1|X_i,Z)) = exp( -V_{12,i}^T Z \cdot \Psi^{-1}(\lambda_{\bullet},\la
 <div class="sourceCode" id="cb17"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="fu">concordanceTwinACE</span>(bintwin,<span class="at">type=</span><span class="st">&quot;ae&quot;</span>)</span>
 <span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; $MZ</span></span>
 <span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;                      Estimate  Std.Err    2.5%   97.5%   P-value</span></span>
-<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; concordance           0.01736 0.001427 0.01456 0.02016 5.005e-34</span></span>
-<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; casewise concordance  0.47954 0.032716 0.41542 0.54366 1.199e-48</span></span>
-<span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; marginal              0.03620 0.001877 0.03252 0.03988 7.148e-83</span></span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; concordance           0.01736 0.001696 0.01403 0.02068 1.394e-24</span></span>
+<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; casewise concordance  0.47954 0.033430 0.41402 0.54506 1.154e-46</span></span>
+<span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; marginal              0.03620 0.002859 0.03059 0.04180 9.821e-37</span></span>
 <span id="cb17-7"><a href="#cb17-7" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
 <span id="cb17-8"><a href="#cb17-8" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; $DZ</span></span>
-<span id="cb17-9"><a href="#cb17-9" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;                      Estimate   Std.Err     2.5%    97.5%    P-value</span></span>
-<span id="cb17-10"><a href="#cb17-10" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; concordance          0.004769 0.0003926 0.003999 0.005538  5.938e-34</span></span>
-<span id="cb17-11"><a href="#cb17-11" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; casewise concordance 0.131750 0.0054168 0.121133 0.142367 1.139e-130</span></span>
-<span id="cb17-12"><a href="#cb17-12" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; marginal             0.036197 0.0018769 0.032518 0.039876  7.148e-83</span></span></code></pre></div>
+<span id="cb17-9"><a href="#cb17-9" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;                      Estimate   Std.Err     2.5%    97.5%   P-value</span></span>
+<span id="cb17-10"><a href="#cb17-10" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; concordance          0.004769 0.0005661 0.003659 0.005878 3.616e-17</span></span>
+<span id="cb17-11"><a href="#cb17-11" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; casewise concordance 0.131750 0.0064368 0.119134 0.144366 4.122e-93</span></span>
+<span id="cb17-12"><a href="#cb17-12" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; marginal             0.036197 0.0028591 0.030593 0.041801 9.821e-37</span></span></code></pre></div>
 </div>
 </div>
 <div id="sessioninfo" class="section level1">
 <h1>SessionInfo</h1>
 <div class="sourceCode" id="cb18"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sessionInfo</span>()</span>
-<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; R version 4.1.1 (2021-08-10)</span></span>
-<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Platform: x86_64-apple-darwin20.4.0 (64-bit)</span></span>
-<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Running under: macOS Big Sur 11.5.2</span></span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; R version 4.2.1 (2022-06-23)</span></span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Platform: x86_64-apple-darwin21.5.0 (64-bit)</span></span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Running under: macOS Monterey 12.5.1</span></span>
 <span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
 <span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Matrix products: default</span></span>
-<span id="cb18-7"><a href="#cb18-7" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; BLAS:   /usr/local/Cellar/openblas/0.3.17/lib/libopenblasp-r0.3.17.dylib</span></span>
-<span id="cb18-8"><a href="#cb18-8" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; LAPACK: /usr/local/Cellar/r/4.1.1/lib/R/lib/libRlapack.dylib</span></span>
+<span id="cb18-7"><a href="#cb18-7" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; BLAS:   /usr/local/Cellar/openblas/0.3.21/lib/libopenblasp-r0.3.21.dylib</span></span>
+<span id="cb18-8"><a href="#cb18-8" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; LAPACK: /usr/local/Cellar/r/4.2.1_2/lib/R/lib/libRlapack.dylib</span></span>
 <span id="cb18-9"><a href="#cb18-9" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
 <span id="cb18-10"><a href="#cb18-10" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; locale:</span></span>
 <span id="cb18-11"><a href="#cb18-11" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] en_US.UTF-8/en_US.UTF-8/en_US.UTF-8/C/en_US.UTF-8/en_US.UTF-8</span></span>
@@ -730,21 +1030,21 @@ logit(P(Y_i=1|X_i,Z)) = exp( -V_{12,i}^T Z \cdot \Psi^{-1}(\lambda_{\bullet},\la
 <span id="cb18-14"><a href="#cb18-14" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] stats     graphics  grDevices utils     datasets  methods   base     </span></span>
 <span id="cb18-15"><a href="#cb18-15" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
 <span id="cb18-16"><a href="#cb18-16" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; other attached packages:</span></span>
-<span id="cb18-17"><a href="#cb18-17" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] mets_1.2.9      lava_1.6.11     timereg_2.0.0   survival_3.2-13</span></span>
+<span id="cb18-17"><a href="#cb18-17" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] mets_1.3.0     lava_1.7.0     timereg_2.0.2  survival_3.3-1</span></span>
 <span id="cb18-18"><a href="#cb18-18" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
 <span id="cb18-19"><a href="#cb18-19" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; loaded via a namespace (and not attached):</span></span>
-<span id="cb18-20"><a href="#cb18-20" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  [1] Rcpp_1.0.7          bslib_0.2.5.1       compiler_4.1.1     </span></span>
-<span id="cb18-21"><a href="#cb18-21" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  [4] jquerylib_0.1.4     tools_4.1.1         digest_0.6.27      </span></span>
-<span id="cb18-22"><a href="#cb18-22" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  [7] jsonlite_1.7.2      evaluate_0.14       lattice_0.20-44    </span></span>
-<span id="cb18-23"><a href="#cb18-23" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [10] ucminf_1.1-4        rlang_0.4.11        Matrix_1.3-4       </span></span>
-<span id="cb18-24"><a href="#cb18-24" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [13] yaml_2.2.1          parallel_4.1.1      mvtnorm_1.1-2      </span></span>
-<span id="cb18-25"><a href="#cb18-25" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [16] xfun_0.25           fastmap_1.1.0       stringr_1.4.0      </span></span>
-<span id="cb18-26"><a href="#cb18-26" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [19] knitr_1.33          sass_0.4.0          globals_0.14.0     </span></span>
-<span id="cb18-27"><a href="#cb18-27" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [22] grid_4.1.1          listenv_0.8.0       R6_2.5.1           </span></span>
-<span id="cb18-28"><a href="#cb18-28" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [25] future.apply_1.8.1  parallelly_1.27.0   rmarkdown_2.10     </span></span>
-<span id="cb18-29"><a href="#cb18-29" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [28] magrittr_2.0.1      codetools_0.2-18    htmltools_0.5.2    </span></span>
-<span id="cb18-30"><a href="#cb18-30" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [31] splines_4.1.1       future_1.22.1       numDeriv_2016.8-1.1</span></span>
-<span id="cb18-31"><a href="#cb18-31" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [34] stringi_1.7.4</span></span></code></pre></div>
+<span id="cb18-20"><a href="#cb18-20" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  [1] Rcpp_1.0.9          bslib_0.3.1         compiler_4.2.1     </span></span>
+<span id="cb18-21"><a href="#cb18-21" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  [4] jquerylib_0.1.4     tools_4.2.1         digest_0.6.29      </span></span>
+<span id="cb18-22"><a href="#cb18-22" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  [7] jsonlite_1.8.0      evaluate_0.15       lattice_0.20-45    </span></span>
+<span id="cb18-23"><a href="#cb18-23" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [10] ucminf_1.1-4        rlang_1.0.2         Matrix_1.4-1       </span></span>
+<span id="cb18-24"><a href="#cb18-24" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [13] cli_3.3.0           yaml_2.3.5          parallel_4.2.1     </span></span>
+<span id="cb18-25"><a href="#cb18-25" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [16] mvtnorm_1.1-3       xfun_0.30           fastmap_1.1.0      </span></span>
+<span id="cb18-26"><a href="#cb18-26" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [19] stringr_1.4.0       knitr_1.37          sass_0.4.0         </span></span>
+<span id="cb18-27"><a href="#cb18-27" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [22] globals_0.16.1      grid_4.2.1          listenv_0.8.0      </span></span>
+<span id="cb18-28"><a href="#cb18-28" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [25] R6_2.5.1            future.apply_1.9.0  parallelly_1.32.1  </span></span>
+<span id="cb18-29"><a href="#cb18-29" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [28] rmarkdown_2.13      magrittr_2.0.2      codetools_0.2-18   </span></span>
+<span id="cb18-30"><a href="#cb18-30" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [31] htmltools_0.5.2     splines_4.2.1       future_1.27.0      </span></span>
+<span id="cb18-31"><a href="#cb18-31" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [34] numDeriv_2016.8-1.1 stringi_1.7.6</span></span></code></pre></div>
 </div>
 
 

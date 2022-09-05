@@ -8,6 +8,7 @@ library(mets)
 ## -----------------------------------------------------------------------------
  library(mets)
  data(diabetes)
+ set.seed(100)
  
  # Marginal Cox model  with treat as covariate
  margph <- phreg(Surv(time,status)~treat+cluster(id),data=diabetes)
@@ -34,7 +35,7 @@ library(mets)
   summary(fitcoa)
 
 ## -----------------------------------------------------------------------------
- d <- simClaytonOakes(2000,2,0.5,0,3)
+ d <- simClaytonOakes(200,2,0.5,0,3)
   margph <- phreg(Surv(time,status)~x+cluster(cluster),data=d)
  # Clayton-Oakes, MLE 
  fitco1<-twostageMLE(margph,data=d)
@@ -45,7 +46,7 @@ library(mets)
  summary(udp)
 
 ## -----------------------------------------------------------------------------
- data <- simClaytonOakes.twin.ace(2000,2,1,0,3)
+ data <- simClaytonOakes.twin.ace(200,2,1,0,3)
 
  out <- twin.polygen.design(data,id="cluster",zyg="DZ",zygname="zyg",type="ace")
  pardes <- out$pardes
@@ -87,7 +88,7 @@ kendall.ClaytonOakes.twin.ace(ts$theta[1],ts$theta[2],K=10000)
 ## -----------------------------------------------------------------------------
 library(mets)
 set.seed(1000)
-data <- simClaytonOakes.family.ace(1000,2,1,0,3)
+data <- simClaytonOakes.family.ace(200,2,1,0,3)
 head(data)
 data$number <- c(1,2,3,4)
 data$child <- 1*(data$number==3)
@@ -119,7 +120,7 @@ ts <- twostage(pa,data=data,clusters=data$cluster, theta=c(2,1),var.link=0,step=
 summary(ts)
 
 ## -----------------------------------------------------------------------------
-ssid <- sort(sample(1:nrow(pairs),2000))
+ssid <- sort(sample(1:nrow(pairs),200))
 tsd <- twostage(pa,data=data,clusters=data$cluster,
     theta=c(2,1)/10,var.link=0,random.design=out$des.rv,
    theta.des=out$pardes,pairs=pairs[ssid,])
@@ -213,7 +214,7 @@ summary(tsdid4)
 ## -----------------------------------------------------------------------------
 library(mets)
 set.seed(1000)
-data <- simClaytonOakes.family.ace(1000,2,1,0,3)
+data <- simClaytonOakes.family.ace(200,2,1,0,3)
 head(data)
 data$number <- c(1,2,3,4)
 data$child <- 1*(data$number==3)

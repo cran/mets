@@ -28,25 +28,26 @@ Average treatment for Competing risks data
 The binreg function does direct binomial regression for one time-point, $t$, 
 fitting the model 
 \begin{align*}
-P(T \leq t, \epsilon=1 | X )  & = \mbox{expit}( X^T beta) 
+P(T \leq t, \epsilon=1 | X )  & = \mbox{expit}( X^T beta),
 \end{align*}
 the estimation is based on IPCW weighted EE
 \begin{align*}
- U(\beta) = &  X \left( \Delta(t) I(T \leq t, \epsilon=1 )/G_c(T- \wedge t) - \mbox{expit}( X^T beta) \right) = 0 
+ U(\beta) = &  X \left( \Delta(t) I(T \leq t, \epsilon=1 )/G_c(T \wedge t) - \mbox{expit}( X^T beta) \right) = 0 
 \end{align*}
 for IPCW adjusted responses and with $\Delta$ indicator of death and $G_c$ censoring survival
-distribution. With $\Delta(t) = I( C > T- \wedge t)$. 
+distribution. With $\Delta(t) = I( C > T \wedge t)$. 
 
 The function logitIPCW instead considers 
 \begin{align*}
- U(\beta) = &  X  \frac{\Delta(t)}{G_c(T- \wedge t)} \left( I(T \leq t, \epsilon=1 ) - \mbox{expit}( X^T beta) \right) = 0.
+ U(\beta) = &  X  \frac{\Delta(t)}{G_c(T \wedge t)} \left( I(T \leq t, \epsilon=1 ) - \mbox{expit}( X^T beta) \right) = 0.
 \end{align*}
 The two score equations are quite similar, and exactly the same when the censoring model is fully-nonparametric given $X$.
+It seems that the binreg estimating equations most often the preferable ones to use. 
 
 Additional functions logitATE, and binregATE computes the average treatment effect, the average effect on treated (ATT), and 
 the average effect on non-treated (ATC). We demonstrate their use below. 
 
-The function logitATE also works when there is no censoring and we thus have simple binary outcome. 
+The functions binregATE (recommended) and logitATE also works when there is no censoring and we thus have simple binary outcome. 
 
 Variance is based on  sandwich formula with IPCW adjustment, and naive.var is variance 
 under known censoring model. The influence functions are stored in the output. 
@@ -54,6 +55,8 @@ under known censoring model. The influence functions are stored in the output.
  - We estimate the average treatment effect of our binary response $I(T \leq t, \epsilon=1)$
    - Using a working logistic model for the resonse
    - Using a working logistic model for treatment given covariates
+     - The binregATE can also handle a factor with more than two levels and then uses
+        the mlogit multinomial regression function (of mets). 
    - Using a working model for censoring given covariates, here  a stratified Kaplan-Meier.
 
 If there are no censoring then the censoring weights are simply put to 1.
@@ -107,7 +110,7 @@ and again standard errors are based on the related influcence functions and are 
 Average treatment effect 
 =========================
 
-First we simulate some data that mimics that Kumar et al 2012. 
+First we simulate some data that mimics that of Kumar et al 2012. 
 This is data from multiple myeloma patients treated with allogeneic stem cell
 transplantation from the Center for International Blood and Marrow Transplant Research
 (CIBMTR) Kumar et al (2012), "Trends in allogeneic stem cell transplantation for multiple myeloma: a CIBMTR
@@ -132,19 +135,27 @@ sample size we still see that we recover the parameters of cause 2.
 
 ```{r}
 library(mets) 
+set.seed(100)
 
-n <- 3000
+n <- 400
 kumar <- kumarsim(n,depcens=1)
 kumar$cause <- kumar$status
 kumar$ttt24 <- kumar[,6]
 dtable(kumar,~cause)
+dfactor(kumar) <- gp.f~gp
 
-c2 <- binregATE(Event(time,cause)~gp+dnr+preauto+ttt24,kumar,cause=2,
-	treat.model=gp~dnr+preauto+ttt24,time=40,cens.model=~strata(gp,dnr,preauto,ttt24))
+### censoring model must be adapted to size of data
+###c2 <- binregATE(Event(time,cause)~gp.f+dnr+preauto+ttt24,kumar,cause=2,
+###	treat.model=gp.f~dnr+preauto+ttt24,time=40,cens.model=~strata(gp,dnr,preauto,ttt24))
+###summary(c2)
+
+c2 <- binregATE(Event(time,cause)~gp.f+dnr+preauto+ttt24,kumar,cause=2,
+	treat.model=gp.f~dnr+preauto+ttt24,time=40,cens.model=~strata(gp,dnr))
 summary(c2)
 
-c1 <- binregATE(Event(time,cause)~gp+dnr+preauto+ttt24,kumar,cause=2,
-		treat.model=gp~dnr+preauto+ttt24,time=60)
+
+c1 <- binregATE(Event(time,cause)~gp.f+dnr+preauto+ttt24,kumar,cause=2,
+		treat.model=gp.f~dnr+preauto+ttt24,time=60)
 summary(c1)
 ```
 
@@ -157,14 +168,15 @@ transplant period, under the standard causal assumptions. We here use the logist
 that is also logistic. The 1/0 variable used for the causal computation is found as the rhs of the treat.model. 
 
 
-Average treatment effect for binary data
-========================================
+Average treatment effect for binary or continuous responses
+===========================================================
 
 In the binary case a binary outcome is specified instead of the survival outcome, and as a
 consequence no-censoring adjustment is done 
 
- - the binary outcome must be a variable in the data-frame 
+ - the binary/numeric outcome must be a variable in the data-frame 
 
+First binnary outcome  (can also use binregATE koding cause without censorings values, so setting cens.code=2, and time large)
 
 ```{r}
 
@@ -173,13 +185,16 @@ kumar$cause2 <- 1*(kumar$cause==2)
 b3 <- logitATE(cause2~gp+dnr+preauto+ttt24,kumar,treat.model=gp~dnr+preauto+ttt24)
 summary(b3)
 
-## quite similar to binregATE
-b2 <- logitATE(Event(time,cause)~gp+dnr+preauto+ttt24,kumar,cause=2,time=60,treat.model=gp~dnr+preauto+ttt24)
-summary(b2)
-
+b4 <- binregATE(Event(time,cause2)~gp.f+dnr+preauto+ttt24,kumar,treat.model=gp.f~dnr+preauto+ttt24,cens.code=2,time=200)
+summary(b4)
 ```
 
+Or with continuous response using normal estiamating equations
 
+```{r}
+b3 <- normalATE(time~gp+dnr+preauto+ttt24,kumar,treat.model=gp~dnr+preauto+ttt24)
+summary(b3)
+```
 
 
 SessionInfo

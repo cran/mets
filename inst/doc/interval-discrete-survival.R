@@ -15,7 +15,7 @@ summary(out)
 
 ## -----------------------------------------------------------------------------
 set.seed(1000) # to control output in simulatins for p-values below.
-n <- 10000
+n <- 1000
 Z <- matrix(rbinom(n*4,1,0.5),n,4)
 outsim <- simlogitSurvd(out$coef,Z)
 outsim <- transform(outsim,left=time,right=time+1)
@@ -88,6 +88,60 @@ summary(fit)
 
 ## sometimes NR-algorithm needs modifications of stepsize to run 
 ## outss <- interval.logitsurv.discrete(Interval(Ileft,Iright)~+gender,IRdia,control=list(trace=TRUE,stepsize=1.0))
+}
+
+
+## -----------------------------------------------------------------------------
+if (test==1) {
+
+###
+### data(ttpd) 
+### dtable(ttpd,~entry+time2)
+### out <- interval.logitsurv.discrete(Interval(entry,time2)~X1+X2+X3+X4,ttpd)
+### summary(out)
+
+#       Estimate Std.Err     2.5%   97.5%   P-value
+# time1  -2.0064  0.1461 -2.29277 -1.7201 6.466e-43
+# time2  -2.1749  0.1543 -2.47725 -1.8725 3.869e-45
+# time3  -1.4581  0.1496 -1.75132 -1.1648 1.936e-22
+# time4  -2.9260  0.2436 -3.40344 -2.4486 3.078e-33
+# time5  -1.2051  0.1655 -1.52935 -0.8808 3.267e-13
+# time6  -0.9102  0.1790 -1.26103 -0.5594 3.671e-07
+# X1      0.9913  0.1171  0.76175  1.2208 2.557e-17
+# X2      0.6962  0.1156  0.46953  0.9228 1.739e-09
+# X3      0.3466  0.1150  0.12110  0.5721 2.590e-03
+# X4      0.3223  0.1147  0.09749  0.5470 4.952e-03
+ out$ploglik
+# [1] -1676.456
+
+### library(ordinal)
+### ttpd <- dfactor(ttpd,fentry~entry)
+### out1 <- clm(fentry~X1+X2+X3+X4,data=ttpd)
+### summary(out1)
+
+# formula: fentry ~ X1 + X2 + X3 + X4
+# data:    ttpd
+# 
+#  link  threshold nobs logLik   AIC     niter max.grad cond.H 
+#  logit flexible  1000 -1676.46 3372.91 6(2)  1.17e-12 5.3e+02
+# 
+# Coefficients:
+#    Estimate Std. Error z value Pr(>|z|)    
+# X1  -0.9913     0.1171  -8.465  < 2e-16 ***
+# X2  -0.6962     0.1156  -6.021 1.74e-09 ***
+# X3  -0.3466     0.1150  -3.013  0.00259 ** 
+# X4  -0.3223     0.1147  -2.810  0.00495 ** 
+# ---
+# Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+# 
+# Threshold coefficients:
+#     Estimate Std. Error z value
+# 0|1  -2.0064     0.1461 -13.733
+# 1|2  -1.3940     0.1396  -9.984
+# 2|3  -0.7324     0.1347  -5.435
+# 3|4  -0.6266     0.1343  -4.667
+# 4|5  -0.1814     0.1333  -1.361
+# 5|6   0.2123     0.1342   1.582
 }
 
 

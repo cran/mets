@@ -54,10 +54,6 @@
 ##' @export
 casewise.test <- function(conc,marg,test="no-test",p=0.01)
 { ## {{{
-###	conc=cdz; marg=cifdz; p=0.01
-###	conc=cmz; marg=cifmz
-###	names(cdz)
-###	cdz$casewise
   if (sum(marg$P1>p)==0) stop("No timepoints where marginal > ",p,"\n"); 
   time1 <- conc$time; time2 <- marg$time[marg$P1>0.01]
   mintime <- max(time1[1],time2[1])
@@ -201,7 +197,7 @@ return(out)
 casewise <- function(conc,marg,cause.marg)
 { ## {{{
   if (missing(cause.marg)) stop("Please specify cause of marginal (as given in Event object)")
-  if ((!class(conc)=="prodlim")  || (!class(marg)=="prodlim")) stop("Assumes that both models are based on prodlim function \n"); 
+  if ((!inherits(conc,"prodlim"))  || (!inherits(marg,"prodlim"))) stop("Assumes that both models are based on prodlim function \n"); 
   time1 <- conc$time
   time2 <- marg$time
 
@@ -215,15 +211,15 @@ casewise <- function(conc,marg,cause.marg)
  
   out <- conc
   out$time <- timer
-  if (class(marg)=="comp.risk") margtime <- Cpred(cbind(marg$time,c(marg$P1)),timer)[,2] else if (class(marg)=="prodlim") {
+  if (inherits(marg,"comp.risk")) margtime <- Cpred(cbind(marg$time,c(marg$P1)),timer)[,2] else if (inherits(marg,"prodlim")) {
 	  cuminc <- data.frame(marg$cuminc)[,cause.prodlim]; 
 	  se.cuminc <- data.frame(marg$se.cuminc)[,cause.prodlim]; 
 	  margtime <- Cpred(cbind(marg$time,c(cuminc)),timer)[,2]; 
 	  se.margtime <- Cpred(cbind(marg$time,c(se.cuminc)),timer)[,2]; 
   } else stop("marginal cumulative incidence comp.risk or prodlim output\n"); 
 
-  if (class(conc)=="comprisk") concP1 <-  Cpred(cbind(conc$time,c(conc$P1)),timer)[,2]
-  else if (class(conc)=="prodlim")  {
+  if (inherits(conc,"comprisk")) concP1 <-  Cpred(cbind(conc$time,c(conc$P1)),timer)[,2]
+  else if (inherits(conc,"prodlim"))  {
 	  conc.cuminc <- data.frame(conc$cuminc)[,1]
 	  conc.se.cuminc <- data.frame(conc$se.cuminc)[,1]
           se.P1 <-  Cpred(cbind(conc$time,conc.se.cuminc),timer)[,2]
@@ -419,7 +415,6 @@ back2timereg <- function(obj)
 ##' bcif1 <- binreg(Event(time,status)~-1+factor(zyg)+cluster(id), data=dd,
 ##'                 time=80, cause=1, cens.model=~strata(zyg))
 ##' pconc <- predict(bcif1,newdata)
-##' pconc
 ##' 
 ##' ## marginal estimates 
 ##' mbcif1 <- binreg(Event(time,status)~cluster(id), data=prt, time=80, cause=2)
@@ -446,13 +441,11 @@ binregCasewise <- function(concbreg,margbreg,zygs=c("DZ","MZ"),newdata=NULL,...)
 
   margiid <- margbreg$iid
   conciid <- matrix(0,nrow(margiid),nrow(pconc))
-###  rownames(margiid) <- margbreg$iid.origid
   wiid <- which(concbreg$iid.origid %in% margbreg$iid.origid)
   conciid[wiid,] <- concbreg$iid
   iids <- cbind(conciid,margiid)
   vcov <- crossprod(iids)
 
-###  dd <- estimate(coef=c(concbreg$coef,margbreg$coef),vcov=vcov,f=fcase,null=0)
   dd <- estimate(coef=c(concbreg$coef,margbreg$coef),vcov=vcov,f=fcase,...)
   expcoef <- exp(dd$coefma[,c(1,3:4)])
 

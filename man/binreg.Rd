@@ -3,6 +3,7 @@
 \name{binreg}
 \alias{binreg}
 \alias{logitIPCW}
+\alias{binregt}
 \title{Binomial Regression for censored competing risks data}
 \usage{
 binreg(
@@ -119,6 +120,8 @@ cifdob <- binreg(Event(time,status)~-1+factor(strata)+
 	 tcell*factor(strata)+platelet*factor(strata)+age*factor(strata)
 	 +cluster(id),bmtdob,cause=1,time=50,cens.model=~strata(strata)+cluster(id))
 summary(cifdob)
+
+expit  <- function(z) 1/(1+exp(-z)) 
 
 riskratio <- function(p) {
   expit  <- function(z) 1/(1+exp(-z)) ## expit

@@ -8,7 +8,7 @@ library(mets)
 ## -----------------------------------------------------------------------------
  library(mets)
  set.seed(100)
- data <- simbinClaytonOakes.family.ace(10000,2,1,beta=NULL,alpha=NULL)
+ data <- simbinClaytonOakes.family.ace(1000,2,1,beta=NULL,alpha=NULL)
  data$number <- c(1,2,3,4)
  data$child <- 1*(data$number==3)
  head(data)
