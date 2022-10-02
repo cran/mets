@@ -1,6 +1,10 @@
 ## ---- include = FALSE---------------------------------------------------------
 knitr::opts_chunk$set(
   collapse = TRUE,
+  dpi=50,
+  fig.width=7.15, fig.height=5.5,
+  out.width="600px",
+  fig.retina=1,
   comment = "#>"
 )
 library(mets)

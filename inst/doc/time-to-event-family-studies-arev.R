@@ -1,7 +1,11 @@
 ## ---- include = FALSE, label=setup--------------------------------------------
 knitr::opts_chunk$set(
   collapse = TRUE,
-  #dev="png",
+  ##dev="png",
+  dpi=50,
+  fig.width=7.15, fig.height=5.5,
+  out.width="600px",
+  fig.retina=1,
   comment = "#>"
   )
 fullVignette <- Sys.getenv("_R_FULL_VIGNETTE_") %in% c("1","TRUE") || length(list.files("data"))==0

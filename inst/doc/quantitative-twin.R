@@ -3,9 +3,14 @@ options(warn=-1, family="Times")
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>",
-  #dev="png",
-  #dpi=72,
-  out.width = "70%")
+  dpi=50,
+  fig.width=7.15, fig.height=5.5,
+  out.width="600px",
+  fig.retina=1
+  ##dev="png",
+  ##dpi=72,
+  ## out.width = "70%")
+)
 library("mets")
 
 ## ----install, eval=FALSE, echo=FALSE------------------------------------------
