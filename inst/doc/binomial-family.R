@@ -6,7 +6,8 @@ knitr::opts_chunk$set(
 library(mets)
 
 ## -----------------------------------------------------------------------------
- library(mets)
+library(mets)
+library(timereg)
  set.seed(100)
  data <- simbinClaytonOakes.family.ace(1000,2,1,beta=NULL,alpha=NULL)
  data$number <- c(1,2,3,4)
@@ -69,6 +70,7 @@ outid$pardes
 head(outid$des.rv)
 
 ## -----------------------------------------------------------------------------
+aa <- glm(ybin~x,data=dataid,family=binomial())
 tsdid <- binomial.twostage(aa,data=dataid,clusters=dataid$cluster,
          theta=c(2,1),random.design=outid$des.rv,theta.des=outid$pardes,pairs=pair.new)
 summary(tsdid)
@@ -133,7 +135,7 @@ head(pairs,12)
  dm <- model.matrix(~-1+factor(dtypes))
 
 ## -----------------------------------------------------------------------------
-aa <- margbin <- glm(ybin~x,data=data,family=binomial())
+aa <- glm(ybin~x,data=data,family=binomial())
 
 tsp <- binomial.twostage(aa,data=data, clusters=data$cluster,
 		 theta.des=dm,pairs=cbind(pairs,1:nrow(dm)))

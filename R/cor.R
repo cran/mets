@@ -17,7 +17,7 @@ dep.cif<-function(cif,data,cause=NULL,model="OR",cif2=NULL,times=NULL,
   delta<-(cause!=cens.code)
   if (length(cause)!=length(time)) stop("cause and time not of same length\n"); 
   formula <- attr(cif,"Formula")
-  ldata <- aalen.des2(formula(delete.response(terms(formula))),data=data,model="aalen")
+  ldata <- timereg::aalen.des2(formula(delete.response(terms(formula))),data=data,model="aalen")
   X<-ldata$X;  Z<-ldata$Z;  
 
   antpers<-nrow(X); 
@@ -36,14 +36,14 @@ dep.cif<-function(cif,data,cause=NULL,model="OR",cif2=NULL,times=NULL,
   if ((cause1[1]!=cause2[1])) {
     if (is.null(cif2)==TRUE) stop("Must provide marginal model for both causes"); 
     formula2<-attr(cif2,"Formula"); 
-    ldata2 <- aalen.des2(formula(delete.response(terms(formula2))),data=data,model="aalen");
+    ldata2 <- timereg::aalen.des2(formula(delete.response(terms(formula2))),data=data,model="aalen");
     X2<-ldata2$X; Z2<-ldata$Z;  
     if (is.null(Z2)==TRUE) {npar2<-TRUE; semi2<-0;}  else {Z2<-as.matrix(Z2); npar2<-FALSE; semi2<-1;}
     if (npar2==TRUE) {Z2<-matrix(0,antpers,1); pg2<-1; fixed2<-0;} else {fixed2<-1;pg2<-ncol(Z2);} 
     px2<-ncol(X2);  
     est2<-cif2$cum; 
     if (semi2==1) gamma2<-cif2$gamma  else gamma2<-0; 
-    est2<-Cpred(est2,times,strict=FALSE);
+    est2<-cpred(est2,times);
   } else { 
     X2<-matrix(0,1,1); Z2<-matrix(0,1,1); pg2<-1; px2<-1;  semi2<-0; est2<-matrix(0,1,2); gamma2<-0; 
     npar2<-FALSE; 
@@ -53,11 +53,11 @@ dep.cif<-function(cif,data,cause=NULL,model="OR",cif2=NULL,times=NULL,
 ### For truncation 
   if (is.null(entry)) entry.call <- NULL else entry.call <- 0
   if (is.null(entry)) entry <- rep(0,antpers); 
-  cum1<-Cpred(rbind(rep(0,px+1),cif$cum),entry)[,-1];
+  cum1<-cpred(rbind(rep(0,px+1),cif$cum),entry)[,-1];
   if (cif.model==1) cif1entry  <-  1-exp(-apply(X*cum1,1,sum)- (Z %*% gamma )*entry)
   else if (cif.model==2) cif1entry  <-  1-exp(-apply(X*cum1,1,sum)*exp(Z %*% gamma ))
   if ((model!="COR") && (cause1[1]!=cause2[1])) {
-    cum2<-Cpred(rbind(rep(0,px2+1),cif2$cum),entry)[,-1];
+    cum2<-cpred(rbind(rep(0,px2+1),cif2$cum),entry)[,-1];
     if (cif.model==1) cif2entry  <-  1-exp(-apply(X2*cum2,1,sum)- (Z2 %*% gamma2 )*entry)
     else if (cif.model==2) cif2entry  <-  1-exp(-apply(X2*cum2,1,sum)*exp(Z2 %*% gamma2 ))
   } else {cum2 <- cum1; cif2entry <- cif1entry;}
@@ -75,33 +75,33 @@ dep.cif<-function(cif,data,cause=NULL,model="OR",cif2=NULL,times=NULL,
         ud.cens<-survival::survfit(Surv(time,cause==cens.code)~+1); 
         Gfit<-cbind(ud.cens$time,ud.cens$surv)
         Gfit<-rbind(c(0,1),Gfit); 
-        Gcx<-Cpred(Gfit,time)[,2];
-        if (is.null(entry.call)==FALSE) Gcxe<-Cpred(Gfit,entry)[,2];
+        Gcx<-cpred(Gfit,time)[,2];
+        if (is.null(entry.call)==FALSE) Gcxe<-cpred(Gfit,entry)[,2];
         Gcx <- Gcx/Gcxe; 
         Gctimes<- Gcx ## }}}
       } else if (cens.model=="cox") { ## {{{
         if (npar==TRUE) XZ<-X[,-1] else XZ<-cbind(X,Z)[,-1];
-        ud.cens<-cox.aalen(Surv(time,cause==cens.code)~prop(XZ),n.sim=0,robust=0);
-        Gcx<-Cpred(ud.cens$cum,time)[,2];
+        ud.cens<-timereg::cox.aalen(Surv(time,cause==cens.code)~prop(XZ),n.sim=0,robust=0);
+        Gcx<-cpred(ud.cens$cum,time)[,2];
         RR<-exp(XZ %*% ud.cens$gamma)
         Gcx<-exp(-Gcx*RR)
         Gfit<-rbind(c(0,1),cbind(time,Gcx)); 
         if (is.null(entry.call)==FALSE) {
-          Gcxe<-Cpred(Gfit,entry)[,2];
+          Gcxe<-cpred(Gfit,entry)[,2];
           Gcxe<-exp(-Gcxe*RR)
         }
         Gcx <- Gcx/Gcxe; 
         Gctimes<- Gcx  ## }}}
       } else if (cens.model=="aalen") {  ## {{{
         if (npar==TRUE) XZ<-X[,-1] else XZ<-cbind(X,Z)[,-1];
-        ud.cens<-aalen(Surv(time,cause==cens.code)~XZ,n.sim=0,robust=0);
-        Gcx<-Cpred(ud.cens$cum,time)[,-1];
+        ud.cens<-timereg::aalen(Surv(time,cause==cens.code)~XZ,n.sim=0,robust=0);
+        Gcx<-cpred(ud.cens$cum,time)[,-1];
         XZ<-cbind(1,XZ); 
         Gcx<-exp(-apply(Gcx*XZ,1,sum))
         Gcx[Gcx>1]<-1; Gcx[Gcx<0]<-0
         Gfit<-rbind(c(0,1),cbind(time,Gcx)); 
         if (is.null(entry.call)==FALSE) {
-          Gcxe<-Cpred(Gfit,entry)[,-1];
+          Gcxe<-cpred(Gfit,entry)[,-1];
           Gcxe<-exp(-apply(Gcxe*XZ,1,sum))
           Gcxe[Gcxe>1]<-1; Gcxe[Gcxe<0]<-0
         }
@@ -407,7 +407,7 @@ dep.cif<-function(cif,data,cause=NULL,model="OR",cif2=NULL,times=NULL,
 ##' see example below, but the default is that it is simply \eqn{\theta^T z}.
 ##'
 ##' @aliases or.cif rr.cif
-##' @param cif a model object from the comp.risk function with the 
+##' @param cif a model object from the timereg::comp.risk function with the
 ##' marginal cumulative incidence of cause1, i.e., the event of interest, and whose
 ##' odds the comparision is compared to the conditional odds given cause2
 ##' @param data a data.frame with the variables.
@@ -456,18 +456,18 @@ dep.cif<-function(cif,data,cause=NULL,model="OR",cif2=NULL,times=NULL,
 ##' theta.des <- model.matrix(~-1+factor(zyg))
 ##' 
 ##' times=seq(0.05,1,by=0.05) # to speed up computations use only these time-points
-##' add<-comp.risk(Event(time,cause)~+1+cluster(id),data=multcif,cause=1,
+##' add <- timereg::comp.risk(Event(time,cause)~+1+cluster(id),data=multcif,cause=1,
 ##'                n.sim=0,times=times,model="fg",max.clust=NULL)
-##' add2<-comp.risk(Event(time,cause)~+1+cluster(id),data=multcif,cause=2,
+##' add2 <- timereg::comp.risk(Event(time,cause)~+1+cluster(id),data=multcif,cause=2,
 ##'                n.sim=0,times=times,model="fg",max.clust=NULL)
 ##' 
-##' out1<-cor.cif(add,data=multcif,cause1=1,cause2=1)
+##' out1 <- cor.cif(add,data=multcif,cause1=1,cause2=1)
 ##' summary(out1)
 ##' 
-##' out2<-cor.cif(add,data=multcif,cause1=1,cause2=1,theta.des=theta.des)
+##' out2 <- cor.cif(add,data=multcif,cause1=1,cause2=1,theta.des=theta.des)
 ##' summary(out2)
 ##' 
-##' ##out3<-cor.cif(add,data=multcif,cause1=1,cause2=2,cif2=add2)
+##' ##out3 <- cor.cif(add,data=multcif,cause1=1,cause2=2,cif2=add2)
 ##' ##summary(out3)
 ##' ###########################################################
 ##' # investigating further models using parfunc and dparfunc
@@ -479,7 +479,7 @@ dep.cif<-function(cif,data,cause=NULL,model="OR",cif2=NULL,times=NULL,
 ##' table(prt$status)
 ##' 
 ##' times <- seq(40,100,by=10)
-##' cifmod <- comp.risk(Event(time,cause)~+1+cluster(id),data=prt,
+##' cifmod <- timereg::comp.risk(Event(time,cause)~+1+cluster(id),data=prt,
 ##'                     cause=1,n.sim=0,
 ##'                     times=times,conservative=1,max.clust=NULL,model="fg")
 ##' theta.des <- model.matrix(~-1+factor(zyg),data=prt)
@@ -648,7 +648,7 @@ or.cif<-function(cif,data,cause=NULL,cif2=NULL,times=NULL,
 ##' \donttest{ ## Reduce Ex.Timings
 ##'  d <- simnordic.random(5000,delayed=TRUE,cordz=0.5,cormz=2,lam0=0.3,country=TRUE)
 ##'  times <- seq(50,90,by=10)
-##'  add1<-comp.risk(Event(time,cause)~-1+factor(country)+cluster(id),data=d,
+##'  add1 <- timereg::comp.risk(Event(time,cause)~-1+factor(country)+cluster(id),data=d,
 ##'  times=times,cause=1,max.clust=NULL)
 ##' 
 ##'  ### making group indidcator 
@@ -665,12 +665,12 @@ or.cif<-function(cif,data,cause=NULL,cif2=NULL,times=NULL,
 ##' ##### 2 different causes
 ##' #########################################
 ##' 
-##'  add2<-comp.risk(Event(time,cause)~-1+factor(country)+cluster(id),data=d,
+##'  add2 <- timereg::comp.risk(Event(time,cause)~-1+factor(country)+cluster(id),data=d,
 ##'                   times=times,cause=2,max.clust=NULL)
-##'  out3<-random.cif(add1,data=d,cause1=1,cause2=2,cif2=add2,sym=1,same.cens=TRUE)
+##'  out3 <- random.cif(add1,data=d,cause1=1,cause2=2,cif2=add2,sym=1,same.cens=TRUE)
 ##'  summary(out3) ## negative dependence
 ##' 
-##'  out4<-random.cif(add1,data=d,cause1=1,cause2=2,cif2=add2,theta.des=mm,sym=1,same.cens=TRUE)
+##'  out4 <- random.cif(add1,data=d,cause1=1,cause2=2,cif2=add2,theta.des=mm,sym=1,same.cens=TRUE)
 ##'  summary(out4) ## negative dependence
 ##' }
 ##' @keywords survival
@@ -726,7 +726,7 @@ random.cif<-function(cif,data,cause=NULL,cif2=NULL,
 ##'
 ##'
 ##'
-##' @param cif a model object from the comp.risk function with the 
+##' @param cif a model object from the timereg::comp.risk function with the
 ##' marginal cumulative incidence of cause2, i.e., the event that is conditioned on, and whose
 ##' odds the comparision is made with respect to
 ##' @param data a data.frame with the variables.
@@ -778,7 +778,7 @@ random.cif<-function(cif,data,cause=NULL,cif2=NULL,
 ##'  d <- simnordic.random(5000,delayed=TRUE,
 ##'        cordz=1.0,cormz=2,lam0=0.3,country=TRUE)
 ##'  times <- seq(50,90,by=10)
-##'  addm<-comp.risk(Event(time,cause)~-1+factor(country)+cluster(id),data=d,
+##'  addm <- timereg::comp.risk(Event(time,cause)~-1+factor(country)+cluster(id),data=d,
 ##'  times=times,cause=1,max.clust=NULL)
 ##' 
 ##'  ### making group indidcator 
@@ -890,19 +890,19 @@ print.summary.cor <- function(x,digits=3,...)
 ##' @author Thomas Scheike
 ##' @keywords survival
 ##' @examples
-##' library("timereg")
-##' data("multcif",package="mets") # simulated data 
-##' multcif$cause[multcif$cause==0] <- 2
-##' 
-##' times=seq(0.1,3,by=0.1) # to speed up computations use only these time-points
-##' add<-comp.risk(Event(time,cause)~+1+cluster(id),data=multcif,
-##'                n.sim=0,times=times,cause=1)
+##' ## library("timereg")
+##' ## data("multcif",package="mets") # simulated data 
+##' ## multcif$cause[multcif$cause==0] <- 2
+##' ##  
+##' ## times=seq(0.1,3,by=0.1) # to speed up computations use only these time-points
+##' ## add <- timereg::comp.risk(Event(time,cause)~+1+cluster(id),
+##' ##                           data=multcif,n.sim=0,times=times,cause=1)
 ##' ###
-##' out1<-cor.cif(add,data=multcif,cause1=1,cause2=1,theta=log(2+1))
-##' summary(out1)
-##' 
-##' pad <- predict(add,X=1,se=0,uniform=0)
-##' summary(out1,marg.cif=pad)
+##' ## out1<-cor.cif(add,data=multcif,cause1=1,cause2=1,theta=log(2+1))
+##' ## summary(out1)
+##' ## 
+##' ## pad <- predict(add,X=1,se=0,uniform=0)
+##' ## summary(out1,marg.cif=pad)
 ##' @method summary cor
 ##' @export
 summary.cor <- function(object,marg.cif=NULL,marg.cif2=NULL,digits=3,...) { ## {{{

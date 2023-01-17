@@ -3,6 +3,7 @@
 \name{resmean.phreg}
 \alias{resmean.phreg}
 \alias{cif.yearslost}
+\alias{rmst.phreg}
 \title{Restricted mean for stratified Kaplan-Meier or Cox model with martingale standard errors}
 \usage{
 resmean.phreg(x, times = NULL, covs = NULL, ...)
@@ -29,7 +30,7 @@ the last event time withn a strata the curves are extrapolated using the estimat
 cumulative incidence.
 }
 \examples{
-data(bmt)
+data(bmt); bmt$time <- bmt$time+runif(408)*0.001
 out1 <- phreg(Surv(time,cause!=0)~strata(tcell,platelet),data=bmt)
 
 rm1 <- resmean.phreg(out1,times=10*(1:6))
@@ -39,7 +40,7 @@ plot(rm1,se=1)
 plot(rm1,years.lost=TRUE,se=1)
 
 ## years.lost decomposed into causes
-drm1 <- cif.yearslost(Surv(time,cause!=0)~cause+strata(tcell,platelet),data=bmt,times=10*(1:6))
+drm1 <- cif.yearslost(Event(time,cause)~strata(tcell,platelet),data=bmt,times=10*(1:6))
 summary(drm1)
 }
 \author{

@@ -13,6 +13,7 @@ library(mets)
 
 ## -----------------------------------------------------------------------------
 library(mets)
+library(timereg)
 set.seed(1000) # to control output in simulatins for p-values below.
 
 ## -----------------------------------------------------------------------------
@@ -24,7 +25,7 @@ base1 <- base1cumhaz
 base4 <- base4cumhaz
 rr <- simRecurrent(200,base1,death.cumhaz=ddr)
 rr$x <- rnorm(nrow(rr)) 
-rr$strata <- floor((rr$id-0.01)/500)
+rr$strata <- floor((rr$id-0.01)/100)
 dlist(rr,.~id| id %in% c(1,7,9))
 
 ## -----------------------------------------------------------------------------
@@ -96,8 +97,12 @@ recEFF1 <- recurrentMarginalAIPCW(Event(start,stop,statusD)~cluster(id),data=rr,
 with( recEFF1, cbind(times,muP,semuP,muPAt,semuPAt,semuPAt/semuP))
 
 times <- 500*(1:10)
+###recEFF14 <- recurrentMarginalAIPCW(Event(start,stop,statusD)~cluster(id),data=rr,times=times,cens.code=0,
+###death.code=3,cause=1,augment.model=~Nt+Nt2+expNt+NtexpNt)
+###with(recEFF14,cbind(times,muP,semuP,muPAt,semuPAt,semuPAt/semuP))
+
 recEFF14 <- recurrentMarginalAIPCW(Event(start,stop,statusD)~cluster(id),data=rr,times=times,cens.code=0,
-death.code=3,cause=1,augment.model=~Nt+Nt2+expNt+NtexpNt)
+death.code=3,cause=1,augment.model=~Nt+I(Nt^2)+I(exp(-Nt))+ I( Nt*exp(-Nt)))
 with(recEFF14,cbind(times,muP,semuP,muPAt,semuPAt,semuPAt/semuP))
 
 bplot(out,se=TRUE,ylab="marginal mean",col=2)
@@ -116,14 +121,11 @@ legend("bottomright",c("Eff-pred"),lty=1,col=c(1,3))
 ## -----------------------------------------------------------------------------
 rr <- mets:::simMarginalMeanCox(200,cens=3/5000,Lam1=base1,LamD=ddr,beta1=c(0.3,-0.3),
 				betad=c(-0.3,0.3))
-dtable(rr,~statusG+status+death,level=2,response=1)
+dtable(rr,~statusD+status+death,level=2,response=1)
 
 times <- seq(500,5000,by=500)
-rr <- transform(rr,statusD=status)
-rr <- dtransform(rr,statusD=2,death==1)
-dtable(rr,~statusD+status+death,level=2)
 recEFF1x <- recurrentMarginalAIPCW(Event(start,stop,statusD)~cluster(id),data=rr,times=times,
-				   cens.code=0,death.code=2,cause=1,augment.model=~X1+X2)
+				   cens.code=0,death.code=3,cause=1,augment.model=~X1+X2)
 with(recEFF1x, cbind(muP,muPA,muPAt,semuP,semuPA,semuPAt,semuPAt/semuP))
 
 xr <- phreg(Surv(start,stop,status==1)~cluster(id),data=rr)
@@ -132,16 +134,67 @@ out <- recurrentMarginal(xr,dr)
 mets::summaryTimeobject(out$times,out$mu,times=times,se.mu=out$se.mu)
 
 ## -----------------------------------------------------------------------------
-rr <- mets:::simMarginalMeanCox(200,cens=3/5000,Lam1=base1,LamD=ddr,beta1=c(0.3,-0.3),
-				betad=c(-0.3,0.3))
-dtable(rr,~statusG+status+death,level=2,response=1)
+ rr <- mets:::simMarginalMeanCox(200,cens=3/5000,Lam1=base1,LamD=ddr,beta1=c(0.3,-0.3),betad=c(-0.3,0.3),k1=0.1)
+ dtable(rr,~statusD+status+death,level=2,response=1)
 
- out  <- recreg(Event(start,stop,statusG)~X1+X2+cluster(id),data=rr,cause=1,death.code=3,cens.code=0)
- outs <- recreg(Event(start,stop,statusG)~X1+X2+cluster(id),data=rr,cause=1,death.code=3,cens.code=0,
+ out  <- recreg(Event(start,stop,statusD)~X1+X2+cluster(id),data=rr,cause=1,death.code=3,cens.code=0)
+ outs <- recreg(Event(start,stop,statusD)~X1+X2+cluster(id),data=rr,cause=1,death.code=3,cens.code=0,
 		cens.model=~strata(X1,X2))
-
  summary(out)$coef
  summary(outs)$coef
+
+ ## checking baseline
+ par(mfrow=c(1,1))
+ bplot(out)
+ bplot(outs,add=TRUE,col=2)
+ lines(scalecumhaz(base1,0.1),col=3,lwd=2)
+
+## -----------------------------------------------------------------------------
+ outipcw  <- recregIPCW(Event(start,stop,statusD)~X1+X2+cluster(id),data=rr,cause=1,death.code=3,
+			cens.code=0,times=2000)
+ outipcws <- recregIPCW(Event(start,stop,statusD)~X1+X2+cluster(id),data=rr,cause=1,death.code=3,
+		    cens.code=0,times=2000,cens.model=~strata(X1,X2))
+ summary(outipcw)$coef
+ summary(outipcws)$coef
+
+## -----------------------------------------------------------------------------
+ out  <- recreg(Event(start,stop,statusD)~X1+X2+cluster(id),data=rr,cause=c(1,3),
+		death.code=3,cens.code=0)
+ summary(out)$coef
+
+## -----------------------------------------------------------------------------
+ rr$binf <- rbinom(nrow(rr),1,0.5) 
+ rr$statusDC <- rr$statusD
+ rr <- dtransform(rr,statusDC=4, statusD==3 & binf==0)
+ rr$weight <- 1
+ rr <- dtransform(rr,weight=2,statusDC==3)
+
+ outC  <- recreg(Event(start,stop,statusDC)~X1+X2+cluster(id),data=rr,cause=c(1,3),
+		 death.code=c(3,4),cens.code=0)
+ summary(outC)$coef
+
+ outCW  <- recreg(Event(start,stop,statusDC)~X1+X2+cluster(id),data=rr,cause=c(1,3),
+		  death.code=c(3,4),cens.code=0,wcomp=c(1,2))
+ summary(outCW)$coef
+
+ bplot(out,ylab="Mean composite")
+ bplot(outC,col=2,add=TRUE)
+ bplot(outCW,col=3,add=TRUE)
+
+## -----------------------------------------------------------------------------
+out  <- recreg(Event(start,stop,statusD)~X1+X2+cluster(id),data=rr,cause=1,death.code=3,
+	        cens.code=0,cox.prep=TRUE)
+baseiid <- IIDbaseline.cifreg(out,time=3000)
+GLprediid(baseiid,rr[1:5,])
+
+## -----------------------------------------------------------------------------
+ outi  <- recreg(Event(start,stop,statusD)~X1+X2+cluster(id),data=rr,cause=1,death.code=3,cens.code=0,
+		augment.model=~Nt+X1+X2)
+ summary(outi)$coef
+ outA  <- recreg(Event(start,stop,statusD)~X1+X2+cluster(id),data=rr,cause=1,death.code=3,cens.code=0,
+		augment.model=~Nt+X1+X2,augment=outi$lindyn.augment)
+ summary(outA)$coef
+
 
 ## -----------------------------------------------------------------------------
 ###cor.mat <- corM <- rbind(c(1.0, 0.6, 0.9), c(0.6, 1.0, 0.5), c(0.9, 0.5, 1.0))

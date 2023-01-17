@@ -27,10 +27,10 @@ library(mets)
 
 ## -----------------------------------------------------------------------------
    # making iid decomposition of regression parameters
-   betaiid <- iid(out)
+   betaiid <- IC(out)
    head(betaiid)
    # robust standard errors
-   crossprod(betaiid)^.5
+   crossprod(betaiid/NROW(betaiid))^.5
    # same as 
 
 ## -----------------------------------------------------------------------------

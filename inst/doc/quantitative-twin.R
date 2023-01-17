@@ -78,11 +78,11 @@ l1 <- lm(bmi ~ gender*ns(age,3), data=twinbmi)
 marg1 <- estimate(l1, id=twinbmi$tvparnr)
 
 ## ----marg1, warning=FALSE,message=FALSE,fig.cap="Marginal association between BMI and Age for males and females."----
-dm <- Expand(twinbmi,
+dm <- lava::Expand(twinbmi,
 	    bmi=0,
 	    gender=c("male"),
 	    age=seq(33,61,length.out=50))
-df <- Expand(twinbmi,
+df <- lava::Expand(twinbmi,
 	    bmi=0,
 	    gender=c("female"),
 	    age=seq(33,61,length.out=50))
@@ -109,7 +109,7 @@ lu <- twinlm(bmi ~ age+gender, data=dd, DZ="DZ", zyg="zyg", id="tvparnr", type="
 estimate(lu)
 
 ## -----------------------------------------------------------------------------
-estimate(lu,contr(5:6,6))
+estimate(lu,lava::contr(5:6,6))
 
 ## ----ace----------------------------------------------------------------------
 ace0 <- twinlm(bmi ~ age+gender, data=dd, DZ="DZ", zyg="zyg", id="tvparnr", type="ace")

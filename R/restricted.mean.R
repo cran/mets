@@ -75,6 +75,7 @@
 ##' rmc1 <- cif.yearslost(Surv(time,cause!=0)~cause+strata(tcell,platelet),data=bmt,times=30)
 ##' summary(rmc1)
 ##' @export
+##' @aliases rmstIPCW 
 resmeanIPCW  <- function(formula,data,cause=1,time=NULL,beta=NULL,
    offset=NULL,weights=NULL,cens.weights=NULL,cens.model=~+1,se=TRUE,
    kaplan.meier=TRUE,cens.code=0,no.opt=FALSE,method="nr",model="exp",
@@ -146,7 +147,7 @@ resmeanIPCW  <- function(formula,data,cause=1,time=NULL,beta=NULL,
   statusC <- (status==cens.code) 
   ucauses  <-  sort(unique(status))
   ccc <- which(ucauses==cens.code)
-  Causes <- ucauses[-ccc]
+  if (length(ccc)==0) Causes <- ucauses else Causes <- ucauses[-ccc]
   competing  <-  (length(Causes)>1) 
   data$id <- id
   data$exit <- exit
@@ -172,7 +173,7 @@ resmeanIPCW  <- function(formula,data,cause=1,time=NULL,beta=NULL,
   X <-  as.matrix(X)
   X2  <- .Call("vecMatMat",X,X)$vXZ
   ## if event before time or alive, then uncensored  
-  obs <- (exit<=time & (status %in% Causes)) | (exit>=time)
+  obs <- (exit<=time & (status %in% Causes)) | (exit>time)
   if (is.null(Ydirect))  {
 	  if (!competing) Y <- c(pmin(exit,time)*obs)/cens.weights else 
 	                  Y <- c((status==cause)*(time-pmin(exit,time))*obs)/cens.weights
@@ -256,7 +257,7 @@ hessian <- matrix(D2log,length(pp),length(pp))
     h <- h[ord]
     lp <- c(X %*% val$coef+offset)
     p <- exp(lp)
-    obs <- (exit<=time & status==cause) | (exit>=time)
+    obs <- (exit<=time & status==cause) | (exit>time)
     if (is.null(Ydirect))  {
 	  if (!competing) Y <- c(pmin(exit,time)*obs)/cens.weights else 
 	                  Y <- c((status==cause)*(time-pmin(exit,time))*obs)/cens.weights
@@ -314,6 +315,14 @@ hessian <- matrix(D2log,length(pp),length(pp))
   class(val) <- c("binreg","resmean")
   return(val)
 }# }}}
+
+##' @export
+rmstIPCW <- function(formula,data,...)
+{# {{{
+   out <- resmeanIPCW(formula,data,...)
+   return(out)
+}# }}}
+
 
 preprrm <- function(cs,ss,X,times,data,model="exp") 
 {# {{{
@@ -375,5 +384,47 @@ augment <- apply(X*Mc*h,2,sum)
 hh <- (DbetaF/varY)
 Faugment <- apply(X*hh*Mc,2,sum)
 return(list(Mc=Mc,Xaugment=Xaugment,Faugment=Faugment,hXaugment=augment,h=h,hh=hh,varY=varY,RRMt0=RRMt0))
+}# }}}
+
+
+##' Average Treatment effect for Restricted Mean for censored competing risks data using IPCW 
+##'
+##' Under the standard causal assumptions  we can estimate the average treatment effect E(Y(1) - Y(0)). We need Consistency, ignorability ( Y(1), Y(0) indep A given X), and positivity.
+##'
+##' The first covariate in the specification of the competing risks regression model must be the treatment effect that is a factor. If the factor has more than two levels
+##' then it uses the mlogit for propensity score modelling.  We consider the outcome mint(T;tau) or
+##' I(epsion==cause1)(t- min(T;t)) that gives years lost due to cause "cause".  
+##* The default model is the exp(X^ \beta) 
+##'
+##' Estimates the ATE using the the standard binary double robust estimating equations that are IPCW censoring adjusted.
+##'
+##' @param formula formula with 'Event' outcome 
+##' @param data data-frame 
+##' @param outcome  "rmst"=E( min(T, t) | X) , or "rmst-cause"=E( I(epsilon==cause) ( t - mint(T,t)) ) | X) 
+##' @param model possible exp model for relevant mean model that is exp(X^t beta) 
+##' @param ... Additional arguments to pass to binregATE 
+##' @author Thomas Scheike
+##' @examples
+##' library(mets); data(bmt); bmt$event <- bmt$cause!=0; dfactor(bmt) <- tcell~tcell
+##' out <- resmeanATE(Event(time,event)~tcell+platelet,data=bmt,time=40,treat.model=tcell~platelet)
+##' summary(out)
+##' 
+##' out1 <- resmeanATE(Event(time,cause)~tcell+platelet,data=bmt,cause=1,outcome="rmst-cause",
+##'                    time=40,treat.model=tcell~platelet)
+##' summary(out1)
+##' 
+##' @export
+##' @aliases rmstATE
+resmeanATE <- function(formula,data,outcome=c("rmst","rmst-cause"),model="exp",...)
+{# {{{
+out <- 	binregATE(formula,data,...,outcome=outcome,model=model) 
+return(out)
+}# }}}
+
+##' @export
+rmstATE <- function(formula,data,outcome=c("rmst","rmst-cause"),model="exp",...)
+{# {{{
+out <- 	resmeanATE(formula,data,...,outcome=outcome,model=model) 
+return(out)
 }# }}}
 

@@ -62,10 +62,10 @@
 ##'
 ##' ### predictions with CI based on iid decomposition of baseline and beta
 ##' fg <- cifreg(Event(time,cause)~tcell+platelet+age,data=bmt,cause=1,propodds=NULL,cox.prep=TRUE)
-##' Biid <- mets:::iid.baseline.cifreg(fg,time=20)
+##' Biid <- IIDbaseline.cifreg(fg,time=20)
 ##' FGprediid(Biid,bmt[1:5,])
 ##'
-##' @aliases vecAllStrata diffstrata iid.baseline.cifreg FGprediid indexstratarightR
+##' @aliases vecAllStrata diffstrata IIDbaseline.cifreg FGprediid indexstratarightR
 ##' @export
 cifreg <- function(formula,data=data,cause=1,cens.code=0,cens.model=~1,
             weights=NULL,offset=NULL,Gc=NULL,propodds=1,...)
@@ -133,7 +133,7 @@ cifreg01 <- function(data,X,exit,status,id=NULL,strata=NULL,offset=NULL,weights=
     if (missing(beta)) beta <- rep(0,p)
     if (p==0) X <- cbind(rep(0,length(exit)))
 
-    cause.jumps <- which(status==cause)
+    cause.jumps <- which(status %in% cause)
     max.jump <- max(exit[cause.jumps])
     other <- which((!(status %in% c(cens.code,cause)) ) & (exit< max.jump))
 
@@ -178,9 +178,9 @@ cifreg01 <- function(data,X,exit,status,id=NULL,strata=NULL,offset=NULL,weights=
     ## }}}
 
     ### censoring weights constructed
-    whereC <- which(status==cens.code)
+    whereC <- which(status %in% cens.code)
     time <- exit
-    statusC <- (status==cens.code)
+    statusC <- (status %in% cens.code)
     data$id <- id
     data$exit <- exit
     data$statusC <- statusC
@@ -217,7 +217,7 @@ cifreg01 <- function(data,X,exit,status,id=NULL,strata=NULL,offset=NULL,weights=
 
     Zcall <- cbind(status,cens.strata,Stime) ## to keep track of status and Censoring strata
     ## setting up all jumps of type "cause", need S0, S1, S2 at jumps of "cause"
-    stat1 <- 1*(status==cause)
+    stat1 <- 1*(status %in% cause)
     trunc <- FALSE
     xx2 <- .Call("FastCoxPrepStrata",entry,exit,stat1,X,id,trunc,strata,weights,offset,Zcall,case.weights,PACKAGE="mets")
     xx2$nstrata <- nstrata
@@ -233,6 +233,7 @@ cifreg01 <- function(data,X,exit,status,id=NULL,strata=NULL,offset=NULL,weights=
             Gts <- vecAllStrata(cens.model$cumhaz[,2],cens.model$strata.jump,cens.model$nstrata)
             ### back to km product-limit form
             Gts <- apply(rbind(0,Gts),2,diff)
+            if (is.null(dim(Gts))) Gts <- matrix(Gts,1,1)
             ### back to km
             Gts <- suppressWarnings(apply(Gts,2,function(x) exp(cumsum(log(1-x)))))
             Gts <- rbind(1,Gts)[whereaJ,]
@@ -535,8 +536,8 @@ indexstratarightR <- function(timeo,stratao,jump,js,nstrata,type="right")# {{{
   return(res)
 }# }}}
 
-##' @export
-iid.baseline.cifreg <- function(x,time=NULL,fixbeta=NULL,...)
+##' @export IIDbaseline.cifreg 
+IIDbaseline.cifreg <- function(x,time=NULL,fixbeta=NULL,...)
 {# {{{
 ###  sum_i int_0^t 1/S_0(s) dM_{ki}(s) - P(t) \beta_k
 ###  with possible strata and cluster "k", and i in clusters 
@@ -694,7 +695,7 @@ iid.baseline.cifreg <- function(x,time=NULL,fixbeta=NULL,...)
  for (i in sus)  { 
 	 wi <- which(xx2$strata==i)
          MGAiidl <- sumstrata(MGAiid[wi],xx2$id[wi],mid+1)
-	 cumhaz.time <- c(cumhaz.time,Cpred(x$cumhaz[x$strata[x$jumps]==i,],time)[,-1])
+	 cumhaz.time <- c(cumhaz.time,cpred(x$cumhaz[x$strata[x$jumps]==i,],time)[,-1])
 
         if (fixbeta==0) {
            UU <-  apply(HtS[i+1,]*t(betaiid),2,sum)
@@ -714,7 +715,7 @@ iid.baseline.cifreg <- function(x,time=NULL,fixbeta=NULL,...)
 } # }}}
 
 ##' @export
-FGprediid <- function(iidBase,newdata,conf.type=c("log","cloglog","plain"))
+FGprediid <- function(iidBase,newdata,conf.type=c("log","cloglog","plain"),model="FG")
 {# {{{
   des <- readPhreg(iidBase,newdata)
   strata <- des$strata
@@ -730,9 +731,14 @@ FGprediid <- function(iidBase,newdata,conf.type=c("log","cloglog","plain"))
    if (ncol(X)!=p) stop("X and coef does not match \n"); 
 
    Ft <- function(p,Xi=rep(0,length(p)-1),type="log") {
+   if (model=="FG") {
        if (type=="log")     y <- log(1-exp(-p[1]*exp(sum(Xi*p[-1]))))
        if (type=="plain")   y <- 1-exp(-p[1]*exp(sum(Xi*p[-1])))
        if (type=="cloglog") y <- log(-log(1-exp(-p[1]*exp(sum(Xi*p[-1])))))
+   } else { ## Ghosh-Lin model
+       if (type=="log")     y <- log(p[1]*exp(sum(Xi*p[-1])))
+       if (type=="plain")   y <- p[1]*exp(sum(Xi*p[-1]))
+   }
        return(y)
    }
    Ftback <- function(p,type="log")
@@ -978,8 +984,8 @@ FG_AugmentCifstrata <- function(formula,data=data,E=NULL,cause=NULL,cens.code=0,
     xxstatus  <- dd$Z[,1]
     xxstrata  <- dd$Z[,2]
     other <- which((!(xxstatus %in% c(cens.code,cause)) ) )
-    jumps1 <- which(xxstatus==cause)
-    jumpsD <- which(xxstatus!=cens.code)
+    jumps1 <- which(xxstatus %in% cause)
+    jumpsD <- which(!(xxstatus %in% cens.code))
     rr <- c(dd$sign*exp(dd$offset))
     ## S0 after strata
     S0 = c(revcumsumstrata(rr,xxstrata,nstrata))
@@ -1132,7 +1138,7 @@ simul.cifs <- function(n,rho1,rho2,beta,rc=0.5,depcens=0,rcZ=0.5,bin=1,type=c("c
 
     cif1 <- setup.cif(cbind(tt,Lam1),beta[1:p],Znames=colnames(Z),type=type[1])
     cif2 <- setup.cif(cbind(tt,Lam2),beta[(p+1):(2*p)],Znames=colnames(Z),type=type[1])
-    data <- timereg::sim.cifsRestrict(list(cif1,cif2),n,Z=Z)
+    data <- sim.cifsRestrict(list(cif1,cif2),n,Z=Z)
 
     if (depcens==0) censor=pmin(rexp(n,1)*(1/rc),6) else censor=pmin(rexp(n,1)*(1/(rc*exp(Z %*% rcZ))),6)
 

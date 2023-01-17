@@ -30,7 +30,7 @@ binreg(
 
 \item{data}{data frame}
 
-\item{cause}{cause of interest}
+\item{cause}{cause of interest (numeric variable)}
 
 \item{time}{time of interest}
 
@@ -131,7 +131,7 @@ riskratio <- function(p) {
   return(p[1]/p[2])
 }
 
-estimate(cifdob,f=riskratio)
+lava::estimate(cifdob,f=riskratio)
 
 }
 \author{

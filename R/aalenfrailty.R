@@ -19,7 +19,7 @@
 ##' dd <- simAalenFrailty(5000)
 ##' f <- ~1##+x
 ##' X <- model.matrix(f,dd) ## design matrix for non-parametric terms
-##' system.time(out<-aalen(update(f,Surv(time,status)~.),dd,n.sim=0,robust=0))
+##' system.time(out<-timereg::aalen(update(f,Surv(time,status)~.),dd,n.sim=0,robust=0))
 ##' dix <- which(dd$status==1)
 ##' t1 <- system.time(bb <- .Call("Bhat",as.integer(dd$status),
 ##'                               X,0.2,as.integer(dd$id),NULL,NULL,
@@ -50,7 +50,7 @@ aalenfrailty <- function(time,status,X,id,theta,B=NULL,...) {
         BB <- B*time[dix]
     }
     Hij0 <- apply(X[dix,,drop=FALSE]*BB,1,sum)
-    Hij <- Cpred(cbind(time[dix],Hij0),time)[,2,drop=FALSE]
+    Hij <- cpred(cbind(time[dix],Hij0),time)[,2,drop=FALSE]
 ##    if (is.na(Hij[1])) browser()
     res <- .Call("Uhat",as.integer(status),Hij,theta,
                 cc$idclust,as.integer(cc$cluster.size),PACKAGE="mets")

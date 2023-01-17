@@ -48,7 +48,7 @@ s_mz_country <- readRDS("data/s_mz_country.rds")
 s_dz_country <- readRDS("data/s_dz_country.rds")
 
 ## ---- label=data-prt----------------------------------------------------------
- library(mets)
+library(mets)
  set.seed(122)
  data(prt)
  
@@ -189,8 +189,8 @@ p11dz <- p11$model$"DZ"
  summary(cdz)
  summary(cmz)
 
- Cpred(cmz$casewise,80)
- Cpred(cdz$casewise,80)
+ timereg::Cpred(cmz$casewise,80)
+ timereg::Cpred(cdz$casewise,80)
 
 ## ---- label=concordance3------------------------------------------------------
 
@@ -249,7 +249,7 @@ slr
 
 ## ---- label=additive_gamma, eval=fullVignette---------------------------------
 #    times <- seq(50,90,length.out=5)
-#    cif1 <- comp.risk(Event(time,status)~-1+factor(country)+cluster(id),prt,
+#    cif1 <- timereg::comp.risk(Event(time,status)~-1+factor(country)+cluster(id),prt,
 #  		   cause=2,times=times,max.clust=NULL)
 #  
 #    mm <- model.matrix(~-1+factor(zyg),prt)
@@ -290,7 +290,7 @@ slr
  # estimate(coef=outaem$theta,vcov=outaem$var.theta,f=function(p) p/sum(p)^2)
 
   times <- 90
-  cif1 <- comp.risk(Event(time,status)~-1+factor(country)+cluster(id),prt,
+  cif1 <- timereg::comp.risk(Event(time,status)~-1+factor(country)+cluster(id),prt,
 		   cause=2,times=times,max.clust=NULL)
 
   mm <- model.matrix(~-1+factor(zyg),prt)
@@ -353,9 +353,9 @@ summary(b2)
 ## -----------------------------------------------------------------------------
 par(mfrow=c(1,2))
 plot(tt, h2[,1], type="s", lty=1, col=cols[3], xlab="Age", ylab="Heritability", ylim=c(0,1))
-confband(tt, h2[,2], h2[,3],polygon=TRUE, step=TRUE, col=Col(cols[3], 0.1), border=NA)
+lava::confband(tt, h2[,2], h2[,3],polygon=TRUE, step=TRUE, col=lava::Col(cols[3], 0.1), border=NA)
 plot(tt, concMZ[,1], type="s", lty=1, col=cols[1], xlab="Age", ylab="Concordance", ylim=c(0,.1))
-confband(tt, concMZ[,2], concMZ[,3],polygon=TRUE, step=TRUE, col=Col(cols[1], 0.1), border=NA)
+lava::confband(tt, concMZ[,2], concMZ[,3],polygon=TRUE, step=TRUE, col=lava::Col(cols[1], 0.1), border=NA)
 
 ## ---- label=biprobittime1-----------------------------------------------------
 system.time(a.mz <- biprobit.time(cancer~1, id="id", data=subset(prt0, zyg=="MZ"),

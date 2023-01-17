@@ -69,15 +69,15 @@ ipw <- function(formula,data,cluster,
         }
         noncens <- !status
         if (is.null(attr(terms(formula,"prop"),"specials")$prop)) {
-            ud.cens <- aalen(formula,n.sim=0,robust=0,data=data,...)
+            ud.cens <- timereg::aalen(formula,n.sim=0,robust=0,data=data,...)
             XZ <- model.matrix(formula,data)
 ###         Gcx <- ud.cens$cum[prodlim::sindex(ud.cens$cum[,1],otimes),-1]
-            Gcx<-Cpred(ud.cens$cum,otimes)[,-1];            
+            Gcx<-cpred(ud.cens$cum,otimes)[,-1];            
             Gcx<-exp(-apply(Gcx*XZ,1,sum))            
         } else {
-            ud.cens <- cox.aalen(formula,n.sim=0,robust=0,data=data,...)
+            ud.cens <- timereg::cox.aalen(formula,n.sim=0,robust=0,data=data,...)
             XZ <- model.matrix(formula,data)
-            Gcx<-Cpred(ud.cens$cum,otimes)[,-1];
+            Gcx<-cpred(ud.cens$cum,otimes)[,-1];
             Gcx<-exp(-apply(Gcx*XZ,1,sum))            
         }
         ##ud.cens <- do.call(cens.model,cens.args)
@@ -90,9 +90,9 @@ ipw <- function(formula,data,cluster,
     if (trunc.prob & ncol(censtime)==3) { ## truncation ## {{{ 
         data$truncsurv <- Surv(ltimes,otimes,noncens)
         trunc.formula <- update(formula,truncsurv~.)        
-        ud.trunc <- aalen(trunc.formula,data=data,robust=0,n.sim=0,residuals=0,silent=1)
+        ud.trunc <- timereg::aalen(trunc.formula,data=data,robust=0,n.sim=0,residuals=0,silent=1)
         dependX0 <- model.matrix(theta.formula,data)        
-        twostage.fit <-two.stage(ud.trunc,data=data,robust=0,detail=0,
+        twostage.fit <- timereg::two.stage(ud.trunc,data=data,robust=0,detail=0,
 			         clusters=data[,cluster],
 				 theta.des=dependX0)#,Nit=20,step=1.0,notaylor=1)
 	pre.theta <- dependX0 %*% twostage.fit$theta
@@ -102,7 +102,7 @@ ipw <- function(formula,data,cluster,
 	colnames(X)[ncol(X)] <- "pre.theta"
         ww <- fast.reshape(cbind(X,".num"=seq(nrow(X)),".lefttime"=ltimes),varying=c(".num",".lefttime"),id=data[,cluster])
 	if (anyNA(ww)) stop("not balanced for predict two stage\n");  
-        Prob <- predict.two.stage(twostage.fit,X=ww[,Xnam],
+        Prob <- timereg::predict.two.stage(twostage.fit,X=ww[,Xnam],
                                   times=ww[,".lefttime1"],times2=ww[,".lefttime2"],
                                   theta=ww$pre.theta)
         P0 <- numeric(nrow(X))
@@ -188,7 +188,7 @@ ipw <- function(formula,data,cluster,
 ##'       cordz=0.5,cormz=2,lam0=0.3,country=FALSE)
 ##' d$strata <- as.numeric(d$country)+(d$zyg=="MZ")*4
 ##' times <- seq(60,100,by=10)
-##' c1 <- comp.risk(Event(time,cause)~1+cluster(id),data=d,cause=1,
+##' c1 <- timereg::comp.risk(Event(time,cause)~1+cluster(id),data=d,cause=1,
 ##' 	model="fg",times=times,max.clust=NULL,n.sim=0)
 ##' mm=model.matrix(~-1+zyg,data=d)
 ##' out1<-random.cif(c1,data=d,cause1=1,cause2=1,same.cens=TRUE,theta.des=mm)
@@ -199,7 +199,7 @@ ipw <- function(formula,data,cluster,
 ##' dl <- d[!d$truncated,]
 ##' dl <- ipw2(dl,cluster="id",same.cens=TRUE,time="time",entrytime="entry",cause="cause",
 ##'            strata="strata",prec.factor=100)
-##' cl <- comp.risk(Event(time,cause)~+1+
+##' cl <- timereg::comp.risk(Event(time,cause)~+1+
 ##' 		cluster(id),
 ##' 		data=dl,cause=1,model="fg",
 ##' 		weights=dl$indi.weights,cens.weights=rep(1,nrow(dl)),
@@ -235,7 +235,7 @@ ipw2 <- function(data,times=NULL,entrytime=NULL,time="time",cause="cause",
 		   trunc.dist <- summary(surv.trunc)
 		   trunc.dist$time <- rev(-trunc.dist$time)
 		   trunc.dist$surv <- c(rev(trunc.dist$surv)[-1], 1)
-		   Lfit <-Cpred(cbind(trunc.dist$time,trunc.dist$surv),data[,time],strict=TRUE)
+		   Lfit <-cpred(cbind(trunc.dist$time,trunc.dist$surv),data[,time],strict=TRUE)
 		   Lw <- Lfit[,2]
 	   } else { Lw <- 1; }
 	   if (!is.null(entrytime)) 
@@ -243,7 +243,7 @@ ipw2 <- function(data,times=NULL,entrytime=NULL,time="time",cause="cause",
            else ud.cens<- survival::survfit(Surv(data[,time],data[,cause]==0)~+1) 
 	   Gfit<-cbind(ud.cens$time,ud.cens$surv)
 	   Gfit<-rbind(c(0,1),Gfit); 
-	   Gcx<-Cpred(Gfit,pmin(mtt,data[,time]),strict=TRUE)[,2];
+	   Gcx<-cpred(Gfit,pmin(mtt,data[,time]),strict=TRUE)[,2];
            weights <- 1/(Lw*Gcx); 
 	   cweights <-  Gcx; 
 	   tweights <-  Lw; 
@@ -264,7 +264,7 @@ ipw2 <- function(data,times=NULL,entrytime=NULL,time="time",cause="cause",
 		   trunc.dist <- summary(surv.trunc)
 		   trunc.dist$time <- rev(-trunc.dist$time)
 		   trunc.dist$surv <- c(rev(trunc.dist$surv)[-1], 1)
-		   Lfit <-Cpred(cbind(trunc.dist$time,trunc.dist$surv),datas[,time],strict=TRUE)
+		   Lfit <-cpred(cbind(trunc.dist$time,trunc.dist$surv),datas[,time],strict=TRUE)
 		   Lw <- Lfit[,2]
 	   } else {Lw <- 1; }
 	   if (!is.null(entrytime)) 
@@ -272,7 +272,7 @@ ipw2 <- function(data,times=NULL,entrytime=NULL,time="time",cause="cause",
            else ud.cens<- survival::survfit(Surv(entrytimes,datas[,time],datas[,cause]==0)~+1) 
 	   Gfit<-cbind(ud.cens$time,ud.cens$surv)
 	   Gfit<-rbind(c(0,1),Gfit); 
-	   Gcx<-Cpred(Gfit,pmin(mtt,datas[,time]),strict=TRUE)[,2];
+	   Gcx<-cpred(Gfit,pmin(mtt,datas[,time]),strict=TRUE)[,2];
 	   weights[who]<-  1/(Lw*Gcx); 
 	   cweights[who] <-  Gcx; 
 	   tweights[who] <-  Lw; 
@@ -282,13 +282,13 @@ ipw2 <- function(data,times=NULL,entrytime=NULL,time="time",cause="cause",
         X <- model.matrix(cens.formula,data=data)[,-1,drop=FALSE]; 
 
 	if (!is.null(entrytime)) {
-###		trunc.model <- cox.aalen(Surv(-data[,time],-entrytime+prec,rep(1,nrow(data))) ~ prop(X)) 
+###		trunc.model <- timereg::cox.aalen(Surv(-data[,time],-entrytime+prec,rep(1,nrow(data))) ~ prop(X))
 		trunc.model <- survival::coxph(Surv(-data[,time],-entrytime+prec,rep(1,nrow(data))) ~ X) 
 ###                baseout <- cens.model$cum 
 		baseout <- survival::basehaz(trunc.model,centered=FALSE); 
 		baseout <- cbind(rev(-baseout$time),rev(baseout$hazard))
 	###
-		Lfit <-Cpred(baseout,data[,time],strict=TRUE)[,-1]
+		Lfit <-cpred(baseout,data[,time],strict=TRUE)[,-1]
 		RR<-exp(as.matrix(X) %*% coef(trunc.model))
 		Lfit<-exp(-Lfit*RR)
 		Lw <- Lfit
@@ -300,7 +300,7 @@ ipw2 <- function(data,times=NULL,entrytime=NULL,time="time",cause="cause",
         baseout <- survival::basehaz(cens.model,centered=FALSE); 
 ###        baseout <- cens.model$cum 
 	baseout <- cbind(baseout$time,baseout$hazard)
-	Gfit<-Cpred(baseout,pmin(mtt,data[,time]),strict=TRUE)[,2];
+	Gfit<-cpred(baseout,pmin(mtt,data[,time]),strict=TRUE)[,2];
 	RR<-exp(as.matrix(X) %*% coef(cens.model))
 	Gfit<-exp(-Gfit*RR)
         weights <- 1/(Lw*Gfit); 
@@ -367,7 +367,7 @@ ipw2 <- function(data,times=NULL,entrytime=NULL,time="time",cause="cause",
 ###       Gfit<-cbind(ud.cens$time,ud.cens$surv)
 ###       Gfit<-rbind(c(0,1),Gfit); 
 ###       tmaxna <- tmax; tmaxna[is.na(tmax)] <- 0
-###       Gcx<-Cpred(Gfit,pmin(mtt,tmaxna),strict=TRUE)[,2];
+###       Gcx<-cpred(Gfit,pmin(mtt,tmaxna),strict=TRUE)[,2];
 ###       Wd <- Gcx
 ###
 ###      data[,"tmax"] <- rep(tmax,id)

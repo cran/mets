@@ -18,7 +18,7 @@
 ##' prt <- prt[which(prt$id %in% sample(unique(prt$id),7500)),]
 ##' ### marginal cumulative incidence of prostate cancer
 ##' times <- seq(60,100,by=2)
-##' outm <- comp.risk(Event(time,status)~+1,data=prt,cause=2,times=times)
+##' outm <- timereg::comp.risk(Event(time,status)~+1,data=prt,cause=2,times=times)
 ##' 
 ##' cifmz <- predict(outm,X=1,uniform=0,resample.iid=1)
 ##' cifdz <- predict(outm,X=1,uniform=0,resample.iid=1)
@@ -31,10 +31,10 @@
 ##' 
 ##' ### To compute casewise cluster argument must be passed on,
 ##' ###  here with a max of 100 to limit comp-time
-##' outm <-comp.risk(Event(time,status)~+1,data=prt,
+##' outm <- timereg::comp.risk(Event(time,status)~+1,data=prt,
 ##'                  cause=2,times=times,max.clust=100)
-##' cifmz <-predict(outm,X=1,uniform=0,resample.iid=1)
-##' cc <-bicomprisk(Event(time,status)~strata(zyg)+id(id),data=prt,
+##' cifmz <- predict(outm,X=1,uniform=0,resample.iid=1)
+##' cc <- bicomprisk(Event(time,status)~strata(zyg)+id(id),data=prt,
 ##'                 cause=c(2,2),se.clusters=outm$clusters)
 ##' cdz <- cc$model$"DZ"
 ##' cmz <- cc$model$"MZ"
@@ -61,10 +61,10 @@ casewise.test <- function(conc,marg,test="no-test",p=0.01)
   timer <- seq(mintime, maxtime,length=100)
   dtimer <- timer[2]-timer[1]
 
-  margtime <- Cpred(cbind(marg$time,c(marg$P1)),timer)[,2]
-  concP1 <-   Cpred(cbind(conc$time,c(conc$P1)),timer)[,2]
-  se.margtime <- Cpred(cbind(marg$time,c(marg$se.P1)),timer)
-  se.concP1 <-   Cpred(cbind(conc$time,c(conc$se.P1)),timer)
+  margtime <- cpred(cbind(marg$time,c(marg$P1)),timer)[,2]
+  concP1 <-   cpred(cbind(conc$time,c(conc$P1)),timer)[,2]
+  se.margtime <- cpred(cbind(marg$time,c(marg$se.P1)),timer)
+  se.concP1 <-   cpred(cbind(conc$time,c(conc$se.P1)),timer)
   outtest <- NULL
   casewise.iid <- NULL
   casewise <- concP1/margtime
@@ -77,9 +77,9 @@ casewise.test <- function(conc,marg,test="no-test",p=0.01)
   if (is.null(conc$P1.iid) || is.null(marg$P1.iid))   {
     cat("Warning, need iid decomposition for correct se's for Concordance \n");
   } else {
-   conciid <- Cpred(cbind(conc$time,conc$P1.iid),timer)[,-1]
+   conciid <- cpred(cbind(conc$time,conc$P1.iid),timer)[,-1]
    nconc <- colnames(conc$P1.iid)
-   P1iid <- Cpred(cbind(marg$time,marg$P1.iid),timer)[,-1]
+   P1iid <- cpred(cbind(marg$time,marg$P1.iid),timer)[,-1]
    P1iid2  <- 2*P1iid*margtime;
    se.p2 <- apply(P1iid2^2,1,sum)^.5
    conciid <- (P1iid2[,nconc]-conciid) ### iid of conc-p1^2 test
@@ -102,7 +102,7 @@ casewise.test <- function(conc,marg,test="no-test",p=0.01)
 	se.const <- apply(iid.constant^2,1,sum)^.5
         test.constant <- max(abs(diff.const/se.const))
 	sim.maxs <- apply(abs(iid.constant/se.const),1,max)
-	pval.const <- pval(sim.maxs,test.constant)
+	pval.const <- timereg::pval(sim.maxs,test.constant)
         outtest <- cbind(diff.pepem,sd.pepem,z.pepem,pval.pepem,test.constant,pval.const)
 
         colnames(outtest) <- c("cum dif.","sd","z","pval","constant-case","pval") 			 
@@ -211,19 +211,19 @@ casewise <- function(conc,marg,cause.marg)
  
   out <- conc
   out$time <- timer
-  if (inherits(marg,"comp.risk")) margtime <- Cpred(cbind(marg$time,c(marg$P1)),timer)[,2] else if (inherits(marg,"prodlim")) {
+  if (inherits(marg,"comp.risk")) margtime <- cpred(cbind(marg$time,c(marg$P1)),timer)[,2] else if (inherits(marg,"prodlim")) {
 	  cuminc <- data.frame(marg$cuminc)[,cause.prodlim]; 
 	  se.cuminc <- data.frame(marg$se.cuminc)[,cause.prodlim]; 
-	  margtime <- Cpred(cbind(marg$time,c(cuminc)),timer)[,2]; 
-	  se.margtime <- Cpred(cbind(marg$time,c(se.cuminc)),timer)[,2]; 
+	  margtime <- cpred(cbind(marg$time,c(cuminc)),timer)[,2]; 
+	  se.margtime <- cpred(cbind(marg$time,c(se.cuminc)),timer)[,2]; 
   } else stop("marginal cumulative incidence comp.risk or prodlim output\n"); 
 
-  if (inherits(conc,"comprisk")) concP1 <-  Cpred(cbind(conc$time,c(conc$P1)),timer)[,2]
+  if (inherits(conc,"comprisk")) concP1 <-  cpred(cbind(conc$time,c(conc$P1)),timer)[,2]
   else if (inherits(conc,"prodlim"))  {
 	  conc.cuminc <- data.frame(conc$cuminc)[,1]
 	  conc.se.cuminc <- data.frame(conc$se.cuminc)[,1]
-          se.P1 <-  Cpred(cbind(conc$time,conc.se.cuminc),timer)[,2]
-	  concP1 <- Cpred(cbind(conc$time,conc.cuminc),timer)[,2]
+          se.P1 <-  cpred(cbind(conc$time,conc.se.cuminc),timer)[,2]
+	  concP1 <- cpred(cbind(conc$time,conc.cuminc),timer)[,2]
   }
   concordance<- cbind(timer,concP1,se.P1)
   colnames(concordance) <- c("time","cif","se.cif")
@@ -333,8 +333,8 @@ test.conc <- function(conc1,conc2,same.cluster=FALSE)
   timer <- seq(mintime, maxtime,length=100)
   dtimer <- timer[2]-timer[1]
 
-  conc2timer <- Cpred(cbind(conc2$time,c(conc2$P1)),timer)[,2]
-  conc1timer <- Cpred(cbind(conc1$time,c(conc1$P1)),timer)[,2]
+  conc2timer <- cpred(cbind(conc2$time,c(conc2$P1)),timer)[,2]
+  conc1timer <- cpred(cbind(conc1$time,c(conc1$P1)),timer)[,2]
   outtest <- NULL
 
   if (is.null(conc1$P1.iid) || is.null(conc2$P1.iid)) 
@@ -347,8 +347,8 @@ test.conc <- function(conc1,conc2,same.cluster=FALSE)
 
     if (!is.null(conc1$P1.iid)) if (!is.null(conc2$P1.iid)) {
     ### iid version af integraler
-      conc2P1.iid  <- Cpred(cbind(conc2$time,conc2$P1.iid[,]),timer)[,-1]
-      conc1P1.iid  <- Cpred(cbind(conc1$time,conc1$P1.iid[,]),timer)[,-1]
+      conc2P1.iid  <- cpred(cbind(conc2$time,conc2$P1.iid[,]),timer)[,-1]
+      conc1P1.iid  <- cpred(cbind(conc1$time,conc1$P1.iid[,]),timer)[,-1]
     if ( (ncol(conc1$P1.iid)==ncol(conc2$P1.iid)) && same.cluster==TRUE) {
 	diff.iid <- conc1P1.iid-conc2P1.iid
 	sdiff.iid <- apply(diff.iid,2,sum)*dtimer

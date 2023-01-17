@@ -30,19 +30,21 @@ c1 <- binregATE(Event(time,cause)~gp.f+dnr+preauto+ttt24,kumar,cause=2,
 		treat.model=gp.f~dnr+preauto+ttt24,time=60)
 summary(c1)
 
+kumar$int <- interaction(kumar$gp,kumar$dnr)
+
+b5 <- binregATE(Event(time,cause)~int+preauto+ttt24,kumar,cause=2,
+		treat.model=int~preauto+ttt24,cens.code=0,time=60)
+summary(b5)
+
 ## -----------------------------------------------------------------------------
 
 kumar$cause2 <- 1*(kumar$cause==2)
 
-b3 <- logitATE(cause2~gp+dnr+preauto+ttt24,kumar,treat.model=gp~dnr+preauto+ttt24)
+b3 <- logitATE(cause2~gp.f+dnr+preauto+ttt24,kumar,treat.model=gp.f~dnr+preauto+ttt24)
 summary(b3)
 
-
-b4 <- binregATE(Event(time,cause)~gp.f+dnr+preauto+ttt24,kumar,treat.model=gp.f~dnr+preauto+ttt24,cens.code=2,time=200)
-summary(b4)
-
 ## -----------------------------------------------------------------------------
-b3 <- normalATE(time~gp+dnr+preauto+ttt24,kumar,treat.model=gp~dnr+preauto+ttt24)
+b3 <- normalATE(time~gp.f+dnr+preauto+ttt24,kumar,treat.model=gp.f~dnr+preauto+ttt24)
 summary(b3)
 
 ## -----------------------------------------------------------------------------

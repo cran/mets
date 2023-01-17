@@ -5,6 +5,7 @@
 \alias{phreg.par}
 \alias{robust.phreg}
 \alias{readPhreg}
+\alias{IIDbaseline.phreg}
 \title{Fast Cox PH regression}
 \usage{
 phreg(formula, data, offset = NULL, weights = NULL, ...)
@@ -32,10 +33,13 @@ so ordering after $id will give iid in order of data-set.
 data(TRACE)
 dcut(TRACE) <- ~.
 out1 <- phreg(Surv(time,status==9)~vf+chf+strata(wmicat.4),data=TRACE)
+out2 <- phreg(Event(time,status)~vf+chf+strata(wmicat.4),data=TRACE)
 ## tracesim <- timereg::sim.cox(out1,1000)
 ## sout1 <- phreg(Surv(time,status==1)~vf+chf+strata(wmicat.4),data=tracesim)
 ## robust standard errors default 
 summary(out1)
+out1 <- phreg(Surv(time,status!=0)~vf+chf+strata(wmicat.4),data=TRACE)
+summary(out2)
 
 par(mfrow=c(1,2))
 bplot(out1)
@@ -46,10 +50,10 @@ rob1 <- robust.phreg(out1)
 bplot(rob1,se=TRUE,robust=TRUE)
 
 ## making iid decomposition of regression parameters
-betaiiid <- iid(out1)
+betaiiid <- lava::iid(out1)
 
 ## making iid decomposition of baseline at a specific time-point
-Aiiid <- mets:::iid.baseline.phreg(out1,time=30)
+Aiiid <- mets:::IIDbaseline.phreg(out1,time=30)
 
 }
 \author{

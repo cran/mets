@@ -76,7 +76,7 @@
 ##' Two-stage binomial modelling
 ##' @examples
 ##' data(twinstut)
-##' twinstut0 <- subset(twinstut, tvparnr<11000)
+##' twinstut0 <- subset(twinstut, tvparnr<4000)
 ##' twinstut <- twinstut0
 ##' twinstut$binstut <- (twinstut$stutter=="yes")*1
 ##' theta.des <- model.matrix( ~-1+factor(zyg),data=twinstut)
@@ -96,6 +96,7 @@
 ##' 		         clusters=twinstut$tvparnr,theta.des=theta.des)
 ##' summary(bina)
 ##'
+##' \donttest{ ## Reduce Ex.Timings
 ##' ## refers to zygosity of first subject in eash pair : zyg1
 ##' ## could also use zyg2 (since zyg2=zyg1 within twinpair's))
 ##' out <- easy.binomial.twostage(stutter~factor(sex)+age,data=twinstut,
@@ -112,6 +113,7 @@
 ##'       data=twinstut,response="binstut",id="tvparnr",var.link=1,
 ##'       theta.formula=desfs,desnames=c("mz","dz","os"))
 ##' summary(out3)
+##' }
 ##'
 ##' ### use of clayton oakes binomial additive gamma model
 ##' ###########################################################
@@ -207,7 +209,7 @@ binomial.twostage <- function(margbin,data=parent.frame(),
         cause <- data[,all.vars(margbin$formula)[1]]
 
 	if (!is.numeric(cause)) stop(paste("response in data",margbin$formula)[1],"not numeric\n");
-	if (is.null(beta.iid))   beta.iid <- iid(margbin,id=clusters)
+	if (is.null(beta.iid))   beta.iid <- lava::iid(margbin,id=clusters)
 	if (is.null(Dbeta.iid)) Dbeta.iid <- model.matrix(margbin$formula,data=data) * ps
 	if (twostage==0)            Xbeta <- model.matrix(margbin$formula,data=data)
     }
@@ -683,7 +685,7 @@ breaks=Inf,pairsonly=TRUE,fix.marg=NULL,cens.formula,cens.model="aalen",weights=
 ##'
 ##' @examples
 ##' data(twinstut)
-##' twinstut0 <- subset(twinstut, tvparnr<10000)
+##' twinstut0 <- subset(twinstut, tvparnr<4000)
 ##' twinstut <- twinstut0
 ##' twinstut$binstut <- (twinstut$stutter=="yes")*1
 ##' theta.des <- model.matrix( ~-1+factor(zyg),data=twinstut)
@@ -712,14 +714,15 @@ breaks=Inf,pairsonly=TRUE,fix.marg=NULL,cens.formula,cens.model="aalen",weights=
 ##'
 ##' ## refers to zygosity of first subject in eash pair : zyg1
 ##' ## could also use zyg2 (since zyg2=zyg1 within twinpair's))
-##' desfs <- function(x,num1="zyg1",namesdes=c("mz","dz","os"))
-##'     c(x[num1]=="mz",x[num1]=="dz",x[num1]=="os")*1
-##'
-##' out3 <- easy.binomial.twostage(binstut~factor(sex)+age,
-##'                                data=twinstut, response="binstut",id="tvparnr",
-##'                                var.link=1,theta.formula=desfs,
-##'                                desnames=c("mz","dz","os"))
-##' summary(out3)
+##' ## do not run t save time
+##' # desfs <- function(x,num1="zyg1",namesdes=c("mz","dz","os"))
+##' #     c(x[num1]=="mz",x[num1]=="dz",x[num1]=="os")*1
+##' #
+##' #out3 <- easy.binomial.twostage(binstut~factor(sex)+age,
+##' #                               data=twinstut, response="binstut",id="tvparnr",
+##' #                               var.link=1,theta.formula=desfs,
+##' #                               desnames=c("mz","dz","os"))
+##' #summary(out3)
 ##'
 ##' \donttest{ ## Reduce Ex.Timings
 ##' n <- 5000

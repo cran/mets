@@ -5,6 +5,7 @@
 \alias{strataAugment}
 \alias{scalecumhaz}
 \alias{GLprediid}
+\alias{recregIPCW}
 \title{Recurrent events regression with terminal event}
 \usage{
 recreg(
@@ -17,6 +18,7 @@ recreg(
   weights = NULL,
   offset = NULL,
   Gc = NULL,
+  wcomp = NULL,
   ...
 )
 }
@@ -38,6 +40,8 @@ recreg(
 \item{offset}{offsets for model}
 
 \item{Gc}{censoring weights for time argument, default is to calculate these with a Kaplan-Meier estimator, should then give G_c(T_i-)}
+
+\item{wcomp}{weights for composite outcome, so when cause=c(1,3), we might have wcomp=c(1,2).}
 
 \item{...}{Additional arguments to lower level funtions}
 }
@@ -64,7 +68,7 @@ The iid decomposition of the beta's are on the form
 and returned as iid.
 
 Events, deaths and censorings are specified via stop start structure and the Event call, that via a status vector 
-and cause (code), censoring-codes (cens.code) and death-codes (death.code) indentifies these. See example.
+and cause (code), censoring-codes (cens.code) and death-codes (death.code) indentifies these. See example and vignette.
 }
 \examples{
 ## data with no ties
