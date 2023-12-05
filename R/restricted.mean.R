@@ -6,8 +6,8 @@
 ##' cause.
 ##'
 ##' When the status is binary assumes it is a survival setting and default is to consider outcome Y=min(T,t), 
-##' if status has more than two levels, then computes years lost due to that particular cause, thus
-##* using the response \deqn{ (min(T,t)-t) I(status==cause) } 
+##' if status has more than two levels, then computes years lost due to the specified cause, thus
+##* using the response \deqn{ (min(T,t)-t) I(status==cause) }
 ##'
 ##' Based on binomial regresion IPCW response estimating equation: 
 ##' \deqn{ X ( \Delta (min(T , t))/G_c(min(T_i,t)) - exp( X^T beta)) = 0 }
@@ -27,12 +27,16 @@
 ##' \deqn{ X ( \Delta( min(T,t)) Ydirect /G_c(min(T_i,t)) - exp( X^T beta)) = 0 }
 ##' for IPCW adjusted responses. 
 ##'
+##' The actual influence (type="II") function is based on augmenting with \deqn{ X \int_0^t E(Y | T>s) /G_c(s) dM_c(s) }
+##' and alternatively just solved directly (type="I") without any additional terms. 
+##'
 ##' Censoring model may depend on strata. 
 ##'
 ##' @param formula formula with outcome (see \code{coxph})
 ##' @param data data frame
 ##' @param cause cause of interest
 ##' @param time  time of interest 
+##' @param type of estimator
 ##' @param beta starting values 
 ##' @param offset offsets for partial likelihood 
 ##' @param weights for score equations 
@@ -72,12 +76,12 @@
 ##'                             cens.model=~strata(platelet,tcell),model="lin")
 ##' estimate(out)
 ##' ## same as integrated cumulative incidence 
-##' rmc1 <- cif.yearslost(Surv(time,cause!=0)~cause+strata(tcell,platelet),data=bmt,times=30)
+##' rmc1 <- cif.yearslost(Event(time,cause)~strata(tcell,platelet),data=bmt,times=30)
 ##' summary(rmc1)
 ##' @export
 ##' @aliases rmstIPCW 
-resmeanIPCW  <- function(formula,data,cause=1,time=NULL,beta=NULL,
-   offset=NULL,weights=NULL,cens.weights=NULL,cens.model=~+1,se=TRUE,
+resmeanIPCW  <- function(formula,data,cause=1,time=NULL,type=c("II","I"),
+   beta=NULL,offset=NULL,weights=NULL,cens.weights=NULL,cens.model=~+1,se=TRUE,
    kaplan.meier=TRUE,cens.code=0,no.opt=FALSE,method="nr",model="exp",
    augmentation=NULL,h=NULL,MCaugment=NULL,Ydirect=NULL,...)
 {# {{{
@@ -160,7 +164,7 @@ resmeanIPCW  <- function(formula,data,cause=1,time=NULL,beta=NULL,
       resC <- phreg(formC,data)
       if (resC$p>0) kmt <- FALSE
       exittime <- pmin(exit,time)
-      cens.weights <- predict(resC,data,times=exittime,individual.time=TRUE,se=FALSE,km=kmt)$surv
+      cens.weights <- predict(resC,data,times=exittime,individual.time=TRUE,se=FALSE,km=kmt,tminus=TRUE)$surv
       ## strata from original data 
       cens.strata <- resC$strata[order(resC$ord)]
       cens.nstrata <- resC$nstrata
@@ -184,6 +188,71 @@ resmeanIPCW  <- function(formula,data,cause=1,time=NULL,beta=NULL,
 
  h.call <- h
  if (is.null(h))  h <- rep(1,length(exit))
+
+ if (!is.null(MCaugment)) {se <- FALSE;}
+
+ if (se) {## {{{ censoring adjustment of variance 
+
+    ### order of sorted times
+    ord <- resC$ord
+    X <-  X[ord,,drop=FALSE]
+    status <- status[ord]
+    exit <- exit[ord]
+    weights <- weights[ord]
+    offset <- offset[ord]
+    if (!is.null(Ydirect)) Ydirect <- Ydirect[ord]
+    cens.weights <- cens.weights[ord]
+    h <- h[ord]
+###    lp <- c(X %*% val$coef+offset)
+###    p <- exp(lp)
+    obs <- (exit<=time & status==cause) | (exit>time)
+    if (is.null(Ydirect))  {
+	  if (!competing) Y <- c(pmin(exit,time)*obs)/cens.weights else 
+	                  Y <- c((status==cause)*(time-pmin(exit,time))*obs)/cens.weights
+    } else Y <- c(Ydirect*obs)/cens.weights
+    if (model=="exp" & is.null(h.call))  ph <- 1
+    if (model=="exp" & !is.null(h.call)) ph <- h
+    if (model!="exp" & is.null(h.call))  ph <- 1 
+    if (model!="exp" & !is.null(h.call)) ph <- h 
+    Xd <- ph*X
+
+	    xx <- resC$cox.prep
+	    S0i2 <- S0i <- rep(0,length(xx$strata))
+	    S0i[xx$jumps+1]  <- 1/resC$S0
+	    S0i2[xx$jumps+1] <- 1/resC$S0^2
+	    ## compute function h(s) = \sum_i X_i Y_i(t) I(s \leq T_i) 
+	    ## to make \int h(s)/Ys  dM_i^C(s) 
+	    btime <- 1*(exit<time)
+
+	    ht  <-  apply(Xd*Y,2,revcumsumstrata,xx$strata,xx$nstrata)
+	    ### Cens-Martingale as a function of time and for all subjects to handle strata 
+	    ## to make \int h(s)/Ys  dM_i^C(s)  = \int h(s)/Ys  dN_i^C(s) - dLambda_i^C(s)
+	    IhdLam0 <- apply(ht*S0i2*btime,2,cumsumstrata,xx$strata,xx$nstrata)
+	    U <- matrix(0,nrow(xx$X),ncol(X))
+	    U[xx$jumps+1,] <- (resC$jumptimes<=time)*ht[xx$jumps+1,]/c(resC$S0)
+	    MGt <- (U[,drop=FALSE]-IhdLam0)*c(xx$weights)
+
+	    ### Censoring Variance Adjustment  \int h^2(s) / y.(s) d Lam_c(s) estimated by \int h^2(s) / y.(s)^2  d N.^C(s) 
+	    MGCiid <- apply(MGt,2,sumstrata,xx$id,max(id)+1)
+
+           if (type[1]=="II") { ## psedo-value type augmentation
+	    hYt  <-  revcumsumstrata(Y,xx$strata,xx$nstrata)
+	    IhdLam0 <- cumsumstrata(hYt*S0i2*btime,xx$strata,xx$nstrata)
+	    U <- rep(0,length(xx$strata))
+	    U[xx$jumps+1] <- (resC$jumptimes<=time)*hYt[xx$jumps+1]/c(resC$S0)
+	    MGt <- Xd*c(U-IhdLam0)*c(xx$weights)
+	    MGtiid <- apply(MGt,2,sumstrata,xx$id,max(id)+1)
+
+	    ### Censoring Variance Adjustment  \int h^2(s) / y.(s) d Lam_c(s) estimated by \int h^2(s) / y.(s)^2  d N.^C(s) 
+	    MGCiid <- MGtiid
+	    augmentation  <-  apply(MGCiid,2,sum) + augmentation
+           }
+   }  else {
+	  MGCiid <- 0
+  }## }}}
+
+ ## use data ordered by time (keeping track of id also)
+ id <- xx$id
 
 obj <- function(pp,all=FALSE)
 { # {{{
@@ -217,6 +286,7 @@ hessian <- matrix(D2log,length(pp),length(pp))
  structure(-ploglik,gradient=-gradient,hessian=hessian)
 }# }}}
 
+
   p <- ncol(X)
   opt <- NULL
   if (p>0) {
@@ -242,55 +312,6 @@ hessian <- matrix(D2log,length(pp),length(pp))
     exit=exit, cens.weights=cens.weights, cens.strata=cens.strata, cens.nstrata=cens.nstrata, 
     model.frame=m,n=length(exit),nevent=nevent,ncluster=nid,Y=Y))
   
- if (!is.null(MCaugment)) {se <- FALSE;}
-
- if (se) {## {{{ censoring adjustment of variance 
-    ### order of sorted times
-    ord <- resC$ord
-    X <-  X[ord,,drop=FALSE]
-    status <- status[ord]
-    exit <- exit[ord]
-    weights <- weights[ord]
-    offset <- offset[ord]
-    if (!is.null(Ydirect)) Ydirect <- Ydirect[ord]
-    cens.weights <- cens.weights[ord]
-    h <- h[ord]
-    lp <- c(X %*% val$coef+offset)
-    p <- exp(lp)
-    obs <- (exit<=time & status==cause) | (exit>time)
-    if (is.null(Ydirect))  {
-	  if (!competing) Y <- c(pmin(exit,time)*obs)/cens.weights else 
-	                  Y <- c((status==cause)*(time-pmin(exit,time))*obs)/cens.weights
-    } else Y <- c(Ydirect*obs)/cens.weights
-    if (model=="exp" & is.null(h.call))  ph <- 1
-    if (model=="exp" & !is.null(h.call)) ph <- h
-    if (model!="exp" & is.null(h.call))  ph <- 1 
-    if (model!="exp" & !is.null(h.call)) ph <- h 
-    Xd <- ph*X
-
-    xx <- resC$cox.prep
-    S0i2 <- S0i <- rep(0,length(xx$strata))
-    S0i[xx$jumps+1]  <- 1/resC$S0
-    S0i2[xx$jumps+1] <- 1/resC$S0^2
-    ## compute function h(s) = \sum_i X_i Y_i(t) I(s \leq T_i) 
-    ## to make \int h(s)/Ys  dM_i^C(s) 
-    btime <- 1*(exit<time)
-    ht  <-  apply(Xd*Y,2,revcumsumstrata,xx$strata,xx$nstrata)
-    ### Cens-Martingale as a function of time and for all subjects to handle strata 
-    ## to make \int h(s)/Ys  dM_i^C(s)  = \int h(s)/Ys  dN_i^C(s) - dLambda_i^C(s)
-    IhdLam0 <- apply(ht*S0i2*btime,2,cumsumstrata,xx$strata,xx$nstrata)
-    U <- matrix(0,nrow(xx$X),ncol(X))
-    U[xx$jumps+1,] <- (resC$jumptimes<=time)*ht[xx$jumps+1,]/c(resC$S0)
-    htdN <- U
-    MGt <- (U[,drop=FALSE]-IhdLam0)*c(xx$weights)
-
-    ### Censoring Variance Adjustment  \int h^2(s) / y.(s) d Lam_c(s) estimated by \int h^2(s) / y.(s)^2  d N.^C(s) 
-    MGCiid <- apply(MGt,2,sumstrata,xx$id,max(id)+1)
-    htdN <- apply(htdN,2,sumstrata,xx$id,max(id)+1)
-   }  else {
-	  MGCiid <- 0
-  }## }}}
-
   ph <- 1
   lp <- c(X %*% val$coe+offset)
   if (model=="exp") p <- exp(lp) else p <- lp
@@ -311,6 +332,8 @@ hessian <- matrix(D2log,length(pp),length(pp))
   val$se.coef <- diag(val$var)^.5
   val$cens.code <- cens.code
   val$model.type <- model
+  val$type <- type[1]
+  val$augmentation <- augmentation
 
   class(val) <- c("binreg","resmean")
   return(val)
@@ -322,7 +345,6 @@ rmstIPCW <- function(formula,data,...)
    out <- resmeanIPCW(formula,data,...)
    return(out)
 }# }}}
-
 
 preprrm <- function(cs,ss,X,times,data,model="exp") 
 {# {{{
@@ -385,7 +407,6 @@ hh <- (DbetaF/varY)
 Faugment <- apply(X*hh*Mc,2,sum)
 return(list(Mc=Mc,Xaugment=Xaugment,Faugment=Faugment,hXaugment=augment,h=h,hh=hh,varY=varY,RRMt0=RRMt0))
 }# }}}
-
 
 ##' Average Treatment effect for Restricted Mean for censored competing risks data using IPCW 
 ##'

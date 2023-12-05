@@ -1,114 +1,9 @@
-###{{{ phreg0 
-phreg0 <- function(X,entry,exit,status,id=NULL,strata=NULL,beta,stderr=TRUE,method="NR",...) {# {{{ 
-  p <- ncol(X) 
-  if (missing(beta)) beta <- rep(0,p)
-  if (p==0) X <- cbind(rep(0,length(exit)))
-  if (!is.null(strata)) { # {{{
-    stratalev <- levels(strata)
-    strataidx <- lapply(stratalev,function(x) which(strata==x))
-    if (!all(unlist(lapply(strataidx,function(x) length(x)>0))))
-      stop("Strata without any observation")
-    dd <- lapply(strataidx, function(ii) {
-        entryi <- entry[ii]
-        trunc <- !is.null(entryi)
-        if (!trunc) entryi <- rep(0,length(exit[ii]))
-                 .Call("FastCoxPrep",
-                       entryi,exit[ii],status[ii],
-                       as.matrix(X)[ii,,drop=FALSE],
-                       id[ii],
-                       trunc,
-                       PACKAGE="mets")
-                 })
-    if (!is.null(id))
-      id <- unlist(lapply(dd,function(x) x$id[x$jumps+1]))
-      obj <- function(pp,U=FALSE,all=FALSE) {
-      val <- lapply(dd,function(d)
-                    with(d,
-                         .Call("FastCoxPL",pp,X,XX,sign,jumps,PACKAGE="mets")))
-      ploglik <-     Reduce("+",lapply(val,function(x) x$ploglik))
-      gradient <-    Reduce("+",lapply(val,function(x) x$gradient))
-      hessian <-     Reduce("+",lapply(val,function(x) x$hessian))
-      if (all) {
-        U <- do.call("rbind",lapply(val,function(x) x$U))
-        hessiantime <- do.call("rbind",lapply(val,function(x) x$hessianttime))
-        time <- lapply(dd,function(x) x$time[x$ord+1])
-        ord <- lapply(dd,function(x) x$ord+1)
-        jumps <- lapply(dd,function(x) x$jumps+1)
-        jumptimes <- lapply(dd,function(x) x$time[x$ord+1][x$jumps+1])
-        S0 <- lapply(val,function(x) x$S0)
-        nevent  <- unlist(lapply(S0,length))
-        return(list(ploglik=ploglik,gradient=gradient,hessian=hessian,
-                    U=U,S0=S0,nevent=nevent,hessianttime=hessiantime,
-                    ord=ord,time=time,jumps=jumps,jumptimes=jumptimes))
-      }
-      structure(-ploglik,gradient=-gradient,hessian=-hessian)
-    }# }}}
-  } else { # {{{
-      trunc <- !is.null(entry)
-      if (!trunc) entry <- rep(0,length(exit))
-      system.time(dd <- .Call("FastCoxPrep",
-                              entry,exit,status,X,
-                              as.integer(seq_along(entry)),
-                              !is.null(entry),
-                              PACKAGE="mets"))
-
-      if (!is.null(id))
-          id <- dd$id[dd$jumps+1]
-      obj <- function(pp,U=FALSE,all=FALSE) {
-          val <- with(dd,
-                      .Call("FastCoxPL",pp,X,XX,sign,jumps,PACKAGE="mets"))
-          if (all) {
-              val$time <- dd$time[dd$ord+1]
-              val$ord <- dd$ord+1
-              val$jumps <- dd$jumps+1
-              val$jumptimes <- val$time[val$jumps]
-              val$nevent <- length(val$S0)
-              return(val)
-          }
-          with(val, structure(-ploglik, gradient=-gradient, hessian=-hessian))
-      }
-  }# }}}
-
-  opt <- NULL
-  if (p>0) {
-      if (tolower(method)=="nr") {
-          opt <- lava::NR(beta,obj,...)
-          opt$estimate <- opt$par
-      } else {
-          opt <- nlm(obj,beta,...)
-          opt$method <- "nlm"
-      }
-      cc <- opt$estimate;  names(cc) <- colnames(X)
-      if (!stderr) return(cc)
-      val <- c(list(coef=cc),obj(opt$estimate,all=TRUE))
-  } else {
-      val <- obj(0,all=TRUE)
-      val[c("ploglik","gradient","hessian","U")] <- NULL
-  }
-
-  ### computes Breslow estimator 
-  cumhaz <- NULL
-
-  res <- c(val,
-           list(strata=strata,
-                entry=entry,
-                exit=exit,
-                status=status,                
-                p=p,
-                X=X,
-                id=id, opt=opt,cum=cumhaz))
-  class(res) <- "phreg"
-  res
-} # }}}
-
-###}}} phreg0
-
 ###{{{ phreg01
 
 phreg01 <- function(X,entry,exit,status,id=NULL,strata=NULL,
 	   offset=NULL,weights=NULL,strata.name=NULL,cumhaz=TRUE,
              beta,stderr=TRUE,method="NR",no.opt=FALSE,Z=NULL,propodds=NULL,AddGam=NULL,
-	     case.weights=NULL,no.var=0,...) {
+	     case.weights=NULL,no.var=0,augmentation=0,...) {
   p <- ncol(X)
   if (missing(beta)) beta <- rep(0,p)
   if (p==0) X <- cbind(rep(0,length(exit)))
@@ -144,10 +39,9 @@ phreg01 <- function(X,entry,exit,status,id=NULL,strata=NULL,
    ## orginal id coding into integers 
    id.orig <- id+1; 
 
-   dd <- .Call("FastCoxPrepStrata", entry,exit,status,X, id, 
-	     trunc,strata,weights,offset,Zcall,case.weights,PACKAGE="mets")
+   dd <- .Call("FastCoxPrepStrata", entry,exit,status,X,id,trunc,strata,weights,offset,Zcall,case.weights,PACKAGE="mets")
 
-   dd$nstrata <- nstrata
+   dd$nstrata <- nstrata 
    obj <- function(pp,U=FALSE,all=FALSE) {# {{{
       if (length(dd$jumps) >0) {
 	      if (is.null(propodds) & is.null(AddGam)) {
@@ -157,6 +51,7 @@ phreg01 <- function(X,entry,exit,status,id=NULL,strata=NULL,
 	      else val <- with(dd, .Call("FastCoxPLstrataAddGam",pp,X,XX,sign,jumps, strata,nstrata,weights,offset,ZX,
 					 AddGam$theta,AddGam$dimthetades,AddGam$thetades,AddGam$ags,AddGam$varlink,AddGam$dimjumprv,AddGam$jumprv,
 					 AddGam$JumpsCauses,PACKAGE="mets"))
+	      val$gradient <- val$gradient+augmentation
       } else {
 	      val <- list(jumps=NULL,ploglik=NULL,U=NULL,gradient=NULL,hessian=NULL,hessiantime=NULL,S2S0=NULL,E=NULL,S0=NULL)
       }
@@ -206,20 +101,27 @@ phreg01 <- function(X,entry,exit,status,id=NULL,strata=NULL,
              function(e) matrix(0,nrow(val$hessian),ncol(val$hessian)) )
   } else II <- matrix(0,p,p)
 
+  ## Brewslow estimator, to handle also possible weights, caseweights that are 0
+  ww <- val$caseweightsJ * val$weightsJ
+  val$S0[abs(ww)<.00000001] <- 0 
+
   ### computes Breslow estimator 
   if (cumhaz==TRUE & (length(val$jumps)>0)) { # {{{
 	 strata <- val$strata[val$jumps]
 	 nstrata <- val$nstrata
 	 jumptimes <- val$jumptimes
 
-	 ## Brewslow estimator
-	 cumhaz <- cbind(jumptimes,cumsumstrata(1/val$S0,strata,nstrata))
+	 ## Brewslow estimator, to handle also possible weights, caseweights that are 0
+	 S0i2 <- S0i <- rep(0,length(val$S0))
+	 S0i[val$S0>0] <- 1/val$S0[val$S0>0]
+	 S0i2[val$S0>0] <- 1/val$S0[val$S0>0]
+	 cumhaz <- cbind(jumptimes,cumsumstrata(S0i,strata,nstrata))
 	 if ((no.opt==FALSE & p!=0)) { 
-	     DLambeta.t <- apply(val$E/c(val$S0),2,cumsumstrata,strata,nstrata)
+	     DLambeta.t <- apply(val$E*S0i,2,cumsumstrata,strata,nstrata)
 	     varbetat <-   rowSums((DLambeta.t %*% II)*DLambeta.t)
 	 ### covv <-  apply(covv*DLambeta.t,1,sum) Covariance is "0" by construction
 	 } else varbetat <- 0
-	 var.cumhaz <- cumsumstrata(1/val$S0^2,strata,nstrata)+varbetat
+	 var.cumhaz <- cumsumstrata(S0i2,strata,nstrata)+varbetat
 	 se.cumhaz <- cbind(jumptimes,(var.cumhaz)^.5)
 
 	 colnames(cumhaz)    <- c("time","cumhaz")
@@ -348,6 +250,7 @@ phreg <- function(formula,data,offset=NULL,weights=NULL,...) {# {{{
   if (!is.null(intpos  <- attributes(Terms)$intercept))
     X <- X[,-intpos,drop=FALSE]
   if (ncol(X)==0) X <- matrix(nrow=0,ncol=0)
+
   res <- c(phreg01(X,entry,exit,status,id,strata,offset,weights,strata.name,...),
    list(call=cl,model.frame=m,formula=formula,strata.pos=pos.strata,
 	cluster.pos=pos.cluster,n=length(exit)))
@@ -728,6 +631,7 @@ IC.phreg  <- function(x,type="robust",all=FALSE,baseline=FALSE,...) {# {{{
     } else {
       res <- IIDbaseline.phreg(x, ...)$base.iid
     }
+    tryCatch(rownames(res) <- rownames(x$X), error=function(...) NULL)
     return(res*NROW(res))
   }
   classes1 <- "mlogit"
@@ -800,20 +704,26 @@ if (is.null(x$propodds)) {
   }# }}}
 
   ncluster <- NULL
-  if (type=="robust" & (!is.null(x$id) | any(x$entry>0))) {
-    if (type=="martingale") id <- x$id[x$jumps]
-    ###  ii <- mets::cluster.index(id)
-    UU <- apply(MGt,2,sumstrata,id,max(id)+1)
-    ### names of clusters given in call 
-    ncluster <- nrow(UU)
+  if (type == "robust" & (!is.null(x$id) | any(x$entry > 0))) {
+      if (type == "martingale") id <- x$id[x$jumps]
+      ###  ii <- mets::cluster.index(id)
+      UU <- apply(MGt, 2, sumstrata, id, max(id) + 1)
+      ### names of clusters given in call
+      ncluster <- nrow(UU)
   } else {
-     UU <- MGt
+      UU <- MGt
   }
- res <-  structure(UU%*%invhess,invhess=invhess,ncluster=ncluster)
+ res <- structure(UU %*% invhess, invhess = invhess, ncluster = ncluster)
+ if (is.null(colnames(res)))
+   colnames(res) <- names(coef(x))
+tryCatch(rownames(res) <- rownames(x$X), error=function(...) NULL)
  res <- res*NROW(res)
  return(res)
 } else if (inherits(x,c("cifreg","recreg"))) {
-  res <- x$iid*NROW(x$iid)
+  res <- x$iid * NROW(x$iid)
+  if (is.null(colnames(res)))
+    colnames(res) <- names(coef(x))
+  res <- res*NROW(res)
   return(res)
 }
 } # }}}
@@ -841,13 +751,13 @@ IIDbaseline.phreg <- function(x,time=NULL,ft=NULL,fixbeta=NULL,...)
   U <- E <- matrix(0,nrow(xx$X),x$p)
   E[xx$jumps+1,] <- x$E
   U[xx$jumps+1,] <- x$U
-  ###    
-  cumhaz <- c(cumsumstrata(S0i,xx$strata,xx$nstrata))
-  ### only up to time t
+  ### only up to time t for A
   if (is.null(ft))  ft <- rep(1,length(xx$time))
+  if (is.matrix(ft)) ft <- c(ft)
+  cumhaz <- c(cumsumstrata(ft*S0i,xx$strata,xx$nstrata))
   cumS0i2 <- c(cumsumstrata(ft*S0i2*btimexx,xx$strata,xx$nstrata))
   if (fixbeta==0) {
-	  EdLam0 <- apply(E*S0i,2,cumsumstrata,xx$strata,xx$nstrata)
+	  EdLam0 <- apply(ft*E*S0i,2,cumsumstrata,xx$strata,xx$nstrata)
 	  Ht <- apply(ft*E*S0i*btimexx,2,cumsumstrata,xx$strata,xx$nstrata)
   } else Ht <- NULL
   if (fixbeta==0) rr <- c(xx$sign*exp(Z %*% coef(x) + xx$offset)) else rr <- c(xx$sign*exp(xx$offset))
@@ -858,7 +768,7 @@ IIDbaseline.phreg <- function(x,time=NULL,ft=NULL,fixbeta=NULL,...)
   MGtiid <- NULL
   if (fixbeta==0) {# {{{
      invhess <- -solve(x$hessian)
-     MGt <- U[,drop=FALSE]-(Z*cumhaz-EdLam0)*rr*c(xx$weights)
+     MGt <- ft*U[,drop=FALSE]-(Z*cumhaz-EdLam0)*rr*c(xx$weights)
      MGt <- MGt %*% invhess
      MGtiid <- apply(MGt,2,sumstrata,id,mid)
      ## Ht efter strata
@@ -1087,11 +997,11 @@ print.summary.phreg  <- function(x,max.strata=5,...) {
     printCoefmat(x$ateDR,...)
     cat("\n")
 
-    if (!is.null(x$attc)) {
-    cat("Average Treatment effects on Treated/Non-Treated (DR) :\n")
-    printCoefmat(x$attc,...)
-    cat("\n")
-    }
+###    if (!is.null(x$attc)) {
+###    cat("Average Treatment effects on Treated/Non-Treated (DR) :\n")
+###    printCoefmat(x$attc,...)
+###    cat("\n")
+###    }
 
   }
   cat("\n")
@@ -1339,7 +1249,7 @@ return(res)
 ##' different causes using the cif.yearslost function that is based on  
 ##' integrating the cumulative incidence functions.  
 ##' One particular feature of these functions are that the restricted mean and years-lost are 
-##' computed for all event times as functions and can be viewed.  When times are given and beyond
+##' computed for all event times as functions and can be plotted/viewed.  When times are given and beyond
 ##' the last event time withn a strata the curves are extrapolated using the estimates of 
 ##' cumulative incidence. 
 ##' 
@@ -1443,6 +1353,7 @@ resmean.phreg <- function(x,times=NULL,covs=NULL,...)
     years.lost <- intkmtimes[,1]-intkmtimes[,2]
     intkmtimes <- cbind(skmtimes,intkmtimes,se.intkmtimes,years.lost)
     colnames(intkmtimes) <- c("strata","times","rmean","se.rmean","years.lost")
+    rownames(intkmtimes) <- rep(x$strata.level,length(times)); 
     intkmtimes=data.frame(intkmtimes)
 ###    logintkmtimes=cbind(intkmtimes[,1:2],log(intkmtimes[,3]),se.intkmtimes/intkmtimes[,3])
 ###    colnames(logintkmtimes) <- c("strata","times","log-rmean","log-se.rmean")
@@ -1653,6 +1564,7 @@ cif.yearslost <- function(formula,data=data,cens.code=0,times=NULL,...)
     intF1mtimes <- cbind(stratatimes,intF1times,se.intF1mtimes,years.lost)
     colnames(intF1mtimes) <- c("strata","times",
 			      paste0("intF1",causes),paste0("se.intF1",causes),"total-years-lost")
+    rownames(intF1mtimes) <- rep(x$strata.level,length(times)); 
     intF1mtimes=data.frame(intF1mtimes)
     if (pka==1) { 
 	    intF1pkatimes <- cbind(stratatimes,intF1times,se.intF1times)
@@ -1706,6 +1618,7 @@ plot.resmean_phreg <- function(x, se=FALSE,time=NULL,add=FALSE,ylim=NULL,xlim=NU
 	if (inherits(x,"km") & is.null(ylab)) ylab <- "Survival probability"
 	if (inherits(x,"cif") & is.null(ylab)) ylab <- "Probability"
 	if (inherits(x,"resmean_phreg") & is.null(ylab)) ylab <- "Restricted residual mean life"
+	if (inherits(x,"resmean_phreg") & !is.null(x$intF1times)) ylab <- "Years lost up to t: t - E(min(T,t))"
 	if (years.lost) ylab <- "Years lost up to t: t - E(min(T,t))"
 	if (is.null(xlab)) xlab <- "time"
    level <- -qnorm((1-level)/2)
@@ -1812,49 +1725,307 @@ plot.resmean_phreg <- function(x, se=FALSE,time=NULL,add=FALSE,ylim=NULL,xlim=NU
 
 # }}}
 
+##' IPTW Cox, Inverse Probaibilty of Treatment Weighted Cox regression 
+##'
+##' Fits Cox model with treatment weights \deqn{ w(A)= \sum_a I(A=a)/P(A=a|X) }, computes
+##' standard errors via influence functions that are returned as the IID argument. 
+##' Propensity scores are fitted using either logistic regression (glm) or the multinomial model (mlogit) when more
+##' than two categories for treatment. The treatment needs to be a factor and is identified on the rhs
+##' of the "treat.model". 
+##'
+##' Also works with cluster argument. Time-dependent propensity score weights can also be computed when weight.var is 1
+##' and then at time of 2nd treatment (A_1) uses weights w_0(A_0) * w_1(A_1) where A_0 is first treatment. 
+##'
+##' @param formula for phreg 
+##' @param data data frame for risk averaging
+##' @param treat.model propensity score model (binary or multinomial) 
+##' @param weight.var a 1/0 variable that indicates when propensity score is computed over time 
+##' @param weights may be given, and then uses weights*w(A) as the weights
+##' @param estpr to estimate propensity scores and get infuence function contribution to uncertainty
+##' @param pi0 fixed simple weights 
+##' @param ...  arguments for phreg call
+##' @author Thomas Scheike
+##' @examples
+##' ##data(bmt)
+##' ##dfactor(bmt) <- tcell~tcell
+##' ##out <- phreg_IPTW(Surv(time,cause==1)~tcell+platelet+age,bmt,tcell~platelet+age)
+##' ##summary(out)
+##'
+##' data <- mets:::simLT(0.7,100,beta=0.3,betac=0,ce=1,betao=0.3)
+##' dfactor(data) <- Z.f~Z
+##' out <- phreg_IPTW(Surv(time,status)~Z.f,data=data,treat.model=Z.f~X)
+##' summary(out)
+##'
+##' @export
+phreg_IPTW <- function(formula,data,treat.model=NULL,weight.var=NULL,
+		       weights=NULL,estpr=1,pi0=0.5,...) {# {{{
+  cl <- match.call()
+  m <- match.call(expand.dots = TRUE)[1:3]
+  special <- c("strata", "cluster","offset")
+  Terms <- terms(formula, special, data = data)
+  m$formula <- Terms
+  m[[1]] <- as.name("model.frame")
+  m <- eval(m, parent.frame())
+  Y <- model.extract(m, "response")
+  if (!inherits(Y,c("Event","Surv"))) stop("Expected a 'Surv' or 'Event'-object")
+  if (ncol(Y)==2) {
+    exit <- Y[,1]
+    entry <- NULL ## rep(0,nrow(Y))
+    status <- Y[,2]
+  } else {
+    entry <- Y[,1]
+    exit <- Y[,2]
+    status <- Y[,3]
+  }
+  id <- strata <- NULL
+  if (!is.null(attributes(Terms)$specials$cluster)) {
+    ts <- survival::untangle.specials(Terms, "cluster")
+    pos.cluster <- ts$terms
+    Terms  <- Terms[-ts$terms]
+    id <- m[[ts$vars]]
+  } else pos.cluster <- NULL
+
+  ### possible handling of id to code from 0:(antid-1)
+  ### same processing inside phreg call 
+  if (!is.null(id)) {
+          orig.id <- id
+	  ids <- sort(unique(id))
+	  nid <- length(ids)
+      if (is.numeric(id)) id <-  fast.approx(ids,id)-1 else  {
+      id <- as.integer(factor(id,labels=seq(nid)))-1
+     }
+  } else { orig.id <- NULL; nid <- length(exit); id <- 0:(nid-1); ids <- NULL}
+  ### id from call coded as numeric 1 -> 
+  id <- id+1
+  nid <- length(unique(id))
+  data$id__  <-  id
+  data$cid__ <- cumsumstrata(rep(1,length(id)),id-1,nid)
+
+treats <- function(treatvar) {# {{{
+treatvar <- droplevels(treatvar)
+nlev <- nlevels(treatvar)
+nlevs <- levels(treatvar)
+###treatvar <- as.numeric(treatvar)
+ntreatvar <- as.numeric(treatvar)
+return(list(nlev=nlev,nlevs=nlevs,ntreatvar=ntreatvar))
+}
+# }}}
+
+## fitting treatment model
+fittreat <- function(treat.model,data,id,ntreatvar,nlev) {# {{{
+if (nlev==2) {
+   treat.model <- drop.specials(treat.model,"cluster")
+   treat <- glm(treat.model,data,family="binomial")
+   iidalpha <- lava::iid(treat,id=id)
+   lpa <- treat$linear.predictors 
+   pal <- expit(lpa)
+   pal <-cbind(1-pal,pal)
+   ppp <- (pal/pal[,1])
+   spp <- 1/pal[,1]
+} else {  
+   treat.modelid <- update.formula(treat.model,.~.+cluster(id__))
+   treat <- mlogit(treat.modelid,data)
+   iidalpha <- lava::iid(treat)
+   pal <- predictmlogit(treat,data,se=0,response=FALSE)
+   ppp <- (pal/pal[,1])
+   spp <- 1/pal[,1]
+}
+
+   ###########################################################
+   ### computes derivative of D (1/Pa) propensity score 
+   ###########################################################
+   Xtreat <- model.matrix(treat.model,data)
+   tvg2 <- 1*(ntreatvar>=2)
+   pA <- c(mdi(pal, 1:length(ntreatvar), ntreatvar))
+   pppy <- c(mdi(ppp,1:length(ntreatvar), ntreatvar))
+   Dppy <-  (spp*tvg2-pppy) 
+   Dp <- c()
+   for (i in seq(nlev-1)) Dp <- cbind(Dp,Xtreat*ppp[,i+1]*Dppy/spp^2);  
+   DPai <- -1*Dp/pA^2
+
+out <- list(iidalpha=iidalpha,pA=pA,Dp=Dp,pal=pal,ppp=ppp,spp=spp,id=id,DPai=DPai)
+return(out)
+} # }}}
+
+expit <- function(x) 1/(1+exp(-x))
+
+if (!is.null(weight.var)) { 
+	## time-changing weights
+	weightWT <- data[,weight.var]
+	whereW <- which(weightWT==1)
+	CountW <- cumsumstrata(weightWT,id-1,nid)
+        dataW <- data[whereW,]; 
+        idW <- id[whereW]; } 
+else { 
+	## all data 
+###	weightWT <- 1*(data$cid__ ==1)
+###	whereW <- which(weightWT==1)
+###	dataW <- data[whereW,]; 
+###	idW <- id; 
+###	CountW <- rep(1,nrow(data))
+###     weightWT <- 1*(data$cid__ ==1)
+	whereW <- 1:nrow(data)
+	dataW <- data
+	idW <- id; 
+	CountW <- rep(1,nrow(data))
+}
+
+treat.name <-  all.vars(treat.model)[1]
+treatvar <- dataW[,treat.name]
+if (!is.factor(treatvar)) stop(paste("treatment=",treat.name," must be coded as factor \n",sep="")); 
+
+treats <- treats(treatvar)
+wlPA <- ww <-  rep(1,nrow(data))
+## id and CountW
+idWW <-   mystrata2index(cbind(id,CountW))
+
+if (estpr[1]==1) {
+   fitt <- fittreat(treat.model,dataW,idW,treats$ntreatvar,treats$nlev)
+   iidalpha0 <- fitt$iidalpha
+   wPA <- c(fitt$pA)
+   DPai <- fitt$DPai
+} else {
+   ## assumes constant fixed prob over groups
+   wPA <- 1/ifelse(pi0,1-pi0,treats$ntreatvar==2)
+   pi0 <- rep(pi0,treats$nlev)
+   DPai <- matrix(0,nrow(data),1)
+}
+
+
+## construct multiplicative weights, with possible start stop structure
+## put propensity score weights at time of weight change 
+ww <-  rep(1,nrow(data))
+ww[whereW] <- wPA
+###
+wlPA <- exp(cumsumstrata(log(ww),idWW-1,attr(idWW,"nlevel")))
+## total weights
+wwt <- exp(cumsumstrata(log(ww),id-1,nid))
+if (estpr[1]==1) {
+	DPait <- matrix(0,nrow(data),ncol(DPai))
+	DPait[whereW,] <- DPai
+	DPait <- apply( DPait*c(wlPA/wwt),2,cumsumstrata,id-1,nid)
+} else DPait <- matrix(0,1,1)
+
+if (is.null(weights)) ww <- 1/wwt else ww <- weights/wwt
+
+## fit the weighted model and bring the derivatives to bring them along
+phw <- phreg(formula,data,weights=ww,Z=DPait,...)
+
+check.derivative <- 0
+if (check.derivative==1) {
+### for checking derivative 
+###fpar <- glm(treat.model,data,family=binomial)
+###mm <- model.matrix(treat.model,data)
+###cpar <- coef(fpar)
+###library(numDeriv)
+###
+###ff <- function(par) {
+###pa <- 	expit(mm %*% par)
+###www <- 1/ifelse(data$Trt == 1, pa, 1 - pa)
+###pp <- phreg(formula,data,weights=www,no.opt=TRUE,beta=coef(phw))
+###return(pp$gradient)
+###}
+###
+###ff(par)
+###gf <- grad(ff,par)
+###
+###print(gf)
+}
+
+
+### iid after propensity model 
+### computing  derivatives 
+if (estpr[1]==1) {
+xx <- phw$cox.prep
+nid <- max(xx$id)
+S0i <- rep(0,length(xx$strata))
+wPAJ <- xx$weights[xx$jumps+1]
+## remove w from S0
+Xt <- xx$X
+S0 <- phw$S0*wPAJ
+S0i[xx$jumps+1] <- 1/S0
+
+U <- E <- matrix(0,nrow(xx$X),phw$p)
+## U is multiplied 1/w  to remove weights
+U[xx$jumps+1,] <- phw$U/wPAJ
+rr <- c(xx$sign*exp(Xt %*% coef(phw) + xx$offset)*xx$weights)
+rrnw <- c(xx$sign*exp(Xt %*% coef(phw) + xx$offset))
+
+DWX=.Call("vecMatMat",xx$Z,Xt)$vXZ;  
+S1=apply(Xt*rr,2,revcumsumstrata,xx$strata,xx$nstrata); 
+DS1=apply(DWX*rrnw,2,revcumsumstrata,xx$strata,xx$nstrata); 
+DS0=apply(xx$Z*rrnw,2,revcumsumstrata,xx$strata,xx$nstrata); 
+DS0S1=.Call("vecMatMat",DS0[xx$jumps+1,,drop=FALSE],S1[xx$jumps+1,,drop=FALSE])$vXZ;  
+
+DUa2 <- apply(wPAJ*DS1[xx$jumps+1,,drop=FALSE]/c(S0),2,sum) - apply(wPAJ*DS0S1/c(S0^2),2,sum)
+DUa1 <-  t(xx$Z[xx$jumps+1,]) %*% (phw$U/wPAJ)
+DUa  <-  DUa1-matrix(DUa2,ncol(fitt$DPai),phw$p)
+iidpal <- iidalpha0 %*% DUa ## /nid
+iid <-   lava::iid(phw) + iidpal %*% phw$ihess
+phw$DUa <- DUa
+phw$IID <- iid
+phw$naive.var <- phw$var
+phw$var  <-  crossprod(iid)
+} 
+
+return(phw)
+}# }}}
+
 ##' G-estimator for Cox and Fine-Gray model 
 ##'
 ##' Computes G-estimator \deqn{ \hat S(t,A=a) = n^{-1} \sum_i \hat S(t,A=a,Z_i) }
 ##' for the Cox model based on phreg og the Fine-Gray model based on the
-##' cifreg function. Assumes that the first covariate is $A$ and this is a factor. 
-##' Gives influence functions of these risk estimates and SE's are based on
-##' these. 
+##' cifreg function. Gives influence functions of these risk estimates and SE's are 
+##' based on  these.  If first covariate is a factor then all contrast are computed, 
+##' and if continuous then considered covariate values are given by Avalues.
+##'
 ##' @param x phreg or cifreg object
 ##' @param data data frame for risk averaging
 ##' @param time for estimate
+##' @param Avalues values to compare for first covariate A
+##' @param varname if given then averages for this variable, default is first variable
+##' @param same.data assumes that same data is used for fitting of survival model and averaging. 
+##' @param id might be given to link to data to iid decomposition of survival data, must be coded as 1,2,..,  
 ##' @author Thomas Scheike
 ##' @examples
 ##' 
 ##' data(bmt); bmt$time <- bmt$time+runif(408)*0.001
 ##' bmt$event <- (bmt$cause!=0)*1
-##' dfactor(bmt) <- tcell~tcell
+##' dfactor(bmt) <- tcell.f~tcell
 ##'
-##' fg1 <- cifreg(Event(time,cause)~tcell+platelet+age,bmt,cause=1,
+##' fg1 <- cifreg(Event(time,cause)~tcell.f+platelet+age,bmt,cause=1,
 ##'               cox.prep=TRUE,propodds=NULL)
 ##' summary(survivalG(fg1,bmt,50))
 ##'
-##' ss <- phreg(Surv(time,event)~tcell+platelet+age,bmt) 
+##' ss <- phreg(Surv(time,event)~tcell.f+platelet+age,bmt) 
 ##' summary(survivalG(ss,bmt,50))
 ##' @export
-survivalG <- function(x,data,time=NULL)
+survivalG <- function(x,data,time=NULL,Avalues=c(0,1),varname=NULL,same.data=TRUE,id=NULL)
 {# {{{
 
-if (is.null(time)) stop("give time for estimation of survival\n")
+if (is.null(time)) stop("Give time for estimation of survival/cumulative incidence\n")
 
 if (inherits(x,"cifreg"))
-Aiid <- IIDbaseline.cifreg(x,time=time) else 
-Aiid <- IIDbaseline.phreg(x,time=time)
+Aiid <- IIDbaseline.cifreg(x,time=time) else Aiid <- IIDbaseline.phreg(x,time=time)
 
 ### dealing with first variable that is a factor 
+
+if (is.null(varname))  {
 treat.name <- all.vars(update.formula(x$formula,1~.))[1]
+} else treat.name <- varname
 treatvar <- data[,treat.name]
-if (!is.factor(treatvar)) stop(paste("treatment=",treat.name,"must be coded as factor \n",sep="")); 
+
+if (is.factor(treatvar)) {
+###if (!is.factor(treatvar)) stop(paste("treatment=",treat.name,"must be coded as factor \n",sep="")); 
 ## treatvar, 1,2,...,nlev or 1,2
 nlev <- nlevels(treatvar)
 nlevs <- levels(treatvar)
 ###treatvar <- as.numeric(treatvar)
 ntreatvar <- as.numeric(treatvar)
 ytreat <- ntreatvar-1
+} else {
+   nlevs <- Avalues
+}
 
 formulaX <- update.formula(x$formula,.~.)
 formulaX <- drop.specials(formulaX,"cluster")
@@ -1862,45 +2033,90 @@ formulaX[-2]
 datA <- dkeep(data,x=all.vars(formulaX))
 xlev <- lapply(datA,levels)
 
-Gf <- function(p,ic=0) {# {{{
-   risks <- c()
-   a <- nlevs[1]
-   for (a in nlevs) {# {{{
-      datA[,treat.name] <- a
-      Xa <- model.matrix(formulaX[-2],datA,xlev=xlev)[,-1]
-      rra <- exp(Xa %*% p[-1])
-
-      if (inherits(x,"cifreg")) { ps0 <- 1- exp(-p[1]*rra) } 
-      else if (inherits(x,"recreg")) { ps0 <- p[1]*rra }
-      else { ps0 <-  exp(-p[1]*rra) } 
-      risks <- cbind(risks,ps0)
-    }# }}}
-
-Gest <- apply(risks,2,mean)
-if (ic==1) Gest <- list(Gest=Gest,iid=t(t(risks)-Gest))
-return(Gest)
-}
-# }}}
+###
+###Gf <- function(p,ic=0) {# {{{
+###   risks <- c()
+###   a <- nlevs[1]
+###   for (a in nlevs) {# {{{
+###      datA[,treat.name] <- a
+###      Xa <- model.matrix(formulaX[-2],datA,xlev=xlev)[,-1]
+###      rra <- exp(Xa %*% p[-1])
+###
+###      if (inherits(x,"cifreg")) { ps0 <- 1- exp(-p[1]*rra) } 
+###      else if (inherits(x,"recreg")) { ps0 <- p[1]*rra }
+###      else { ps0 <-  exp(-p[1]*rra) } 
+###      risks <- cbind(risks,ps0)
+###    }# }}}
+###
+###Gest <- apply(risks,2,mean)
+###if (ic==1) Gest <- list(Gest=Gest,iid=t(t(risks)-Gest))
+###return(Gest)
+###}
+#### }}}
+###
 
 cumhaz.time <- Cpred(x$cumhaz,time)[-1]
-theta <- c(cumhaz.time,x$coef)
+k <- 1; risks <- c(); DariskG <- list()
+for (a in nlevs) { ## {{{
+ datA[,treat.name] <- a
+ Xa <- model.matrix(formulaX[-2],datA,xlev=xlev)[,-1]
+ rra <- c(exp(Xa %*% x$coef))
+ if (inherits(x,"phreg"))  { ps0 <- exp(-cumhaz.time*rra); Dma  <- -cbind(rra*ps0,ps0*cumhaz.time*rra*Xa);    }
+ if (inherits(x,"cifreg")) { ps0 <- 1- exp(-cumhaz.time*rra); Dma  <- cbind(rra*(1-ps0),(1-ps0)*cumhaz.time*rra*Xa);    }
+  else if (inherits(x,"recreg")) { ps0 <- cumhaz.time*rra ; Dma <-  cbind(rra,cumhaz.time*rra*Xa) }
+ risks <- cbind(risks,ps0)
+ DariskG[[k]] <- apply(Dma,2,sum)
+ k <- k+1
+} ## }}}
 
-icf <- Gf(theta,ic=1)
+predictAiid <- NULL
 ###
-DG <- numDeriv::jacobian(Gf,theta,ic=0)
-nid <- max(x$id)
-risk.iid <- apply(icf$iid,2,sumstrata,x$id-1,nid)/nid+
-            cbind(Aiid$base.iid,Aiid$beta.iid) %*% t(DG)
-vv <- crossprod(risk.iid)
+Grisk <- apply(risks,2,mean)
+risk.iid  <- t(t(risks)-Grisk)
+###
+nid <- nrow(Xa) 
+nidcox <- max(x$id)
+mnid <- max(nid,nidcox)
+
+coxiid <- cbind(Aiid$base.iid,Aiid$beta.iid)
+if (nid!=nidcox) {
+    coxiid <- apply(coxiid,2,sumstrata,x$id-1,mnid)
+} 
+
+
+if (same.data) {
+   if (is.null(id)) id <- 1:nrow(Xa) else id <- data[,id];  
+   risk.iid <- apply(risk.iid,2,sumstrata,id-1,mnid)/nid 
+   for (a in seq_along(nlevs)) risk.iid[,a] <- risk.iid[,a]+ coxiid %*% DariskG[[a]]/nid
+   vv <- crossprod(risk.iid)
+} else {
+   predictAiid <- matrix(0,nidcox,ncol(risks))
+   for (a in seq_along(nlevs))  {
+	risk.iid[,a] <- risk.iid[,a] 
+	predictAiid[,a] <- coxiid %*% DariskG[[a]]/nid
+   }
+   vv <- crossprod(risk.iid)+crossprod(predictAiid)
+}
 
 ###estimate(lava::estimate(coef=theta,vcov=vv,f=function(p) Gf(p,ic=0))
-out <- estimate(coef=icf$Gest,vcov=vv,labels=paste("risk",nlevs,sep=""))
-ed <- estimate(coef=icf$Gest,vcov=vv,out,function(p) p[-1]-p[1])
-rd <- estimate(coef=icf$Gest,vcov=vv,out,function(p) p[-1]/p[1],null=1)
+
+if (inherits(x,"phreg"))  { 
+out <- estimate(coef=1-Grisk,vcov=vv,labels=paste("risk",nlevs,sep=""))
+sout <- estimate(coef=Grisk,vcov=vv,labels=paste("risk",nlevs,sep=""))
+ed <- estimate(coef=Grisk,vcov=vv,f=function(p) (1-p[-1])-(1-p[1]))
+rd <- estimate(coef=Grisk,vcov=vv,f=function(p) (1-p[-1])/(1-p[1]),null=1)
+out <- list(risk.iid=risk.iid,survivalG=sout,risk=out,difference=ed,ratio=rd,vcov=vv)
+} 
+if (inherits(x,"cifreg") | inherits(x,"recreg")) { 
+out <- estimate(coef=Grisk,vcov=vv,labels=paste("risk",nlevs,sep=""))
+ed <- estimate(coef=Grisk,vcov=vv,f=function(p) (p[-1])-(p[1]))
+rd <- estimate(coef=Grisk,vcov=vv,f=function(p) (p[-1])/(p[1]),null=1)
 out <- list(risk.iid=risk.iid,risk=out,difference=ed,ratio=rd,vcov=vv)
+}
+
 class(out) <- "survivalG"
 return(out)
-}
+} ## }}}
 
 ###{{{ summary 
 
@@ -1928,7 +2144,6 @@ print.summary.survivalG  <- function(x,...) {
 }
 
 ###}}} summary 
-# }}}
 
 ##' Fast additive hazards model with robust standard errors 
 ##'
@@ -1975,14 +2190,19 @@ S0 = c(revcumsumstrata(eXb,xx$strata,xx$nstrata))
 E=apply(eXb*xx$X,2,revcumsumstrata,xx$strata,xx$nstrata)/S0; 
 S2=apply(eXb*xx$XX,2,revcumsumstrata,xx$strata,xx$nstrata)
 ###
-E2=.Call("vecMatMat",E,E)$vXZ;  
+###E2=.Call("vecMatMat",E,E)$vXZ;  
+E2  <- .Call("vecCPMat",E)$XX
 ###
 dts <- c(diffstrata(xx$time,xx$strata,xx$nstrata))
 dt <- diff(c(0,xx$time))
 ###
 intZbar <- apply(E*dts,2,cumsumstrata,xx$strata,xx$nstrata) 
 intZHZt <- apply((S2-S0*E2)*dts,2,cumsum) 
-intZHZ <- matrix(tail(intZHZt,1),ncol(E), ncol(E))
+intZHZ <- matrix(0,ncol(E),ncol(E));
+intZHZ[lower.tri(intZHZ,diag=TRUE)] <- tail(intZHZt,1)
+intZHZ<- intZHZ+t(intZHZ)
+diag(intZHZ) <- diag(intZHZ)/2
+###intZHZ <- matrix(tail(intZHZt,1),ncol(E), ncol(E))
 IintZHZ  <-  solve(intZHZ)
 intZHdN <- matrix(x$gradient,ncol(E),1)
 gamma <- IintZHZ %*% intZHdN
@@ -2043,7 +2263,7 @@ return(x)
 ##' @export
 km <- function(formula,data=data,conf.type="log",conf.int=0.95,robust=TRUE,...)
 {# {{{
- coxo <- phreg(formula,data=data)
+ coxo <- phreg(formula,data=data,...)
  coxo <- robust.phreg(coxo)
 
  chaz <-     coxo$cumhaz[,2]
@@ -2052,7 +2272,9 @@ km <- function(formula,data=data,conf.type="log",conf.int=0.95,robust=TRUE,...)
  else std.err <-  coxo$se.cumhaz[,2]
  strat <-    coxo$strata[coxo$jumps]
 
- S0i  <-  1/coxo$S0
+ S0i <- rep(0,length(coxo$S0))
+ S0i[coxo$S0>0] <- 1/coxo$S0[coxo$S0>0]
+
  kmt <- exp(cumsumstrata(log(1-S0i),strat,coxo$nstrata))
  temp <- list(surv=kmt)
 
@@ -2331,8 +2553,9 @@ predict.phreg <- function(object,newdata,times=NULL,individual.time=FALSE,tminus
 {# {{{ default is all time-points from the object
 
    ### take baseline and strata from object# {{{
-   jumptimes <- object$cumhaz[,1]
-   chaz <- object$cumhaz[,2]
+   ocumhaz <- object$cumhaz
+   jumptimes <- ocumhaz[,1]
+   chaz <- ocumhaz[,2]
    if (is.null(object$nstrata)) {  ## try to make more robust
 	nstrata <- 1; 
 	strata <- rep(1,length(jumptimes))
@@ -2380,7 +2603,8 @@ if (individual.time & length(times)==1) times <- rep(times,length(object$exit))
 
     for (j in unique(strataNew)) {
 ###        where <- sindex.prodlim(c(0,jumptimes[strata==j]),times,strict=tminus)
-        where <- predictCumhaz(c(0,jumptimes[strata==j]),times,type="left",tminus=tminus)
+       where <- predictCumhaz(c(0,jumptimes[strata==j]),times,type="left",tminus=tminus)
+
 ###	if (sum(abs(whereO-where))>=1) {
 ###	print(c(0,jumptimes[strata==j]))
 ###	print(times)
@@ -2640,7 +2864,7 @@ plot.predictphreg  <- function(x,se=FALSE,add=FALSE,ylim=NULL,xlim=NULL,lty=NULL
 
 ##' Plotting the baslines of stratified Cox 
 ##'
-##' Plotting the baslines of stratified Cox 
+##' Plotting the baselines of stratified Cox
 ##' @param x phreg object
 ##' @param se to include standard errors
 ##' @param time to plot for specific time variables
@@ -2924,4 +3148,262 @@ print.phreg  <- function(x,...) {
   print(summary(x),...)
 }
 ###}}} print
+
+##' Lu-Tsiatis More Efficient Log-Rank for Randomized studies with baseline covariates
+##'
+##' Efficient implementation of the Lu-Tsiatis improvement using baseline covariates. Results
+##' almost equivalent with the speffSurv function of the speff2trial function. A dynamic 
+##' censoring augmentation regression is also computed to gain even more from the censoring augmentation.
+##'
+##' @param formula formula with 'Surv' outcome (see \code{coxph}) and treatment (randomization 0/1)
+##' @param data data frame
+##' @param augmentR formula for the randomization augmentation  (~age+sex)
+##' @param treat.model propensity score model, default is ~+1, assuming RCT study
+##' @param augmentC formula for the censoring augmentation  (~age+sex)
+##' @param km use Kaplan-Meier for the censoring weights (stratified on treatment)
+##' @param cens.code censoring code 
+##' @param level of confidence intervals 
+##' @param cens.model, default is censoring model ~strata(treatment) but any model can be used to make censoring martingales
+##' @param typeII if 1 then computes also alternative formulae that are based on the censoring martingale rather than the robust processes of  Lu-Tsiatis computations. 
+##' @param ... Additional arguments to phreg function 
+##' @author Thomas Scheike
+##' @references
+##'
+##' Lu, Tsiatis (2008), Improving the efficiency of the log-rank test using auxiliary covariates, Biometrika, 679--694
+##' @examples
+##' ## Lu, Tsiatis simulation
+##' data <- mets:::simLT(0.7,100)
+##' 
+##' out <- phreg_lt(Surv(time,status)~Z,data=data,augmentR=~X,augmentC=~factor(Z):X)
+##' out$coefs
+##' @export
+phreg_lt <- function(formula,data,augmentR=NULL,treat.model=~+1,
+		     augmentC=NULL,km=TRUE,cens.code=0,level=0.95,
+		       cens.model=NULL,typeII=NULL,...) {# {{{
+
+### ... for phreg
+fit0 <- phreg(formula, data=data,...)
+
+rhs <- update(formula,.~+1)
+lhs <- update(formula,-1~.)
+varss <- all.vars(rhs)
+
+## first varaible on lhs 
+treat.name <-  all.vars(lhs)[1] 
+Z <- data[,treat.name]
+treat.formula <- update.formula(treat.model,Z~.)
+ptreat <- glm(treat.formula,data=data,family=binomial)
+pi0 <- expit(ptreat$linear.predictors)
+
+ea <- (lava::iid(fit0) %*% fit0$hessian)
+
+AugR <- AugR.iid <- 0
+if (!is.null(augmentR)) {
+   ## design without intercept
+   XR <- model.matrix(augmentR,data)[,-1]
+   XRpi <- (Z-pi0)*XR
+   gamma.R <- solve(crossprod(XRpi)) %*% crossprod(XRpi, ea)
+   XRgamma <- XR %*% gamma.R
+   AugR.iid <- (Z-pi0)*XRgamma
+   AugR <- apply(AugR.iid,2,sum)
+
+   ## iid term for predicted P(treat=1)
+   explp <- exp(ptreat$linear.predictors)
+   iid.treat <- lava::iid(ptreat,id=fit0$id)
+   iid.treat <- -((pi0/(1+explp))*iid.treat)%*%t(apply(XRgamma,2,sum) )
+   AugR.iid <- AugR.iid + iid.treat
+}
+
+AugC <- AugC.times <- AugC.iid <- varC.improve <- 0
+AugClt <- AugClt.iid <- 0
+if (!is.null(augmentC)) {# {{{
+
+  ## formulaC with or without start,stop formulation
+  if (is.null(cens.model)) cens.model <- as.formula(paste("~strata(",treat.name,")"))
+
+  varssrhs <- all.vars(rhs)
+  if (length(varss)==2) 
+  formulaC <-as.formula( paste("Surv(",varss[1],",",varss[2],"==",cens.code,")~."))
+  else 
+  formulaC <-as.formula( paste("Surv(",varss[1],",",varss[2],",",varss[3],"==",cens.code,")~."))
+  formulaC <- update.formula(formulaC,cens.model)
+
+  varsC <- attr(terms(augmentC),"term.labels")
+  formCC <- update(formulaC, reformulate(c(".", varsC)))
+  Cfit0 <- phreg(formCC, data=data,no.opt=TRUE,no.var=1,...)
+
+  ### computing weights for censoring terms
+  x <- Cfit0
+  xx <- x$cox.prep
+  S0i <- rep(0,length(xx$strata))
+  S0i[xx$jumps+1] <-  1/x$S0
+  ## G_c survival at t- 
+  if (!km) {
+    cumhazD <- c(cumsumstratasum(S0i,xx$strata,xx$nstrata)$lagsum)
+    St      <- exp(-cumhazD)
+  } else St <- c(exp(cumsumstratasum(log(1-S0i),xx$strata,xx$nstrata)$lagsum))
+
+  ## Lu-Tsiatis formula from program and biometrika paper
+  out1 <- IIDbaseline.phreg(Cfit0,ft=1/St,time=0,fixbeta=0)
+  Hiid <- (out1$beta.iid %*% Cfit0$hessian)
+  ###
+  gamma <- solve(crossprod(Hiid)) %*% crossprod(Hiid, ea)
+  AugClt.iid <- Hiid %*%  gamma
+  AugClt <- sum(AugClt.iid)
+
+  ### dynamic regression, id to deal with start,stop notation 
+  data$ea__ <- ea[fit0$id]
+  formCCC <- update(formulaC, reformulate(c(".","ea__",varsC)))
+  cr2 <- phreg(formCCC,data=data,no.opt=TRUE,no.var=1,...)
+  ####
+  nterms <- cr2$p-1
+  dhessian <- cr2$hessianttime
+  ## going to full pxp version from more lower triangle 
+  dhessian <-  .Call("XXMatFULL",dhessian,cr2$p,PACKAGE="mets")$XXf
+  ### take relevant \sum H_i(s,t) (e_i - \bar e)
+  covts <- dhessian[,1+1:nterms,drop=FALSE]
+  ### construct relevant \sum (e_i - \bar e)^2
+  Pt <- dhessian[,-c((1:(nterms+1)),(1:(nterms))*(nterms+1)+1),drop=FALSE]
+  gammahat <- .Call("CubeVec",Pt,covts,1,PACKAGE="mets")$XXbeta
+  gammahat[is.na(gammahat)] <- 0
+  gammahat[gammahat==Inf] <- 0
+  Stj <- St[cr2$cox.prep$jumps+1]
+  AugC.times <- -sum(apply(gammahat*cr2$U[,1+1:nterms,drop=FALSE],1,sum))
+  varC.improve <- sum(gammahat*.Call("CubeVec",Pt,gammahat,0,PACKAGE="mets")$XXbeta)
+
+  ###
+  varZ <- matrix(apply(Pt/Stj^2,2,sum),nterms,nterms)
+  gamma2 <- .Call("CubeVec",matrix(c(varZ),nrow=1),matrix(apply(covts/Stj,2,sum),nrow=1),1,PACKAGE="mets")$XXbeta
+  AugC <- -sum(apply(c(gamma2)*t(cr2$U[,1+1:nterms,drop=FALSE])/Stj,2,sum))
+  AugC.iid <- Hiid %*%  t(gamma2)
+###  AugC2 <- sum(AugC.iid); print(c(augC,AugC,AugC3,AugC2)); print("________")
+}
+# }}}
+
+fit0lt <- phreg(formula,data=data,augmentation=AugR+AugClt,no.var=1,...)
+iidlt <- (ea-AugClt.iid-AugR.iid ) %*% fit0$ihessian
+var.betalt <- crossprod(iidlt)
+
+if (!is.null(typeII)) {
+fit0rc <- phreg(formula,data=data,augmentation=AugR+AugC,no.var=1,...)
+iid <- (ea-AugC.iid-AugR.iid ) %*% fit0$ihessian
+var.beta <- crossprod(iid)
+coefAugCRII <- estimate(coef=coef(fit0rc),vcov=var.beta,level=level)$coefmat
+rownames(coefAugCRII) <- paste("Lu-Tsiatis-type-II",rownames(coefAugCRII),sep="-")
+} else coefAugCRII <- NULL
+
+if (!is.null(typeII)) {
+fit0c <- phreg(formula,data=data,augmentation=AugC,no.var=1,...)
+iidc <- (ea-AugC.iid ) %*% fit0$ihessian
+var.betac <- crossprod(iidc)
+coefAugCII <- estimate(coef=coef(fit0c),vcov=var.betac,level=level)$coefmat
+rownames(coefAugCII) <- paste("Lu-Tsiatis-type-II",rownames(coefAugCII),sep="-")
+} else coefAugCII <- NULL
+
+fit0clt <- phreg(formula,data=data,augmentation=AugClt,no.var=1,...)
+iidclt <- (ea-AugClt.iid ) %*% fit0$ihessian
+var.betaClt <- crossprod(iidclt)
+
+fit0r <- phreg(formula,data=data,augmentation=AugR,no.var=1,...)
+iidR <- (ea-AugR.iid ) %*% fit0$ihessian
+var.betaR <- crossprod(iidR)
+
+fit0rct <- phreg(formula,data=data,augmentation=AugR+AugC.times,no.var=1,...)
+var.betat <- var.betaR + varC.improve * fit0$ihessian^2
+###if (var.betat<0)  var.betat <- var.betaR
+
+coefMarg <- estimate(fit0,level=level)$coefmat
+rownames(coefMarg) <- paste("Marginal",rownames(coefMarg),sep="-")
+coefAuglt <- estimate(coef=coef(fit0lt),vcov=var.betalt,level=level)$coefmat
+rownames(coefAuglt) <- paste("Lu-Tsiatis",rownames(coefAuglt),sep="-")
+coefAugR <- estimate(coef=coef(fit0r),vcov=var.betaR,level=level)$coefmat
+rownames(coefAugR) <- paste("LT-AugR",rownames(coefAugR),sep="-")
+coefLTAugC <- estimate(coef=coef(fit0clt),vcov=var.betaClt,level=level)$coefmat
+rownames(coefLTAugC) <- paste("LT-AugC",rownames(coefLTAugC),sep="-")
+coefAugC.dyn <- estimate(coef=coef(fit0rct),vcov=var.betat,level=level)$coefmat
+rownames(coefAugC.dyn) <- paste("Dynamic-LT",rownames(coefAugC.dyn),sep="-")
+
+## take out two of them 
+if (is.null(typeII)) { coefAugC  <- coefAugCR <- NULL }
+coefs <- rbind(coefMarg, coefAuglt, coefAugCRII, coefAugR, coefLTAugC, coefAugCII, coefAugC.dyn)
+coefs <- cbind(coefs,(coefs[,2]/coefs[1,2])^2)
+colnames(coefs)[6] <- "Var-Ratio"
+out <- list(marginal=fit0,augmented=fit0lt,
+	    betaLT.iid=iidlt,AugR=AugR,AugC=AugC,AugC.times=AugC.times,AugClt=AugClt,
+	    coefs=coefs)
+class(out) <- "Lu-Tsiatis"
+return(out)
+} ## }}} 
+
+simLT <- function(rho,n,beta=0,betac=0,ce=1,betao=0)
+{# {{{
+Sigma <- matrix(c(1,rho,rho,1),2,2)
+M <- t(chol(Sigma))
+# M %*% t(M)
+Z <- matrix(rnorm(2*n),2,n) # 2 rows, N/2 columns
+XY <- t(M %*% Z) 
+###
+X <- XY[,1]
+Y <- XY[,2]
+if (betao!=0) px <- expit(X*betao) else px <- 0.5
+Z <- rbinom(n,1,px)
+TT <- -exp(Z*beta)*log(1-pnorm(Y))
+C <- exp(Z*betac)*rexp(n)*ce
+status <- (TT<C)
+mean(status)
+time <- pmin(TT,C)
+data <- data.frame(time=time,status=status,X=X,Z=Z)
+return(data)
+}# }}}
+
+simLTTS <- function(rho,n,beta=c(0,0),betac=0,ce=1,cr=0.5,betao=0.4)
+{# {{{
+
+## to avoid R-check
+TR <- Z1.f <- count2 <- X1 <- NULL
+
+sigma <- matrix(rho,4,4)
+diag(sigma) <- 1
+m <- t(chol(sigma))
+# m %*% t(m)
+z <- matrix(rnorm(4*n),4,n) # 2 rows, n/2 columns
+xy <- t(m %*% z) 
+zz <- matrix(rnorm(4*n),4,n) # 2 rows, n/2 columns
+xyz <- t(m %*% zz) 
+###
+x <- xy[,1]
+y <- xy[,2]
+tr <- xy[,3]
+x1 <- xyz[,1]
+y1 <- xyz[,2]
+if (betao!=0) px <- lava::expit(x*betao) else px <- 0.5
+if (betao!=0) px1 <- lava::expit(x1*betao+tr) else px1 <- 0.5
+z0 <- rbinom(n,1,px)
+z1 <- rbinom(n,1,px1)
+tt0 <- -exp(z0*beta[1])*log(1-pnorm(y))
+tt1 <- -exp(z0*beta[1]+z1*beta[2])*log(1-pnorm(y1))  ## log(1-pnorm(y1))
+tr <- exp(z0*beta[1])*rexp(n)*cr 
+tt <- ifelse(tt0<tr,tt0,tr)+(tt0>tr)*(tt1)
+c <- exp(z0*betac)*rexp(n)*ce
+status <- (tt<c)
+time <- pmin(tt,c)
+data <- data.frame(time=time,status=status,X=x,X1=x1,Z0=z0,Z1=z1,TR=tr)
+data <- timereg::event.split(data,cuts="TR")
+data <- dtransform(data,status=2,TR==time)
+data <- dtransform(data,Z1=0,start<TR)
+data$count2 <- 1*(data$start==data$TR)
+data$Count2 <- 1*(data$start==data$TR)
+data$cw <- 1
+data$Zt.f <- factor(data$Z0)
+data$Z0.f <- factor(data$Z0)
+data$Z1.f <- factor(data$Z1)
+data$Xt <- data$X
+data <- dtransform(data,Zt.f=Z1.f,count2==1)
+data <- dtransform(data,Xt=X1,count2==1)
+data$X0 <- data$X
+data$X1t <- 0
+data <- dtransform(data,X1t=X1,count2==1)
+
+return(data)
+}# }}}
 

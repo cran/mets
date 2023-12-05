@@ -10,6 +10,7 @@ resmeanIPCW(
   data,
   cause = 1,
   time = NULL,
+  type = c("II", "I"),
   beta = NULL,
   offset = NULL,
   weights = NULL,
@@ -36,6 +37,8 @@ resmeanIPCW(
 \item{cause}{cause of interest}
 
 \item{time}{time of interest}
+
+\item{type}{of estimator}
 
 \item{beta}{starting values}
 
@@ -77,7 +80,7 @@ cause.
 }
 \details{
 When the status is binary assumes it is a survival setting and default is to consider outcome Y=min(T,t), 
-if status has more than two levels, then computes years lost due to that particular cause, thus
+if status has more than two levels, then computes years lost due to the specified cause, thus
 
 Based on binomial regresion IPCW response estimating equation: 
 \deqn{ X ( \Delta (min(T , t))/G_c(min(T_i,t)) - exp( X^T beta)) = 0 }
@@ -96,6 +99,9 @@ under known censoring model.
 When Ydirect is given it solves : 
 \deqn{ X ( \Delta( min(T,t)) Ydirect /G_c(min(T_i,t)) - exp( X^T beta)) = 0 }
 for IPCW adjusted responses. 
+
+The actual influence (type="II") function is based on augmenting with \deqn{ X \int_0^t E(Y | T>s) /G_c(s) dM_c(s) }
+and alternatively just solved directly (type="I") without any additional terms. 
 
 Censoring model may depend on strata.
 }
@@ -121,7 +127,7 @@ out <- resmeanIPCW(Event(time,cause)~-1+int,bmt,time=30,cause=1,
                             cens.model=~strata(platelet,tcell),model="lin")
 estimate(out)
 ## same as integrated cumulative incidence 
-rmc1 <- cif.yearslost(Surv(time,cause!=0)~cause+strata(tcell,platelet),data=bmt,times=30)
+rmc1 <- cif.yearslost(Event(time,cause)~strata(tcell,platelet),data=bmt,times=30)
 summary(rmc1)
 }
 \author{

@@ -1,4 +1,4 @@
-## ---- include = FALSE---------------------------------------------------------
+## ----include = FALSE----------------------------------------------------------
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>"
@@ -37,11 +37,13 @@ b5 <- binregATE(Event(time,cause)~int+preauto+ttt24,kumar,cause=2,
 summary(b5)
 
 ## -----------------------------------------------------------------------------
-
 kumar$cause2 <- 1*(kumar$cause==2)
 
 b3 <- logitATE(cause2~gp.f+dnr+preauto+ttt24,kumar,treat.model=gp.f~dnr+preauto+ttt24)
 summary(b3)
+
+## calculate also relative risk
+estimate(coef=b3$riskDR,vcov=b3$var.riskDR,f=function(p) p[1]/p[2])
 
 ## -----------------------------------------------------------------------------
 b3 <- normalATE(time~gp.f+dnr+preauto+ttt24,kumar,treat.model=gp.f~dnr+preauto+ttt24)

@@ -31,22 +31,26 @@ Overview
 ========
 
 For recurrent events data it is often of interest to compute basic descriptive
-quantities as a first go at getting some basic understanding of the phenonmenon
-studied. We here demonstrate how one can compute 
+quantities to get some basic understanding of the phenonmenon studied. 
+We here demonstrate how one can compute: 
 
  * the marginal mean 
    * efficient marginal mean estimation
- * the variance 
- * the probability of exceeding k events
  * the Ghosh-Lin Cox type regression for the marginal mean, possibly with composite outcomes. 
    * efficient regression augmentation of the Ghosh-Lin model
+ * the variance of a recurrent events process
+ * the probability of exceeding k events
+
+We also show how to improve the efficiency of recurrents events marginal mean. 
 
 In addition several tools can be used for simulating recurrent events and
-bivariate recurrent events data, also with a possible terminating event. 
+bivariate recurrent events data, also with a possible terminating event: 
 
  * recurrent events up to two causes and death, given rates of survivors and death on Cox form.
- * multistate model 
+   * frailty extenstions
  * the Ghosh-Lin model when the survival rate is on Cox form.
+   * frailty extenstions
+ * The general illness death model with  cox models for all hazards. 
 
 For bivariate recurrent events we also compute summary measures that describe their
 dependence such as 
@@ -54,16 +58,12 @@ dependence such as
  * the covariance 
  * directional dependence 
  * the bivariate probability of exceeding $(k_1,k_2)$ events
- 
-We also show how to improve the efficiency of recurrents events marginal mean. 
 
 
 Simulation of recurrents events
 ==============================
 
-
-We start by simulating some recurrent events data with two type of events with
-cumulative hazards 
+We start by simulating some recurrent events data with two type of events with cumulative hazards 
 
  * $\Lambda_1(t)$ (rate among survivors)
  * $\Lambda_2(t)$ (rate among survivors)
@@ -95,8 +95,28 @@ cumulative hazards
     + $\tilde Z_2 \lambda_2(t)$
     + $\tilde Z_3 \lambda_D(t)$
 
-
  We return to how to run the different set-ups later and start by simulating independent processes. 
+
+The key functions are 
+
+ * simRecurrent
+   * simple simulation with only one event type and death 
+ * simRecurrentII 
+   * extended version with possibly multiple types of recurrent events (but rates can be 0) 
+   * Allows Cox types rates with subject specific rates 
+
+In addition we can simulate data from the Ghosh-Lin model and where marginals of the rates among survivors are on
+on Cox form 
+
+ * simGLcox 
+   * can simulate data from Ghosh-Lin model  (also simRecurrentCox)
+   * with frailties
+      * where survival model for terminal event is on Cox form 
+   * can simulate data where rates among survivors are are con Cox form 
+     * with frailties
+
+see examples below for specific models. 
+
 
 Utility functions 
 =================
@@ -163,7 +183,6 @@ library(timereg)
 set.seed(1000) # to control output in simulatins for p-values below.
 ```
 
-
 ```{r}
 data(base1cumhaz)
 data(base4cumhaz)
@@ -210,7 +229,6 @@ summary(out,times=c(1000,2000))
 
 The marginal mean can also be estimated in a stratified case:
 
-
 ```{r}
 xr <- phreg(Surv(entry,time,status)~strata(strata)+cluster(id),data=rr)
 dr <- phreg(Surv(entry,time,death)~strata(strata)+cluster(id),data=rr)
@@ -225,7 +243,7 @@ out <- recurrentMarginal(xr,dr)
 bplot(out,se=TRUE,ylab="marginal mean",col=1:2)
 ```
 
-Furhter, if we adjust for covariates for the two rates we can still do
+Further, if we adjust for covariates for the two rates we can still do
 predictions of marginal mean, what can be plotted is the baseline marginal mean, 
 that is for the covariates equal to 0 for both models. Predictions for specific 
 covariates can also be obtained with the recmarg (recurren marginal mean used 
@@ -305,8 +323,17 @@ In the case where covariates might be important but we are still interested in t
 we can also augment wrt these covariates 
 
 ```{r}
-rr <- mets:::simMarginalMeanCox(200,cens=3/5000,Lam1=base1,LamD=ddr,beta1=c(0.3,-0.3),
-				betad=c(-0.3,0.3))
+n <- 200
+X <- matrix(rbinom(n*2,1,0.5),n,2)
+colnames(X) <- paste("X",1:2,sep="")
+###
+r1 <- exp( X %*% c(0.3,-0.3))
+rd <- exp( X %*% c(0.3,-0.3))
+rc <- exp( X %*% c(0,0))
+fz <- NULL
+rr <- mets:::simGLcox(n,base1,ddr,var.z=0,r1=r1,rd=rd,rc=rc,fz,model="twostage",cens=3/5000) 
+rr <- cbind(rr,X[rr$id+1,])
+
 dtable(rr,~statusD+status+death,level=2,response=1)
 
 times <- seq(500,5000,by=500)
@@ -319,7 +346,6 @@ dr <- phreg(Surv(start,stop,death)~cluster(id),data=rr)
 out <- recurrentMarginal(xr,dr)
 mets::summaryTimeobject(out$times,out$mu,times=times,se.mu=out$se.mu)
 ```
-
 
 Regression models for the marginal mean 
 ========================================
@@ -334,8 +360,16 @@ First we generate data that from a Ghosh-Lin model with $\beta=(-0.3,0.3)$ and t
 this is done under the assumption that the death rate given covariates are on Cox form with baseline ddr: 
 
 ```{r}
- rr <- mets:::simMarginalMeanCox(200,cens=3/5000,Lam1=base1,LamD=ddr,beta1=c(0.3,-0.3),betad=c(-0.3,0.3),k1=0.1)
- dtable(rr,~statusD+status+death,level=2,response=1)
+n <- 200
+X <- matrix(rbinom(n*2,1,0.5),n,2)
+colnames(X) <- paste("X",1:2,sep="")
+###
+r1 <- exp( X %*% c(0.3,-0.3))
+rd <- exp( X %*% c(0.3,-0.3))
+rc <- exp( X %*% c(0,0))
+fz <- NULL
+rr <- mets:::simGLcox(n,base1,ddr,var.z=0,r1=r1,rd=rd,rc=rc,fz,model="twostage",cens=3/5000) 
+rr <- cbind(rr,X[rr$id+1,])
 
  out  <- recreg(Event(start,stop,statusD)~X1+X2+cluster(id),data=rr,cause=1,death.code=3,cens.code=0)
  outs <- recreg(Event(start,stop,statusD)~X1+X2+cluster(id),data=rr,cause=1,death.code=3,cens.code=0,
@@ -347,7 +381,7 @@ this is done under the assumption that the death rate given covariates are on Co
  par(mfrow=c(1,1))
  bplot(out)
  bplot(outs,add=TRUE,col=2)
- lines(scalecumhaz(base1,0.1),col=3,lwd=2)
+ lines(scalecumhaz(base1,1),col=3,lwd=2)
 ```
 
 We note that for the extended censoring model we gain a little efficiency and that the estimates are close to the true values. 
@@ -426,6 +460,55 @@ then in a second step the augmented estimator (Cortese and Scheike (2023)):
 
 We note that the simple augmentation improves the standard errors as expected. The data was generated assuming independence with
 previous number of events so it would suffice to augment only with the covariates. 
+
+
+Simulations with specific structure
+===================================
+
+The function simGLcox can simulate data where the recurrent process has mean on Ghosh-Lin form. The key is that
+\begin{align*}
+E(N_1(t) | X) &  = \Lambda_0(t)  \exp(X^T \beta) = \int_0^t S(t|X,Z) dR(t|X,Z)
+\end{align*}
+where $Z$ is a possible frailty. Therefore 
+\begin{align*}
+ R(t|X,Z) & = \frac{Z \Lambda_0(t)  \exp(X^T \beta) }{S(t|X,Z)}
+\end{align*}
+leads to a Ghosh-Lin model. We can choose the survival model to have Cox form among survivors by the option
+model="twostage", otherwise model="frailty" uses the survival model with rate \( Z \lambda_d(t) rd \).
+The $Z$ is gamma distributed  with a variance that can be specified. The simulations are based on 
+a piecwise-linear approximation of the hazard functions for $S(t|X,Z)$ and $R(t|X,Z)$.
+
+
+```{r}
+n <- 100
+X <- matrix(rbinom(n*2,1,0.5),n,2)
+colnames(X) <- paste("X",1:2,sep="")
+###
+r1 <- exp( X %*% c(0.3,-0.3))
+rd <- exp( X %*% c(0.3,-0.3))
+rc <- exp( X %*% c(0,0))
+rr <- mets:::simGLcox(n,base1,ddr,var.z=0,r1=r1,rd=rd,rc=rc,model="twostage",cens=3/5000) 
+rr <- cbind(rr,X[rr$id+1,])
+```
+
+We can also simulate from models where the terminal event is on Cox form and the rate among survivors is on Cox form. 
+
+ * $E(dN_1 | D>t, X) = \lambda_1(t) r_1$
+ * $E(dN_d | D>t, X) = \lambda_d(t) r_d$
+
+underlying these models we have a shared frailty model
+
+```{r}
+rr <- mets:::simGLcox(100,base1,ddr,var.z=1,r1=r1,rd=rd,rc=rc,type=3,cens=3/5000) 
+rr <- cbind(rr,X[rr$id+1,])
+margsurv <- phreg(Surv(start,stop,statusD==3)~X1+X2+cluster(id),rr)
+recurrent <- phreg(Surv(start,stop,statusD==1)~X1+X2+cluster(id),rr)
+estimate(margsurv)
+estimate(recurrent)
+par(mfrow=c(1,2)); 
+plot(margsurv); lines(ddr,col=3); 
+plot(recurrent); lines(base1,col=3)
+```
 
 
 Other marginal properties 

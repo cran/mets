@@ -1,4 +1,4 @@
-## ---- include = FALSE---------------------------------------------------------
+## ----include = FALSE----------------------------------------------------------
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>"
@@ -15,7 +15,7 @@ summary(out)
 
 ## -----------------------------------------------------------------------------
 set.seed(1000) # to control output in simulatins for p-values below.
-n <- 1000
+n <- 200
 Z <- matrix(rbinom(n*4,1,0.5),n,4)
 outsim <- simlogitSurvd(out$coef,Z)
 outsim <- transform(outsim,left=time,right=time+1)

@@ -127,7 +127,8 @@ cifreg <- function(formula,data=data,cause=1,cens.code=0,cens.model=~1,
 
 cifreg01 <- function(data,X,exit,status,id=NULL,strata=NULL,offset=NULL,weights=NULL,
               strata.name=NULL,beta,stderr=TRUE,method="NR",no.opt=FALSE,propodds=1,profile=0,
-              case.weights=NULL,cause=1,cens.code=0,Gc=NULL,cens.model=~+1,augmentation=0,cox.prep=FALSE,...) {# {{{
+              case.weights=NULL,cause=1,cens.code=0,Gc=NULL,cens.model=~+1,augmentation=0,cox.prep=FALSE,
+	      adm.cens.code=NULL,adm.cens.time=NULL,...) {# {{{
     ##  setting up weights, strata, beta and so forth before the action starts# {{{
     p <- ncol(X)
     if (missing(beta)) beta <- rep(0,p)
@@ -135,7 +136,7 @@ cifreg01 <- function(data,X,exit,status,id=NULL,strata=NULL,offset=NULL,weights=
 
     cause.jumps <- which(status %in% cause)
     max.jump <- max(exit[cause.jumps])
-    other <- which((!(status %in% c(cens.code,cause)) ) & (exit< max.jump))
+    other <- which((!(status %in% c(cens.code,cause,adm.cens.code)) ) & (exit< max.jump))
 
     entry <- NULL
     n <- length(exit)
@@ -214,11 +215,10 @@ cifreg01 <- function(data,X,exit,status,id=NULL,strata=NULL,offset=NULL,weights=
 	cens.strata <- rep(0,length(exit))
     }# }}}
 
-
-    Zcall <- cbind(status,cens.strata,Stime) ## to keep track of status and Censoring strata
+    trunc <- FALSE
+    Zcall <- cbind(status,cens.strata,Stime,adm.cens.time) ## to keep track of status and Censoring strata
     ## setting up all jumps of type "cause", need S0, S1, S2 at jumps of "cause"
     stat1 <- 1*(status %in% cause)
-    trunc <- FALSE
     xx2 <- .Call("FastCoxPrepStrata",entry,exit,stat1,X,id,trunc,strata,weights,offset,Zcall,case.weights,PACKAGE="mets")
     xx2$nstrata <- nstrata
     jumps <- xx2$jumps+1
@@ -239,7 +239,7 @@ cifreg01 <- function(data,X,exit,status,id=NULL,strata=NULL,offset=NULL,weights=
             Gts <- rbind(1,Gts)[whereaJ,]
             Gts[is.na(Gts)] <- 0
             Gjumps <- Gts
-        } else Gts <- Gjumps <- c(1,Pcens.model$surv)[fast.approx(c(0,Pcens.model$time),jumptimes)]
+        } else Gts <- Gjumps <- c(1,Pcens.model$surv)[fast.approx(c(0,Pcens.model$time),jumptimes,type="left")]
     } else {
         Gts <-   Gjumps <- rep(1,length(jumptimes))
     }
@@ -248,7 +248,9 @@ cifreg01 <- function(data,X,exit,status,id=NULL,strata=NULL,offset=NULL,weights=
     if (length(other)>=1) {# {{{
         trunc <- TRUE
         weightso <- weights[other]/Stime[other]
+        if (is.null(adm.cens.time))
         timeoo <- rep(max(exit)+1,length(other))
+        else timeoo <- adm.cens.time[other] 
         statuso <- rep(1,length(other))
         Xo <- X[other,,drop=FALSE]
         offseto <- offset[other]
@@ -338,7 +340,8 @@ cifreg01 <- function(data,X,exit,status,id=NULL,strata=NULL,offset=NULL,weights=
 
         Ut <- caseweightsJ*weightsJ*U
         ## E^2, as n x (pxp)
-        Et2 <-  .Call("vecMatMat",E,E,PACKAGE="mets")$vXZ
+###        Et2 <-  .Call("vecMatMat",E,E,PACKAGE="mets")$vXZ
+        Et2  <- .Call("vecCPMat",E)$XX
         S2S0 <-  (S2oo+S2no)/S0
         DUt <-  -(S2S0-Et2)
 
@@ -346,6 +349,7 @@ cifreg01 <- function(data,X,exit,status,id=NULL,strata=NULL,offset=NULL,weights=
             Ut  <- pow*Ut
             S0 <- S0/pow
             DUt <- pow*DUt
+            DUt <-  .Call("XXMatFULL",DUt,p,PACKAGE="mets")$XXf
             DUt <- DUt+DUadj
             if (profile==1) {
 		Ut <- Ut+c(ploglik)*Dwbeta
@@ -357,7 +361,12 @@ cifreg01 <- function(data,X,exit,status,id=NULL,strata=NULL,offset=NULL,weights=
 
         U  <- apply(Ut,2,sum)
         DUt <- caseweightsJ*weightsJ*DUt
-        DU <- -matrix(apply(DUt,2,sum),p,p)
+	if (ncol(DUt)!=p*p) {
+        DU <- matrix(0,p,p);
+        DU[lower.tri(DU,diag=TRUE)] <- -apply(DUt,2,sum)
+        DU<- DU+t(DU)
+        diag(DU) <- diag(DU)/2
+	} else  DU <- -matrix(apply(DUt,2,sum),p,p)
         ploglik <- sum(ploglik)
         U <- U+augmentation
 
@@ -423,10 +432,10 @@ cifreg01 <- function(data,X,exit,status,id=NULL,strata=NULL,offset=NULL,weights=
     mid <- max(xx2$id)
     UU <- apply(MGt,2,sumstrata,xx2$id,mid+1)
 
+    if (is.null(adm.cens.time)) {
     if (length(other)>=1) { ## martingale part for type-2 after T
-
     ### xx2 data all data
-        otherxx2 <- which(!(xx2$Z[,1] %in% c(cause,cens.code)))
+        otherxx2 <- which(!(xx2$Z[,1] %in% c(cause,cens.code,adm.cens.code)))
         rr0 <- xx2$sign
         jumpsC <-  which(xx2$Z[,1] %in% cens.code)
         strataCxx2 <- xx2$Z[,2]
@@ -454,16 +463,57 @@ cifreg01 <- function(data,X,exit,status,id=NULL,strata=NULL,offset=NULL,weights=
         UU2 <- apply(MGt2,2,sumstrata,xx2$id[otherxx2],mid+1)
         UU  <-  UU+UU2
     }
+    }
+
+    if (!is.null(adm.cens.time)) {
+    if (length(other)>=1) { ## martingale part for type-2 after T
+        otherxx2 <- which(!(xx2$Z[,1] %in% c(cause,cens.code,adm.cens.code)))
+        rr0 <- xx2$sign
+        jumpsC <-  which(xx2$Z[,1] %in% cens.code)
+        strataCxx2 <- xx2$Z[,2]
+        S0iC2  <-  S0iC <- rep(0,length(xx2$status))
+        S0rrr <- revcumsumstrata(rr0,strataCxx2,nCstrata)
+        S0iC[jumpsC] <- 1/S0rrr[jumpsC]
+        S0iC2[jumpsC] <- 1/S0rrr[jumpsC]^2
+        Gcxx2 <- exp(cumsumstrata(log(1-S0iC),strataCxx2,nCstrata))
+        Gstart <- rep(1,nCstrata)
+
+        dstrata <- mystrata(data.frame(strataCxx2,xx2$strata))
+        ndstrata <- attr(dstrata,"nlevel")
+        lastt <- tailstrata(dstrata-1,ndstrata)
+	if (!is.null(adm.cens.time)) {
+            act <- xx2$Z[otherxx2,4] 
+	    dact <- dstrata[otherxx2]
+            wherea <- indexstratarightR(xx2$time,dstrata-1,act,dact-1,ndstrata,type="left")
+	} else wherea <- lastt[dstrata][otherxx2]
+        ll <-  cumsum2strata(Gcxx2,S0i,strataCxx2,nCstrata,xx2$strata,xx2$nstrata,Gstart)
+        Htsj <- ll$res[wherea]-ll$res[otherxx2]
+        fff <- function(x) {
+            cx  <- cumsum2strata(Gcxx2,x*S0i,strataCxx2,nCstrata,xx2$strata,xx2$nstrata,Gstart)
+            cx <- cx$res[wherea]-cx$res[otherxx2]
+            return(cx)
+        }
+        EHtsj  <- apply(E,2,fff)
+        rrx2 <- rr[otherxx2]*xx2$weights[otherxx2]/xx2$Z[otherxx2,3]
+        MGt2  <- -(Z[otherxx2,,drop=FALSE]*Htsj-EHtsj)*rrx2
+        UU2 <- apply(MGt2,2,sumstrata,xx2$id[otherxx2],mid+1)
+        UU  <-  UU+UU2
+    }
+    }
     ## }}}
 
-    if ((length(other)>=1) & (length(whereC)>0)) { ### Censoring adjustment for jumps of other type but only for KM-case {{{
 
-        Xos <- matrix(0,nrow(Z),ncol(Z));
+    if ((length(other)>=1) & (length(whereC)>0) & (is.null(adm.cens.time))) { ### Censoring adjustment for jumps of other type but only for KM-case {{{
+
+        EHtsja <- Xos <- matrix(0,nrow(Z),ncol(Z));
         Xos[otherxx2,] <- Z[otherxx2,]*rrx2
         rrx <- rep(0,nrow(Z))
         rrx[otherxx2] <- rrx2
         rrsx <- cumsumstrata(rrx,strataCxx2,nCstrata)
         Xos <- apply(Xos,2,cumsumstrata,strataCxx2,nCstrata)
+	Htsja <- rep(0,nrow(Z))
+###	Htsja[otherxx2] <- Htsj
+###	EHtsja[otherxx2,] <- EHtsj
         q2 <- (Xos*c(Htsj)-EHtsj*c(rrsx))
 
         sss <- headstrata(dstrata-1,ndstrata)
@@ -524,17 +574,26 @@ cifreg01 <- function(data,X,exit,status,id=NULL,strata=NULL,offset=NULL,weights=
 ##' @export
 indexstratarightR <- function(timeo,stratao,jump,js,nstrata,type="right")# {{{
 {
-  if (any(stratao<0 | stratao>=nstrata)) stop("time-strata strata not between 0-(nstrata-1)\n")
-  if (any(js<0 | js>=nstrata)) stop("jump-strata strata not between 0-(nstrata-1)\n")
-  mm <- cbind(timeo,stratao,1:length(timeo),0)
-  mm <- rbind(mm,cbind(jump,js,1:length(jump),1))
-  ord <- order(mm[,1],mm[,4])
-  mm <- mm[ord,]
-  if (type=="right") right <- 1 else right <- 0
-  res <- .Call("indexstrataR",mm[,2],mm[,3],mm[,4],nstrata,right)$res[,1]
-  if (right==0) res <- rev(res)
-  return(res)
-}# }}}
+###    if (any(stratao < 0 | stratao >= nstrata))
+###        stop("time-strata strata not between 0-(nstrata-1)\n")
+###    if (any(js < 0 | js >= nstrata))
+###        stop("jump-strata strata not between 0-(nstrata-1)\n")
+    mm <- cbind(timeo, stratao, 1:length(timeo), 0)
+    mm <- rbind(mm, cbind(jump, js, 1:length(jump), 1))
+    ord <- order(mm[, 1], mm[, 4])
+    mm <- mm[ord, ]
+    if (type == "right") right <- 1 else right <- 0
+    ires <- .Call("indexstrataR", mm[, 2], mm[, 3], mm[, 4], nstrata,right)
+    res <- ires$res
+    or2 <- order(res[,2])
+    res <- res[or2,1]
+    reso <- which(res==0) 
+    if (length(reso)>0) {
+       jso <- js[reso]
+       for (s in 1:nstrata) if (length(jso)>0) res[reso[jso==s-1]] <- ires$maxmin[s] 
+    }
+    return(res)
+} ## }}}
 
 ##' @export IIDbaseline.cifreg 
 IIDbaseline.cifreg <- function(x,time=NULL,fixbeta=NULL,...)

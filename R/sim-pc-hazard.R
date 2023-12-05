@@ -38,7 +38,9 @@ rchaz <- function(cumhazard,rr,n=NULL,entry=NULL,cum.hazard=TRUE,cause=1,extend=
 {# {{{
 ### cumh=cbind(breaks,rates), first rate is 0 if cumh=FALSE
 ### cumh=cbind(breaks,cumhazard) if cumh=TRUE
+###  if (is.null(rr) & is.null(n)) stop("must give rr or n\n"); 
   if (!is.null(n)) rr <- rep(1,n)
+  n <- length(rr)
 
   breaks <- cumhazard[,1]
   rates <- cumhazard[,2][-1]
@@ -47,7 +49,6 @@ rchaz <- function(cumhazard,rr,n=NULL,entry=NULL,cum.hazard=TRUE,cause=1,extend=
         cumh <- cumsum(c(0,diff(breaks)*rates))
         cumhazard <- cbind(breaks,cumh)
   } else cumh <- cumhazard[,2] 
-   n <- length(rr)
    ttt <- rexp(n)/rr
    if (cumhazard[1,2]>0)  { ## start cumulative hazard with a 0
 ###	   warning("Safest to start with cumulative hazard 0 to avoid problems\n"); 
@@ -93,7 +94,7 @@ lin.approx <- function(x2,xfx,x=1)
    ### x=-1  gives  f^-1(x2) 
    breaks <- xfx[,x]
    fx     <- xfx[,-x]
-   ri <- sindex.prodlim(breaks,x2)
+   ri <- fast.approx(breaks,x2,type="left")
    maxindex <- which(ri==length(breaks))
    rip1 <- ri+1
    rip1[maxindex] <- length(breaks)
@@ -183,7 +184,7 @@ simrchaz <- function(cumhazard,rr,n=NULL,cens=NULL,rrc=NULL,...)
 #' cbind(cox1$coef,scox1$coef,cox2$coef,scox2$coef)
 #' 
 #' @export 
-#' @aliases cause.pchazard.sim 
+#' @aliases cause.pchazard.sim  rcrisks
 rcrisk <-function(cumhaz1,cumhaz2,rr1,rr2,n=NULL,cens=NULL,rrc=NULL,...)
 {#'# {{{
  
@@ -211,6 +212,44 @@ if (!is.null(cens)) {
 
 return(ptt)
 }# }}}
+
+#' @export 
+rcrisks <-function(cumhazs,rrs,n=NULL,cens=NULL,rrc=NULL,entry=NULL,causes=NULL,...)
+{#'# {{{
+ 
+  status <- NULL
+  if (!is.null(n)) rrs <- matrix(1,n,length(cumhazs)) 
+  n <- nrow(rrs); 
+
+  if (!is.null(cens)) cens <- list(cens)
+  if (!is.null(cens)) { 
+	  if (is.null(rrc)) rrc <- rep(1,n); 
+	  rrs <- cbind(rrs,rrc)
+  }
+  cumss  <-  c(cumhazs,cens)
+  for (i in seq_along(cumss))  cumss[[i]] <- rbind(0,cumss[[i]])
+  cumss <- extendCums(cumss,NULL)
+
+  ## first time
+  ptt <- rchaz(cumss[[1]],rrs[,1],entry=entry)
+
+  ## other times and always min 
+  if (length(cumss)>=2)
+  for (i in 2:length(cumss)) {
+  cum <- cumss[[i]]
+  ptt1 <- rchaz(cumss[[i]],rrs[,i],entry=entry)
+  ptt <- data.frame(time=pmin(ptt$time,ptt1$time),entry=ptt1$entry,
+                    status=ifelse(ptt$time<=ptt1$time,ptt$status,ptt1$status*i))
+  }
+  if (!is.null(cens)) ptt <- dtransform(ptt,status=0,status==length(cumss))
+
+  if (!is.null(causes))  {
+	  ptt$status <- c(0,causes)[ptt$status+1]
+  }
+
+return(ptt)
+}# }}}
+
 
 #' @export 
 cause.pchazard.sim<-function(cumhaz1,cumhaz2,rr1,rr2,cens=NULL,rrc=NULL,...)

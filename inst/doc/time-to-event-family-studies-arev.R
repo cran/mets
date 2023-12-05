@@ -1,4 +1,4 @@
-## ---- include = FALSE, label=setup--------------------------------------------
+## ----include = FALSE, label=setup---------------------------------------------
 knitr::opts_chunk$set(
   collapse = TRUE,
   ##dev="png",
@@ -47,7 +47,7 @@ concMZ <- readRDS("data/concMZ.rds")
 s_mz_country <- readRDS("data/s_mz_country.rds")
 s_dz_country <- readRDS("data/s_dz_country.rds")
 
-## ---- label=data-prt----------------------------------------------------------
+## ----label=data-prt-----------------------------------------------------------
 library(mets)
  set.seed(122)
  data(prt)
@@ -55,19 +55,19 @@ library(mets)
  dtable(prt,~status+cancer)
  dtable(prt,~zyg+country,level=1)
 
-## ---- label=survival-marginal-------------------------------------------------
+## ----label=survival-marginal--------------------------------------------------
  # Marginal Cox model here stratified on country without covariates 
  margph <- phreg(Surv(time,cancer)~strata(country)+cluster(id),data=prt)
  plot(margph)
 
-## ---- label=survival-pairwise1, eval=fullVignette-----------------------------
+## ----label=survival-pairwise1, eval=fullVignette------------------------------
 #  # Clayton-Oakes, MLE , overall variance
 #  fitco1<-twostageMLE(margph,data=prt,theta=2.7)
 
 ## -----------------------------------------------------------------------------
  summary(fitco1)
 
-## ---- label=survival-pairwise2, eval=fullVignette-----------------------------
+## ----label=survival-pairwise2, eval=fullVignette------------------------------
 #  fitco2 <- survival.twostage(margph,data=prt,theta=2.7,clusters=prt$id,var.link=0)
 
 ## -----------------------------------------------------------------------------
@@ -92,7 +92,7 @@ library(mets)
  ## dz kendalls tau
  kendall.ClaytonOakes.twin.ace(fitco4$theta[1],0,K=1000)$mz.kendall
 
-## ---- label=survival-polygenic1, eval=fullVignette----------------------------
+## ----label=survival-polygenic1, eval=fullVignette-----------------------------
 #   ### setting up design for random effects and parameters of random effects
 #   desace <- twin.polygen.design(prt,type="ace")
 #  
@@ -134,7 +134,7 @@ prt <-  force.same.cens(prt,cause="status")
  dtable(prt,~status+country)
  dtable(prt,~zyg+country)
 
-## ---- label=concordance-------------------------------------------------------
+## ----label=concordance--------------------------------------------------------
  ## cumulative incidence with cluster standard errors.
  cif1 <- cif(Event(time,status)~strata(country)+cluster(id),prt,cause=2)
  plot(cif1,se=1)
@@ -152,7 +152,7 @@ p11dz <- p11$model$"DZ"
  plot(p11mz,ylim=c(0,0.1));
  plot(p11dz,ylim=c(0,0.1));
 
-## ---- label=concordance2------------------------------------------------------
+## ----label=concordance2-------------------------------------------------------
  library(prodlim)
  outm <- prodlim(Hist(time,status)~+1,data=prt)
 
@@ -192,7 +192,7 @@ p11dz <- p11$model$"DZ"
  timereg::Cpred(cmz$casewise,80)
  timereg::Cpred(cdz$casewise,80)
 
-## ---- label=concordance3------------------------------------------------------
+## ----label=concordance3-------------------------------------------------------
 
  dd <- bicompriskData(Event(time,status)~country+strata(zyg)+id(id),data=prt,cause=c(2,2))
  conczyg <- cif(Event(time,status)~strata(zyg)+cluster(id),data=dd,cause=1)
@@ -208,7 +208,7 @@ p11dz <- p11$model$"DZ"
  with(data.frame(cdz$casewise),plotConfRegionSE(time,casewise.conc,se.casewise,col=1))
 
 
-## ---- label=concordance4, eval=fullVignette-----------------------------------
+## ----label=concordance4, eval=fullVignette------------------------------------
 #   ### new version of Casewise for specific time-point based on binreg
 #   dd <- bicompriskData(Event(time,status)~country+strata(zyg)+id(id),data=prt,cause=c(2,2))
 #   newdata <- data.frame(zyg=c("DZ","MZ"),id=1)
@@ -227,7 +227,7 @@ p11dz <- p11$model$"DZ"
 ## -----------------------------------------------------------------------------
  cse 
 
-## ---- label=semiparconc, eval=fullVignette------------------------------------
+## ----label=semiparconc, eval=fullVignette-------------------------------------
 #   ### semi-parametric modelling of concordance
 #   dd <- bicompriskData(Event(time,status)~country+strata(zyg)+id(id),data=prt,cause=c(2,2))
 #   regconc <- cifreg(Event(time,status)~country*zyg,data=dd,prop=NULL)
@@ -247,7 +247,7 @@ slr
 ### library(Publish)
 ### publish(round(slr$exp.coef[,-c(2,5)],2),latex=TRUE,digits=2)
 
-## ---- label=additive_gamma, eval=fullVignette---------------------------------
+## ----label=additive_gamma, eval=fullVignette----------------------------------
 #    times <- seq(50,90,length.out=5)
 #    cif1 <- timereg::comp.risk(Event(time,status)~-1+factor(country)+cluster(id),prt,
 #  		   cause=2,times=times,max.clust=NULL)
@@ -308,7 +308,7 @@ slr
  estimate(coef=outaem$theta,vcov=outaem$var.theta,f=function(p) p/sum(p)^2)
 
 
-## ---- label=probit1-----------------------------------------------------------
+## ----label=probit1------------------------------------------------------------
 rm(prt)
 data(prt)
 prt0 <-  force.same.cens(prt, cause="status", cens.code=0, time="time", id="id")
@@ -325,7 +325,7 @@ tt <- seq(70, tau, length.out=5) ## Time points to evaluate model in
 ## -----------------------------------------------------------------------------
 summary(b0)
 
-## ---- label=liability_ace1, eval=fullVignette---------------------------------
+## ----label=liability_ace1, eval=fullVignette----------------------------------
 #  b1 <- bptwin.time(cancer ~ 1, data=prt0, id="id", zyg="zyg", DZ="DZ", type="ace",
 #                cens.formula=Surv(time,status==0)~zyg, breaks=tau)
 
@@ -335,14 +335,14 @@ summary(b1)
 ## -----------------------------------------------------------------------------
 AIC(b0, b1)
 
-## ---- label=liability_ace_country, eval=fullVignette--------------------------
+## ----label=liability_ace_country, eval=fullVignette---------------------------
 #  b2 <- bptwin.time(cancer ~ country, data=prt0, id="id", zyg="zyg", DZ="DZ", type="ace",
 #                cens.formula=Surv(time,status==0)~zyg+country, breaks=95)
 
 ## -----------------------------------------------------------------------------
 summary(b2)
 
-## ---- label=bptime1, eval=fullVignette----------------------------------------
+## ----label=bptime1, eval=fullVignette-----------------------------------------
 #  bt0 <- bptwin.time(cancer ~ 1, data=prt0, id="id", zyg="zyg", DZ="DZ", type="ace",
 #                cens.formula=Surv(time,status==0)~zyg,
 #                summary.function=function(x) x, breaks=tt)
@@ -357,7 +357,7 @@ lava::confband(tt, h2[,2], h2[,3],polygon=TRUE, step=TRUE, col=lava::Col(cols[3]
 plot(tt, concMZ[,1], type="s", lty=1, col=cols[1], xlab="Age", ylab="Concordance", ylim=c(0,.1))
 lava::confband(tt, concMZ[,2], concMZ[,3],polygon=TRUE, step=TRUE, col=lava::Col(cols[1], 0.1), border=NA)
 
-## ---- label=biprobittime1-----------------------------------------------------
+## ----label=biprobittime1------------------------------------------------------
 system.time(a.mz <- biprobit.time(cancer~1, id="id", data=subset(prt0, zyg=="MZ"),
                                cens.formula = Surv(time,status==0)~1, pairs.only=TRUE,
                                 breaks=tt))
@@ -377,7 +377,7 @@ plot(conczyg,se=TRUE,legend=FALSE,xlab="Age",ylab="Concordance", ylim=c(0,0.07))
 plot(a.mz, ylim=c(0,.07), col=cols[1], lty=ltys[1], legend=FALSE, add=TRUE)
 plot(a.dz, col=cols[2], lty=ltys[2], add=TRUE)
 
-## ---- label=biprobittime2, eval=fullVignette----------------------------------
+## ----label=biprobittime2, eval=fullVignette-----------------------------------
 #  a.mz_country <- biprobit.time(cancer~country, id="id", data=subset(prt0, zyg=="MZ"),
 #                                 cens.formula = Surv(time,status==0)~country, pairs.only=TRUE,
 #                                  breaks=tt)
@@ -392,7 +392,7 @@ plot(a.dz, col=cols[2], lty=ltys[2], add=TRUE)
 s_mz_country
 s_dz_country
 
-## ---- label=liability_ace_time1, eval=fullVignette----------------------------
+## ----label=liability_ace_time1, eval=fullVignette-----------------------------
 #  ## ACE model (time-varying) with and without adjustment for country
 #  a1 <- bptwin.time(cancer~1, id="id", data=prt0, type="ace",
 #                                zyg="zyg", DZ="DZ",

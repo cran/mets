@@ -1,4 +1,4 @@
-## ---- include = FALSE---------------------------------------------------------
+## ----include = FALSE----------------------------------------------------------
 knitr::opts_chunk$set(
   collapse = TRUE,
   #dev="svg",
@@ -119,8 +119,17 @@ for (t in times) {
 legend("bottomright",c("Eff-pred"),lty=1,col=c(1,3))
 
 ## -----------------------------------------------------------------------------
-rr <- mets:::simMarginalMeanCox(200,cens=3/5000,Lam1=base1,LamD=ddr,beta1=c(0.3,-0.3),
-				betad=c(-0.3,0.3))
+n <- 200
+X <- matrix(rbinom(n*2,1,0.5),n,2)
+colnames(X) <- paste("X",1:2,sep="")
+###
+r1 <- exp( X %*% c(0.3,-0.3))
+rd <- exp( X %*% c(0.3,-0.3))
+rc <- exp( X %*% c(0,0))
+fz <- NULL
+rr <- mets:::simGLcox(n,base1,ddr,var.z=0,r1=r1,rd=rd,rc=rc,fz,model="twostage",cens=3/5000) 
+rr <- cbind(rr,X[rr$id+1,])
+
 dtable(rr,~statusD+status+death,level=2,response=1)
 
 times <- seq(500,5000,by=500)
@@ -134,8 +143,16 @@ out <- recurrentMarginal(xr,dr)
 mets::summaryTimeobject(out$times,out$mu,times=times,se.mu=out$se.mu)
 
 ## -----------------------------------------------------------------------------
- rr <- mets:::simMarginalMeanCox(200,cens=3/5000,Lam1=base1,LamD=ddr,beta1=c(0.3,-0.3),betad=c(-0.3,0.3),k1=0.1)
- dtable(rr,~statusD+status+death,level=2,response=1)
+n <- 200
+X <- matrix(rbinom(n*2,1,0.5),n,2)
+colnames(X) <- paste("X",1:2,sep="")
+###
+r1 <- exp( X %*% c(0.3,-0.3))
+rd <- exp( X %*% c(0.3,-0.3))
+rc <- exp( X %*% c(0,0))
+fz <- NULL
+rr <- mets:::simGLcox(n,base1,ddr,var.z=0,r1=r1,rd=rd,rc=rc,fz,model="twostage",cens=3/5000) 
+rr <- cbind(rr,X[rr$id+1,])
 
  out  <- recreg(Event(start,stop,statusD)~X1+X2+cluster(id),data=rr,cause=1,death.code=3,cens.code=0)
  outs <- recreg(Event(start,stop,statusD)~X1+X2+cluster(id),data=rr,cause=1,death.code=3,cens.code=0,
@@ -147,7 +164,7 @@ mets::summaryTimeobject(out$times,out$mu,times=times,se.mu=out$se.mu)
  par(mfrow=c(1,1))
  bplot(out)
  bplot(outs,add=TRUE,col=2)
- lines(scalecumhaz(base1,0.1),col=3,lwd=2)
+ lines(scalecumhaz(base1,1),col=3,lwd=2)
 
 ## -----------------------------------------------------------------------------
  outipcw  <- recregIPCW(Event(start,stop,statusD)~X1+X2+cluster(id),data=rr,cause=1,death.code=3,
@@ -195,6 +212,28 @@ GLprediid(baseiid,rr[1:5,])
 		augment.model=~Nt+X1+X2,augment=outi$lindyn.augment)
  summary(outA)$coef
 
+
+## -----------------------------------------------------------------------------
+n <- 100
+X <- matrix(rbinom(n*2,1,0.5),n,2)
+colnames(X) <- paste("X",1:2,sep="")
+###
+r1 <- exp( X %*% c(0.3,-0.3))
+rd <- exp( X %*% c(0.3,-0.3))
+rc <- exp( X %*% c(0,0))
+rr <- mets:::simGLcox(n,base1,ddr,var.z=0,r1=r1,rd=rd,rc=rc,model="twostage",cens=3/5000) 
+rr <- cbind(rr,X[rr$id+1,])
+
+## -----------------------------------------------------------------------------
+rr <- mets:::simGLcox(100,base1,ddr,var.z=1,r1=r1,rd=rd,rc=rc,type=3,cens=3/5000) 
+rr <- cbind(rr,X[rr$id+1,])
+margsurv <- phreg(Surv(start,stop,statusD==3)~X1+X2+cluster(id),rr)
+recurrent <- phreg(Surv(start,stop,statusD==1)~X1+X2+cluster(id),rr)
+estimate(margsurv)
+estimate(recurrent)
+par(mfrow=c(1,2)); 
+plot(margsurv); lines(ddr,col=3); 
+plot(recurrent); lines(base1,col=3)
 
 ## -----------------------------------------------------------------------------
 ###cor.mat <- corM <- rbind(c(1.0, 0.6, 0.9), c(0.6, 1.0, 0.5), c(0.9, 0.5, 1.0))
@@ -247,7 +286,7 @@ plot(covrp)
 covrpS <- covarianceRecurrentS(rr,1,2,status="status",death="death",
         start="entry",stop="time",strata="strata",id="id",names.count="Count")
 
-## ---- eval=FALSE--------------------------------------------------------------
+## ----eval=FALSE---------------------------------------------------------------
 #  times <- seq(500,5000,500)
 #  
 #  coo1 <- covarianceRecurrent(rr,1,2,status="status",start="entry",stop="time")
@@ -261,7 +300,7 @@ covrpS <- covarianceRecurrentS(rr,1,2,status="status",death="death",
 #  cbind(times,mu2.1,mu2.i)
 #  cbind(times,mu1.2,mu1.i)
 
-## ---- eval=FALSE--------------------------------------------------------------
+## ----eval=FALSE---------------------------------------------------------------
 #  bt1 <- BootcovariancerecurrenceS(rr,1,2,status="status",start="entry",stop="time",K=100,times=times)
 #  #bt1 <- Bootcovariancerecurrence(rr,1,2,status="status",start="entry",stop="time",K=K,times=times)
 #  
@@ -277,21 +316,21 @@ covrpS <- covarianceRecurrentS(rr,1,2,status="status",death="death",
 #  	bse.dmu1.i=apply(bt1$mu1.2-bt1$mu1.i,1,sd)
 #  	)
 
-## ---- eval=FALSE--------------------------------------------------------------
+## ----eval=FALSE---------------------------------------------------------------
 #  tt  <- BCoutput$dmugi/BCoutput$bse.dmugi
 #  cbind(times,2*(1-pnorm(abs(tt))))
 
-## ---- eval=FALSE--------------------------------------------------------------
+## ----eval=FALSE---------------------------------------------------------------
 #  t21  <- BCoutput$dmu1.i/BCoutput$bse.dmu1.i
 #  t12  <- BCoutput$dmu2.i/BCoutput$bse.dmu2.i
 #  cbind(times,2*(1-pnorm(abs(t21))),2*(1-pnorm(abs(t12))))
 
-## ---- eval=FALSE--------------------------------------------------------------
+## ----eval=FALSE---------------------------------------------------------------
 #  par(mfrow=c(1,2))
 #  matplot(BCoutput$bt1$time,BCoutput$bt1$EN1N2,type="l",lwd=0.3)
 #  matplot(BCoutput$bt1$time,BCoutput$bt1$EIN1N2,type="l",lwd=0.3)
 
-## ---- eval=FALSE--------------------------------------------------------------
+## ----eval=FALSE---------------------------------------------------------------
 #    data(base1cumhaz)
 #    data(base4cumhaz)
 #    data(drcumhaz)
@@ -309,7 +348,7 @@ covrpS <- covarianceRecurrentS(rr,1,2,status="status",death="death",
 #    coo <- covarianceRecurrent(rr,1,2,status="status",start="entry",stop="time")
 #    plot(coo,main ="Scenario I")
 
-## ---- eval=FALSE--------------------------------------------------------------
+## ----eval=FALSE---------------------------------------------------------------
 #    var.z <- c(0.5,0.5,0.5)
 #    # death related to  both causes in same way
 #    cor.mat <- corM <- rbind(c(1.0, 0.0, 0.5), c(0.0, 1.0, 0.5), c(0.5, 0.5, 1.0))
@@ -319,7 +358,7 @@ covrpS <- covarianceRecurrentS(rr,1,2,status="status",death="death",
 #    par(mfrow=c(1,3))
 #    plot(coo,main ="Scenario II")
 
-## ---- eval=FALSE--------------------------------------------------------------
+## ----eval=FALSE---------------------------------------------------------------
 #    var.z <- c(0.5,0.5,0.5)
 #    # positive dependence for N1 and N2 all related in same way
 #    cor.mat <- corM <- rbind(c(1.0, 0.5, 0.5), c(0.5, 1.0, 0.5), c(0.5, 0.5, 1.0))
@@ -329,7 +368,7 @@ covrpS <- covarianceRecurrentS(rr,1,2,status="status",death="death",
 #    par(mfrow=c(1,3))
 #    plot(coo,main="Scenario III")
 
-## ---- eval=FALSE--------------------------------------------------------------
+## ----eval=FALSE---------------------------------------------------------------
 #    var.z <- c(0.5,0.5,0.5)
 #    # negative dependence for N1 and N2 all related in same way
 #    cor.mat <- corM <- rbind(c(1.0, -0.4, 0.5), c(-0.4, 1.0, 0.5), c(0.5, 0.5, 1.0))

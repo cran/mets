@@ -205,7 +205,6 @@ if (!is.null(Haplos)) { ## with haplo-types {{{
 if (!design.only) {
 
 	if (is.null(beta)) beta <- rep(0,ncol(X))
-	expit  <- function(z) 1/(1+exp(-z)) ## expit
 
 	obj <- function(pp,all=FALSE)
 	{ # {{{
@@ -286,10 +285,10 @@ if (!design.only) {
 } ## }}} 
 
 ##' @export
-summary.survd <- function(object,...) return(lava::estimate(object,...)) 
+summary.survd <- function(object,...) return(lava::estimate(coef=coef(object),vcov=vcov(object),...)) 
 
 ##' @export
-print.survd <- function(x,...) return(lava::estimate(x,...)) 
+print.survd <- function(x,...) return(lava::estimate(coef=coef(x),vcov=vcov(x),...)) 
 
 ##' @export
 vcov.survd <- function(object,...) return(object$var) 
@@ -313,8 +312,6 @@ simTTP <- function(coef=NULL,n=100,Xglm=NULL,times=NULL)
      nm <- match(c("id","times"),names(data))
      Z <- cbind(mt,data[,-nm])
   }
-
-  expit  <- function(z) 1/(1+exp(-z)) ## expit
 
   p <- c(expit(as.matrix(Z) %*% coef))
   y <- rbinom(length(p),1,p)
@@ -366,7 +363,6 @@ predictSurvd <- function(ds,Z,times=1:6,se=FALSE,type="prob")
 # }}}
   } else {# {{{
 
-    expit <- function(p) exp(p)/(1+exp(p))
     Ft <- function(p)
     {
 	   xp <- as.matrix(Zi) %*% p
@@ -490,7 +486,7 @@ plotSurvd <- function(ds,ids=NULL,add=FALSE,se=FALSE,cols=NULL,ltys=NULL,...)
 ##' pred <- predictlogitSurvd(out,se=FALSE)
 ##' plotSurvd(pred)
 ##' 
-##' @aliases Interval dInterval simlogitSurvd predictlogitSurvd
+##' @aliases Interval dInterval simlogitSurvd predictlogitSurvd cumODDS
 ##' @export
 interval.logitsurv.discrete <- function (formula,data,beta=NULL,no.opt=FALSE,method="NR",
 	   stderr=TRUE,weights=NULL,offsets=NULL,exp.link=1,increment=1,...)
@@ -580,8 +576,6 @@ interval.logitsurv.discrete <- function (formula,data,beta=NULL,no.opt=FALSE,met
   ## weights/offets will follow id 
   if (is.null(weights))  weights <- rep(1,n); #  else wiid <- weights
   if (is.null(offsets))  offsets <- rep(0,n); # else offsets <- offsets
-  expit  <- function(z) 1/(1+exp(-z)) ## expit
-  logit  <- function(p) log(p/(1-p))  ## logit
 
   if (is.null(beta)) {
      beta <- rep(0,ncol(X)+mutimes)
@@ -701,8 +695,8 @@ hessian <- D2log
       beta.iid <- apply(beta.iid,2,sumstrata,id,nid)
       robvar <- crossprod(beta.iid)
       val <- list(par=pp,ploglik=ploglik,gradient=gradient,hessian=hessian,ihessian=ihess,
-		  iid=beta.iid,robvar=robvar,var=-ihess,id=id,
-		  se=diag(-ihess)^.5,se.robust=diag(robvar)^.5)
+		  iid=beta.iid,robvar=robvar,var=robvar,ihessian=ihess,id=id,
+		  se=diag(robvar)^.5,coef=pp,se.coef=diag(robvar)^.5)
       return(val)
   }  
  structure(-ploglik,gradient=-gradient,hessian=-hessian)
@@ -733,6 +727,30 @@ hessian <- D2log
   class(val) <- c("survd","logistic.survd")
   return(val)
 } ## }}} 
+
+##' @export
+cumODDS <- function (formula,data,...)
+{ ## {{{ 
+  cl <- match.call()
+  m <- match.call(expand.dots = TRUE)[1:3]
+  special <- c("strata", "cluster","offset")
+  Terms <- terms(formula, special, data = data)
+  m$formula <- Terms
+  m[[1]] <- as.name("model.frame")
+  m <- eval(m, parent.frame())
+  Y <- model.extract(m, "response")
+  nt <- nlevels(Y)
+  time2__ <- as.numeric(Y)
+  entrytime__ <- time2__-1
+  time2__[time2__==7] <- Inf
+
+  xf <- update.formula(formula,Interval(entrytime__,time2__)~.)
+  data$entrytime__ <- entrytime__
+  data$time2__ <- time2__
+  out <- interval.logitsurv.discrete(xf,data,...)
+
+ return(out)
+} ## }}}
 
 ##' @export
 Interval <- function (time, time2 , ...)

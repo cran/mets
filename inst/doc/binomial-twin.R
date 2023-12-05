@@ -1,4 +1,4 @@
-## ---- include = FALSE---------------------------------------------------------
+## ----include = FALSE----------------------------------------------------------
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>"
@@ -12,6 +12,7 @@ twinstut$binstut <- 1*(twinstut$stutter=="yes")
 twinsall <- twinstut
 twinstut <- subset(twinstut,zyg%in%c("mz","dz"))
 head(twinstut)
+twinstut <- subset(twinstut,tvparnr < 3000)
 
 ## -----------------------------------------------------------------------------
 margbin <- glm(binstut~factor(sex)+age,data=twinstut,family=binomial())
@@ -63,6 +64,7 @@ data(twinstut)
 twinstut <- subset(twinstut,zyg%in%c("mz","dz"))
 twinstut$binstut <- 1*(twinstut$stutter=="yes")
 head(twinstut)
+twinstut <- subset(twinstut,tvparnr < 2000)
 
 ## ----biprobit1----------------------------------------------------------------
 b1 <- bptwin(binstut~sex,data=twinstut,id="tvparnr",zyg="zyg",DZ="dz",type="un")

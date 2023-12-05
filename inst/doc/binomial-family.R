@@ -1,4 +1,4 @@
-## ---- include = FALSE---------------------------------------------------------
+## ----include = FALSE----------------------------------------------------------
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>"
@@ -6,10 +6,10 @@ knitr::opts_chunk$set(
 library(mets)
 
 ## -----------------------------------------------------------------------------
-library(mets)
-library(timereg)
+ library(mets)
+ library(timereg)
  set.seed(100)
- data <- simbinClaytonOakes.family.ace(1000,2,1,beta=NULL,alpha=NULL)
+ data <- simbinClaytonOakes.family.ace(500,2,1,beta=NULL,alpha=NULL)
  data$number <- c(1,2,3,4)
  data$child <- 1*(data$number==3)
  head(data)
@@ -117,7 +117,7 @@ summary(tsdid3)
 ## -----------------------------------------------------------------------------
 library(mets)
 set.seed(1000)
-data <- simbinClaytonOakes.family.ace(10000,2,1,beta=NULL,alpha=NULL)
+data <- simbinClaytonOakes.family.ace(500,2,1,beta=NULL,alpha=NULL)
 head(data)
 data$number <- c(1,2,3,4)
 data$child <- 1*(data$number==3)

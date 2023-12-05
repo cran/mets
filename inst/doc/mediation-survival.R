@@ -1,4 +1,4 @@
-## ---- include = FALSE---------------------------------------------------------
+## ----include = FALSE----------------------------------------------------------
 knitr::opts_chunk$set(
   collapse = TRUE,
   #dev="png",
@@ -28,63 +28,69 @@ dat$ftime <- 1
 weightmodel <- fit <- glm(gp.f~dnr.f+preauto+ttt24,data=dat,family=binomial)
 wdata <- medweight(fit,data=dat)
 
+## -----------------------------------------------------------------------------
 aaMss2 <- binreg(Event(time,status)~gp+dnr+preauto+ttt24+cluster(id),data=dat,time=50,cause=2)
 summary(aaMss2)
-aaMss22 <- binreg(Event(time,status)~dnr+preauto+ttt24+cluster(id),data=dat,time=50,cause=2)
-summary(aaMss22)
 
-## ---- label=multiplemodels----------------------------------------------------
+## ----label=firstmodel---------------------------------------------------------
 ### binomial regression ###########################################################
-aaMss <- binreg(Event(time,status)~dnr.f0+dnr.f1+preauto+ttt24+cluster(id),data=wdata,time=50,weights=wdata$weights,cause=2)
+aaMss <- binreg(Event(time,status)~dnr.f0+dnr.f1+preauto+ttt24+cluster(id),data=wdata,
+		time=50,weights=wdata$weights,cause=2)
 summary(aaMss)
 
 ll <- mediatorSurv(aaMss,fit,data=dat,wdata=wdata)
 summary(ll)
 if (runb>0) { bll <- BootmediatorSurv(aaMss,fit,data=dat,k.boot=k.boot); summary(bll)}
 
+## ----label=multiplemodels-----------------------------------------------------
 ### lin-ying model ################################################################
-aaMss <- aalenMets(Surv(time/100,status==2)~dnr.f0+dnr.f1+preauto+ttt24+cluster(id),data=wdata,weights=wdata$weights)
+aaMss <- aalenMets(Surv(time/100,status==2)~dnr.f0+dnr.f1+preauto+ttt24+cluster(id),data=wdata,
+		   weights=wdata$weights)
 ll <- mediatorSurv(aaMss,fit,data=dat,wdata=wdata)
 summary(ll)
 if (runb>0) { bll <- BootmediatorSurv(aaMss,fit,data=dat,k.boot=k.boot); summary(bll)}
 
 ### cox model ###############################################################################
-aaMss <- phreg(Surv(time,status==2)~dnr.f0+dnr.f1+preauto+ttt24+cluster(id),data=wdata,weights=wdata$weights)
+aaMss <- phreg(Surv(time,status==2)~dnr.f0+dnr.f1+preauto+ttt24+cluster(id),data=wdata,
+	       weights=wdata$weights)
 summary(aaMss)
 ll <- mediatorSurv(aaMss,fit,data=dat,wdata=wdata)
 summary(ll)
 if (runb>0) { bll <- BootmediatorSurv(aaMss,fit,data=dat,k.boot=k.boot); summary(bll)}
 
 ### Fine-Gray #############################################################3
-aaMss <- cifreg(Event(time,status)~dnr.f0+dnr.f1+preauto+ttt24+cluster(id),data=wdata,weights=wdata$weights,propodds=NULL,cause=2)
+aaMss <- cifreg(Event(time,status)~dnr.f0+dnr.f1+preauto+ttt24+cluster(id),data=wdata,
+		weights=wdata$weights,propodds=NULL,cause=2)
 summary(aaMss)
 ll <- mediatorSurv(aaMss,fit,data=dat,wdata=wdata)
 summary(ll)
 if (runb>0) { bll <- BootmediatorSurv(aaMss,fit,data=dat,k.boot=k.boot); summary(bll)}
 
-
 ### logit model  #############################################################3
-aaMss <- cifreg(Event(time,status)~dnr.f0+dnr.f1+preauto+ttt24+cluster(id),data=wdata,weights=wdata$weights,cause=2)
+aaMss <- cifreg(Event(time,status)~dnr.f0+dnr.f1+preauto+ttt24+cluster(id),data=wdata,
+		weights=wdata$weights,cause=2)
 summary(aaMss)
 ll <- mediatorSurv(aaMss,fit,data=dat,wdata=wdata)
 summary(ll)
 if (runb>0) { bll <- BootmediatorSurv(aaMss,fit,data=dat,k.boot=k.boot); summary(bll)}
 
 ### binomial outcome  ############################
-aaMss <- binreg(Event(ftime,status)~dnr.f0+dnr.f1+preauto+ttt24+cluster(id),data=wdata,time=50,weights=wdata$weights,cens.weights=1,cause=2)
+aaMss <- binreg(Event(ftime,status)~dnr.f0+dnr.f1+preauto+ttt24+cluster(id),data=wdata,
+		time=50,weights=wdata$weights,cens.weights=1,cause=2)
 summary(aaMss)
 ll <- mediatorSurv(aaMss,fit,data=dat,wdata=wdata)
 summary(ll)
 if (runb>0) { bll <- BootmediatorSurv(aaMss,fit,data=dat,k.boot=k.boot); summary(bll)}
 
-## ---- label=multinom, cache=TRUE, eval=fullVignette---------------------------
+## ----label=multinom, cache=TRUE, eval=fullVignette----------------------------
 #  data(tTRACE)
 #  dcut(tTRACE) <- ~.
 #  
 #  weightmodel <- fit <- mlogit(wmicat.4 ~agecat.4+vf+chf,data=tTRACE,family=binomial)
 #  wdata <- medweight(fit,data=tTRACE)
 #  
-#  aaMss <- binreg(Event(time,status)~agecat.40+ agecat.41+ vf+chf+cluster(id),data=wdata,time=7,weights=wdata$weights,cause=9)
+#  aaMss <- binreg(Event(time,status)~agecat.40+ agecat.41+ vf+chf+cluster(id),data=wdata,
+#  		time=7,weights=wdata$weights,cause=9)
 #  summary(aaMss)
 #  MultMed <- mediatorSurv(aaMss,fit,data=tTRACE,wdata=wdata)
 

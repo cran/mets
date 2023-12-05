@@ -42,15 +42,16 @@ The function logitIPCW instead considers
  U(\beta) = &  X  \frac{\Delta(t)}{G_c(T \wedge t)} \left( I(T \leq t, \epsilon=1 ) - \mbox{expit}( X^T beta) \right) = 0.
 \end{align*}
 The two score equations are quite similar, and exactly the same when the censoring model is fully-nonparametric given $X$.
-It seems that the binreg estimating equations most often the preferable ones to use. 
 
-Additional functions logitATE, and binregATE computes the average treatment effect, the average effect on treated (ATT), and 
-the average effect on non-treated (ATC). We demonstrate their use below. 
+ - It seems that the binreg estimating equations most often the preferable ones to use. 
+
+Additional functions logitATE, and binregATE computes the average treatment effect. We demonstrate their use below. 
 
 The functions binregATE (recommended) and logitATE also works when there is no censoring and we thus have simple binary outcome. 
 
 Variance is based on  sandwich formula with IPCW adjustment, and naive.var is variance 
 under known censoring model. The influence functions are stored in the output. 
+
 
  - We estimate the average treatment effect of our binary response $I(T \leq t, \epsilon=1)$
    - Using a working logistic model for the resonse
@@ -106,6 +107,11 @@ Also compute standard marginalization for average treatment effect  (called diff
 \end{align*}
 and again standard errors are based on the related influcence functions and are also returned. 
 
+For large data where there are more than 2 treatment groups the computations can be memeory extensive when
+there are many covariates due to  the multinomial-regression model used for the propensity scores.  Otherwise
+the function (binregATE) will run for rather large data and be rather quick. 
+
+
 
 Average treatment effect 
 =========================
@@ -117,7 +123,7 @@ transplantation from the Center for International Blood and Marrow Transplant Re
 analysis".  The data used in this paper consist of patients transplanted from 1995 to
 2005, and we compared the outcomes between transplant periods: 2001-2005 (N=488)
 versus 1995-2000 (N=375). The two competing events were
-relapse and treatment-related mortality (TRM) defined as death without relapse.
+relapse (cause 2) and treatment-related mortality (TRM, cause 1) defined as death without relapse.
 \cite{kumar-2012} considered the following risk covariates: 
 transplant time period (gp (main interest of the study): 1 for transplanted in
 2001-2005 versus 0 for transplanted in 1995-2000), donor type (dnr: 1 for Unrelated or
@@ -185,14 +191,16 @@ consequence no-censoring adjustment is done
 First binnary outcome  (can also use binregATE koding cause without censorings values, so setting cens.code=2, and time large)
 
 ```{r}
-
 kumar$cause2 <- 1*(kumar$cause==2)
 
 b3 <- logitATE(cause2~gp.f+dnr+preauto+ttt24,kumar,treat.model=gp.f~dnr+preauto+ttt24)
 summary(b3)
+
+## calculate also relative risk
+estimate(coef=b3$riskDR,vcov=b3$var.riskDR,f=function(p) p[1]/p[2])
 ```
 
-Or with continuous response using normal estiamating equations
+Or with continuous response using normal estimating equations
 
 ```{r}
 b3 <- normalATE(time~gp.f+dnr+preauto+ttt24,kumar,treat.model=gp.f~dnr+preauto+ttt24)

@@ -1,4 +1,4 @@
-## ---- include = FALSE---------------------------------------------------------
+## ----include = FALSE----------------------------------------------------------
 knitr::opts_chunk$set(
   collapse = TRUE,
   dpi=50,
@@ -278,7 +278,7 @@ summary(tsp)
 ## -----------------------------------------------------------------------------
  # Piecewise constant cross hazards ratio modelling
 
- d <- subset(simClaytonOakes(2000,2,0.5,0,stoptime=2,left=0),!truncated)
+ d <- subset(simClaytonOakes(1000,2,0.5,0,stoptime=2,left=0),!truncated)
  udp <- piecewise.twostage(c(0,0.5,2),data=d,id="cluster",timevar="time",
                            status="status",model="plackett",silent=0)
  summary(udp)

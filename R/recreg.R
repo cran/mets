@@ -61,7 +61,7 @@
 ##'               death.code=3,cens.model=~strata(gx))
 ##' summary(lls)
 ##' 
-##' @aliases strataAugment scalecumhaz GLprediid recregIPCW
+##' @aliases strataAugment scalecumhaz GLprediid recregIPCW twostageREC
 ##' @export
 recreg <- function(formula,data=data,cause=1,death.code=c(2),cens.code=0,cens.model=~1,weights=NULL,offset=NULL,Gc=NULL,
 		   wcomp=NULL,...)
@@ -132,7 +132,8 @@ recreg <- function(formula,data=data,cause=1,death.code=c(2),cens.code=0,cens.mo
 recreg01 <- function(data,X,entry,exit,status,id=NULL,strata=NULL,offset=NULL,weights=NULL,strataA=NULL,
           strata.name=NULL,beta,stderr=1,method="NR",no.opt=FALSE, propodds=NULL,profile=0,
           case.weights=NULL,cause=1,death.code=2,cens.code=0,Gc=NULL,cens.model=~+1,augmentation=NULL,
-	  cox.prep=FALSE,wcomp=NULL,augment.model=NULL,ftime.augment=NULL,...) { # {{{
+	  cox.prep=FALSE,wcomp=NULL,augment.model=NULL,ftime.augment=NULL,
+	  adm.cens.code=NULL,adm.cens.time=NULL,...) { # {{{
 # {{{ setting up weights, strata, beta and so forth before the action starts
     p <- ncol(X)
     if (missing(beta)) beta <- rep(0,p)
@@ -279,7 +280,9 @@ recreg01 <- function(data,X,entry,exit,status,id=NULL,strata=NULL,offset=NULL,we
     if (length(other)>=1) {# {{{
         trunc <- TRUE
         weightso <- weights[other]/Stime[other]
+        if (is.null(adm.cens.time))
         timeoo <- rep(max(exit)+1,length(other))
+        else timeoo <- adm.cens.time[other] 
         statuso <- rep(1,length(other))
         Xo <- X[other,,drop=FALSE]
         offseto <- offset[other]
@@ -368,7 +371,8 @@ recreg01 <- function(data,X,entry,exit,status,id=NULL,strata=NULL,offset=NULL,we
 
         Ut <- caseweightsJ*weightsJ*U
         ## E^2, as n x (pxp)
-        Et2 <-  .Call("vecMatMat",E,E,PACKAGE="mets")$vXZ
+###        Et2 <-  .Call("vecMatMat",E,E,PACKAGE="mets")$vXZ
+        Et2  <- .Call("vecCPMat",E)$XX
         S2S0 <-  (S2oo+S2no)/S0
         DUt <-  -(S2S0-Et2)
 
@@ -377,6 +381,7 @@ recreg01 <- function(data,X,entry,exit,status,id=NULL,strata=NULL,offset=NULL,we
             S0 <- S0/pow
             DUt <- pow*DUt
             DUt <- DUt+DUadj
+            DUt <-  .Call("XXMatFULL",DUt,p,PACKAGE="mets")$XXf
             if (profile==1) {
 		Ut <- Ut+c(ploglik)*Dwbeta
 		## not implemented
@@ -387,7 +392,13 @@ recreg01 <- function(data,X,entry,exit,status,id=NULL,strata=NULL,offset=NULL,we
 
         U  <- apply(Ut,2,sum)
         DUt <- caseweightsJ*weightsJ*DUt
-        DU <- -matrix(apply(DUt,2,sum),p,p)
+###        DU <- -matrix(apply(DUt,2,sum),p,p)
+	if (ncol(DUt)!=p*p) {
+        DU <- matrix(0,p,p);
+        DU[lower.tri(DU,diag=TRUE)] <- -apply(DUt,2,sum)
+        DU<- DU+t(DU)
+        diag(DU) <- diag(DU)/2
+	} else  DU <- -matrix(apply(DUt,2,sum),p,p)
         ploglik <- sum(ploglik)
         U <- U+augmentation
 
@@ -455,7 +466,6 @@ recreg01 <- function(data,X,entry,exit,status,id=NULL,strata=NULL,offset=NULL,we
     UU <- apply(MGt,2,sumstrata,xx2$id,mid+1)
 
     if (length(other)>=1) { ## martingale part for type-2 after T
-
         ### xx2 all data with start stop structure, takes position of death times
         otherxx2 <- which((xx2$Z[,1] %in% death.code) & xx2$sign==1)
         statusxx2 <- xx2$Z[,1]
@@ -704,7 +714,15 @@ recreg01 <- function(data,X,entry,exit,status,id=NULL,strata=NULL,offset=NULL,we
 # }}}
 
     ### end if (p>0)
-    } else {varmc <- var1 <- 0; augment.new <- MGAc <- MGc <- iH <- UUiid <- Uiid <- NULL}
+    } else {
+          iid.augment <- iid.augment.times <- augment <- augment.times <- NULL 
+          var.augment.times <- var.augment <- NULL
+          var.augment.times.iid <- var.augment.iid <- NULL
+          Uiid.augment.times <- Uiid.augment <- NULL
+          time.gammat <- gamma <- gammat <- NULL
+          ftime.gamma <- NULL
+          Gcj <- NULL
+	    varmc <- var1 <- 0; augment.new <- MGAc <- MGc <- iH <- UUiid <- Uiid <- NULL}
     strata <- xx2$strata[jumps]
     cumhaz <- cbind(opt$time,cumsumstrata(1/opt$S0,strata,nstrata))
     colnames(cumhaz)    <- c("time","cumhaz")
@@ -865,7 +883,7 @@ recregIPCW <- function(formula,data=data,cause=1,cens.code=0,death.code=2,
   jump1 <- xx$jumps+1
   timeJ <- xx$time[jump1]
   strataN1J <- xx$strata[jump1]
- ### Partitioned estimator , same as Lin, Lawless & Cook estimator
+ ### Partitioned estimator , same as Ghosh-Lin+Lawless-Cook estimator
  cumhazP <- c(cumsum(1/Gc[jump1])/nid)
  cumhazP <- cbind(timeJ,cumhazP)
 # }}}
@@ -898,15 +916,15 @@ recregIPCW <- function(formula,data=data,cause=1,cens.code=0,death.code=2,
     obj <- function(pp, all = FALSE) {# {{{
         lp <- c(X %*% pp + offset)
         if (model == "exp") p <- exp(lp) else p <- lp
+        if (model == "dexp") p <- exp(lp) 
         ploglik <- sum(weights * (Y - p)^2)
-        if (model == "exp") {
+        if (model == "dexp") {
+            Dlogl <- weights * X *p * c(Y - p)
+            D2logl <- c(weights) *p^2* X2
+        } else {
             Dlogl <- weights *  X * c(Y - p)
-            D2logl <- c(weights * p) * X2
-        }
-        else {
-            Dlogl <- weights * X * c(Y - p)
-            D2logl <- c(weights) * X2
-        }
+	if (model=="exp") D2logl <- c(weights) * c(p)* X2 else D2logl <- c(weights) * X2
+	}
         D2log <- apply(D2logl, 2, sum)
         gradient <- apply(Dlogl, 2, sum) 
         hessian <- matrix(D2log, length(pp), length(pp))
@@ -960,7 +978,7 @@ recregIPCW <- function(formula,data=data,cause=1,cens.code=0,death.code=2,
        Gcdata <- suppressWarnings(predict(cr,data,times=dexit,individual.time=TRUE,se=FALSE,km=km,tminus=TRUE)$surv)
        Gcdata[Gcdata<0.000001] <- 0.00001
        data$Hst <- revcumsumstrata((dexit<times)*(dstatus %in% cause)/Gcdata,data$id__,nid)
-       HstX <- Xorig*c(data$Hst)
+       if (model=="dexp") HstX <-c(exp(as.matrix(Xorig) %*% val$coef))*Xorig*c(data$Hst) else HstX <- Xorig*c(data$Hst) 
        ccn <- paste("nn__nn",1:ncol(Xorig),sep="")
        colnames(HstX) <- ccn
        nncovs <- c()
@@ -1011,6 +1029,91 @@ recregIPCW <- function(formula,data=data,cause=1,cens.code=0,death.code=2,
 
 ##' @export
 strataAugment <- survival:::strata
+
+simGLcox <- function(n,base1,drcumhaz,var.z=0,r1=NULL,rd=NULL,rc=NULL,fz=NULL,fdz=NULL,
+		     model=c("twostage","frailty","shared","multiplicative"),type=NULL,share=1,cens=NULL,nmax=200)
+{# {{{
+## setting up baselines for simulations 
+base1 <- predictCumhaz(rbind(0,as.matrix(base1)),1:round(tail(base1[,1],1)) )
+cumD <- predictCumhaz(rbind(0,as.matrix(drcumhaz)),base1[,1])
+St <- exp(-cumD[,2])
+Stm <- cbind(base1[,1],St)
+###
+dbase1 <- diff(c(0,base1[,2]))
+dcum <- cbind(base1[,1],dbase1)
+maxtime <- tail(base1[,1],1)
+
+if (is.null(r1)) r1 <- rep(1,n)
+if (is.null(rd)) rd <- rep(1,n)
+if (is.null(rc)) rc <- rep(1,n)
+
+fz.orig <- fz
+if (is.null(fz)) fz <- function(x) x
+
+ if (var.z[1]>0) {
+	 z1 <- z <- rgamma(n,share/var.z[1])*var.z[1] 
+	 if (share<1) { 
+		 z2 <- rgamma(n,(1-share)/var.z[1])*var.z[1] 
+		 z <- z+z2
+	 } 
+	 fzz <- fz(z1)
+	 if (share<1) fzz <- fzz/share; 
+	 mza <- mean(fzz)
+	 if (n<10000 & (!is.null(fz.orig))) {
+	    zl <- rgamma(100000,share/var.z[1])*var.z[1] 
+	    fzl <- fz(z)
+	    mza <- mean(fzl)
+	 } 
+ }  else fzz <- z <- z1 <- rep(1,n)
+
+if (var.z[1]==0) model <- "frailty"
+if (is.null(type)) 
+if (model[1]=="twostage") type <- 2 else type <- 1
+## for frailty setting we also consider any function of z 
+if (!is.null(fdz)) { fdzz <- fdz(z); rd <- rd*fdzz; z <- rep(1,n);}
+
+ ## survival censoring given X, Z, either twostage or frailty-model 
+ if (type>=2) stype <- 2 else stype <- 1
+ dd <- .Call("_mets_simSurvZ",as.matrix(rbind(c(0,1),Stm)),rd,z,var.z[1],stype)
+ dd <- data.frame(time=dd[,1],status=(dd[,1]<maxtime))
+ if (!is.null(cens)) cens <- rexp(n)/(rc*cens) else cens <- rep(maxtime,n)
+ dd$status <- ifelse(dd$time<cens,dd$status,0)
+ dd$time <- pmin(dd$time,cens)
+
+ ## to avoid R check error
+ reverseCountid  <-  death  <- NULL
+
+ if (model[1]=="multiplicative") {
+    ## other random effect 
+     z2 <- rgamma(n,share/var.z[2])*var.z[2] 
+     fzz <- z1*z2
+     type <- 3
+ }
+ ## type=2 draw recurrent process given X,Z with rate:
+ ##  1/S(t|X,Z) exp(X^t beta_1) d \Lambda_1(t)
+ ## such that GL model holds with exp(X^t beta_1) \Lambda_1(t)
+ ## type=3, observed hazards on Cox form among survivors
+ ## W_1 ~ N1, W_1+W_2 ~ D observed hazards on Cox form among survivors
+ ## or W_1 ~ N1, W_1~ D   observed hazards on Cox form among survivors
+ ## or W_2 * W_1 ~ N1, W_1~ D   observed hazards on Cox form among survivors
+ dcum <- cbind(base1[,1],dbase1)
+ ll <- .Call("_mets_simGL",as.matrix(rbind(0,dcum)),c(1,St),r1,rd,z1,fzz,dd$time,type,var.z[1],nmax,1)
+ colnames(ll) <- c("id","start","stop","death")
+ ll <- data.frame(ll)
+ ll$death <- dd$status[ll$id+1]
+ ## add frailty to data for possible validation
+ ll$z <- z1[ll$id+1]
+ ll$fz <- fzz[ll$id+1]
+ ## add counts of id
+ ids <- countID(ll)
+ ll <- cbind(ll,ids[,c(2,4,5)]); 
+ ll$status <- 1; 
+ ll <- dtransform(ll,status=0,reverseCountid==1)
+ ll$statusD <- ll$status
+ ll <- dtransform(ll,statusD=3,reverseCountid==1 & death==1)
+
+ return(ll)
+}# }}}
 
 simRecurrentCox <- function(n,cumhaz,cumhaz2,death.cumhaz=NULL,X=NULL,r1=NULL,r2=NULL,rd=NULL,rc=NULL, 
                      model=c("not-random","random"),frailty=TRUE,var.z=0.5,death.code=3,alpha=1,...)
@@ -1111,7 +1214,6 @@ simRecurrentCox <- function(n,cumhaz,cumhaz2,death.cumhaz=NULL,X=NULL,r1=NULL,r2
  return(data)
 }# }}}
 
-
 simMarginalMeanCox <- function(n,cens=3/5000,k1=0.1,k2=0,bin=1,Lam1=NULL,Lam2=NULL,LamD=NULL,
 			       beta1=rep(0,2),betad=rep(0,2),betac=rep(0,2),X=NULL,...)
 {# {{{
@@ -1131,8 +1233,7 @@ simMarginalMeanCox <- function(n,cens=3/5000,k1=0.1,k2=0,bin=1,Lam1=NULL,Lam2=NU
 
  if (is.null(Lam2)) Lam2 <- Lam1; 
 
- rr <- simRecurrentCox(n,scalecumhaz(Lam1,k1),cumhaz2=scalecumhaz(Lam1,k2),
-		       death.cumhaz=LamD,X=X,cens=cens,r1=r1,rd=rd,rc=rc,...)
+ rr <- simRecurrentCox(n,scalecumhaz(Lam1,k1),cumhaz2=scalecumhaz(Lam1,k2),death.cumhaz=LamD,X=X,cens=cens,r1=r1,rd=rd,rc=rc,...)
 
  if (bin==0) dcut(rr,breaks=4) <- X1g~X1 else rr$X1g <- rr$X1
  if (bin==0) dcut(rr,breaks=4) <- X2g~X2 else rr$X2g <- rr$X2
@@ -1151,4 +1252,417 @@ GLprediid <- function(...)
 out <- FGprediid(...,model="GL")
 return(out)
 }# }}}
+
+boottwostageREC <- function(margsurv,recurrent,data,bootstrap=100,id="id",...) 
+{# {{{
+n <- max(margsurv$id)
+K <- bootstrap
+  formid <- as.formula(paste("~",id))
+  rrb <- blocksample(data, size = n*K, formid)
+  rrb$strata <- floor((rrb[,id]-0.01)/n)
+
+  outb <- c()
+  for (i in 1:K)
+  {
+     rrbs <- subset(rrb,strata==i-1)
+     drb <- phreg(margsurv$formula,data=rrbs)
+     xrb <- phreg(recurrent$formula,data=rrbs)
+     outbl <- tryCatch(twostageREC(drb,xrb,rrbs,...),error=function(x) NULL)
+     if (!is.null(outbl)) outb <- rbind(outb,outbl$coef)
+  }
+  var <- var(outb)
+
+  list(var=var, se=diag(var)^.5,outb=outb)
+}# }}}
+
+##' @export
+twostageREC  <-  function (margsurv,recurrent, data = parent.frame(), theta = NULL, model=c("full","shared","non-shared"),
+  theta.des = NULL, var.link = 0, method = "NR", no.opt = FALSE, weights = NULL, se.cluster = NULL, nufix=0,nu=NULL,at.risk=1,...)
+{# {{{
+    if (!inherits(margsurv, "phreg")) stop("Must use phreg for death model\n")
+    if (!inherits(recurrent, "phreg")) stop("Must use phreg for recurrent model\n")
+    clusters <- margsurv$cox.prep$id
+    n <-  max(clusters)+1
+    if (is.null(theta.des) == TRUE) ptheta <- 1
+    if (is.null(theta.des) == TRUE) theta.des <- matrix(1, n, ptheta) else theta.des <- as.matrix(theta.des)
+    ptheta <- ncol(theta.des)
+    if (nrow(theta.des) != n) stop("Theta design does not have correct dim")
+    if (is.null(theta) == TRUE) {
+        if (var.link == 1) theta <- rep(0, ptheta)
+        if (var.link == 0) theta <- rep(1, ptheta)
+    }
+    if (is.null(nu)  & (nufix==0)) nu <- 0 
+    if (length(theta) != ptheta) theta <- rep(theta[1], ptheta)
+    if (length(nu) != ptheta) nu <- rep(nu,ptheta)
+    theta.score <- rep(0, ptheta)
+    Stheta <- var.theta <- matrix(0, ptheta, ptheta)
+    max.clust <- length(unique(clusters))
+    theta.iid <- matrix(0, max.clust, ptheta)
+    xx <- margsurv$cox.prep
+    xr <- recurrent$cox.prep
+    nn <- length(xx$strata)
+    if (is.null(weights)) weights <- rep(1, nn)
+    if (length(weights) != nn) stop("Weights do not have right length")
+    statusxx <- rep(0, length(xx$strata))
+    statusxx[xx$jumps + 1] <- 1
+    xx$status <- statusxx
+    mid <- max(xx$id) + 1
+    Nsum <- cumsumstratasum(statusxx, xx$id, mid, type = "all")
+    Ni.tau <- sumstrata(statusxx, xx$id, mid)
+    S0i2 <- S0i <- rep(0, length(xx$strata))
+    S0i[xx$jumps + 1] <- 1/margsurv$S0
+    cumhazD <- cumsumstrata(S0i, xx$strata, xx$nstrata)
+    if (!is.null(margsurv$coef)) RR <- exp(xx$X %*% margsurv$coef) else RR <- rep(1, nn)
+    HD <- c(cumhazD * RR)
+    cumDYt <- sumstrata(HD*xx$sign,xx$id,mid)
+    statusx1 <- rep(0, length(xx$strata))
+    statusx1[xr$jumps + 1] <- 1
+    xr$status <- statusx1
+    N1sum <- cumsumstratasum(statusx1, xr$id, mid, type = "all")
+    N1i.tau <- sumstrata(statusx1, xr$id, mid)
+    S01i2 <- S01i <- rep(0, length(xr$strata))
+    S01i[xr$jumps + 1] <- 1/recurrent$S0
+    cumhaz1 <- cumsumstrata(S01i, xr$strata, xr$nstrata)
+    if (!is.null(recurrent$coef)) RR1 <- exp(xr$X %*% recurrent$coef) else RR1 <- rep(1, nn)
+    H1 <- c(cumhaz1 * RR1)
+    ###
+    ## designs of fixed time covariates and weights
+    cc <- cluster.index(xx$id)
+    firstid <- cc$firstclustid + 1
+    if (max(cc$cluster.size) == 1) stop("No clusters !, maxclust size=1\n")
+    ###
+    theta.des <- theta.des[xx$id+ 1, , drop = FALSE]
+    theta.des <- theta.des[xx$ord + 1, , drop = FALSE]
+    weightsid <- weights <- weights[xx$ord + 1]
+    weights <- weights[firstid]
+    thetaX <- as.matrix(theta.des[firstid, , drop = FALSE])
+    Xdeath <- as.matrix(xx$X[firstid,,drop = FALSE])
+    Xrecurrent <- as.matrix(xr$X[firstid,,drop = FALSE])
+    statusxb <- statusxx+statusx1
+    ###
+    Nsumb <- Nsum$lagsum+N1sum$lagsum
+    rd <- RR[firstid]
+    r1 <- RR1[firstid]
+    lastid <- tailstrata(xx$id,mid)
+    ###
+    cumDL <- HD[lastid]
+    nuX <- thetaX
+    ###
+    idD <- xx$id[statusxx==1]
+
+    obj <- function(par, all = FALSE) {# {{{
+        if (var.link == 1) epar <- c(exp(c(par))) else epar <- c(par)
+        thetav <- c(as.matrix(theta.des) %*% c(epar))
+        thetai <- thetav[firstid]
+	###
+###        tildeL <- .Call("_mets_tildeLambda1",S01i,cumhazD,r1,rd,thetai,xx$id)
+###	if (at.risk==1)  
+###		tildeL <- apply(tildeL*c(xr$sign),2,cumsumstrata,xr$id,mid)
+        tildeL <- .Call("_mets_tildeLambda1R",S01i,cumhazD,r1,rd,thetai,xr$id,xr$sign)
+        tildeLast <- tildeL[lastid,]
+	Ht <- thetav*tildeL[,1]+exp(thetav*HD)
+	Hr <- thetai*tildeLast[,1]+exp(thetai*cumDL)
+	DHt <- tildeL[,1]+thetav*tildeL[,2]+HD*exp(thetav*HD)
+	DHr <- tildeLast[,1]+thetai*tildeLast[,2]+cumDL*exp(thetai*cumDL)
+        ###
+	D2Ht <- 2*tildeL[,2]+thetav*tildeL[,3]+HD^2*exp(thetav*HD)
+	D2Hr <- 2*tildeLast[,2]+thetai*tildeLast[,3]+cumDL^2*exp(thetai*cumDL)
+	aHt <- abs(Ht)
+	aDHt <- abs(DHt)
+	aD2Ht <- abs(D2Ht)
+        ###
+        l1 <- sumstrata(log(1 + thetav * N1sum$lagsum) * statusxb, xx$id, mid)
+        l2 <- sumstrata(statusxb * HD, xx$id, mid)
+	if (at.risk==0) l3 <- -(1/thetai + N1i.tau) * log(Hr) 
+	if (at.risk==1) l3 <- - sumstrata(c(xr$sign)*(1/thetav+N1sum$sum)*log(aHt),xr$id,mid) 
+	HtD <- Ht[statusxx==1]
+	DHtD <- DHt[statusxx==1]
+	D2HtD <- D2Ht[statusxx==1]
+        l4 <- -sumstrata(log(HtD),idD,mid)
+        logliid <- (l1 + thetai * l2 + l3 + l4) * c(weights)
+        logl <- sum(logliid)
+        ploglik <- logl
+        ###
+        l1s <- sumstrata(N1sum$lagsum/(1 + thetav * N1sum$lagsum) * statusxb, xx$id, mid)
+	if (at.risk==0) l3s <- -(1/thetai + N1i.tau) * DHr/Hr + log(Hr)/thetai^2;
+	if (at.risk==1) l3s <- sumstrata(c(xr$sign)*(-(1/thetav+N1sum$sum)*DHt/Ht+log(aHt)/thetav^2),xr$id,mid);
+	l4s <-  -sumstrata((DHtD/HtD),idD, mid) 
+	Dltheta <- (l1s+l2+l3s+l4s)*c(weights) 
+	scoreiid <- thetaX * c(Dltheta)
+        D2N <- -sumstrata(N1sum$lagsum^2/(1 + thetav * N1sum$lagsum)^2 * statusxb, xx$id, mid)
+	if (at.risk==0) 
+        Dhes <- (2/thetai^2) * DHr/Hr -(1/thetai + N1i.tau)*(D2Hr*Hr-DHr^2)/Hr^2 - (2/thetai^3) * log(Hr) 
+	if (at.risk==1) 
+        Dhes <- sumstrata(c(xr$sign)* (
+	(2/thetav^2) * aDHt/aHt -(1/thetav + N1sum$sum)*(aD2Ht*Ht-aDHt^2)/aHt^2 -(2/thetav^3) * log(aHt)) ,xr$id,mid)
+	D2l4 <- -sumstrata(((D2HtD*HtD-DHtD^2)/HtD^2), idD, mid)
+        Dhes <- c(Dhes+D2N+D2l4) * c(weights)
+        if (var.link == 1) {
+            scoreiid <- scoreiid * c(thetai)
+            Dhes <- Dhes * thetai^2 + thetai * Dltheta
+        }
+        gradient <- apply(scoreiid, 2, sum)
+        hessian <- crossprod(thetaX, thetaX * c(Dhes))
+        hess2 <- crossprod(scoreiid)
+        val <- list(id = xx$id, score.iid = scoreiid, logl.iid = logliid,
+            ploglik = ploglik, gradient = gradient, hessian = hessian,
+            hess2 = hess2)
+        if (all)
+            return(val)
+        with(val, structure(-ploglik, gradient = -gradient, hessian = -hessian))
+    }
+# }}}
+
+    objNonShared <- function(par, all = FALSE) {# {{{
+        if (var.link == 1) epar <- c(exp(c(par))) else epar <- c(par)
+        thetav <- c(as.matrix(theta.des) %*% c(epar))
+        thetai <- thetav[firstid]
+	###
+	Ht <- 1+thetav*H1 
+	Hr <- Ht[lastid]
+	DHt <- H1
+	DHr <- H1[lastid]
+        ###
+	D2Ht <- 0
+	D2Hr <- 0
+	aHt <- abs(Ht)
+	aDHt <- abs(DHt)
+	aHr <- abs(Hr)
+        ###
+        l1 <- sumstrata(log(1 + thetav * N1sum$lagsum) * statusx1, xx$id, mid)
+	if (at.risk==0) l3 <- -(1/thetai + N1i.tau) * log(Hr) 
+	if (at.risk==1) l3 <- - sumstrata(c(xr$sign)*(1/thetav+N1sum$sum)*log(aHt),xr$id,mid) 
+        logliid <- (l1 + l3) * c(weights)
+        logl <- sum(logliid)
+        ploglik <- logl
+        ###
+        l1s <- sumstrata(N1sum$lagsum/(1 + thetav * N1sum$lagsum) * statusx1, xx$id, mid)
+	if (at.risk==0) l3s <- -(1/thetai + N1i.tau) * DHr/Hr + log(Hr)/thetai^2;
+	if (at.risk==1) l3s <- sumstrata(c(xr$sign)*(-(1/thetav+N1sum$sum)*DHt/Ht+log(aHt)/thetav^2),xr$id,mid);
+	Dltheta <- (l1s+l3s)*c(weights) 
+	scoreiid <- thetaX * c(Dltheta)
+        D2N <- -sumstrata(N1sum$lagsum^2/(1 + thetav * N1sum$lagsum)^2 * statusx1, xx$id, mid)
+	if (at.risk==0) 
+        Dhes <- (2/thetai^2) * DHr/Hr -(1/thetai + N1i.tau)*(-DHr^2)/Hr^2 - (2/thetai^3) * log(Hr) 
+	if (at.risk==1) 
+        Dhes <- sumstrata(c(xr$sign)* (
+	(2/thetav^2) * aDHt/aHt -(1/thetav + N1sum$sum)*(-aDHt^2)/aHt^2 -(2/thetav^3) * log(aHt)) ,xr$id,mid)
+        Dhes <- c(Dhes+D2N) * c(weights)
+        if (var.link == 1) {
+            scoreiid <- scoreiid * c(thetai)
+            Dhes <- Dhes * thetai^2 + thetai * Dltheta
+        }
+        gradient <- apply(scoreiid, 2, sum)
+        hessian <- crossprod(thetaX, thetaX * c(Dhes))
+        hess2 <- crossprod(scoreiid)
+        val <- list(id = xx$id, score.iid = scoreiid, logl.iid = logliid,
+            ploglik = ploglik, gradient = gradient, hessian = hessian,
+            hess2 = hess2)
+        if (all)
+            return(val)
+        with(val, structure(-ploglik, gradient = -gradient, hessian = -hessian))
+    }
+# }}}
+
+   fw <- function(x) 1/(1+exp(x))
+   nudes <- theta.des  
+   p <- ncol(theta.des)
+
+    objShared <- function(par, all = FALSE) {# {{{
+        if (var.link == 1) epar <- c(exp(par[1:p])) else epar <- c(par[1:p])
+        thetav <- c(as.matrix(theta.des) %*% epar)
+	if (nufix==1) nu1 <- c(as.matrix(nudes) %*% nu)
+	else nu1 <- c(as.matrix(nudes) %*% par[(p+1):2*p])
+        nu1i <-nu1[firstid]
+	tbeta1 <- fw(nu1); tbeta2 <- 1-tbeta1; 
+        thetai <- thetav[firstid]; tbeta1i <- tbeta1[firstid]; tbeta2i <- tbeta2[firstid]
+	###
+	R <-  exp( - thetav*HD);  DR <- -HD*exp( - thetav* HD); D2R <-  HD^2*exp( - thetav* HD) 
+###        tildeL <- .Call("_mets_tildeLambda1",S01i,cumhazD,r1,rd,thetai,xx$id)
+###	if (at.risk==1)  
+###		tildeL <- apply(tildeL*c(xr$sign),2,cumsumstrata,xr$id,mid)
+        tildeL <- .Call("_mets_tildeLambda1R",S01i,cumhazD,r1,rd,thetai,xr$id,xr$sign)
+	tildeLast <- tildeL[lastid,]
+	Ht <- (thetav/tbeta1)*tildeL[,1]+exp(thetav*HD)
+	Hr <- (thetai/tbeta1i)*tildeLast[,1]+exp(thetai*cumDL)
+	DHt <- (tildeL[,1]+thetav*tildeL[,2])/tbeta1+HD*exp(thetav*HD)
+	DHr <- (tildeLast[,1]+thetai*tildeLast[,2])/tbeta1i+cumDL*exp(thetai*cumDL)
+	DHtn <- -(thetav/tbeta1^2)*tildeL[,1]
+	DHrn <- -(thetai/tbeta1i^2)*tildeLast[,1]
+        ###
+	D2Ht <- (2*tildeL[,2]+thetav*tildeL[,3])/tbeta1+HD^2*exp(thetav*HD)
+	D2Hr <- (2*tildeLast[,2]+thetai*tildeLast[,3])/tbeta1i+cumDL^2*exp(thetai*cumDL)
+        ###
+        N <- (tbeta1 + thetav * N1sum$lagsum)/Ht + tbeta2*R
+        l1d <- sumstrata(log(N) * statusxx, xx$id, mid)
+        l11 <- sumstrata(log(tbeta1 + thetav * N1sum$lagsum) * statusx1, xx$id, mid)
+	l1 <- l1d+l11
+        l2 <- sumstrata(statusxb * HD, xx$id, mid) 
+	l22 <-  -log(tbeta1i)*N1i.tau 
+        if (at.risk==0) l3 <- -(tbeta1i/thetai + N1i.tau)*log(Hr) 
+        if (at.risk==1) l3 <- - sumstrata(c(xr$sign)*(tbeta1/thetav+N1sum$sum)*log(Ht),xr$id,mid) 
+        l4 <-  (tbeta1i)*cumDYt
+        logliid <- (l1 + thetai*l2+ l22 + l3 + l4) * c(weights)
+        logl <- sum(logliid)
+        ploglik <- logl
+        ###
+	DN1tt <- (Ht*N1sum$lagsum-DHt*(tbeta1+thetav*N1sum$lagsum))
+	DN1t <-  DN1tt/Ht^2 
+	DNt <- c(DN1t+tbeta2*DR)
+        l1ds <- sumstrata((DNt/N)*statusxx,xx$id,mid)
+        l11s <- sumstrata((N1sum$lagsum/(tbeta1 + thetav * N1sum$lagsum)) * statusx1, xx$id, mid)
+	l1s <- l1ds+l11s
+        if (at.risk==0) 
+        l3s <- -(tbeta1i/thetai + N1i.tau) * (DHr/Hr) + (tbeta1i/thetai^{2}) * log(Hr) 
+        if (at.risk==1) 
+	l3s <- sumstrata(c(xr$sign)*(-(tbeta1/thetav+N1sum$sum)*DHt/Ht+log(Ht)*tbeta1/thetav^2),xr$id,mid);
+        Dltheta <- (l1s+l2+l3s)*c(weights)
+        ### 
+	DNtn <- (Ht-DHtn*(tbeta1+thetav*N1sum$lagsum))
+	DNn <- DNtn/Ht^2 
+        l1dn <- sumstrata( c(DNn-R)/N * statusxx, xx$id, mid)
+        l11n <- sumstrata(1/(tbeta1 + thetav * N1sum$lagsum) * statusx1, xx$id, mid)
+	l1n <- l1dn+l11n
+	l22n <-  -N1i.tau/tbeta1i 
+	if (at.risk==0) 
+		l3n <- -(tbeta1i/thetai+N1i.tau)*(DHrn/Hr)-(1/thetai)*log(Hr)
+	if (at.risk==1) 
+        l3n <- -sumstrata(c(xr$sign)*(+(tbeta1/thetav+N1sum$sum)*(DHtn/Ht)+(1/thetav)*log(Ht)), xr$id,mid);
+        Dlnu <- (l1n+l22n+l3n+cumDYt)*c(weights)
+        ###
+	if (nufix==1)
+        scoreiid <- thetaX * c(Dltheta)
+        else  scoreiid <- cbind(thetaX * c(Dltheta),nuX*c(Dlnu)*(-exp(nu1i)*tbeta1i^2))
+        ###   ###
+        Dl11s <- -sumstrata(N1sum$lagsum^2/(tbeta1 + thetav * N1sum$lagsum)^2 * statusxb, xx$id, mid)
+        Dl3s <- (2*tbeta1i/thetai^2) * DHr/Hr -(tbeta1i/thetai+ N1i.tau)*(D2Hr*Hr-DHr^2)/Hr^2 - (2*tbeta1i/thetai^3) * log(Hr) 
+        ###
+	D2N1t <- (Ht^2*(DHt*N1sum$lagsum-D2Ht*(tbeta1+thetav*N1sum$lagsum)-DHt*N1sum$lagsum)-2*DHt*DN1tt)/Ht^4 
+	D2Nt <-  D2N1t+tbeta2*D2R
+	Dl1ds <- -sumstrata(((D2Nt*N-DNt^2)/N^2)*statusxx, xx$id, mid)
+        Dhes <- c(Dl1ds+Dl11s+Dl3s) * c(weights)
+        if (var.link == 1) {
+            scoreiid[,1:p] <- scoreiid[,1:p] * c(thetai)
+            Dhes <- Dhes * thetai^2 + thetai * Dltheta
+        }
+        gradient <- apply(scoreiid, 2, sum)
+        hessian <- crossprod(thetaX, thetaX * c(Dhes))
+	if (nufix==0) {
+###	    hessiann <- crossprod(nuX, nuX* c(D2nu))
+###	    hessiannp <- crossprod(thetaX,nuX*Dtn)
+###	    hessian <- cbind(hessian,hessianp)
+###	    hessian <- rbind(hessian,cbind(t(hessianp),hessiann))
+	}
+        hess2 <- crossprod(scoreiid)
+        val <- list(id = xx$id, score.iid = scoreiid, logl.iid = logliid,
+            ploglik = ploglik, gradient = gradient, hessian = -hess2,
+            hess2 = hess2)
+        if (all)
+            return(val)
+###        with(val, structure(-ploglik, gradient = -gradient, hessian = -hessian))
+        with(val, structure(-ploglik, gradient = -gradient, hessian = hess2))
+    }
+# }}}
+
+   if (model[1]=="shared") obj <- objShared
+   if (model[1]=="non-shared") obj <- objNonShared
+   if (nufix==0 & model[1]=="shared") par <- c(theta,nu) else par <- theta
+
+    opt <- NULL
+    if (no.opt == FALSE) {
+        if (tolower(method) == "nr") {
+            opt <- lava::NR(par, obj, ...)
+            opt$estimate <- opt$par
+        }
+        else {
+            opt <- nlm(obj, par, ...)
+            opt$method <- "nlm"
+        }
+        cc <- opt$estimate
+        val <- c(list(coef = cc), obj(opt$estimate, all = TRUE))
+    }
+    else val <- c(list(coef = par), obj(par, all = TRUE))
+    val$score <- val$gradient
+    theta <- matrix(c(val$coef), length(c(val$coef)), 1)
+
+    if (!is.null(colnames(theta.des)))
+        thetanames <- colnames(theta.des)
+    else thetanames <- paste("dependence", 1:length(c(theta)), sep = "")
+    if (nufix==0 & model[1]=="shared") thetanames <-
+     thetanames <- c(paste("dependence", 1:p, sep = ""),paste("share", 1:p,sep = ""))
+
+    if (length(thetanames) == length(c(theta))) {
+        rownames(theta) <- thetanames
+        names(val$coef)  <- thetanames
+    }
+    hessianI <- solve(val$hessian)
+    val$theta.iid.naive <- val$score.iid %*% hessianI
+
+    if (!is.null(se.cluster))
+        if (length(se.cluster) != length(clusters))
+            stop("Length of seclusters and clusters must be same\n")
+    if (!is.null(se.cluster)) {
+        iids <- unique(se.cluster)
+        nseclust <- length(iids)
+        if (is.numeric(se.cluster))
+            se.cluster <- fast.approx(iids, se.cluster) - 1
+        else se.cluster <- as.integer(factor(se.cluster, labels = seq(nseclust))) - 1
+        val$theta.iid <- apply(val$theta.iid,2,sumstrata,se.cluster, nseclust)
+        val$theta.iid.naive <- apply(val$theta.iid.naive,2,sumstrata,se.cluster, nseclust)
+    }
+    var <- robvar.theta <- var.theta <- crossprod(val$theta.iid)
+    naive.var <- crossprod(val$theta.iid.naive)
+    val <- c(val, list(theta = theta, var.theta = var,n=mid,p=ncol(thetaX),var.link=var.link,
+                       robvar.theta = var, var = var, thetanames = thetanames,
+                       model = model[1], se = diag(var)^0.5), 
+	     var.naive = naive.var,no.opt=no.opt)
+    class(val) <- "twostageREC"
+    attr(val, "clusters") <- clusters
+    attr(val, "secluster") <- c(se.cluster)
+    attr(val, "var.link") <- var.link
+    attr(val, "ptheta") <- ptheta
+    attr(val, "n") <- n
+    attr(val, "response") <- "survival"
+    attr(val, "additive-gamma") <- 0
+    attr(val, "twostage") <- "two.stage"
+    return(val)
+}
+# }}}
+
+##' @export
+summary.twostageREC <- function(object,...) {# {{{
+    I <- -solve(object$hessian)
+    V <- object$var
+    ncluster <- object$n
+    cc <- cbind(object$coef,diag(V)^0.5,diag(I)^0.5)
+    cc  <- cbind(cc,2*(pnorm(abs(cc[,1]/cc[,2]),lower.tail=FALSE)))
+    colnames(cc) <- c("Estimate","S.E.","dU^-1/2","P-value")
+    if (length(class(object))==1) if (!is.null(ncluster <- attributes(V)$ncluster))
+    rownames(cc) <- names(coef(object))
+    pd <- object$p
+    if (object$var.link==1 & object$model=="full") f <- function(p) exp(p)
+    if (object$var.link==0 & object$model=="full") f <- function(p) p
+    if (object$var.link==1 & object$model=="shared") f <- function(p) c(exp(p[1:pd]),1/(1+exp(p[(pd+1):2*pd])))
+    if (object$var.link==0 & object$model=="shared") f <- function(p) c(p[1:pd],1/(1+exp(p[(pd+1):2*pd])))
+    expC <- lava::estimate(coef=object$coef,vcov=V,f=f)$coefmat[,c(1,3,4),drop=FALSE]
+  n <- object$n
+  res <- list(coef=cc,n=n,nevent=object$nevent,ncluster=ncluster,var=V,exp.coef=expC,var.link=object$var.link)
+  class(res) <- "summary.twostageREC"
+  res
+}
+# }}}
+
+##' @export
+print.summary.twostageREC  <- function(x,max.strata=5,...) {# {{{
+  if (!is.null(x$ncluster)) cat("\n ", x$ncluster, " clusters\n",sep="")
+  if (!is.null(x$coef)) {
+    cat("coeffients:\n")
+    printCoefmat(x$coef,...)
+    cat("\n")
+    if (x$var.link==1) cat("var=exp(coeffients),shared:\n")
+    if (x$var.link==0) cat("var,shared:\n")
+    printCoefmat(x$exp.coef,...)
+  }
+  cat("\n")
+} # }}}
 

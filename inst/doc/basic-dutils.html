@@ -12,7 +12,7 @@
 
 <meta name="author" content="Klaus Holst &amp; Thomas Scheike" />
 
-<meta name="date" content="2023-01-16" />
+<meta name="date" content="2023-12-04" />
 
 <title>dUtility data-frame manipulations</title>
 
@@ -51,7 +51,7 @@ overflow: visible;
 </style>
 <style type="text/css" data-origin="pandoc">
 pre > code.sourceCode { white-space: pre; position: relative; }
-pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span { line-height: 1.25; }
 pre > code.sourceCode > span:empty { height: 1.2em; }
 .sourceCode { overflow: visible; }
 code.sourceCode > span { color: inherit; text-decoration: inherit; }
@@ -340,7 +340,7 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 
 <h1 class="title toc-ignore">dUtility data-frame manipulations</h1>
 <h4 class="author">Klaus Holst &amp; Thomas Scheike</h4>
-<h4 class="date">2023-01-16</h4>
+<h4 class="date">2023-12-04</h4>
 
 
 
@@ -363,10 +363,10 @@ much like what is possible in SAS or STATA.</p>
 <p>The functions, say, dcut, dfactor and so on are all functions that
 basically does what the base R cut, factor do, but are easier to use in
 the context of data-frames and have additional functionality.</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(mets)</span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">data</span>(melanoma)</span></code></pre></div>
-<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">is.data.frame</span>(melanoma)</span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] TRUE</span></span></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="fu">library</span>(mets)</span>
+<span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a><span class="fu">data</span>(melanoma)</span></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a><span class="fu">is.data.frame</span>(melanoma)</span>
+<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a><span class="co">#&gt; [1] TRUE</span></span></code></pre></div>
 <p>Here we work on the melanoma data that is already read into R and is
 a data-frame.</p>
 </div>
@@ -397,327 +397,321 @@ as the argument</p>
 be specified using regular-expressions or by wildcards (default). Here
 to illustrate this, we compute the means of certain variables.</p>
 <p>First just oveall</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">dmean</span>(melanoma,<span class="sc">~</span>thick<span class="sc">+</span><span class="fu">I</span>(<span class="fu">log</span>(thick)))</span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;         thick I(log(thick)) </span></span>
-<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;    291.985366      5.223341</span></span></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a><span class="fu">dmean</span>(melanoma,<span class="sc">~</span>thick<span class="sc">+</span><span class="fu">I</span>(<span class="fu">log</span>(thick)))</span>
+<span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a><span class="co">#&gt;         thick I(log(thick)) </span></span>
+<span id="cb3-3"><a href="#cb3-3" tabindex="-1"></a><span class="co">#&gt;    291.985366      5.223341</span></span></code></pre></div>
 <p>now only when days&gt;500</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="fu">dmean</span>(melanoma,<span class="sc">~</span>thick<span class="sc">+</span><span class="fu">I</span>(<span class="fu">log</span>(thick))<span class="sc">|</span><span class="fu">I</span>(days<span class="sc">&gt;</span><span class="dv">500</span>))</span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;         thick I(log(thick)) </span></span>
-<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;    271.582011      5.168691</span></span></code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a><span class="fu">dmean</span>(melanoma,<span class="sc">~</span>thick<span class="sc">+</span><span class="fu">I</span>(<span class="fu">log</span>(thick))<span class="sc">|</span><span class="fu">I</span>(days<span class="sc">&gt;</span><span class="dv">500</span>))</span>
+<span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a><span class="co">#&gt;         thick I(log(thick)) </span></span>
+<span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a><span class="co">#&gt;    271.582011      5.168691</span></span></code></pre></div>
 <p>and now after sex but only when days&gt;500</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">dmean</span>(melanoma,thick<span class="sc">+</span><span class="fu">I</span>(<span class="fu">log</span>(thick))<span class="sc">~</span>sex<span class="sc">|</span><span class="fu">I</span>(days<span class="sc">&gt;</span><span class="dv">500</span>))</span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;   sex    thick I(log(thick))</span></span>
-<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 1   0 242.9580      5.060086</span></span>
-<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 2   1 320.2429      5.353321</span></span></code></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a><span class="fu">dmean</span>(melanoma,thick<span class="sc">+</span><span class="fu">I</span>(<span class="fu">log</span>(thick))<span class="sc">~</span>sex<span class="sc">|</span><span class="fu">I</span>(days<span class="sc">&gt;</span><span class="dv">500</span>))</span>
+<span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a><span class="co">#&gt;   sex    thick I(log(thick))</span></span>
+<span id="cb5-3"><a href="#cb5-3" tabindex="-1"></a><span class="co">#&gt; 1   0 242.9580      5.060086</span></span>
+<span id="cb5-4"><a href="#cb5-4" tabindex="-1"></a><span class="co">#&gt; 2   1 320.2429      5.353321</span></span></code></pre></div>
 <p>and finally after quartiles of days (via the dcut function)</p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="fu">dmean</span>(melanoma,thick<span class="sc">+</span><span class="fu">I</span>(<span class="fu">log</span>(thick))<span class="sc">~</span><span class="fu">I</span>(<span class="fu">dcut</span>(days)))</span>
-<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;         I(dcut(days))    thick I(log(thick))</span></span>
-<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 1       [10,1.52e+03] 482.1731      5.799525</span></span>
-<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 2 (1.52e+03,2.00e+03] 208.5490      4.987652</span></span>
-<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 3 (2.00e+03,3.04e+03] 223.2941      4.974759</span></span>
-<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 4 (3.04e+03,5.56e+03] 250.1961      5.120129</span></span></code></pre></div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a><span class="fu">dmean</span>(melanoma,thick<span class="sc">+</span><span class="fu">I</span>(<span class="fu">log</span>(thick))<span class="sc">~</span><span class="fu">I</span>(<span class="fu">dcut</span>(days)))</span>
+<span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a><span class="co">#&gt;         I(dcut(days))    thick I(log(thick))</span></span>
+<span id="cb6-3"><a href="#cb6-3" tabindex="-1"></a><span class="co">#&gt; 1       [10,1.52e+03] 482.1731      5.799525</span></span>
+<span id="cb6-4"><a href="#cb6-4" tabindex="-1"></a><span class="co">#&gt; 2 (1.52e+03,2.00e+03] 208.5490      4.987652</span></span>
+<span id="cb6-5"><a href="#cb6-5" tabindex="-1"></a><span class="co">#&gt; 3 (2.00e+03,3.04e+03] 223.2941      4.974759</span></span>
+<span id="cb6-6"><a href="#cb6-6" tabindex="-1"></a><span class="co">#&gt; 4 (3.04e+03,5.56e+03] 250.1961      5.120129</span></span></code></pre></div>
 <p>or summary of all variables starting with “s” and that contains
 “a”</p>
-<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="fu">dmean</span>(melanoma,<span class="st">&quot;s*&quot;</span><span class="sc">+</span><span class="st">&quot;*a*&quot;</span><span class="sc">~</span>sex<span class="sc">|</span><span class="fu">I</span>(days<span class="sc">&gt;</span><span class="dv">500</span>))</span>
-<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;   sex   status     days</span></span>
-<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 1   0 1.831933 2399.143</span></span>
-<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 2   1 1.714286 2169.800</span></span></code></pre></div>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a><span class="fu">dmean</span>(melanoma,<span class="st">&quot;s*&quot;</span><span class="sc">+</span><span class="st">&quot;*a*&quot;</span><span class="sc">~</span>sex<span class="sc">|</span><span class="fu">I</span>(days<span class="sc">&gt;</span><span class="dv">500</span>))</span>
+<span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a><span class="co">#&gt;   sex   status     days</span></span>
+<span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a><span class="co">#&gt; 1   0 1.831933 2399.143</span></span>
+<span id="cb7-4"><a href="#cb7-4" tabindex="-1"></a><span class="co">#&gt; 2   1 1.714286 2169.800</span></span></code></pre></div>
 </div>
 <div id="renaming-deleting-keeping-dropping-variables" class="section level1">
 <h1>Renaming, deleting, keeping, dropping variables</h1>
-<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>melanoma<span class="ot">=</span><span class="fu">drename</span>(melanoma,tykkelse<span class="sc">~</span>thick)</span>
-<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="fu">names</span>(melanoma)</span>
-<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] &quot;no&quot;       &quot;status&quot;   &quot;days&quot;     &quot;ulc&quot;      &quot;tykkelse&quot; &quot;sex&quot;</span></span></code></pre></div>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a>melanoma<span class="ot">=</span><span class="fu">drename</span>(melanoma,tykkelse<span class="sc">~</span>thick)</span>
+<span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a><span class="fu">names</span>(melanoma)</span>
+<span id="cb8-3"><a href="#cb8-3" tabindex="-1"></a><span class="co">#&gt; [1] &quot;no&quot;       &quot;status&quot;   &quot;days&quot;     &quot;ulc&quot;      &quot;tykkelse&quot; &quot;sex&quot;</span></span></code></pre></div>
 <p>Deleting variables</p>
-<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="fu">data</span>(melanoma)</span>
-<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>melanoma<span class="ot">=</span><span class="fu">drm</span>(melanoma,<span class="sc">~</span>thick<span class="sc">+</span>sex)</span>
-<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a><span class="fu">names</span>(melanoma)</span>
-<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] &quot;no&quot;     &quot;status&quot; &quot;days&quot;   &quot;ulc&quot;</span></span></code></pre></div>
+<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" tabindex="-1"></a><span class="fu">data</span>(melanoma)</span>
+<span id="cb9-2"><a href="#cb9-2" tabindex="-1"></a>melanoma<span class="ot">=</span><span class="fu">drm</span>(melanoma,<span class="sc">~</span>thick<span class="sc">+</span>sex)</span>
+<span id="cb9-3"><a href="#cb9-3" tabindex="-1"></a><span class="fu">names</span>(melanoma)</span>
+<span id="cb9-4"><a href="#cb9-4" tabindex="-1"></a><span class="co">#&gt; [1] &quot;no&quot;     &quot;status&quot; &quot;days&quot;   &quot;ulc&quot;</span></span></code></pre></div>
 <p>or sas style</p>
-<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="fu">data</span>(melanoma)</span>
-<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>melanoma<span class="ot">=</span><span class="fu">ddrop</span>(melanoma,<span class="sc">~</span>thick<span class="sc">+</span>sex)</span>
-<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a><span class="fu">names</span>(melanoma)</span>
-<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] &quot;no&quot;     &quot;status&quot; &quot;days&quot;   &quot;ulc&quot;</span></span></code></pre></div>
+<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" tabindex="-1"></a><span class="fu">data</span>(melanoma)</span>
+<span id="cb10-2"><a href="#cb10-2" tabindex="-1"></a>melanoma<span class="ot">=</span><span class="fu">ddrop</span>(melanoma,<span class="sc">~</span>thick<span class="sc">+</span>sex)</span>
+<span id="cb10-3"><a href="#cb10-3" tabindex="-1"></a><span class="fu">names</span>(melanoma)</span>
+<span id="cb10-4"><a href="#cb10-4" tabindex="-1"></a><span class="co">#&gt; [1] &quot;no&quot;     &quot;status&quot; &quot;days&quot;   &quot;ulc&quot;</span></span></code></pre></div>
 <p>alternatively we can also keep certain variables</p>
-<div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="fu">data</span>(melanoma)</span>
-<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>melanoma<span class="ot">=</span><span class="fu">dkeep</span>(melanoma,<span class="sc">~</span>thick<span class="sc">+</span>sex<span class="sc">+</span>status<span class="sc">+</span>days)</span>
-<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a><span class="fu">names</span>(melanoma)</span>
-<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] &quot;thick&quot;  &quot;sex&quot;    &quot;status&quot; &quot;days&quot;</span></span></code></pre></div>
+<div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" tabindex="-1"></a><span class="fu">data</span>(melanoma)</span>
+<span id="cb11-2"><a href="#cb11-2" tabindex="-1"></a>melanoma<span class="ot">=</span><span class="fu">dkeep</span>(melanoma,<span class="sc">~</span>thick<span class="sc">+</span>sex<span class="sc">+</span>status<span class="sc">+</span>days)</span>
+<span id="cb11-3"><a href="#cb11-3" tabindex="-1"></a><span class="fu">names</span>(melanoma)</span>
+<span id="cb11-4"><a href="#cb11-4" tabindex="-1"></a><span class="co">#&gt; [1] &quot;thick&quot;  &quot;sex&quot;    &quot;status&quot; &quot;days&quot;</span></span></code></pre></div>
 <p>This can also be done with direct asignment</p>
-<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="fu">data</span>(melanoma)</span>
-<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="fu">ddrop</span>(melanoma) <span class="ot">&lt;-</span> <span class="er">~</span>thick<span class="sc">+</span>sex</span>
-<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a><span class="fu">names</span>(melanoma)</span>
-<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] &quot;no&quot;     &quot;status&quot; &quot;days&quot;   &quot;ulc&quot;</span></span></code></pre></div>
+<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" tabindex="-1"></a><span class="fu">data</span>(melanoma)</span>
+<span id="cb12-2"><a href="#cb12-2" tabindex="-1"></a><span class="fu">ddrop</span>(melanoma) <span class="ot">&lt;-</span> <span class="er">~</span>thick<span class="sc">+</span>sex</span>
+<span id="cb12-3"><a href="#cb12-3" tabindex="-1"></a><span class="fu">names</span>(melanoma)</span>
+<span id="cb12-4"><a href="#cb12-4" tabindex="-1"></a><span class="co">#&gt; [1] &quot;no&quot;     &quot;status&quot; &quot;days&quot;   &quot;ulc&quot;</span></span></code></pre></div>
 <p>The dkeep function can also be used to re-ordering the variables in
 the data-frame</p>
-<div class="sourceCode" id="cb13"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="fu">data</span>(melanoma)</span>
-<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a><span class="fu">names</span>(melanoma)</span>
-<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] &quot;no&quot;     &quot;status&quot; &quot;days&quot;   &quot;ulc&quot;    &quot;thick&quot;  &quot;sex&quot;</span></span>
-<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>melanoma<span class="ot">=</span><span class="fu">dkeep</span>(melanoma,<span class="sc">~</span>days<span class="sc">+</span>status<span class="sc">+</span>.)</span>
-<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a><span class="fu">names</span>(melanoma)</span>
-<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] &quot;days&quot;   &quot;status&quot; &quot;no&quot;     &quot;ulc&quot;    &quot;thick&quot;  &quot;sex&quot;</span></span></code></pre></div>
+<div class="sourceCode" id="cb13"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" tabindex="-1"></a><span class="fu">data</span>(melanoma)</span>
+<span id="cb13-2"><a href="#cb13-2" tabindex="-1"></a><span class="fu">names</span>(melanoma)</span>
+<span id="cb13-3"><a href="#cb13-3" tabindex="-1"></a><span class="co">#&gt; [1] &quot;no&quot;     &quot;status&quot; &quot;days&quot;   &quot;ulc&quot;    &quot;thick&quot;  &quot;sex&quot;</span></span>
+<span id="cb13-4"><a href="#cb13-4" tabindex="-1"></a>melanoma<span class="ot">=</span><span class="fu">dkeep</span>(melanoma,<span class="sc">~</span>days<span class="sc">+</span>status<span class="sc">+</span>.)</span>
+<span id="cb13-5"><a href="#cb13-5" tabindex="-1"></a><span class="fu">names</span>(melanoma)</span>
+<span id="cb13-6"><a href="#cb13-6" tabindex="-1"></a><span class="co">#&gt; [1] &quot;days&quot;   &quot;status&quot; &quot;no&quot;     &quot;ulc&quot;    &quot;thick&quot;  &quot;sex&quot;</span></span></code></pre></div>
 </div>
 <div id="looking-at-the-data" class="section level1">
 <h1>Looking at the data</h1>
-<div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="fu">data</span>(melanoma)</span>
-<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a><span class="fu">dstr</span>(melanoma)</span>
-<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; &#39;data.frame&#39;:    205 obs. of  6 variables:</span></span>
-<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  $ no    : int  789 13 97 16 21 469 685 7 932 944 ...</span></span>
-<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  $ status: int  3 3 2 3 1 1 1 1 3 1 ...</span></span>
-<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  $ days  : int  10 30 35 99 185 204 210 232 232 279 ...</span></span>
-<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  $ ulc   : int  1 0 0 0 1 1 1 1 1 1 ...</span></span>
-<span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  $ thick : int  676 65 134 290 1208 484 516 1288 322 741 ...</span></span>
-<span id="cb14-9"><a href="#cb14-9" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  $ sex   : int  1 1 1 0 1 1 1 1 0 0 ...</span></span>
-<span id="cb14-10"><a href="#cb14-10" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Warning in structure(res, ngroupvar = 0, class = c(&quot;daggregate&quot;, class(res))): Calling &#39;structure(NULL, *)&#39; is deprecated, as NULL cannot have attributes.</span></span>
-<span id="cb14-11"><a href="#cb14-11" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;   Consider &#39;structure(list(), *)&#39; instead.</span></span></code></pre></div>
+<div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" tabindex="-1"></a><span class="fu">data</span>(melanoma)</span>
+<span id="cb14-2"><a href="#cb14-2" tabindex="-1"></a><span class="fu">dstr</span>(melanoma)</span>
+<span id="cb14-3"><a href="#cb14-3" tabindex="-1"></a><span class="co">#&gt; &#39;data.frame&#39;:    205 obs. of  6 variables:</span></span>
+<span id="cb14-4"><a href="#cb14-4" tabindex="-1"></a><span class="co">#&gt;  $ no    : int  789 13 97 16 21 469 685 7 932 944 ...</span></span>
+<span id="cb14-5"><a href="#cb14-5" tabindex="-1"></a><span class="co">#&gt;  $ status: int  3 3 2 3 1 1 1 1 3 1 ...</span></span>
+<span id="cb14-6"><a href="#cb14-6" tabindex="-1"></a><span class="co">#&gt;  $ days  : int  10 30 35 99 185 204 210 232 232 279 ...</span></span>
+<span id="cb14-7"><a href="#cb14-7" tabindex="-1"></a><span class="co">#&gt;  $ ulc   : int  1 0 0 0 1 1 1 1 1 1 ...</span></span>
+<span id="cb14-8"><a href="#cb14-8" tabindex="-1"></a><span class="co">#&gt;  $ thick : int  676 65 134 290 1208 484 516 1288 322 741 ...</span></span>
+<span id="cb14-9"><a href="#cb14-9" tabindex="-1"></a><span class="co">#&gt;  $ sex   : int  1 1 1 0 1 1 1 1 0 0 ...</span></span>
+<span id="cb14-10"><a href="#cb14-10" tabindex="-1"></a><span class="co">#&gt; Warning in structure(res, ngroupvar = 0, class = c(&quot;daggregate&quot;, class(res))): Calling &#39;structure(NULL, *)&#39; is deprecated, as NULL cannot have attributes.</span></span>
+<span id="cb14-11"><a href="#cb14-11" tabindex="-1"></a><span class="co">#&gt;   Consider &#39;structure(list(), *)&#39; instead.</span></span></code></pre></div>
 <p>The data can in Rstudio be seen as a data-table but to list certain
 parts of the data in output window</p>
-<div class="sourceCode" id="cb15"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="fu">dlist</span>(melanoma)</span>
-<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;     no  status days ulc thick sex</span></span>
-<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 1   789 3       10  1    676  1  </span></span>
-<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 2    13 3       30  0     65  1  </span></span>
-<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 3    97 2       35  0    134  1  </span></span>
-<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 4    16 3       99  0    290  0  </span></span>
-<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 5    21 1      185  1   1208  1  </span></span>
-<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ---                              </span></span>
-<span id="cb15-9"><a href="#cb15-9" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 201 317 2      4492 1   706   1  </span></span>
-<span id="cb15-10"><a href="#cb15-10" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 202 798 2      4668 0   612   0  </span></span>
-<span id="cb15-11"><a href="#cb15-11" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 203 806 2      4688 0    48   0  </span></span>
-<span id="cb15-12"><a href="#cb15-12" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 204 606 2      4926 0   226   0  </span></span>
-<span id="cb15-13"><a href="#cb15-13" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 205 328 2      5565 0   290   0  </span></span>
-<span id="cb15-14"><a href="#cb15-14" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; attr(,&quot;class&quot;)</span></span>
-<span id="cb15-15"><a href="#cb15-15" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] matrix array</span></span></code></pre></div>
-<div class="sourceCode" id="cb16"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="fu">dlist</span>(melanoma, <span class="sc">~</span>.<span class="sc">|</span>sex<span class="sc">==</span><span class="dv">1</span>)</span>
-<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;     no  status days ulc thick</span></span>
-<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 1   789 3       10  1    676 </span></span>
-<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 2    13 3       30  0     65 </span></span>
-<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 3    97 2       35  0    134 </span></span>
-<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 5    21 1      185  1   1208 </span></span>
-<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 6   469 1      204  1    484 </span></span>
-<span id="cb16-8"><a href="#cb16-8" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ---                          </span></span>
-<span id="cb16-9"><a href="#cb16-9" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 191 445 2      3909 1   806  </span></span>
-<span id="cb16-10"><a href="#cb16-10" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 195 415 2      4119 0    65  </span></span>
-<span id="cb16-11"><a href="#cb16-11" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 197 175 2      4207 0    65  </span></span>
-<span id="cb16-12"><a href="#cb16-12" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 198 493 2      4310 0   210  </span></span>
-<span id="cb16-13"><a href="#cb16-13" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 201 317 2      4492 1   706  </span></span>
-<span id="cb16-14"><a href="#cb16-14" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; attr(,&quot;class&quot;)</span></span>
-<span id="cb16-15"><a href="#cb16-15" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] matrix array</span></span></code></pre></div>
-<div class="sourceCode" id="cb17"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="fu">dlist</span>(melanoma, <span class="sc">~</span>ulc<span class="sc">+</span>days<span class="sc">+</span>thick<span class="sc">+</span>sex<span class="sc">|</span>sex<span class="sc">==</span><span class="dv">1</span>)</span>
-<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;     ulc days thick sex</span></span>
-<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 1   1    10   676  1  </span></span>
-<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 2   0    30    65  1  </span></span>
-<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 3   0    35   134  1  </span></span>
-<span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 5   1   185  1208  1  </span></span>
-<span id="cb17-7"><a href="#cb17-7" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 6   1   204   484  1  </span></span>
-<span id="cb17-8"><a href="#cb17-8" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ---                   </span></span>
-<span id="cb17-9"><a href="#cb17-9" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 191 1   3909 806   1  </span></span>
-<span id="cb17-10"><a href="#cb17-10" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 195 0   4119  65   1  </span></span>
-<span id="cb17-11"><a href="#cb17-11" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 197 0   4207  65   1  </span></span>
-<span id="cb17-12"><a href="#cb17-12" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 198 0   4310 210   1  </span></span>
-<span id="cb17-13"><a href="#cb17-13" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 201 1   4492 706   1  </span></span>
-<span id="cb17-14"><a href="#cb17-14" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; attr(,&quot;class&quot;)</span></span>
-<span id="cb17-15"><a href="#cb17-15" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] matrix array</span></span></code></pre></div>
+<div class="sourceCode" id="cb15"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" tabindex="-1"></a><span class="fu">dlist</span>(melanoma)</span>
+<span id="cb15-2"><a href="#cb15-2" tabindex="-1"></a><span class="co">#&gt;     no  status days ulc thick sex</span></span>
+<span id="cb15-3"><a href="#cb15-3" tabindex="-1"></a><span class="co">#&gt; 1   789 3       10  1    676  1  </span></span>
+<span id="cb15-4"><a href="#cb15-4" tabindex="-1"></a><span class="co">#&gt; 2    13 3       30  0     65  1  </span></span>
+<span id="cb15-5"><a href="#cb15-5" tabindex="-1"></a><span class="co">#&gt; 3    97 2       35  0    134  1  </span></span>
+<span id="cb15-6"><a href="#cb15-6" tabindex="-1"></a><span class="co">#&gt; 4    16 3       99  0    290  0  </span></span>
+<span id="cb15-7"><a href="#cb15-7" tabindex="-1"></a><span class="co">#&gt; 5    21 1      185  1   1208  1  </span></span>
+<span id="cb15-8"><a href="#cb15-8" tabindex="-1"></a><span class="co">#&gt; ---                              </span></span>
+<span id="cb15-9"><a href="#cb15-9" tabindex="-1"></a><span class="co">#&gt; 201 317 2      4492 1   706   1  </span></span>
+<span id="cb15-10"><a href="#cb15-10" tabindex="-1"></a><span class="co">#&gt; 202 798 2      4668 0   612   0  </span></span>
+<span id="cb15-11"><a href="#cb15-11" tabindex="-1"></a><span class="co">#&gt; 203 806 2      4688 0    48   0  </span></span>
+<span id="cb15-12"><a href="#cb15-12" tabindex="-1"></a><span class="co">#&gt; 204 606 2      4926 0   226   0  </span></span>
+<span id="cb15-13"><a href="#cb15-13" tabindex="-1"></a><span class="co">#&gt; 205 328 2      5565 0   290   0</span></span></code></pre></div>
+<div class="sourceCode" id="cb16"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" tabindex="-1"></a><span class="fu">dlist</span>(melanoma, <span class="sc">~</span>.<span class="sc">|</span>sex<span class="sc">==</span><span class="dv">1</span>)</span>
+<span id="cb16-2"><a href="#cb16-2" tabindex="-1"></a><span class="co">#&gt;     no  status days ulc thick</span></span>
+<span id="cb16-3"><a href="#cb16-3" tabindex="-1"></a><span class="co">#&gt; 1   789 3       10  1    676 </span></span>
+<span id="cb16-4"><a href="#cb16-4" tabindex="-1"></a><span class="co">#&gt; 2    13 3       30  0     65 </span></span>
+<span id="cb16-5"><a href="#cb16-5" tabindex="-1"></a><span class="co">#&gt; 3    97 2       35  0    134 </span></span>
+<span id="cb16-6"><a href="#cb16-6" tabindex="-1"></a><span class="co">#&gt; 5    21 1      185  1   1208 </span></span>
+<span id="cb16-7"><a href="#cb16-7" tabindex="-1"></a><span class="co">#&gt; 6   469 1      204  1    484 </span></span>
+<span id="cb16-8"><a href="#cb16-8" tabindex="-1"></a><span class="co">#&gt; ---                          </span></span>
+<span id="cb16-9"><a href="#cb16-9" tabindex="-1"></a><span class="co">#&gt; 191 445 2      3909 1   806  </span></span>
+<span id="cb16-10"><a href="#cb16-10" tabindex="-1"></a><span class="co">#&gt; 195 415 2      4119 0    65  </span></span>
+<span id="cb16-11"><a href="#cb16-11" tabindex="-1"></a><span class="co">#&gt; 197 175 2      4207 0    65  </span></span>
+<span id="cb16-12"><a href="#cb16-12" tabindex="-1"></a><span class="co">#&gt; 198 493 2      4310 0   210  </span></span>
+<span id="cb16-13"><a href="#cb16-13" tabindex="-1"></a><span class="co">#&gt; 201 317 2      4492 1   706</span></span></code></pre></div>
+<div class="sourceCode" id="cb17"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" tabindex="-1"></a><span class="fu">dlist</span>(melanoma, <span class="sc">~</span>ulc<span class="sc">+</span>days<span class="sc">+</span>thick<span class="sc">+</span>sex<span class="sc">|</span>sex<span class="sc">==</span><span class="dv">1</span>)</span>
+<span id="cb17-2"><a href="#cb17-2" tabindex="-1"></a><span class="co">#&gt;     ulc days thick sex</span></span>
+<span id="cb17-3"><a href="#cb17-3" tabindex="-1"></a><span class="co">#&gt; 1   1    10   676  1  </span></span>
+<span id="cb17-4"><a href="#cb17-4" tabindex="-1"></a><span class="co">#&gt; 2   0    30    65  1  </span></span>
+<span id="cb17-5"><a href="#cb17-5" tabindex="-1"></a><span class="co">#&gt; 3   0    35   134  1  </span></span>
+<span id="cb17-6"><a href="#cb17-6" tabindex="-1"></a><span class="co">#&gt; 5   1   185  1208  1  </span></span>
+<span id="cb17-7"><a href="#cb17-7" tabindex="-1"></a><span class="co">#&gt; 6   1   204   484  1  </span></span>
+<span id="cb17-8"><a href="#cb17-8" tabindex="-1"></a><span class="co">#&gt; ---                   </span></span>
+<span id="cb17-9"><a href="#cb17-9" tabindex="-1"></a><span class="co">#&gt; 191 1   3909 806   1  </span></span>
+<span id="cb17-10"><a href="#cb17-10" tabindex="-1"></a><span class="co">#&gt; 195 0   4119  65   1  </span></span>
+<span id="cb17-11"><a href="#cb17-11" tabindex="-1"></a><span class="co">#&gt; 197 0   4207  65   1  </span></span>
+<span id="cb17-12"><a href="#cb17-12" tabindex="-1"></a><span class="co">#&gt; 198 0   4310 210   1  </span></span>
+<span id="cb17-13"><a href="#cb17-13" tabindex="-1"></a><span class="co">#&gt; 201 1   4492 706   1</span></span></code></pre></div>
 <p>Getting summaries</p>
-<div class="sourceCode" id="cb18"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="fu">dsummary</span>(melanoma)</span>
-<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;        no            status          days           ulc            thick     </span></span>
-<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  Min.   :  2.0   Min.   :1.00   Min.   :  10   Min.   :0.000   Min.   :  10  </span></span>
-<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  1st Qu.:222.0   1st Qu.:1.00   1st Qu.:1525   1st Qu.:0.000   1st Qu.:  97  </span></span>
-<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  Median :469.0   Median :2.00   Median :2005   Median :0.000   Median : 194  </span></span>
-<span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  Mean   :463.9   Mean   :1.79   Mean   :2153   Mean   :0.439   Mean   : 292  </span></span>
-<span id="cb18-7"><a href="#cb18-7" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  3rd Qu.:731.0   3rd Qu.:2.00   3rd Qu.:3042   3rd Qu.:1.000   3rd Qu.: 356  </span></span>
-<span id="cb18-8"><a href="#cb18-8" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  Max.   :992.0   Max.   :3.00   Max.   :5565   Max.   :1.000   Max.   :1742  </span></span>
-<span id="cb18-9"><a href="#cb18-9" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;       sex        </span></span>
-<span id="cb18-10"><a href="#cb18-10" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  Min.   :0.0000  </span></span>
-<span id="cb18-11"><a href="#cb18-11" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  1st Qu.:0.0000  </span></span>
-<span id="cb18-12"><a href="#cb18-12" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  Median :0.0000  </span></span>
-<span id="cb18-13"><a href="#cb18-13" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  Mean   :0.3854  </span></span>
-<span id="cb18-14"><a href="#cb18-14" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  3rd Qu.:1.0000  </span></span>
-<span id="cb18-15"><a href="#cb18-15" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  Max.   :1.0000</span></span></code></pre></div>
+<div class="sourceCode" id="cb18"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" tabindex="-1"></a><span class="fu">dsummary</span>(melanoma)</span>
+<span id="cb18-2"><a href="#cb18-2" tabindex="-1"></a><span class="co">#&gt;        no            status          days           ulc            thick     </span></span>
+<span id="cb18-3"><a href="#cb18-3" tabindex="-1"></a><span class="co">#&gt;  Min.   :  2.0   Min.   :1.00   Min.   :  10   Min.   :0.000   Min.   :  10  </span></span>
+<span id="cb18-4"><a href="#cb18-4" tabindex="-1"></a><span class="co">#&gt;  1st Qu.:222.0   1st Qu.:1.00   1st Qu.:1525   1st Qu.:0.000   1st Qu.:  97  </span></span>
+<span id="cb18-5"><a href="#cb18-5" tabindex="-1"></a><span class="co">#&gt;  Median :469.0   Median :2.00   Median :2005   Median :0.000   Median : 194  </span></span>
+<span id="cb18-6"><a href="#cb18-6" tabindex="-1"></a><span class="co">#&gt;  Mean   :463.9   Mean   :1.79   Mean   :2153   Mean   :0.439   Mean   : 292  </span></span>
+<span id="cb18-7"><a href="#cb18-7" tabindex="-1"></a><span class="co">#&gt;  3rd Qu.:731.0   3rd Qu.:2.00   3rd Qu.:3042   3rd Qu.:1.000   3rd Qu.: 356  </span></span>
+<span id="cb18-8"><a href="#cb18-8" tabindex="-1"></a><span class="co">#&gt;  Max.   :992.0   Max.   :3.00   Max.   :5565   Max.   :1.000   Max.   :1742  </span></span>
+<span id="cb18-9"><a href="#cb18-9" tabindex="-1"></a><span class="co">#&gt;       sex        </span></span>
+<span id="cb18-10"><a href="#cb18-10" tabindex="-1"></a><span class="co">#&gt;  Min.   :0.0000  </span></span>
+<span id="cb18-11"><a href="#cb18-11" tabindex="-1"></a><span class="co">#&gt;  1st Qu.:0.0000  </span></span>
+<span id="cb18-12"><a href="#cb18-12" tabindex="-1"></a><span class="co">#&gt;  Median :0.0000  </span></span>
+<span id="cb18-13"><a href="#cb18-13" tabindex="-1"></a><span class="co">#&gt;  Mean   :0.3854  </span></span>
+<span id="cb18-14"><a href="#cb18-14" tabindex="-1"></a><span class="co">#&gt;  3rd Qu.:1.0000  </span></span>
+<span id="cb18-15"><a href="#cb18-15" tabindex="-1"></a><span class="co">#&gt;  Max.   :1.0000</span></span></code></pre></div>
 <p>or for specfic variables</p>
-<div class="sourceCode" id="cb19"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="fu">dsummary</span>(melanoma,<span class="sc">~</span>thick<span class="sc">+</span>status<span class="sc">+</span>sex)</span>
-<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;      thick          status          sex        </span></span>
-<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  Min.   :  10   Min.   :1.00   Min.   :0.0000  </span></span>
-<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  1st Qu.:  97   1st Qu.:1.00   1st Qu.:0.0000  </span></span>
-<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  Median : 194   Median :2.00   Median :0.0000  </span></span>
-<span id="cb19-6"><a href="#cb19-6" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  Mean   : 292   Mean   :1.79   Mean   :0.3854  </span></span>
-<span id="cb19-7"><a href="#cb19-7" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  3rd Qu.: 356   3rd Qu.:2.00   3rd Qu.:1.0000  </span></span>
-<span id="cb19-8"><a href="#cb19-8" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  Max.   :1742   Max.   :3.00   Max.   :1.0000</span></span></code></pre></div>
+<div class="sourceCode" id="cb19"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" tabindex="-1"></a><span class="fu">dsummary</span>(melanoma,<span class="sc">~</span>thick<span class="sc">+</span>status<span class="sc">+</span>sex)</span>
+<span id="cb19-2"><a href="#cb19-2" tabindex="-1"></a><span class="co">#&gt;      thick          status          sex        </span></span>
+<span id="cb19-3"><a href="#cb19-3" tabindex="-1"></a><span class="co">#&gt;  Min.   :  10   Min.   :1.00   Min.   :0.0000  </span></span>
+<span id="cb19-4"><a href="#cb19-4" tabindex="-1"></a><span class="co">#&gt;  1st Qu.:  97   1st Qu.:1.00   1st Qu.:0.0000  </span></span>
+<span id="cb19-5"><a href="#cb19-5" tabindex="-1"></a><span class="co">#&gt;  Median : 194   Median :2.00   Median :0.0000  </span></span>
+<span id="cb19-6"><a href="#cb19-6" tabindex="-1"></a><span class="co">#&gt;  Mean   : 292   Mean   :1.79   Mean   :0.3854  </span></span>
+<span id="cb19-7"><a href="#cb19-7" tabindex="-1"></a><span class="co">#&gt;  3rd Qu.: 356   3rd Qu.:2.00   3rd Qu.:1.0000  </span></span>
+<span id="cb19-8"><a href="#cb19-8" tabindex="-1"></a><span class="co">#&gt;  Max.   :1742   Max.   :3.00   Max.   :1.0000</span></span></code></pre></div>
 <p>Summaries in different groups (sex)</p>
-<div class="sourceCode" id="cb20"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="fu">dsummary</span>(melanoma,thick<span class="sc">+</span>days<span class="sc">+</span>status<span class="sc">~</span>sex)</span>
-<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; sex: 0</span></span>
-<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;      thick             days          status     </span></span>
-<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  Min.   :  10.0   Min.   :  99   Min.   :1.000  </span></span>
-<span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  1st Qu.:  97.0   1st Qu.:1636   1st Qu.:2.000  </span></span>
-<span id="cb20-6"><a href="#cb20-6" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  Median : 162.0   Median :2059   Median :2.000  </span></span>
-<span id="cb20-7"><a href="#cb20-7" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  Mean   : 248.6   Mean   :2283   Mean   :1.833  </span></span>
-<span id="cb20-8"><a href="#cb20-8" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  3rd Qu.: 306.0   3rd Qu.:3131   3rd Qu.:2.000  </span></span>
-<span id="cb20-9"><a href="#cb20-9" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  Max.   :1742.0   Max.   :5565   Max.   :3.000  </span></span>
-<span id="cb20-10"><a href="#cb20-10" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ------------------------------------------------------------ </span></span>
-<span id="cb20-11"><a href="#cb20-11" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; sex: 1</span></span>
-<span id="cb20-12"><a href="#cb20-12" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;      thick             days          status     </span></span>
-<span id="cb20-13"><a href="#cb20-13" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  Min.   :  16.0   Min.   :  10   Min.   :1.000  </span></span>
-<span id="cb20-14"><a href="#cb20-14" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  1st Qu.: 105.0   1st Qu.:1052   1st Qu.:1.000  </span></span>
-<span id="cb20-15"><a href="#cb20-15" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  Median : 258.0   Median :1860   Median :2.000  </span></span>
-<span id="cb20-16"><a href="#cb20-16" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  Mean   : 361.1   Mean   :1946   Mean   :1.722  </span></span>
-<span id="cb20-17"><a href="#cb20-17" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  3rd Qu.: 484.0   3rd Qu.:2784   3rd Qu.:2.000  </span></span>
-<span id="cb20-18"><a href="#cb20-18" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  Max.   :1466.0   Max.   :4492   Max.   :3.000</span></span></code></pre></div>
+<div class="sourceCode" id="cb20"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" tabindex="-1"></a><span class="fu">dsummary</span>(melanoma,thick<span class="sc">+</span>days<span class="sc">+</span>status<span class="sc">~</span>sex)</span>
+<span id="cb20-2"><a href="#cb20-2" tabindex="-1"></a><span class="co">#&gt; sex: 0</span></span>
+<span id="cb20-3"><a href="#cb20-3" tabindex="-1"></a><span class="co">#&gt;      thick             days          status     </span></span>
+<span id="cb20-4"><a href="#cb20-4" tabindex="-1"></a><span class="co">#&gt;  Min.   :  10.0   Min.   :  99   Min.   :1.000  </span></span>
+<span id="cb20-5"><a href="#cb20-5" tabindex="-1"></a><span class="co">#&gt;  1st Qu.:  97.0   1st Qu.:1636   1st Qu.:2.000  </span></span>
+<span id="cb20-6"><a href="#cb20-6" tabindex="-1"></a><span class="co">#&gt;  Median : 162.0   Median :2059   Median :2.000  </span></span>
+<span id="cb20-7"><a href="#cb20-7" tabindex="-1"></a><span class="co">#&gt;  Mean   : 248.6   Mean   :2283   Mean   :1.833  </span></span>
+<span id="cb20-8"><a href="#cb20-8" tabindex="-1"></a><span class="co">#&gt;  3rd Qu.: 306.0   3rd Qu.:3131   3rd Qu.:2.000  </span></span>
+<span id="cb20-9"><a href="#cb20-9" tabindex="-1"></a><span class="co">#&gt;  Max.   :1742.0   Max.   :5565   Max.   :3.000  </span></span>
+<span id="cb20-10"><a href="#cb20-10" tabindex="-1"></a><span class="co">#&gt; ------------------------------------------------------------ </span></span>
+<span id="cb20-11"><a href="#cb20-11" tabindex="-1"></a><span class="co">#&gt; sex: 1</span></span>
+<span id="cb20-12"><a href="#cb20-12" tabindex="-1"></a><span class="co">#&gt;      thick             days          status     </span></span>
+<span id="cb20-13"><a href="#cb20-13" tabindex="-1"></a><span class="co">#&gt;  Min.   :  16.0   Min.   :  10   Min.   :1.000  </span></span>
+<span id="cb20-14"><a href="#cb20-14" tabindex="-1"></a><span class="co">#&gt;  1st Qu.: 105.0   1st Qu.:1052   1st Qu.:1.000  </span></span>
+<span id="cb20-15"><a href="#cb20-15" tabindex="-1"></a><span class="co">#&gt;  Median : 258.0   Median :1860   Median :2.000  </span></span>
+<span id="cb20-16"><a href="#cb20-16" tabindex="-1"></a><span class="co">#&gt;  Mean   : 361.1   Mean   :1946   Mean   :1.722  </span></span>
+<span id="cb20-17"><a href="#cb20-17" tabindex="-1"></a><span class="co">#&gt;  3rd Qu.: 484.0   3rd Qu.:2784   3rd Qu.:2.000  </span></span>
+<span id="cb20-18"><a href="#cb20-18" tabindex="-1"></a><span class="co">#&gt;  Max.   :1466.0   Max.   :4492   Max.   :3.000</span></span></code></pre></div>
 <p>and only among those with thin-tumours or only females (sex==1)</p>
-<div class="sourceCode" id="cb21"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="fu">dsummary</span>(melanoma,thick<span class="sc">+</span>days<span class="sc">+</span>status<span class="sc">~</span>sex<span class="sc">|</span>thick<span class="sc">&lt;</span><span class="dv">97</span>)</span>
-<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; sex: 0</span></span>
-<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;      thick            days          status     </span></span>
-<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  Min.   :10.00   Min.   : 355   Min.   :1.000  </span></span>
-<span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  1st Qu.:32.00   1st Qu.:1762   1st Qu.:2.000  </span></span>
-<span id="cb21-6"><a href="#cb21-6" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  Median :64.00   Median :2227   Median :2.000  </span></span>
-<span id="cb21-7"><a href="#cb21-7" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  Mean   :51.48   Mean   :2425   Mean   :2.034  </span></span>
-<span id="cb21-8"><a href="#cb21-8" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  3rd Qu.:65.00   3rd Qu.:3185   3rd Qu.:2.000  </span></span>
-<span id="cb21-9"><a href="#cb21-9" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  Max.   :81.00   Max.   :4688   Max.   :3.000  </span></span>
-<span id="cb21-10"><a href="#cb21-10" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ------------------------------------------------------------ </span></span>
-<span id="cb21-11"><a href="#cb21-11" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; sex: 1</span></span>
-<span id="cb21-12"><a href="#cb21-12" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;      thick            days          status     </span></span>
-<span id="cb21-13"><a href="#cb21-13" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  Min.   :16.00   Min.   :  30   Min.   :1.000  </span></span>
-<span id="cb21-14"><a href="#cb21-14" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  1st Qu.:30.00   1st Qu.:1820   1st Qu.:2.000  </span></span>
-<span id="cb21-15"><a href="#cb21-15" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  Median :65.00   Median :2886   Median :2.000  </span></span>
-<span id="cb21-16"><a href="#cb21-16" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  Mean   :55.75   Mean   :2632   Mean   :1.875  </span></span>
-<span id="cb21-17"><a href="#cb21-17" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  3rd Qu.:81.00   3rd Qu.:3328   3rd Qu.:2.000  </span></span>
-<span id="cb21-18"><a href="#cb21-18" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  Max.   :81.00   Max.   :4207   Max.   :3.000</span></span></code></pre></div>
-<div class="sourceCode" id="cb22"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="fu">dsummary</span>(melanoma,thick<span class="sc">+</span>status<span class="sc">~+</span><span class="dv">1</span><span class="sc">|</span>sex<span class="sc">==</span><span class="dv">1</span>)</span>
-<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;      thick            status     </span></span>
-<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  Min.   :  16.0   Min.   :1.000  </span></span>
-<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  1st Qu.: 105.0   1st Qu.:1.000  </span></span>
-<span id="cb22-5"><a href="#cb22-5" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  Median : 258.0   Median :2.000  </span></span>
-<span id="cb22-6"><a href="#cb22-6" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  Mean   : 361.1   Mean   :1.722  </span></span>
-<span id="cb22-7"><a href="#cb22-7" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  3rd Qu.: 484.0   3rd Qu.:2.000  </span></span>
-<span id="cb22-8"><a href="#cb22-8" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  Max.   :1466.0   Max.   :3.000</span></span></code></pre></div>
+<div class="sourceCode" id="cb21"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" tabindex="-1"></a><span class="fu">dsummary</span>(melanoma,thick<span class="sc">+</span>days<span class="sc">+</span>status<span class="sc">~</span>sex<span class="sc">|</span>thick<span class="sc">&lt;</span><span class="dv">97</span>)</span>
+<span id="cb21-2"><a href="#cb21-2" tabindex="-1"></a><span class="co">#&gt; sex: 0</span></span>
+<span id="cb21-3"><a href="#cb21-3" tabindex="-1"></a><span class="co">#&gt;      thick            days          status     </span></span>
+<span id="cb21-4"><a href="#cb21-4" tabindex="-1"></a><span class="co">#&gt;  Min.   :10.00   Min.   : 355   Min.   :1.000  </span></span>
+<span id="cb21-5"><a href="#cb21-5" tabindex="-1"></a><span class="co">#&gt;  1st Qu.:32.00   1st Qu.:1762   1st Qu.:2.000  </span></span>
+<span id="cb21-6"><a href="#cb21-6" tabindex="-1"></a><span class="co">#&gt;  Median :64.00   Median :2227   Median :2.000  </span></span>
+<span id="cb21-7"><a href="#cb21-7" tabindex="-1"></a><span class="co">#&gt;  Mean   :51.48   Mean   :2425   Mean   :2.034  </span></span>
+<span id="cb21-8"><a href="#cb21-8" tabindex="-1"></a><span class="co">#&gt;  3rd Qu.:65.00   3rd Qu.:3185   3rd Qu.:2.000  </span></span>
+<span id="cb21-9"><a href="#cb21-9" tabindex="-1"></a><span class="co">#&gt;  Max.   :81.00   Max.   :4688   Max.   :3.000  </span></span>
+<span id="cb21-10"><a href="#cb21-10" tabindex="-1"></a><span class="co">#&gt; ------------------------------------------------------------ </span></span>
+<span id="cb21-11"><a href="#cb21-11" tabindex="-1"></a><span class="co">#&gt; sex: 1</span></span>
+<span id="cb21-12"><a href="#cb21-12" tabindex="-1"></a><span class="co">#&gt;      thick            days          status     </span></span>
+<span id="cb21-13"><a href="#cb21-13" tabindex="-1"></a><span class="co">#&gt;  Min.   :16.00   Min.   :  30   Min.   :1.000  </span></span>
+<span id="cb21-14"><a href="#cb21-14" tabindex="-1"></a><span class="co">#&gt;  1st Qu.:30.00   1st Qu.:1820   1st Qu.:2.000  </span></span>
+<span id="cb21-15"><a href="#cb21-15" tabindex="-1"></a><span class="co">#&gt;  Median :65.00   Median :2886   Median :2.000  </span></span>
+<span id="cb21-16"><a href="#cb21-16" tabindex="-1"></a><span class="co">#&gt;  Mean   :55.75   Mean   :2632   Mean   :1.875  </span></span>
+<span id="cb21-17"><a href="#cb21-17" tabindex="-1"></a><span class="co">#&gt;  3rd Qu.:81.00   3rd Qu.:3328   3rd Qu.:2.000  </span></span>
+<span id="cb21-18"><a href="#cb21-18" tabindex="-1"></a><span class="co">#&gt;  Max.   :81.00   Max.   :4207   Max.   :3.000</span></span></code></pre></div>
+<div class="sourceCode" id="cb22"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" tabindex="-1"></a><span class="fu">dsummary</span>(melanoma,thick<span class="sc">+</span>status<span class="sc">~+</span><span class="dv">1</span><span class="sc">|</span>sex<span class="sc">==</span><span class="dv">1</span>)</span>
+<span id="cb22-2"><a href="#cb22-2" tabindex="-1"></a><span class="co">#&gt;      thick            status     </span></span>
+<span id="cb22-3"><a href="#cb22-3" tabindex="-1"></a><span class="co">#&gt;  Min.   :  16.0   Min.   :1.000  </span></span>
+<span id="cb22-4"><a href="#cb22-4" tabindex="-1"></a><span class="co">#&gt;  1st Qu.: 105.0   1st Qu.:1.000  </span></span>
+<span id="cb22-5"><a href="#cb22-5" tabindex="-1"></a><span class="co">#&gt;  Median : 258.0   Median :2.000  </span></span>
+<span id="cb22-6"><a href="#cb22-6" tabindex="-1"></a><span class="co">#&gt;  Mean   : 361.1   Mean   :1.722  </span></span>
+<span id="cb22-7"><a href="#cb22-7" tabindex="-1"></a><span class="co">#&gt;  3rd Qu.: 484.0   3rd Qu.:2.000  </span></span>
+<span id="cb22-8"><a href="#cb22-8" tabindex="-1"></a><span class="co">#&gt;  Max.   :1466.0   Max.   :3.000</span></span></code></pre></div>
 <p>or</p>
-<div class="sourceCode" id="cb23"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="fu">dsummary</span>(melanoma,<span class="sc">~</span>thick<span class="sc">+</span>status<span class="sc">|</span>sex<span class="sc">==</span><span class="dv">1</span>)</span>
-<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;      thick            status     </span></span>
-<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  Min.   :  16.0   Min.   :1.000  </span></span>
-<span id="cb23-4"><a href="#cb23-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  1st Qu.: 105.0   1st Qu.:1.000  </span></span>
-<span id="cb23-5"><a href="#cb23-5" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  Median : 258.0   Median :2.000  </span></span>
-<span id="cb23-6"><a href="#cb23-6" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  Mean   : 361.1   Mean   :1.722  </span></span>
-<span id="cb23-7"><a href="#cb23-7" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  3rd Qu.: 484.0   3rd Qu.:2.000  </span></span>
-<span id="cb23-8"><a href="#cb23-8" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  Max.   :1466.0   Max.   :3.000</span></span></code></pre></div>
+<div class="sourceCode" id="cb23"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" tabindex="-1"></a><span class="fu">dsummary</span>(melanoma,<span class="sc">~</span>thick<span class="sc">+</span>status<span class="sc">|</span>sex<span class="sc">==</span><span class="dv">1</span>)</span>
+<span id="cb23-2"><a href="#cb23-2" tabindex="-1"></a><span class="co">#&gt;      thick            status     </span></span>
+<span id="cb23-3"><a href="#cb23-3" tabindex="-1"></a><span class="co">#&gt;  Min.   :  16.0   Min.   :1.000  </span></span>
+<span id="cb23-4"><a href="#cb23-4" tabindex="-1"></a><span class="co">#&gt;  1st Qu.: 105.0   1st Qu.:1.000  </span></span>
+<span id="cb23-5"><a href="#cb23-5" tabindex="-1"></a><span class="co">#&gt;  Median : 258.0   Median :2.000  </span></span>
+<span id="cb23-6"><a href="#cb23-6" tabindex="-1"></a><span class="co">#&gt;  Mean   : 361.1   Mean   :1.722  </span></span>
+<span id="cb23-7"><a href="#cb23-7" tabindex="-1"></a><span class="co">#&gt;  3rd Qu.: 484.0   3rd Qu.:2.000  </span></span>
+<span id="cb23-8"><a href="#cb23-8" tabindex="-1"></a><span class="co">#&gt;  Max.   :1466.0   Max.   :3.000</span></span></code></pre></div>
 <p>To make more complex conditions need to use the I()</p>
-<div class="sourceCode" id="cb24"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="fu">dsummary</span>(melanoma,thick<span class="sc">+</span>days<span class="sc">+</span>status<span class="sc">~</span>sex<span class="sc">|</span><span class="fu">I</span>(thick<span class="sc">&lt;</span><span class="dv">97</span> <span class="sc">&amp;</span> sex<span class="sc">==</span><span class="dv">1</span>))</span>
-<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; sex: 1</span></span>
-<span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;      thick            days          status     </span></span>
-<span id="cb24-4"><a href="#cb24-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  Min.   :16.00   Min.   :  30   Min.   :1.000  </span></span>
-<span id="cb24-5"><a href="#cb24-5" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  1st Qu.:30.00   1st Qu.:1820   1st Qu.:2.000  </span></span>
-<span id="cb24-6"><a href="#cb24-6" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  Median :65.00   Median :2886   Median :2.000  </span></span>
-<span id="cb24-7"><a href="#cb24-7" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  Mean   :55.75   Mean   :2632   Mean   :1.875  </span></span>
-<span id="cb24-8"><a href="#cb24-8" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  3rd Qu.:81.00   3rd Qu.:3328   3rd Qu.:2.000  </span></span>
-<span id="cb24-9"><a href="#cb24-9" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  Max.   :81.00   Max.   :4207   Max.   :3.000</span></span></code></pre></div>
+<div class="sourceCode" id="cb24"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" tabindex="-1"></a><span class="fu">dsummary</span>(melanoma,thick<span class="sc">+</span>days<span class="sc">+</span>status<span class="sc">~</span>sex<span class="sc">|</span><span class="fu">I</span>(thick<span class="sc">&lt;</span><span class="dv">97</span> <span class="sc">&amp;</span> sex<span class="sc">==</span><span class="dv">1</span>))</span>
+<span id="cb24-2"><a href="#cb24-2" tabindex="-1"></a><span class="co">#&gt; sex: 1</span></span>
+<span id="cb24-3"><a href="#cb24-3" tabindex="-1"></a><span class="co">#&gt;      thick            days          status     </span></span>
+<span id="cb24-4"><a href="#cb24-4" tabindex="-1"></a><span class="co">#&gt;  Min.   :16.00   Min.   :  30   Min.   :1.000  </span></span>
+<span id="cb24-5"><a href="#cb24-5" tabindex="-1"></a><span class="co">#&gt;  1st Qu.:30.00   1st Qu.:1820   1st Qu.:2.000  </span></span>
+<span id="cb24-6"><a href="#cb24-6" tabindex="-1"></a><span class="co">#&gt;  Median :65.00   Median :2886   Median :2.000  </span></span>
+<span id="cb24-7"><a href="#cb24-7" tabindex="-1"></a><span class="co">#&gt;  Mean   :55.75   Mean   :2632   Mean   :1.875  </span></span>
+<span id="cb24-8"><a href="#cb24-8" tabindex="-1"></a><span class="co">#&gt;  3rd Qu.:81.00   3rd Qu.:3328   3rd Qu.:2.000  </span></span>
+<span id="cb24-9"><a href="#cb24-9" tabindex="-1"></a><span class="co">#&gt;  Max.   :81.00   Max.   :4207   Max.   :3.000</span></span></code></pre></div>
 <p>Tables between variables</p>
-<div class="sourceCode" id="cb25"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a><span class="fu">dtable</span>(melanoma,<span class="sc">~</span>status<span class="sc">+</span>sex)</span>
-<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb25-3"><a href="#cb25-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;        sex  0  1</span></span>
-<span id="cb25-4"><a href="#cb25-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; status          </span></span>
-<span id="cb25-5"><a href="#cb25-5" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 1          28 29</span></span>
-<span id="cb25-6"><a href="#cb25-6" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 2          91 43</span></span>
-<span id="cb25-7"><a href="#cb25-7" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 3           7  7</span></span></code></pre></div>
+<div class="sourceCode" id="cb25"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1" tabindex="-1"></a><span class="fu">dtable</span>(melanoma,<span class="sc">~</span>status<span class="sc">+</span>sex)</span>
+<span id="cb25-2"><a href="#cb25-2" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb25-3"><a href="#cb25-3" tabindex="-1"></a><span class="co">#&gt;        sex  0  1</span></span>
+<span id="cb25-4"><a href="#cb25-4" tabindex="-1"></a><span class="co">#&gt; status          </span></span>
+<span id="cb25-5"><a href="#cb25-5" tabindex="-1"></a><span class="co">#&gt; 1          28 29</span></span>
+<span id="cb25-6"><a href="#cb25-6" tabindex="-1"></a><span class="co">#&gt; 2          91 43</span></span>
+<span id="cb25-7"><a href="#cb25-7" tabindex="-1"></a><span class="co">#&gt; 3           7  7</span></span></code></pre></div>
 <p>All bivariate tables</p>
-<div class="sourceCode" id="cb26"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a><span class="fu">dtable</span>(melanoma,<span class="sc">~</span>status<span class="sc">+</span>sex<span class="sc">+</span>ulc,<span class="at">level=</span><span class="dv">2</span>)</span>
-<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb26-3"><a href="#cb26-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;    status</span></span>
-<span id="cb26-4"><a href="#cb26-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; sex  1  2  3</span></span>
-<span id="cb26-5"><a href="#cb26-5" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;   0 28 91  7</span></span>
-<span id="cb26-6"><a href="#cb26-6" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;   1 29 43  7</span></span>
-<span id="cb26-7"><a href="#cb26-7" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb26-8"><a href="#cb26-8" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;    status</span></span>
-<span id="cb26-9"><a href="#cb26-9" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ulc  1  2  3</span></span>
-<span id="cb26-10"><a href="#cb26-10" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;   0 16 92  7</span></span>
-<span id="cb26-11"><a href="#cb26-11" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;   1 41 42  7</span></span>
-<span id="cb26-12"><a href="#cb26-12" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb26-13"><a href="#cb26-13" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;    sex</span></span>
-<span id="cb26-14"><a href="#cb26-14" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ulc  0  1</span></span>
-<span id="cb26-15"><a href="#cb26-15" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;   0 79 36</span></span>
-<span id="cb26-16"><a href="#cb26-16" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;   1 47 43</span></span></code></pre></div>
+<div class="sourceCode" id="cb26"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1" tabindex="-1"></a><span class="fu">dtable</span>(melanoma,<span class="sc">~</span>status<span class="sc">+</span>sex<span class="sc">+</span>ulc,<span class="at">level=</span><span class="dv">2</span>)</span>
+<span id="cb26-2"><a href="#cb26-2" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb26-3"><a href="#cb26-3" tabindex="-1"></a><span class="co">#&gt;    status</span></span>
+<span id="cb26-4"><a href="#cb26-4" tabindex="-1"></a><span class="co">#&gt; sex  1  2  3</span></span>
+<span id="cb26-5"><a href="#cb26-5" tabindex="-1"></a><span class="co">#&gt;   0 28 91  7</span></span>
+<span id="cb26-6"><a href="#cb26-6" tabindex="-1"></a><span class="co">#&gt;   1 29 43  7</span></span>
+<span id="cb26-7"><a href="#cb26-7" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb26-8"><a href="#cb26-8" tabindex="-1"></a><span class="co">#&gt;    status</span></span>
+<span id="cb26-9"><a href="#cb26-9" tabindex="-1"></a><span class="co">#&gt; ulc  1  2  3</span></span>
+<span id="cb26-10"><a href="#cb26-10" tabindex="-1"></a><span class="co">#&gt;   0 16 92  7</span></span>
+<span id="cb26-11"><a href="#cb26-11" tabindex="-1"></a><span class="co">#&gt;   1 41 42  7</span></span>
+<span id="cb26-12"><a href="#cb26-12" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb26-13"><a href="#cb26-13" tabindex="-1"></a><span class="co">#&gt;    sex</span></span>
+<span id="cb26-14"><a href="#cb26-14" tabindex="-1"></a><span class="co">#&gt; ulc  0  1</span></span>
+<span id="cb26-15"><a href="#cb26-15" tabindex="-1"></a><span class="co">#&gt;   0 79 36</span></span>
+<span id="cb26-16"><a href="#cb26-16" tabindex="-1"></a><span class="co">#&gt;   1 47 43</span></span></code></pre></div>
 <p>All univariate tables</p>
-<div class="sourceCode" id="cb27"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a><span class="fu">dtable</span>(melanoma,<span class="sc">~</span>status<span class="sc">+</span>sex<span class="sc">+</span>ulc,<span class="at">level=</span><span class="dv">1</span>)</span>
-<span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb27-3"><a href="#cb27-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; status</span></span>
-<span id="cb27-4"><a href="#cb27-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;   1   2   3 </span></span>
-<span id="cb27-5"><a href="#cb27-5" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  57 134  14 </span></span>
-<span id="cb27-6"><a href="#cb27-6" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb27-7"><a href="#cb27-7" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; sex</span></span>
-<span id="cb27-8"><a href="#cb27-8" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;   0   1 </span></span>
-<span id="cb27-9"><a href="#cb27-9" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 126  79 </span></span>
-<span id="cb27-10"><a href="#cb27-10" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb27-11"><a href="#cb27-11" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ulc</span></span>
-<span id="cb27-12"><a href="#cb27-12" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;   0   1 </span></span>
-<span id="cb27-13"><a href="#cb27-13" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 115  90</span></span></code></pre></div>
+<div class="sourceCode" id="cb27"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb27-1"><a href="#cb27-1" tabindex="-1"></a><span class="fu">dtable</span>(melanoma,<span class="sc">~</span>status<span class="sc">+</span>sex<span class="sc">+</span>ulc,<span class="at">level=</span><span class="dv">1</span>)</span>
+<span id="cb27-2"><a href="#cb27-2" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb27-3"><a href="#cb27-3" tabindex="-1"></a><span class="co">#&gt; status</span></span>
+<span id="cb27-4"><a href="#cb27-4" tabindex="-1"></a><span class="co">#&gt;   1   2   3 </span></span>
+<span id="cb27-5"><a href="#cb27-5" tabindex="-1"></a><span class="co">#&gt;  57 134  14 </span></span>
+<span id="cb27-6"><a href="#cb27-6" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb27-7"><a href="#cb27-7" tabindex="-1"></a><span class="co">#&gt; sex</span></span>
+<span id="cb27-8"><a href="#cb27-8" tabindex="-1"></a><span class="co">#&gt;   0   1 </span></span>
+<span id="cb27-9"><a href="#cb27-9" tabindex="-1"></a><span class="co">#&gt; 126  79 </span></span>
+<span id="cb27-10"><a href="#cb27-10" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb27-11"><a href="#cb27-11" tabindex="-1"></a><span class="co">#&gt; ulc</span></span>
+<span id="cb27-12"><a href="#cb27-12" tabindex="-1"></a><span class="co">#&gt;   0   1 </span></span>
+<span id="cb27-13"><a href="#cb27-13" tabindex="-1"></a><span class="co">#&gt; 115  90</span></span></code></pre></div>
 <p>and with new variables</p>
-<div class="sourceCode" id="cb28"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a><span class="fu">dtable</span>(melanoma,<span class="sc">~</span>status<span class="sc">+</span>sex<span class="sc">+</span>ulc<span class="sc">+</span><span class="fu">dcut</span>(days)<span class="sc">+</span><span class="fu">I</span>(days<span class="sc">&gt;</span><span class="dv">300</span>),<span class="at">level=</span><span class="dv">1</span>)</span>
-<span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb28-3"><a href="#cb28-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; status</span></span>
-<span id="cb28-4"><a href="#cb28-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;   1   2   3 </span></span>
-<span id="cb28-5"><a href="#cb28-5" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  57 134  14 </span></span>
-<span id="cb28-6"><a href="#cb28-6" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb28-7"><a href="#cb28-7" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; sex</span></span>
-<span id="cb28-8"><a href="#cb28-8" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;   0   1 </span></span>
-<span id="cb28-9"><a href="#cb28-9" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 126  79 </span></span>
-<span id="cb28-10"><a href="#cb28-10" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb28-11"><a href="#cb28-11" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ulc</span></span>
-<span id="cb28-12"><a href="#cb28-12" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;   0   1 </span></span>
-<span id="cb28-13"><a href="#cb28-13" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 115  90 </span></span>
-<span id="cb28-14"><a href="#cb28-14" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb28-15"><a href="#cb28-15" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; dcut(days)</span></span>
-<span id="cb28-16"><a href="#cb28-16" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;       [10,1.52e+03] (1.52e+03,2.00e+03] (2.00e+03,3.04e+03] (3.04e+03,5.56e+03] </span></span>
-<span id="cb28-17"><a href="#cb28-17" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;                  52                  51                  51                  51 </span></span>
-<span id="cb28-18"><a href="#cb28-18" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb28-19"><a href="#cb28-19" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; I(days &gt; 300)</span></span>
-<span id="cb28-20"><a href="#cb28-20" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; FALSE  TRUE </span></span>
-<span id="cb28-21"><a href="#cb28-21" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;    11   194</span></span></code></pre></div>
+<div class="sourceCode" id="cb28"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb28-1"><a href="#cb28-1" tabindex="-1"></a><span class="fu">dtable</span>(melanoma,<span class="sc">~</span>status<span class="sc">+</span>sex<span class="sc">+</span>ulc<span class="sc">+</span><span class="fu">dcut</span>(days)<span class="sc">+</span><span class="fu">I</span>(days<span class="sc">&gt;</span><span class="dv">300</span>),<span class="at">level=</span><span class="dv">1</span>)</span>
+<span id="cb28-2"><a href="#cb28-2" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb28-3"><a href="#cb28-3" tabindex="-1"></a><span class="co">#&gt; status</span></span>
+<span id="cb28-4"><a href="#cb28-4" tabindex="-1"></a><span class="co">#&gt;   1   2   3 </span></span>
+<span id="cb28-5"><a href="#cb28-5" tabindex="-1"></a><span class="co">#&gt;  57 134  14 </span></span>
+<span id="cb28-6"><a href="#cb28-6" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb28-7"><a href="#cb28-7" tabindex="-1"></a><span class="co">#&gt; sex</span></span>
+<span id="cb28-8"><a href="#cb28-8" tabindex="-1"></a><span class="co">#&gt;   0   1 </span></span>
+<span id="cb28-9"><a href="#cb28-9" tabindex="-1"></a><span class="co">#&gt; 126  79 </span></span>
+<span id="cb28-10"><a href="#cb28-10" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb28-11"><a href="#cb28-11" tabindex="-1"></a><span class="co">#&gt; ulc</span></span>
+<span id="cb28-12"><a href="#cb28-12" tabindex="-1"></a><span class="co">#&gt;   0   1 </span></span>
+<span id="cb28-13"><a href="#cb28-13" tabindex="-1"></a><span class="co">#&gt; 115  90 </span></span>
+<span id="cb28-14"><a href="#cb28-14" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb28-15"><a href="#cb28-15" tabindex="-1"></a><span class="co">#&gt; dcut(days)</span></span>
+<span id="cb28-16"><a href="#cb28-16" tabindex="-1"></a><span class="co">#&gt;       [10,1.52e+03] (1.52e+03,2.00e+03] (2.00e+03,3.04e+03] (3.04e+03,5.56e+03] </span></span>
+<span id="cb28-17"><a href="#cb28-17" tabindex="-1"></a><span class="co">#&gt;                  52                  51                  51                  51 </span></span>
+<span id="cb28-18"><a href="#cb28-18" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb28-19"><a href="#cb28-19" tabindex="-1"></a><span class="co">#&gt; I(days &gt; 300)</span></span>
+<span id="cb28-20"><a href="#cb28-20" tabindex="-1"></a><span class="co">#&gt; FALSE  TRUE </span></span>
+<span id="cb28-21"><a href="#cb28-21" tabindex="-1"></a><span class="co">#&gt;    11   194</span></span></code></pre></div>
 </div>
 <div id="sorting-the-data" class="section level1">
 <h1>Sorting the data</h1>
 <p>To sort the data</p>
-<div class="sourceCode" id="cb29"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a><span class="fu">data</span>(melanoma)</span>
-<span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a>mel<span class="ot">=</span> <span class="fu">dsort</span>(melanoma,<span class="sc">~</span>days)</span>
-<span id="cb29-3"><a href="#cb29-3" aria-hidden="true" tabindex="-1"></a><span class="fu">dsort</span>(melanoma) <span class="ot">&lt;-</span> <span class="er">~</span>days</span>
-<span id="cb29-4"><a href="#cb29-4" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(mel)</span>
-<span id="cb29-5"><a href="#cb29-5" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;    no status days ulc thick sex</span></span>
-<span id="cb29-6"><a href="#cb29-6" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 1 789      3   10   1   676   1</span></span>
-<span id="cb29-7"><a href="#cb29-7" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 2  13      3   30   0    65   1</span></span>
-<span id="cb29-8"><a href="#cb29-8" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 3  97      2   35   0   134   1</span></span>
-<span id="cb29-9"><a href="#cb29-9" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 4  16      3   99   0   290   0</span></span>
-<span id="cb29-10"><a href="#cb29-10" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 5  21      1  185   1  1208   1</span></span>
-<span id="cb29-11"><a href="#cb29-11" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 6 469      1  204   1   484   1</span></span></code></pre></div>
+<div class="sourceCode" id="cb29"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb29-1"><a href="#cb29-1" tabindex="-1"></a><span class="fu">data</span>(melanoma)</span>
+<span id="cb29-2"><a href="#cb29-2" tabindex="-1"></a>mel<span class="ot">=</span> <span class="fu">dsort</span>(melanoma,<span class="sc">~</span>days)</span>
+<span id="cb29-3"><a href="#cb29-3" tabindex="-1"></a><span class="fu">dsort</span>(melanoma) <span class="ot">&lt;-</span> <span class="er">~</span>days</span>
+<span id="cb29-4"><a href="#cb29-4" tabindex="-1"></a><span class="fu">head</span>(mel)</span>
+<span id="cb29-5"><a href="#cb29-5" tabindex="-1"></a><span class="co">#&gt;    no status days ulc thick sex</span></span>
+<span id="cb29-6"><a href="#cb29-6" tabindex="-1"></a><span class="co">#&gt; 1 789      3   10   1   676   1</span></span>
+<span id="cb29-7"><a href="#cb29-7" tabindex="-1"></a><span class="co">#&gt; 2  13      3   30   0    65   1</span></span>
+<span id="cb29-8"><a href="#cb29-8" tabindex="-1"></a><span class="co">#&gt; 3  97      2   35   0   134   1</span></span>
+<span id="cb29-9"><a href="#cb29-9" tabindex="-1"></a><span class="co">#&gt; 4  16      3   99   0   290   0</span></span>
+<span id="cb29-10"><a href="#cb29-10" tabindex="-1"></a><span class="co">#&gt; 5  21      1  185   1  1208   1</span></span>
+<span id="cb29-11"><a href="#cb29-11" tabindex="-1"></a><span class="co">#&gt; 6 469      1  204   1   484   1</span></span></code></pre></div>
 <p>and to sort after multiple variables increasing and decreasing</p>
-<div class="sourceCode" id="cb30"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a><span class="fu">dsort</span>(melanoma) <span class="ot">&lt;-</span> <span class="er">~</span>days<span class="sc">-</span>status</span>
-<span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(melanoma)</span>
-<span id="cb30-3"><a href="#cb30-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;    no status days ulc thick sex</span></span>
-<span id="cb30-4"><a href="#cb30-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 1 789      3   10   1   676   1</span></span>
-<span id="cb30-5"><a href="#cb30-5" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 2  13      3   30   0    65   1</span></span>
-<span id="cb30-6"><a href="#cb30-6" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 3  97      2   35   0   134   1</span></span>
-<span id="cb30-7"><a href="#cb30-7" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 4  16      3   99   0   290   0</span></span>
-<span id="cb30-8"><a href="#cb30-8" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 5  21      1  185   1  1208   1</span></span>
-<span id="cb30-9"><a href="#cb30-9" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 6 469      1  204   1   484   1</span></span></code></pre></div>
+<div class="sourceCode" id="cb30"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb30-1"><a href="#cb30-1" tabindex="-1"></a><span class="fu">dsort</span>(melanoma) <span class="ot">&lt;-</span> <span class="er">~</span>days<span class="sc">-</span>status</span>
+<span id="cb30-2"><a href="#cb30-2" tabindex="-1"></a><span class="fu">head</span>(melanoma)</span>
+<span id="cb30-3"><a href="#cb30-3" tabindex="-1"></a><span class="co">#&gt;    no status days ulc thick sex</span></span>
+<span id="cb30-4"><a href="#cb30-4" tabindex="-1"></a><span class="co">#&gt; 1 789      3   10   1   676   1</span></span>
+<span id="cb30-5"><a href="#cb30-5" tabindex="-1"></a><span class="co">#&gt; 2  13      3   30   0    65   1</span></span>
+<span id="cb30-6"><a href="#cb30-6" tabindex="-1"></a><span class="co">#&gt; 3  97      2   35   0   134   1</span></span>
+<span id="cb30-7"><a href="#cb30-7" tabindex="-1"></a><span class="co">#&gt; 4  16      3   99   0   290   0</span></span>
+<span id="cb30-8"><a href="#cb30-8" tabindex="-1"></a><span class="co">#&gt; 5  21      1  185   1  1208   1</span></span>
+<span id="cb30-9"><a href="#cb30-9" tabindex="-1"></a><span class="co">#&gt; 6 469      1  204   1   484   1</span></span></code></pre></div>
 </div>
 <div id="making-new-variales-for-the-analysis" class="section level1">
 <h1>Making new variales for the analysis</h1>
 <p>To define a bunch of new covariates within a data-frame</p>
-<div class="sourceCode" id="cb31"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a><span class="fu">data</span>(melanoma)</span>
-<span id="cb31-2"><a href="#cb31-2" aria-hidden="true" tabindex="-1"></a>melanoma<span class="ot">=</span> <span class="fu">transform</span>(melanoma, <span class="at">thick2=</span>thick<span class="sc">^</span><span class="dv">2</span>, <span class="at">lthick=</span><span class="fu">log</span>(thick) ) </span>
-<span id="cb31-3"><a href="#cb31-3" aria-hidden="true" tabindex="-1"></a><span class="fu">dhead</span>(melanoma)</span>
-<span id="cb31-4"><a href="#cb31-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;    no status days ulc thick sex  thick2   lthick</span></span>
-<span id="cb31-5"><a href="#cb31-5" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 1 789      3   10   1   676   1  456976 6.516193</span></span>
-<span id="cb31-6"><a href="#cb31-6" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 2  13      3   30   0    65   1    4225 4.174387</span></span>
-<span id="cb31-7"><a href="#cb31-7" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 3  97      2   35   0   134   1   17956 4.897840</span></span>
-<span id="cb31-8"><a href="#cb31-8" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 4  16      3   99   0   290   0   84100 5.669881</span></span>
-<span id="cb31-9"><a href="#cb31-9" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 5  21      1  185   1  1208   1 1459264 7.096721</span></span>
-<span id="cb31-10"><a href="#cb31-10" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 6 469      1  204   1   484   1  234256 6.182085</span></span></code></pre></div>
+<div class="sourceCode" id="cb31"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb31-1"><a href="#cb31-1" tabindex="-1"></a><span class="fu">data</span>(melanoma)</span>
+<span id="cb31-2"><a href="#cb31-2" tabindex="-1"></a>melanoma<span class="ot">=</span> <span class="fu">transform</span>(melanoma, <span class="at">thick2=</span>thick<span class="sc">^</span><span class="dv">2</span>, <span class="at">lthick=</span><span class="fu">log</span>(thick) ) </span>
+<span id="cb31-3"><a href="#cb31-3" tabindex="-1"></a><span class="fu">dhead</span>(melanoma)</span>
+<span id="cb31-4"><a href="#cb31-4" tabindex="-1"></a><span class="co">#&gt;    no status days ulc thick sex  thick2   lthick</span></span>
+<span id="cb31-5"><a href="#cb31-5" tabindex="-1"></a><span class="co">#&gt; 1 789      3   10   1   676   1  456976 6.516193</span></span>
+<span id="cb31-6"><a href="#cb31-6" tabindex="-1"></a><span class="co">#&gt; 2  13      3   30   0    65   1    4225 4.174387</span></span>
+<span id="cb31-7"><a href="#cb31-7" tabindex="-1"></a><span class="co">#&gt; 3  97      2   35   0   134   1   17956 4.897840</span></span>
+<span id="cb31-8"><a href="#cb31-8" tabindex="-1"></a><span class="co">#&gt; 4  16      3   99   0   290   0   84100 5.669881</span></span>
+<span id="cb31-9"><a href="#cb31-9" tabindex="-1"></a><span class="co">#&gt; 5  21      1  185   1  1208   1 1459264 7.096721</span></span>
+<span id="cb31-10"><a href="#cb31-10" tabindex="-1"></a><span class="co">#&gt; 6 469      1  204   1   484   1  234256 6.182085</span></span></code></pre></div>
 <p>When the above definitions are done using a condition this can be
 achieved using the dtransform function that extends transform with a
 possible condition</p>
-<div class="sourceCode" id="cb32"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a> melanoma<span class="ot">=</span><span class="fu">dtransform</span>(melanoma,<span class="at">ll=</span>thick<span class="sc">*</span><span class="fl">1.05</span><span class="sc">^</span>ulc,sex<span class="sc">==</span><span class="dv">1</span>)  </span>
-<span id="cb32-2"><a href="#cb32-2" aria-hidden="true" tabindex="-1"></a> melanoma<span class="ot">=</span><span class="fu">dtransform</span>(melanoma,<span class="at">ll=</span>thick,sex<span class="sc">!=</span><span class="dv">1</span>)  </span>
-<span id="cb32-3"><a href="#cb32-3" aria-hidden="true" tabindex="-1"></a> <span class="fu">dmean</span>(melanoma,ll<span class="sc">~</span>sex<span class="sc">+</span>ulc)</span>
-<span id="cb32-4"><a href="#cb32-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;   sex ulc       ll</span></span>
-<span id="cb32-5"><a href="#cb32-5" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 1   0   0 173.7342</span></span>
-<span id="cb32-6"><a href="#cb32-6" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 2   1   0 197.3611</span></span>
-<span id="cb32-7"><a href="#cb32-7" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 3   0   1 374.5532</span></span>
-<span id="cb32-8"><a href="#cb32-8" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 4   1   1 523.1198</span></span></code></pre></div>
+<div class="sourceCode" id="cb32"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb32-1"><a href="#cb32-1" tabindex="-1"></a> melanoma<span class="ot">=</span><span class="fu">dtransform</span>(melanoma,<span class="at">ll=</span>thick<span class="sc">*</span><span class="fl">1.05</span><span class="sc">^</span>ulc,sex<span class="sc">==</span><span class="dv">1</span>)  </span>
+<span id="cb32-2"><a href="#cb32-2" tabindex="-1"></a> melanoma<span class="ot">=</span><span class="fu">dtransform</span>(melanoma,<span class="at">ll=</span>thick,sex<span class="sc">!=</span><span class="dv">1</span>)  </span>
+<span id="cb32-3"><a href="#cb32-3" tabindex="-1"></a> <span class="fu">dmean</span>(melanoma,ll<span class="sc">~</span>sex<span class="sc">+</span>ulc)</span>
+<span id="cb32-4"><a href="#cb32-4" tabindex="-1"></a><span class="co">#&gt;   sex ulc       ll</span></span>
+<span id="cb32-5"><a href="#cb32-5" tabindex="-1"></a><span class="co">#&gt; 1   0   0 173.7342</span></span>
+<span id="cb32-6"><a href="#cb32-6" tabindex="-1"></a><span class="co">#&gt; 2   1   0 197.3611</span></span>
+<span id="cb32-7"><a href="#cb32-7" tabindex="-1"></a><span class="co">#&gt; 3   0   1 374.5532</span></span>
+<span id="cb32-8"><a href="#cb32-8" tabindex="-1"></a><span class="co">#&gt; 4   1   1 523.1198</span></span></code></pre></div>
 </div>
 <div id="making-factors-groupings" class="section level1">
 <h1>Making factors (groupings)</h1>
@@ -725,242 +719,243 @@ possible condition</p>
 melanom tumour. For some analyses we would like to make a factor
 depending on the thickness. This can be done in several different
 ways</p>
-<div class="sourceCode" id="cb33"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a>melanoma<span class="ot">=</span><span class="fu">dcut</span>(melanoma,<span class="sc">~</span>thick,<span class="at">breaks=</span><span class="fu">c</span>(<span class="dv">0</span>,<span class="dv">200</span>,<span class="dv">500</span>,<span class="dv">800</span>,<span class="dv">2000</span>))</span></code></pre></div>
+<div class="sourceCode" id="cb33"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb33-1"><a href="#cb33-1" tabindex="-1"></a>melanoma<span class="ot">=</span><span class="fu">dcut</span>(melanoma,<span class="sc">~</span>thick,<span class="at">breaks=</span><span class="fu">c</span>(<span class="dv">0</span>,<span class="dv">200</span>,<span class="dv">500</span>,<span class="dv">800</span>,<span class="dv">2000</span>))</span></code></pre></div>
 <p>New variable is named thickcat.0 by default.</p>
 <p>To see levels of factors in data-frame</p>
-<div class="sourceCode" id="cb34"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a><span class="fu">dlevels</span>(melanoma)</span>
-<span id="cb34-2"><a href="#cb34-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; thickcat.0 #levels=:4 </span></span>
-<span id="cb34-3"><a href="#cb34-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] &quot;[0,200]&quot;     &quot;(200,500]&quot;   &quot;(500,800]&quot;   &quot;(800,2e+03]&quot;</span></span>
-<span id="cb34-4"><a href="#cb34-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; -----------------------------------------</span></span></code></pre></div>
+<div class="sourceCode" id="cb34"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb34-1"><a href="#cb34-1" tabindex="-1"></a><span class="fu">dlevels</span>(melanoma)</span>
+<span id="cb34-2"><a href="#cb34-2" tabindex="-1"></a><span class="co">#&gt; thickcat.0 #levels=:4 </span></span>
+<span id="cb34-3"><a href="#cb34-3" tabindex="-1"></a><span class="co">#&gt; [1] &quot;[0,200]&quot;     &quot;(200,500]&quot;   &quot;(500,800]&quot;   &quot;(800,2e+03]&quot;</span></span>
+<span id="cb34-4"><a href="#cb34-4" tabindex="-1"></a><span class="co">#&gt; -----------------------------------------</span></span></code></pre></div>
 <p>Checking group sizes</p>
-<div class="sourceCode" id="cb35"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a><span class="fu">dtable</span>(melanoma,<span class="sc">~</span>thickcat<span class="fl">.0</span>)</span>
-<span id="cb35-2"><a href="#cb35-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb35-3"><a href="#cb35-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; thickcat.0</span></span>
-<span id="cb35-4"><a href="#cb35-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;     [0,200]   (200,500]   (500,800] (800,2e+03] </span></span>
-<span id="cb35-5"><a href="#cb35-5" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;         109          64          20          12</span></span></code></pre></div>
+<div class="sourceCode" id="cb35"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb35-1"><a href="#cb35-1" tabindex="-1"></a><span class="fu">dtable</span>(melanoma,<span class="sc">~</span>thickcat<span class="fl">.0</span>)</span>
+<span id="cb35-2"><a href="#cb35-2" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb35-3"><a href="#cb35-3" tabindex="-1"></a><span class="co">#&gt; thickcat.0</span></span>
+<span id="cb35-4"><a href="#cb35-4" tabindex="-1"></a><span class="co">#&gt;     [0,200]   (200,500]   (500,800] (800,2e+03] </span></span>
+<span id="cb35-5"><a href="#cb35-5" tabindex="-1"></a><span class="co">#&gt;         109          64          20          12</span></span></code></pre></div>
 <p>With adding to the data-frame directly</p>
-<div class="sourceCode" id="cb36"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a><span class="fu">dcut</span>(melanoma,<span class="at">breaks=</span><span class="fu">c</span>(<span class="dv">0</span>,<span class="dv">200</span>,<span class="dv">500</span>,<span class="dv">800</span>,<span class="dv">2000</span>)) <span class="ot">&lt;-</span> gr.thick1<span class="sc">~</span>thick</span>
-<span id="cb36-2"><a href="#cb36-2" aria-hidden="true" tabindex="-1"></a><span class="fu">dlevels</span>(melanoma)</span>
-<span id="cb36-3"><a href="#cb36-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; thickcat.0 #levels=:4 </span></span>
-<span id="cb36-4"><a href="#cb36-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] &quot;[0,200]&quot;     &quot;(200,500]&quot;   &quot;(500,800]&quot;   &quot;(800,2e+03]&quot;</span></span>
-<span id="cb36-5"><a href="#cb36-5" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; -----------------------------------------</span></span>
-<span id="cb36-6"><a href="#cb36-6" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; gr.thick1 #levels=:4 </span></span>
-<span id="cb36-7"><a href="#cb36-7" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] &quot;[0,200]&quot;     &quot;(200,500]&quot;   &quot;(500,800]&quot;   &quot;(800,2e+03]&quot;</span></span>
-<span id="cb36-8"><a href="#cb36-8" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; -----------------------------------------</span></span></code></pre></div>
+<div class="sourceCode" id="cb36"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb36-1"><a href="#cb36-1" tabindex="-1"></a><span class="fu">dcut</span>(melanoma,<span class="at">breaks=</span><span class="fu">c</span>(<span class="dv">0</span>,<span class="dv">200</span>,<span class="dv">500</span>,<span class="dv">800</span>,<span class="dv">2000</span>)) <span class="ot">&lt;-</span> gr.thick1<span class="sc">~</span>thick</span>
+<span id="cb36-2"><a href="#cb36-2" tabindex="-1"></a><span class="fu">dlevels</span>(melanoma)</span>
+<span id="cb36-3"><a href="#cb36-3" tabindex="-1"></a><span class="co">#&gt; thickcat.0 #levels=:4 </span></span>
+<span id="cb36-4"><a href="#cb36-4" tabindex="-1"></a><span class="co">#&gt; [1] &quot;[0,200]&quot;     &quot;(200,500]&quot;   &quot;(500,800]&quot;   &quot;(800,2e+03]&quot;</span></span>
+<span id="cb36-5"><a href="#cb36-5" tabindex="-1"></a><span class="co">#&gt; -----------------------------------------</span></span>
+<span id="cb36-6"><a href="#cb36-6" tabindex="-1"></a><span class="co">#&gt; gr.thick1 #levels=:4 </span></span>
+<span id="cb36-7"><a href="#cb36-7" tabindex="-1"></a><span class="co">#&gt; [1] &quot;[0,200]&quot;     &quot;(200,500]&quot;   &quot;(500,800]&quot;   &quot;(800,2e+03]&quot;</span></span>
+<span id="cb36-8"><a href="#cb36-8" tabindex="-1"></a><span class="co">#&gt; -----------------------------------------</span></span></code></pre></div>
 <p>new variable is named thickcat.0 (after first cut-point), or to get
 quartiles with default names thick.cat.4</p>
-<div class="sourceCode" id="cb37"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a><span class="fu">dcut</span>(melanoma) <span class="ot">&lt;-</span> <span class="er">~</span> thick  <span class="co"># new variable is thickcat.4</span></span>
-<span id="cb37-2"><a href="#cb37-2" aria-hidden="true" tabindex="-1"></a><span class="fu">dlevels</span>(melanoma)</span>
-<span id="cb37-3"><a href="#cb37-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; thickcat.0 #levels=:4 </span></span>
-<span id="cb37-4"><a href="#cb37-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] &quot;[0,200]&quot;     &quot;(200,500]&quot;   &quot;(500,800]&quot;   &quot;(800,2e+03]&quot;</span></span>
-<span id="cb37-5"><a href="#cb37-5" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; -----------------------------------------</span></span>
-<span id="cb37-6"><a href="#cb37-6" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; gr.thick1 #levels=:4 </span></span>
-<span id="cb37-7"><a href="#cb37-7" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] &quot;[0,200]&quot;     &quot;(200,500]&quot;   &quot;(500,800]&quot;   &quot;(800,2e+03]&quot;</span></span>
-<span id="cb37-8"><a href="#cb37-8" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; -----------------------------------------</span></span>
-<span id="cb37-9"><a href="#cb37-9" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; thickcat.4 #levels=:4 </span></span>
-<span id="cb37-10"><a href="#cb37-10" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] &quot;[10,97]&quot;        &quot;(97,194]&quot;       &quot;(194,356]&quot;      &quot;(356,1.74e+03]&quot;</span></span>
-<span id="cb37-11"><a href="#cb37-11" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; -----------------------------------------</span></span></code></pre></div>
+<div class="sourceCode" id="cb37"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb37-1"><a href="#cb37-1" tabindex="-1"></a><span class="fu">dcut</span>(melanoma) <span class="ot">&lt;-</span> <span class="er">~</span> thick  <span class="co"># new variable is thickcat.4</span></span>
+<span id="cb37-2"><a href="#cb37-2" tabindex="-1"></a><span class="fu">dlevels</span>(melanoma)</span>
+<span id="cb37-3"><a href="#cb37-3" tabindex="-1"></a><span class="co">#&gt; thickcat.0 #levels=:4 </span></span>
+<span id="cb37-4"><a href="#cb37-4" tabindex="-1"></a><span class="co">#&gt; [1] &quot;[0,200]&quot;     &quot;(200,500]&quot;   &quot;(500,800]&quot;   &quot;(800,2e+03]&quot;</span></span>
+<span id="cb37-5"><a href="#cb37-5" tabindex="-1"></a><span class="co">#&gt; -----------------------------------------</span></span>
+<span id="cb37-6"><a href="#cb37-6" tabindex="-1"></a><span class="co">#&gt; gr.thick1 #levels=:4 </span></span>
+<span id="cb37-7"><a href="#cb37-7" tabindex="-1"></a><span class="co">#&gt; [1] &quot;[0,200]&quot;     &quot;(200,500]&quot;   &quot;(500,800]&quot;   &quot;(800,2e+03]&quot;</span></span>
+<span id="cb37-8"><a href="#cb37-8" tabindex="-1"></a><span class="co">#&gt; -----------------------------------------</span></span>
+<span id="cb37-9"><a href="#cb37-9" tabindex="-1"></a><span class="co">#&gt; thickcat.4 #levels=:4 </span></span>
+<span id="cb37-10"><a href="#cb37-10" tabindex="-1"></a><span class="co">#&gt; [1] &quot;[10,97]&quot;        &quot;(97,194]&quot;       &quot;(194,356]&quot;      &quot;(356,1.74e+03]&quot;</span></span>
+<span id="cb37-11"><a href="#cb37-11" tabindex="-1"></a><span class="co">#&gt; -----------------------------------------</span></span></code></pre></div>
 <p>or median groups, here starting again with the original data,</p>
-<div class="sourceCode" id="cb38"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb38-1"><a href="#cb38-1" aria-hidden="true" tabindex="-1"></a><span class="fu">data</span>(melanoma)</span>
-<span id="cb38-2"><a href="#cb38-2" aria-hidden="true" tabindex="-1"></a><span class="fu">dcut</span>(melanoma,<span class="at">breaks=</span><span class="dv">2</span>) <span class="ot">&lt;-</span> <span class="er">~</span> thick  <span class="co"># new variable is thick.2</span></span>
-<span id="cb38-3"><a href="#cb38-3" aria-hidden="true" tabindex="-1"></a><span class="fu">dlevels</span>(melanoma)</span>
-<span id="cb38-4"><a href="#cb38-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; thickcat.2 #levels=:2 </span></span>
-<span id="cb38-5"><a href="#cb38-5" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] &quot;[10,194]&quot;       &quot;(194,1.74e+03]&quot;</span></span>
-<span id="cb38-6"><a href="#cb38-6" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; -----------------------------------------</span></span></code></pre></div>
+<div class="sourceCode" id="cb38"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb38-1"><a href="#cb38-1" tabindex="-1"></a><span class="fu">data</span>(melanoma)</span>
+<span id="cb38-2"><a href="#cb38-2" tabindex="-1"></a><span class="fu">dcut</span>(melanoma,<span class="at">breaks=</span><span class="dv">2</span>) <span class="ot">&lt;-</span> <span class="er">~</span> thick  <span class="co"># new variable is thick.2</span></span>
+<span id="cb38-3"><a href="#cb38-3" tabindex="-1"></a><span class="fu">dlevels</span>(melanoma)</span>
+<span id="cb38-4"><a href="#cb38-4" tabindex="-1"></a><span class="co">#&gt; thickcat.2 #levels=:2 </span></span>
+<span id="cb38-5"><a href="#cb38-5" tabindex="-1"></a><span class="co">#&gt; [1] &quot;[10,194]&quot;       &quot;(194,1.74e+03]&quot;</span></span>
+<span id="cb38-6"><a href="#cb38-6" tabindex="-1"></a><span class="co">#&gt; -----------------------------------------</span></span></code></pre></div>
 <p>to control new names</p>
-<div class="sourceCode" id="cb39"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb39-1"><a href="#cb39-1" aria-hidden="true" tabindex="-1"></a><span class="fu">data</span>(melanoma)</span>
-<span id="cb39-2"><a href="#cb39-2" aria-hidden="true" tabindex="-1"></a>mela<span class="ot">=</span> <span class="fu">dcut</span>(melanoma,thickcat4<span class="sc">+</span>dayscat4<span class="sc">~</span>thick<span class="sc">+</span>days,<span class="at">breaks=</span><span class="dv">4</span>)</span>
-<span id="cb39-3"><a href="#cb39-3" aria-hidden="true" tabindex="-1"></a><span class="fu">dlevels</span>(mela)</span>
-<span id="cb39-4"><a href="#cb39-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; thickcat4 #levels=:4 </span></span>
-<span id="cb39-5"><a href="#cb39-5" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] &quot;[10,97]&quot;        &quot;(97,194]&quot;       &quot;(194,356]&quot;      &quot;(356,1.74e+03]&quot;</span></span>
-<span id="cb39-6"><a href="#cb39-6" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; -----------------------------------------</span></span>
-<span id="cb39-7"><a href="#cb39-7" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; dayscat4 #levels=:4 </span></span>
-<span id="cb39-8"><a href="#cb39-8" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] &quot;[10,1.52e+03]&quot;       &quot;(1.52e+03,2.00e+03]&quot; &quot;(2.00e+03,3.04e+03]&quot;</span></span>
-<span id="cb39-9"><a href="#cb39-9" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [4] &quot;(3.04e+03,5.56e+03]&quot;</span></span>
-<span id="cb39-10"><a href="#cb39-10" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; -----------------------------------------</span></span></code></pre></div>
+<div class="sourceCode" id="cb39"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb39-1"><a href="#cb39-1" tabindex="-1"></a><span class="fu">data</span>(melanoma)</span>
+<span id="cb39-2"><a href="#cb39-2" tabindex="-1"></a>mela<span class="ot">=</span> <span class="fu">dcut</span>(melanoma,thickcat4<span class="sc">+</span>dayscat4<span class="sc">~</span>thick<span class="sc">+</span>days,<span class="at">breaks=</span><span class="dv">4</span>)</span>
+<span id="cb39-3"><a href="#cb39-3" tabindex="-1"></a><span class="fu">dlevels</span>(mela)</span>
+<span id="cb39-4"><a href="#cb39-4" tabindex="-1"></a><span class="co">#&gt; thickcat4 #levels=:4 </span></span>
+<span id="cb39-5"><a href="#cb39-5" tabindex="-1"></a><span class="co">#&gt; [1] &quot;[10,97]&quot;        &quot;(97,194]&quot;       &quot;(194,356]&quot;      &quot;(356,1.74e+03]&quot;</span></span>
+<span id="cb39-6"><a href="#cb39-6" tabindex="-1"></a><span class="co">#&gt; -----------------------------------------</span></span>
+<span id="cb39-7"><a href="#cb39-7" tabindex="-1"></a><span class="co">#&gt; dayscat4 #levels=:4 </span></span>
+<span id="cb39-8"><a href="#cb39-8" tabindex="-1"></a><span class="co">#&gt; [1] &quot;[10,1.52e+03]&quot;       &quot;(1.52e+03,2.00e+03]&quot; &quot;(2.00e+03,3.04e+03]&quot;</span></span>
+<span id="cb39-9"><a href="#cb39-9" tabindex="-1"></a><span class="co">#&gt; [4] &quot;(3.04e+03,5.56e+03]&quot;</span></span>
+<span id="cb39-10"><a href="#cb39-10" tabindex="-1"></a><span class="co">#&gt; -----------------------------------------</span></span></code></pre></div>
 <p>or</p>
-<div class="sourceCode" id="cb40"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb40-1"><a href="#cb40-1" aria-hidden="true" tabindex="-1"></a><span class="fu">data</span>(melanoma)</span>
-<span id="cb40-2"><a href="#cb40-2" aria-hidden="true" tabindex="-1"></a><span class="fu">dcut</span>(melanoma,<span class="at">breaks=</span><span class="dv">4</span>) <span class="ot">&lt;-</span> thickcat4<span class="sc">+</span>dayscat4<span class="sc">~</span>thick<span class="sc">+</span>days</span>
-<span id="cb40-3"><a href="#cb40-3" aria-hidden="true" tabindex="-1"></a><span class="fu">dlevels</span>(melanoma)</span>
-<span id="cb40-4"><a href="#cb40-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; thickcat4 #levels=:4 </span></span>
-<span id="cb40-5"><a href="#cb40-5" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] &quot;[10,97]&quot;        &quot;(97,194]&quot;       &quot;(194,356]&quot;      &quot;(356,1.74e+03]&quot;</span></span>
-<span id="cb40-6"><a href="#cb40-6" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; -----------------------------------------</span></span>
-<span id="cb40-7"><a href="#cb40-7" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; dayscat4 #levels=:4 </span></span>
-<span id="cb40-8"><a href="#cb40-8" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] &quot;[10,1.52e+03]&quot;       &quot;(1.52e+03,2.00e+03]&quot; &quot;(2.00e+03,3.04e+03]&quot;</span></span>
-<span id="cb40-9"><a href="#cb40-9" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [4] &quot;(3.04e+03,5.56e+03]&quot;</span></span>
-<span id="cb40-10"><a href="#cb40-10" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; -----------------------------------------</span></span></code></pre></div>
+<div class="sourceCode" id="cb40"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb40-1"><a href="#cb40-1" tabindex="-1"></a><span class="fu">data</span>(melanoma)</span>
+<span id="cb40-2"><a href="#cb40-2" tabindex="-1"></a><span class="fu">dcut</span>(melanoma,<span class="at">breaks=</span><span class="dv">4</span>) <span class="ot">&lt;-</span> thickcat4<span class="sc">+</span>dayscat4<span class="sc">~</span>thick<span class="sc">+</span>days</span>
+<span id="cb40-3"><a href="#cb40-3" tabindex="-1"></a><span class="fu">dlevels</span>(melanoma)</span>
+<span id="cb40-4"><a href="#cb40-4" tabindex="-1"></a><span class="co">#&gt; thickcat4 #levels=:4 </span></span>
+<span id="cb40-5"><a href="#cb40-5" tabindex="-1"></a><span class="co">#&gt; [1] &quot;[10,97]&quot;        &quot;(97,194]&quot;       &quot;(194,356]&quot;      &quot;(356,1.74e+03]&quot;</span></span>
+<span id="cb40-6"><a href="#cb40-6" tabindex="-1"></a><span class="co">#&gt; -----------------------------------------</span></span>
+<span id="cb40-7"><a href="#cb40-7" tabindex="-1"></a><span class="co">#&gt; dayscat4 #levels=:4 </span></span>
+<span id="cb40-8"><a href="#cb40-8" tabindex="-1"></a><span class="co">#&gt; [1] &quot;[10,1.52e+03]&quot;       &quot;(1.52e+03,2.00e+03]&quot; &quot;(2.00e+03,3.04e+03]&quot;</span></span>
+<span id="cb40-9"><a href="#cb40-9" tabindex="-1"></a><span class="co">#&gt; [4] &quot;(3.04e+03,5.56e+03]&quot;</span></span>
+<span id="cb40-10"><a href="#cb40-10" tabindex="-1"></a><span class="co">#&gt; -----------------------------------------</span></span></code></pre></div>
 <p>This can also be typed out more specifically</p>
-<div class="sourceCode" id="cb41"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb41-1"><a href="#cb41-1" aria-hidden="true" tabindex="-1"></a>melanoma<span class="sc">$</span>gthick <span class="ot">=</span> <span class="fu">cut</span>(melanoma<span class="sc">$</span>thick,<span class="at">breaks=</span><span class="fu">c</span>(<span class="dv">0</span>,<span class="dv">200</span>,<span class="dv">500</span>,<span class="dv">800</span>,<span class="dv">2000</span>))</span>
-<span id="cb41-2"><a href="#cb41-2" aria-hidden="true" tabindex="-1"></a>melanoma<span class="sc">$</span>gthick <span class="ot">=</span> <span class="fu">cut</span>(melanoma<span class="sc">$</span>thick,<span class="at">breaks=</span><span class="fu">quantile</span>(melanoma<span class="sc">$</span>thick),<span class="at">include.lowest=</span><span class="cn">TRUE</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb41"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb41-1"><a href="#cb41-1" tabindex="-1"></a>melanoma<span class="sc">$</span>gthick <span class="ot">=</span> <span class="fu">cut</span>(melanoma<span class="sc">$</span>thick,<span class="at">breaks=</span><span class="fu">c</span>(<span class="dv">0</span>,<span class="dv">200</span>,<span class="dv">500</span>,<span class="dv">800</span>,<span class="dv">2000</span>))</span>
+<span id="cb41-2"><a href="#cb41-2" tabindex="-1"></a>melanoma<span class="sc">$</span>gthick <span class="ot">=</span> <span class="fu">cut</span>(melanoma<span class="sc">$</span>thick,<span class="at">breaks=</span><span class="fu">quantile</span>(melanoma<span class="sc">$</span>thick),<span class="at">include.lowest=</span><span class="cn">TRUE</span>)</span></code></pre></div>
 </div>
 <div id="working-with-factors" class="section level1">
 <h1>Working with factors</h1>
 <p>To see levels of covariates in data-frame</p>
-<div class="sourceCode" id="cb42"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb42-1"><a href="#cb42-1" aria-hidden="true" tabindex="-1"></a><span class="fu">data</span>(melanoma)</span>
-<span id="cb42-2"><a href="#cb42-2" aria-hidden="true" tabindex="-1"></a><span class="fu">dcut</span>(melanoma,<span class="at">breaks=</span><span class="dv">4</span>) <span class="ot">&lt;-</span> thickcat4<span class="sc">~</span>thick</span>
-<span id="cb42-3"><a href="#cb42-3" aria-hidden="true" tabindex="-1"></a><span class="fu">dlevels</span>(melanoma) </span>
-<span id="cb42-4"><a href="#cb42-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; thickcat4 #levels=:4 </span></span>
-<span id="cb42-5"><a href="#cb42-5" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] &quot;[10,97]&quot;        &quot;(97,194]&quot;       &quot;(194,356]&quot;      &quot;(356,1.74e+03]&quot;</span></span>
-<span id="cb42-6"><a href="#cb42-6" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; -----------------------------------------</span></span></code></pre></div>
+<div class="sourceCode" id="cb42"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb42-1"><a href="#cb42-1" tabindex="-1"></a><span class="fu">data</span>(melanoma)</span>
+<span id="cb42-2"><a href="#cb42-2" tabindex="-1"></a><span class="fu">dcut</span>(melanoma,<span class="at">breaks=</span><span class="dv">4</span>) <span class="ot">&lt;-</span> thickcat4<span class="sc">~</span>thick</span>
+<span id="cb42-3"><a href="#cb42-3" tabindex="-1"></a><span class="fu">dlevels</span>(melanoma) </span>
+<span id="cb42-4"><a href="#cb42-4" tabindex="-1"></a><span class="co">#&gt; thickcat4 #levels=:4 </span></span>
+<span id="cb42-5"><a href="#cb42-5" tabindex="-1"></a><span class="co">#&gt; [1] &quot;[10,97]&quot;        &quot;(97,194]&quot;       &quot;(194,356]&quot;      &quot;(356,1.74e+03]&quot;</span></span>
+<span id="cb42-6"><a href="#cb42-6" tabindex="-1"></a><span class="co">#&gt; -----------------------------------------</span></span></code></pre></div>
 <p>To relevel the factor</p>
-<div class="sourceCode" id="cb43"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb43-1"><a href="#cb43-1" aria-hidden="true" tabindex="-1"></a><span class="fu">dtable</span>(melanoma,<span class="sc">~</span>thickcat4)</span>
-<span id="cb43-2"><a href="#cb43-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb43-3"><a href="#cb43-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; thickcat4</span></span>
-<span id="cb43-4"><a href="#cb43-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;        [10,97]       (97,194]      (194,356] (356,1.74e+03] </span></span>
-<span id="cb43-5"><a href="#cb43-5" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;             56             53             45             51</span></span>
-<span id="cb43-6"><a href="#cb43-6" aria-hidden="true" tabindex="-1"></a>melanoma <span class="ot">=</span> <span class="fu">drelevel</span>(melanoma,<span class="sc">~</span>thickcat4,<span class="at">ref=</span><span class="st">&quot;(194,356]&quot;</span>)</span>
-<span id="cb43-7"><a href="#cb43-7" aria-hidden="true" tabindex="-1"></a><span class="fu">dlevels</span>(melanoma)</span>
-<span id="cb43-8"><a href="#cb43-8" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; thickcat4 #levels=:4 </span></span>
-<span id="cb43-9"><a href="#cb43-9" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] &quot;[10,97]&quot;        &quot;(97,194]&quot;       &quot;(194,356]&quot;      &quot;(356,1.74e+03]&quot;</span></span>
-<span id="cb43-10"><a href="#cb43-10" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; -----------------------------------------</span></span>
-<span id="cb43-11"><a href="#cb43-11" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; thickcat4.(194,356] #levels=:4 </span></span>
-<span id="cb43-12"><a href="#cb43-12" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] &quot;(194,356]&quot;      &quot;[10,97]&quot;        &quot;(97,194]&quot;       &quot;(356,1.74e+03]&quot;</span></span>
-<span id="cb43-13"><a href="#cb43-13" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; -----------------------------------------</span></span></code></pre></div>
+<div class="sourceCode" id="cb43"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb43-1"><a href="#cb43-1" tabindex="-1"></a><span class="fu">dtable</span>(melanoma,<span class="sc">~</span>thickcat4)</span>
+<span id="cb43-2"><a href="#cb43-2" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb43-3"><a href="#cb43-3" tabindex="-1"></a><span class="co">#&gt; thickcat4</span></span>
+<span id="cb43-4"><a href="#cb43-4" tabindex="-1"></a><span class="co">#&gt;        [10,97]       (97,194]      (194,356] (356,1.74e+03] </span></span>
+<span id="cb43-5"><a href="#cb43-5" tabindex="-1"></a><span class="co">#&gt;             56             53             45             51</span></span>
+<span id="cb43-6"><a href="#cb43-6" tabindex="-1"></a>melanoma <span class="ot">=</span> <span class="fu">drelevel</span>(melanoma,<span class="sc">~</span>thickcat4,<span class="at">ref=</span><span class="st">&quot;(194,356]&quot;</span>)</span>
+<span id="cb43-7"><a href="#cb43-7" tabindex="-1"></a><span class="fu">dlevels</span>(melanoma)</span>
+<span id="cb43-8"><a href="#cb43-8" tabindex="-1"></a><span class="co">#&gt; thickcat4 #levels=:4 </span></span>
+<span id="cb43-9"><a href="#cb43-9" tabindex="-1"></a><span class="co">#&gt; [1] &quot;[10,97]&quot;        &quot;(97,194]&quot;       &quot;(194,356]&quot;      &quot;(356,1.74e+03]&quot;</span></span>
+<span id="cb43-10"><a href="#cb43-10" tabindex="-1"></a><span class="co">#&gt; -----------------------------------------</span></span>
+<span id="cb43-11"><a href="#cb43-11" tabindex="-1"></a><span class="co">#&gt; thickcat4.(194,356] #levels=:4 </span></span>
+<span id="cb43-12"><a href="#cb43-12" tabindex="-1"></a><span class="co">#&gt; [1] &quot;(194,356]&quot;      &quot;[10,97]&quot;        &quot;(97,194]&quot;       &quot;(356,1.74e+03]&quot;</span></span>
+<span id="cb43-13"><a href="#cb43-13" tabindex="-1"></a><span class="co">#&gt; -----------------------------------------</span></span></code></pre></div>
 <p>or to take the third level in the list of levels, same as above,</p>
-<div class="sourceCode" id="cb44"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb44-1"><a href="#cb44-1" aria-hidden="true" tabindex="-1"></a>melanoma <span class="ot">=</span> <span class="fu">drelevel</span>(melanoma,<span class="sc">~</span>thickcat4,<span class="at">ref=</span><span class="dv">2</span>)</span>
-<span id="cb44-2"><a href="#cb44-2" aria-hidden="true" tabindex="-1"></a><span class="fu">dlevels</span>(melanoma)</span>
-<span id="cb44-3"><a href="#cb44-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; thickcat4 #levels=:4 </span></span>
-<span id="cb44-4"><a href="#cb44-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] &quot;[10,97]&quot;        &quot;(97,194]&quot;       &quot;(194,356]&quot;      &quot;(356,1.74e+03]&quot;</span></span>
-<span id="cb44-5"><a href="#cb44-5" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; -----------------------------------------</span></span>
-<span id="cb44-6"><a href="#cb44-6" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; thickcat4.(194,356] #levels=:4 </span></span>
-<span id="cb44-7"><a href="#cb44-7" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] &quot;(194,356]&quot;      &quot;[10,97]&quot;        &quot;(97,194]&quot;       &quot;(356,1.74e+03]&quot;</span></span>
-<span id="cb44-8"><a href="#cb44-8" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; -----------------------------------------</span></span>
-<span id="cb44-9"><a href="#cb44-9" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; thickcat4.2 #levels=:4 </span></span>
-<span id="cb44-10"><a href="#cb44-10" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] &quot;(97,194]&quot;       &quot;[10,97]&quot;        &quot;(194,356]&quot;      &quot;(356,1.74e+03]&quot;</span></span>
-<span id="cb44-11"><a href="#cb44-11" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; -----------------------------------------</span></span></code></pre></div>
+<div class="sourceCode" id="cb44"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb44-1"><a href="#cb44-1" tabindex="-1"></a>melanoma <span class="ot">=</span> <span class="fu">drelevel</span>(melanoma,<span class="sc">~</span>thickcat4,<span class="at">ref=</span><span class="dv">2</span>)</span>
+<span id="cb44-2"><a href="#cb44-2" tabindex="-1"></a><span class="fu">dlevels</span>(melanoma)</span>
+<span id="cb44-3"><a href="#cb44-3" tabindex="-1"></a><span class="co">#&gt; thickcat4 #levels=:4 </span></span>
+<span id="cb44-4"><a href="#cb44-4" tabindex="-1"></a><span class="co">#&gt; [1] &quot;[10,97]&quot;        &quot;(97,194]&quot;       &quot;(194,356]&quot;      &quot;(356,1.74e+03]&quot;</span></span>
+<span id="cb44-5"><a href="#cb44-5" tabindex="-1"></a><span class="co">#&gt; -----------------------------------------</span></span>
+<span id="cb44-6"><a href="#cb44-6" tabindex="-1"></a><span class="co">#&gt; thickcat4.(194,356] #levels=:4 </span></span>
+<span id="cb44-7"><a href="#cb44-7" tabindex="-1"></a><span class="co">#&gt; [1] &quot;(194,356]&quot;      &quot;[10,97]&quot;        &quot;(97,194]&quot;       &quot;(356,1.74e+03]&quot;</span></span>
+<span id="cb44-8"><a href="#cb44-8" tabindex="-1"></a><span class="co">#&gt; -----------------------------------------</span></span>
+<span id="cb44-9"><a href="#cb44-9" tabindex="-1"></a><span class="co">#&gt; thickcat4.2 #levels=:4 </span></span>
+<span id="cb44-10"><a href="#cb44-10" tabindex="-1"></a><span class="co">#&gt; [1] &quot;(97,194]&quot;       &quot;[10,97]&quot;        &quot;(194,356]&quot;      &quot;(356,1.74e+03]&quot;</span></span>
+<span id="cb44-11"><a href="#cb44-11" tabindex="-1"></a><span class="co">#&gt; -----------------------------------------</span></span></code></pre></div>
 <p>To combine levels of a factor (first combinining first 3 groups into
 one)</p>
-<div class="sourceCode" id="cb45"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb45-1"><a href="#cb45-1" aria-hidden="true" tabindex="-1"></a>melanoma <span class="ot">=</span> <span class="fu">drelevel</span>(melanoma,<span class="sc">~</span>thickcat4,<span class="at">newlevels=</span><span class="dv">1</span><span class="sc">:</span><span class="dv">3</span>)</span>
-<span id="cb45-2"><a href="#cb45-2" aria-hidden="true" tabindex="-1"></a><span class="fu">dlevels</span>(melanoma)</span>
-<span id="cb45-3"><a href="#cb45-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; thickcat4 #levels=:4 </span></span>
-<span id="cb45-4"><a href="#cb45-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] &quot;[10,97]&quot;        &quot;(97,194]&quot;       &quot;(194,356]&quot;      &quot;(356,1.74e+03]&quot;</span></span>
-<span id="cb45-5"><a href="#cb45-5" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; -----------------------------------------</span></span>
-<span id="cb45-6"><a href="#cb45-6" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; thickcat4.(194,356] #levels=:4 </span></span>
-<span id="cb45-7"><a href="#cb45-7" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] &quot;(194,356]&quot;      &quot;[10,97]&quot;        &quot;(97,194]&quot;       &quot;(356,1.74e+03]&quot;</span></span>
-<span id="cb45-8"><a href="#cb45-8" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; -----------------------------------------</span></span>
-<span id="cb45-9"><a href="#cb45-9" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; thickcat4.2 #levels=:4 </span></span>
-<span id="cb45-10"><a href="#cb45-10" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] &quot;(97,194]&quot;       &quot;[10,97]&quot;        &quot;(194,356]&quot;      &quot;(356,1.74e+03]&quot;</span></span>
-<span id="cb45-11"><a href="#cb45-11" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; -----------------------------------------</span></span>
-<span id="cb45-12"><a href="#cb45-12" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; thickcat4.1:3 #levels=:2 </span></span>
-<span id="cb45-13"><a href="#cb45-13" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] &quot;[10,97]-(194,356]&quot; &quot;(356,1.74e+03]&quot;   </span></span>
-<span id="cb45-14"><a href="#cb45-14" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; -----------------------------------------</span></span></code></pre></div>
+<div class="sourceCode" id="cb45"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb45-1"><a href="#cb45-1" tabindex="-1"></a>melanoma <span class="ot">=</span> <span class="fu">drelevel</span>(melanoma,<span class="sc">~</span>thickcat4,<span class="at">newlevels=</span><span class="dv">1</span><span class="sc">:</span><span class="dv">3</span>)</span>
+<span id="cb45-2"><a href="#cb45-2" tabindex="-1"></a><span class="fu">dlevels</span>(melanoma)</span>
+<span id="cb45-3"><a href="#cb45-3" tabindex="-1"></a><span class="co">#&gt; thickcat4 #levels=:4 </span></span>
+<span id="cb45-4"><a href="#cb45-4" tabindex="-1"></a><span class="co">#&gt; [1] &quot;[10,97]&quot;        &quot;(97,194]&quot;       &quot;(194,356]&quot;      &quot;(356,1.74e+03]&quot;</span></span>
+<span id="cb45-5"><a href="#cb45-5" tabindex="-1"></a><span class="co">#&gt; -----------------------------------------</span></span>
+<span id="cb45-6"><a href="#cb45-6" tabindex="-1"></a><span class="co">#&gt; thickcat4.(194,356] #levels=:4 </span></span>
+<span id="cb45-7"><a href="#cb45-7" tabindex="-1"></a><span class="co">#&gt; [1] &quot;(194,356]&quot;      &quot;[10,97]&quot;        &quot;(97,194]&quot;       &quot;(356,1.74e+03]&quot;</span></span>
+<span id="cb45-8"><a href="#cb45-8" tabindex="-1"></a><span class="co">#&gt; -----------------------------------------</span></span>
+<span id="cb45-9"><a href="#cb45-9" tabindex="-1"></a><span class="co">#&gt; thickcat4.2 #levels=:4 </span></span>
+<span id="cb45-10"><a href="#cb45-10" tabindex="-1"></a><span class="co">#&gt; [1] &quot;(97,194]&quot;       &quot;[10,97]&quot;        &quot;(194,356]&quot;      &quot;(356,1.74e+03]&quot;</span></span>
+<span id="cb45-11"><a href="#cb45-11" tabindex="-1"></a><span class="co">#&gt; -----------------------------------------</span></span>
+<span id="cb45-12"><a href="#cb45-12" tabindex="-1"></a><span class="co">#&gt; thickcat4.1:3 #levels=:2 </span></span>
+<span id="cb45-13"><a href="#cb45-13" tabindex="-1"></a><span class="co">#&gt; [1] &quot;[10,97]-(194,356]&quot; &quot;(356,1.74e+03]&quot;   </span></span>
+<span id="cb45-14"><a href="#cb45-14" tabindex="-1"></a><span class="co">#&gt; -----------------------------------------</span></span></code></pre></div>
 <p>or to combine groups 1 and 2 into one group and 3 and 4 into
 another</p>
-<div class="sourceCode" id="cb46"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb46-1"><a href="#cb46-1" aria-hidden="true" tabindex="-1"></a><span class="fu">dkeep</span>(melanoma) <span class="ot">&lt;-</span> <span class="er">~</span>thick<span class="sc">+</span>thickcat4</span>
-<span id="cb46-2"><a href="#cb46-2" aria-hidden="true" tabindex="-1"></a>melanoma <span class="ot">=</span> <span class="fu">drelevel</span>(melanoma,gthick2<span class="sc">~</span>thickcat4,<span class="at">newlevels=</span><span class="fu">list</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">2</span>,<span class="dv">3</span><span class="sc">:</span><span class="dv">4</span>))</span>
-<span id="cb46-3"><a href="#cb46-3" aria-hidden="true" tabindex="-1"></a><span class="fu">dlevels</span>(melanoma)</span>
-<span id="cb46-4"><a href="#cb46-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; thickcat4 #levels=:4 </span></span>
-<span id="cb46-5"><a href="#cb46-5" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] &quot;[10,97]&quot;        &quot;(97,194]&quot;       &quot;(194,356]&quot;      &quot;(356,1.74e+03]&quot;</span></span>
-<span id="cb46-6"><a href="#cb46-6" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; -----------------------------------------</span></span>
-<span id="cb46-7"><a href="#cb46-7" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; gthick2 #levels=:2 </span></span>
-<span id="cb46-8"><a href="#cb46-8" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] &quot;[10,97]-(97,194]&quot;         &quot;(194,356]-(356,1.74e+03]&quot;</span></span>
-<span id="cb46-9"><a href="#cb46-9" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; -----------------------------------------</span></span></code></pre></div>
+<div class="sourceCode" id="cb46"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb46-1"><a href="#cb46-1" tabindex="-1"></a><span class="fu">dkeep</span>(melanoma) <span class="ot">&lt;-</span> <span class="er">~</span>thick<span class="sc">+</span>thickcat4</span>
+<span id="cb46-2"><a href="#cb46-2" tabindex="-1"></a>melanoma <span class="ot">=</span> <span class="fu">drelevel</span>(melanoma,gthick2<span class="sc">~</span>thickcat4,<span class="at">newlevels=</span><span class="fu">list</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">2</span>,<span class="dv">3</span><span class="sc">:</span><span class="dv">4</span>))</span>
+<span id="cb46-3"><a href="#cb46-3" tabindex="-1"></a><span class="fu">dlevels</span>(melanoma)</span>
+<span id="cb46-4"><a href="#cb46-4" tabindex="-1"></a><span class="co">#&gt; thickcat4 #levels=:4 </span></span>
+<span id="cb46-5"><a href="#cb46-5" tabindex="-1"></a><span class="co">#&gt; [1] &quot;[10,97]&quot;        &quot;(97,194]&quot;       &quot;(194,356]&quot;      &quot;(356,1.74e+03]&quot;</span></span>
+<span id="cb46-6"><a href="#cb46-6" tabindex="-1"></a><span class="co">#&gt; -----------------------------------------</span></span>
+<span id="cb46-7"><a href="#cb46-7" tabindex="-1"></a><span class="co">#&gt; gthick2 #levels=:2 </span></span>
+<span id="cb46-8"><a href="#cb46-8" tabindex="-1"></a><span class="co">#&gt; [1] &quot;[10,97]-(97,194]&quot;         &quot;(194,356]-(356,1.74e+03]&quot;</span></span>
+<span id="cb46-9"><a href="#cb46-9" tabindex="-1"></a><span class="co">#&gt; -----------------------------------------</span></span></code></pre></div>
 <p>Changing order of factor levels</p>
-<div class="sourceCode" id="cb47"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb47-1"><a href="#cb47-1" aria-hidden="true" tabindex="-1"></a><span class="fu">dfactor</span>(melanoma,<span class="at">levels=</span><span class="fu">c</span>(<span class="dv">3</span>,<span class="dv">1</span>,<span class="dv">2</span>,<span class="dv">4</span>)) <span class="ot">&lt;-</span>  thickcat4<span class="fl">.2</span><span class="sc">~</span>thickcat4</span>
-<span id="cb47-2"><a href="#cb47-2" aria-hidden="true" tabindex="-1"></a><span class="fu">dlevel</span>(melanoma,<span class="sc">~</span> <span class="st">&quot;thickcat4*&quot;</span>)</span>
-<span id="cb47-3"><a href="#cb47-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; thickcat4 #levels=:4 </span></span>
-<span id="cb47-4"><a href="#cb47-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] &quot;[10,97]&quot;        &quot;(97,194]&quot;       &quot;(194,356]&quot;      &quot;(356,1.74e+03]&quot;</span></span>
-<span id="cb47-5"><a href="#cb47-5" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; -----------------------------------------</span></span>
-<span id="cb47-6"><a href="#cb47-6" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; thickcat4.2 #levels=:4 </span></span>
-<span id="cb47-7"><a href="#cb47-7" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] &quot;(194,356]&quot;      &quot;[10,97]&quot;        &quot;(97,194]&quot;       &quot;(356,1.74e+03]&quot;</span></span>
-<span id="cb47-8"><a href="#cb47-8" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; -----------------------------------------</span></span>
-<span id="cb47-9"><a href="#cb47-9" aria-hidden="true" tabindex="-1"></a><span class="fu">dtable</span>(melanoma,<span class="sc">~</span>thickcat4<span class="sc">+</span>thickcat4<span class="fl">.2</span>)</span>
-<span id="cb47-10"><a href="#cb47-10" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb47-11"><a href="#cb47-11" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;                thickcat4.2 (194,356] [10,97] (97,194] (356,1.74e+03]</span></span>
-<span id="cb47-12"><a href="#cb47-12" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; thickcat4                                                           </span></span>
-<span id="cb47-13"><a href="#cb47-13" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [10,97]                            0      56        0              0</span></span>
-<span id="cb47-14"><a href="#cb47-14" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; (97,194]                           0       0       53              0</span></span>
-<span id="cb47-15"><a href="#cb47-15" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; (194,356]                         45       0        0              0</span></span>
-<span id="cb47-16"><a href="#cb47-16" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; (356,1.74e+03]                     0       0        0             51</span></span></code></pre></div>
+<div class="sourceCode" id="cb47"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb47-1"><a href="#cb47-1" tabindex="-1"></a><span class="fu">dfactor</span>(melanoma,<span class="at">levels=</span><span class="fu">c</span>(<span class="dv">3</span>,<span class="dv">1</span>,<span class="dv">2</span>,<span class="dv">4</span>)) <span class="ot">&lt;-</span>  thickcat4<span class="fl">.2</span><span class="sc">~</span>thickcat4</span>
+<span id="cb47-2"><a href="#cb47-2" tabindex="-1"></a><span class="fu">dlevel</span>(melanoma,<span class="sc">~</span> <span class="st">&quot;thickcat4*&quot;</span>)</span>
+<span id="cb47-3"><a href="#cb47-3" tabindex="-1"></a><span class="co">#&gt; thickcat4 #levels=:4 </span></span>
+<span id="cb47-4"><a href="#cb47-4" tabindex="-1"></a><span class="co">#&gt; [1] &quot;[10,97]&quot;        &quot;(97,194]&quot;       &quot;(194,356]&quot;      &quot;(356,1.74e+03]&quot;</span></span>
+<span id="cb47-5"><a href="#cb47-5" tabindex="-1"></a><span class="co">#&gt; -----------------------------------------</span></span>
+<span id="cb47-6"><a href="#cb47-6" tabindex="-1"></a><span class="co">#&gt; thickcat4.2 #levels=:4 </span></span>
+<span id="cb47-7"><a href="#cb47-7" tabindex="-1"></a><span class="co">#&gt; [1] &quot;(194,356]&quot;      &quot;[10,97]&quot;        &quot;(97,194]&quot;       &quot;(356,1.74e+03]&quot;</span></span>
+<span id="cb47-8"><a href="#cb47-8" tabindex="-1"></a><span class="co">#&gt; -----------------------------------------</span></span>
+<span id="cb47-9"><a href="#cb47-9" tabindex="-1"></a><span class="fu">dtable</span>(melanoma,<span class="sc">~</span>thickcat4<span class="sc">+</span>thickcat4<span class="fl">.2</span>)</span>
+<span id="cb47-10"><a href="#cb47-10" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb47-11"><a href="#cb47-11" tabindex="-1"></a><span class="co">#&gt;                thickcat4.2 (194,356] [10,97] (97,194] (356,1.74e+03]</span></span>
+<span id="cb47-12"><a href="#cb47-12" tabindex="-1"></a><span class="co">#&gt; thickcat4                                                           </span></span>
+<span id="cb47-13"><a href="#cb47-13" tabindex="-1"></a><span class="co">#&gt; [10,97]                            0      56        0              0</span></span>
+<span id="cb47-14"><a href="#cb47-14" tabindex="-1"></a><span class="co">#&gt; (97,194]                           0       0       53              0</span></span>
+<span id="cb47-15"><a href="#cb47-15" tabindex="-1"></a><span class="co">#&gt; (194,356]                         45       0        0              0</span></span>
+<span id="cb47-16"><a href="#cb47-16" tabindex="-1"></a><span class="co">#&gt; (356,1.74e+03]                     0       0        0             51</span></span></code></pre></div>
 <p>Combine levels but now control factor-level names</p>
-<div class="sourceCode" id="cb48"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb48-1"><a href="#cb48-1" aria-hidden="true" tabindex="-1"></a>melanoma<span class="ot">=</span><span class="fu">drelevel</span>(melanoma,gthick3<span class="sc">~</span>thickcat4,<span class="at">newlevels=</span><span class="fu">list</span>(<span class="at">group1.2=</span><span class="dv">1</span><span class="sc">:</span><span class="dv">2</span>,<span class="at">group3.4=</span><span class="dv">3</span><span class="sc">:</span><span class="dv">4</span>))</span>
-<span id="cb48-2"><a href="#cb48-2" aria-hidden="true" tabindex="-1"></a><span class="fu">dlevels</span>(melanoma)</span>
-<span id="cb48-3"><a href="#cb48-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; thickcat4 #levels=:4 </span></span>
-<span id="cb48-4"><a href="#cb48-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] &quot;[10,97]&quot;        &quot;(97,194]&quot;       &quot;(194,356]&quot;      &quot;(356,1.74e+03]&quot;</span></span>
-<span id="cb48-5"><a href="#cb48-5" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; -----------------------------------------</span></span>
-<span id="cb48-6"><a href="#cb48-6" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; gthick2 #levels=:2 </span></span>
-<span id="cb48-7"><a href="#cb48-7" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] &quot;[10,97]-(97,194]&quot;         &quot;(194,356]-(356,1.74e+03]&quot;</span></span>
-<span id="cb48-8"><a href="#cb48-8" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; -----------------------------------------</span></span>
-<span id="cb48-9"><a href="#cb48-9" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; thickcat4.2 #levels=:4 </span></span>
-<span id="cb48-10"><a href="#cb48-10" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] &quot;(194,356]&quot;      &quot;[10,97]&quot;        &quot;(97,194]&quot;       &quot;(356,1.74e+03]&quot;</span></span>
-<span id="cb48-11"><a href="#cb48-11" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; -----------------------------------------</span></span>
-<span id="cb48-12"><a href="#cb48-12" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; gthick3 #levels=:2 </span></span>
-<span id="cb48-13"><a href="#cb48-13" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] &quot;group1.2&quot; &quot;group3.4&quot;</span></span>
-<span id="cb48-14"><a href="#cb48-14" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; -----------------------------------------</span></span></code></pre></div>
+<div class="sourceCode" id="cb48"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb48-1"><a href="#cb48-1" tabindex="-1"></a>melanoma<span class="ot">=</span><span class="fu">drelevel</span>(melanoma,gthick3<span class="sc">~</span>thickcat4,<span class="at">newlevels=</span><span class="fu">list</span>(<span class="at">group1.2=</span><span class="dv">1</span><span class="sc">:</span><span class="dv">2</span>,<span class="at">group3.4=</span><span class="dv">3</span><span class="sc">:</span><span class="dv">4</span>))</span>
+<span id="cb48-2"><a href="#cb48-2" tabindex="-1"></a><span class="fu">dlevels</span>(melanoma)</span>
+<span id="cb48-3"><a href="#cb48-3" tabindex="-1"></a><span class="co">#&gt; thickcat4 #levels=:4 </span></span>
+<span id="cb48-4"><a href="#cb48-4" tabindex="-1"></a><span class="co">#&gt; [1] &quot;[10,97]&quot;        &quot;(97,194]&quot;       &quot;(194,356]&quot;      &quot;(356,1.74e+03]&quot;</span></span>
+<span id="cb48-5"><a href="#cb48-5" tabindex="-1"></a><span class="co">#&gt; -----------------------------------------</span></span>
+<span id="cb48-6"><a href="#cb48-6" tabindex="-1"></a><span class="co">#&gt; gthick2 #levels=:2 </span></span>
+<span id="cb48-7"><a href="#cb48-7" tabindex="-1"></a><span class="co">#&gt; [1] &quot;[10,97]-(97,194]&quot;         &quot;(194,356]-(356,1.74e+03]&quot;</span></span>
+<span id="cb48-8"><a href="#cb48-8" tabindex="-1"></a><span class="co">#&gt; -----------------------------------------</span></span>
+<span id="cb48-9"><a href="#cb48-9" tabindex="-1"></a><span class="co">#&gt; thickcat4.2 #levels=:4 </span></span>
+<span id="cb48-10"><a href="#cb48-10" tabindex="-1"></a><span class="co">#&gt; [1] &quot;(194,356]&quot;      &quot;[10,97]&quot;        &quot;(97,194]&quot;       &quot;(356,1.74e+03]&quot;</span></span>
+<span id="cb48-11"><a href="#cb48-11" tabindex="-1"></a><span class="co">#&gt; -----------------------------------------</span></span>
+<span id="cb48-12"><a href="#cb48-12" tabindex="-1"></a><span class="co">#&gt; gthick3 #levels=:2 </span></span>
+<span id="cb48-13"><a href="#cb48-13" tabindex="-1"></a><span class="co">#&gt; [1] &quot;group1.2&quot; &quot;group3.4&quot;</span></span>
+<span id="cb48-14"><a href="#cb48-14" tabindex="-1"></a><span class="co">#&gt; -----------------------------------------</span></span></code></pre></div>
 </div>
 <div id="making-a-factor-from-existing-numeric-variable-and-vice-versa" class="section level1">
 <h1>Making a factor from existing numeric variable and vice versa</h1>
 <p>A numeric variable “status” with values 1,2,3 into a factor by</p>
-<div class="sourceCode" id="cb49"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb49-1"><a href="#cb49-1" aria-hidden="true" tabindex="-1"></a><span class="fu">data</span>(melanoma)</span>
-<span id="cb49-2"><a href="#cb49-2" aria-hidden="true" tabindex="-1"></a>melanoma <span class="ot">=</span> <span class="fu">dfactor</span>(melanoma,<span class="sc">~</span>status, <span class="at">labels=</span><span class="fu">c</span>(<span class="st">&quot;malignant-melanoma&quot;</span>,<span class="st">&quot;censoring&quot;</span>,<span class="st">&quot;dead-other&quot;</span>))</span>
-<span id="cb49-3"><a href="#cb49-3" aria-hidden="true" tabindex="-1"></a>melanoma <span class="ot">=</span> <span class="fu">dfactor</span>(melanoma,sexl<span class="sc">~</span>sex,<span class="at">labels=</span><span class="fu">c</span>(<span class="st">&quot;females&quot;</span>,<span class="st">&quot;males&quot;</span>))</span>
-<span id="cb49-4"><a href="#cb49-4" aria-hidden="true" tabindex="-1"></a><span class="fu">dtable</span>(melanoma,<span class="sc">~</span>sexl<span class="sc">+</span>status.f)</span>
-<span id="cb49-5"><a href="#cb49-5" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb49-6"><a href="#cb49-6" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;         status.f malignant-melanoma censoring dead-other</span></span>
-<span id="cb49-7"><a href="#cb49-7" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; sexl                                                    </span></span>
-<span id="cb49-8"><a href="#cb49-8" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; females                          28        91          7</span></span>
-<span id="cb49-9"><a href="#cb49-9" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; males                            29        43          7</span></span></code></pre></div>
+<div class="sourceCode" id="cb49"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb49-1"><a href="#cb49-1" tabindex="-1"></a><span class="fu">data</span>(melanoma)</span>
+<span id="cb49-2"><a href="#cb49-2" tabindex="-1"></a>melanoma <span class="ot">=</span> <span class="fu">dfactor</span>(melanoma,<span class="sc">~</span>status, <span class="at">labels=</span><span class="fu">c</span>(<span class="st">&quot;malignant-melanoma&quot;</span>,<span class="st">&quot;censoring&quot;</span>,<span class="st">&quot;dead-other&quot;</span>))</span>
+<span id="cb49-3"><a href="#cb49-3" tabindex="-1"></a>melanoma <span class="ot">=</span> <span class="fu">dfactor</span>(melanoma,sexl<span class="sc">~</span>sex,<span class="at">labels=</span><span class="fu">c</span>(<span class="st">&quot;females&quot;</span>,<span class="st">&quot;males&quot;</span>))</span>
+<span id="cb49-4"><a href="#cb49-4" tabindex="-1"></a><span class="fu">dtable</span>(melanoma,<span class="sc">~</span>sexl<span class="sc">+</span>status.f)</span>
+<span id="cb49-5"><a href="#cb49-5" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb49-6"><a href="#cb49-6" tabindex="-1"></a><span class="co">#&gt;         status.f malignant-melanoma censoring dead-other</span></span>
+<span id="cb49-7"><a href="#cb49-7" tabindex="-1"></a><span class="co">#&gt; sexl                                                    </span></span>
+<span id="cb49-8"><a href="#cb49-8" tabindex="-1"></a><span class="co">#&gt; females                          28        91          7</span></span>
+<span id="cb49-9"><a href="#cb49-9" tabindex="-1"></a><span class="co">#&gt; males                            29        43          7</span></span></code></pre></div>
 <p>A gender factor with values “M”, “F” can be converted into numerics
 by</p>
-<div class="sourceCode" id="cb50"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb50-1"><a href="#cb50-1" aria-hidden="true" tabindex="-1"></a>melanoma <span class="ot">=</span> <span class="fu">dnumeric</span>(melanoma,<span class="sc">~</span>sexl)</span>
-<span id="cb50-2"><a href="#cb50-2" aria-hidden="true" tabindex="-1"></a><span class="fu">dstr</span>(melanoma,<span class="st">&quot;sex*&quot;</span>)</span>
-<span id="cb50-3"><a href="#cb50-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; &#39;data.frame&#39;:    205 obs. of  3 variables:</span></span>
-<span id="cb50-4"><a href="#cb50-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  $ sex   : int  1 1 1 0 1 1 1 1 0 0 ...</span></span>
-<span id="cb50-5"><a href="#cb50-5" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  $ sexl  : Factor w/ 2 levels &quot;females&quot;,&quot;males&quot;: 2 2 2 1 2 2 2 2 1 1 ...</span></span>
-<span id="cb50-6"><a href="#cb50-6" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  $ sexl.n: num  2 2 2 1 2 2 2 2 1 1 ...</span></span>
-<span id="cb50-7"><a href="#cb50-7" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Warning in structure(res, ngroupvar = 0, class = c(&quot;daggregate&quot;, class(res))): Calling &#39;structure(NULL, *)&#39; is deprecated, as NULL cannot have attributes.</span></span>
-<span id="cb50-8"><a href="#cb50-8" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;   Consider &#39;structure(list(), *)&#39; instead.</span></span>
-<span id="cb50-9"><a href="#cb50-9" aria-hidden="true" tabindex="-1"></a><span class="fu">dtable</span>(melanoma,<span class="sc">~</span><span class="st">&#39;sex*&#39;</span>,<span class="at">level=</span><span class="dv">2</span>)</span>
-<span id="cb50-10"><a href="#cb50-10" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb50-11"><a href="#cb50-11" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;          sex</span></span>
-<span id="cb50-12"><a href="#cb50-12" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; sexl        0   1</span></span>
-<span id="cb50-13"><a href="#cb50-13" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;   females 126   0</span></span>
-<span id="cb50-14"><a href="#cb50-14" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;   males     0  79</span></span>
-<span id="cb50-15"><a href="#cb50-15" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb50-16"><a href="#cb50-16" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;       sex</span></span>
-<span id="cb50-17"><a href="#cb50-17" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; sexl.n   0   1</span></span>
-<span id="cb50-18"><a href="#cb50-18" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;      1 126   0</span></span>
-<span id="cb50-19"><a href="#cb50-19" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;      2   0  79</span></span>
-<span id="cb50-20"><a href="#cb50-20" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb50-21"><a href="#cb50-21" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;       sexl</span></span>
-<span id="cb50-22"><a href="#cb50-22" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; sexl.n females males</span></span>
-<span id="cb50-23"><a href="#cb50-23" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;      1     126     0</span></span>
-<span id="cb50-24"><a href="#cb50-24" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;      2       0    79</span></span></code></pre></div>
+<div class="sourceCode" id="cb50"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb50-1"><a href="#cb50-1" tabindex="-1"></a>melanoma <span class="ot">=</span> <span class="fu">dnumeric</span>(melanoma,<span class="sc">~</span>sexl)</span>
+<span id="cb50-2"><a href="#cb50-2" tabindex="-1"></a><span class="fu">dstr</span>(melanoma,<span class="st">&quot;sex*&quot;</span>)</span>
+<span id="cb50-3"><a href="#cb50-3" tabindex="-1"></a><span class="co">#&gt; &#39;data.frame&#39;:    205 obs. of  3 variables:</span></span>
+<span id="cb50-4"><a href="#cb50-4" tabindex="-1"></a><span class="co">#&gt;  $ sex   : int  1 1 1 0 1 1 1 1 0 0 ...</span></span>
+<span id="cb50-5"><a href="#cb50-5" tabindex="-1"></a><span class="co">#&gt;  $ sexl  : Factor w/ 2 levels &quot;females&quot;,&quot;males&quot;: 2 2 2 1 2 2 2 2 1 1 ...</span></span>
+<span id="cb50-6"><a href="#cb50-6" tabindex="-1"></a><span class="co">#&gt;  $ sexl.n: num  2 2 2 1 2 2 2 2 1 1 ...</span></span>
+<span id="cb50-7"><a href="#cb50-7" tabindex="-1"></a><span class="co">#&gt; Warning in structure(res, ngroupvar = 0, class = c(&quot;daggregate&quot;, class(res))): Calling &#39;structure(NULL, *)&#39; is deprecated, as NULL cannot have attributes.</span></span>
+<span id="cb50-8"><a href="#cb50-8" tabindex="-1"></a><span class="co">#&gt;   Consider &#39;structure(list(), *)&#39; instead.</span></span>
+<span id="cb50-9"><a href="#cb50-9" tabindex="-1"></a><span class="fu">dtable</span>(melanoma,<span class="sc">~</span><span class="st">&#39;sex*&#39;</span>,<span class="at">level=</span><span class="dv">2</span>)</span>
+<span id="cb50-10"><a href="#cb50-10" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb50-11"><a href="#cb50-11" tabindex="-1"></a><span class="co">#&gt;          sex</span></span>
+<span id="cb50-12"><a href="#cb50-12" tabindex="-1"></a><span class="co">#&gt; sexl        0   1</span></span>
+<span id="cb50-13"><a href="#cb50-13" tabindex="-1"></a><span class="co">#&gt;   females 126   0</span></span>
+<span id="cb50-14"><a href="#cb50-14" tabindex="-1"></a><span class="co">#&gt;   males     0  79</span></span>
+<span id="cb50-15"><a href="#cb50-15" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb50-16"><a href="#cb50-16" tabindex="-1"></a><span class="co">#&gt;       sex</span></span>
+<span id="cb50-17"><a href="#cb50-17" tabindex="-1"></a><span class="co">#&gt; sexl.n   0   1</span></span>
+<span id="cb50-18"><a href="#cb50-18" tabindex="-1"></a><span class="co">#&gt;      1 126   0</span></span>
+<span id="cb50-19"><a href="#cb50-19" tabindex="-1"></a><span class="co">#&gt;      2   0  79</span></span>
+<span id="cb50-20"><a href="#cb50-20" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb50-21"><a href="#cb50-21" tabindex="-1"></a><span class="co">#&gt;       sexl</span></span>
+<span id="cb50-22"><a href="#cb50-22" tabindex="-1"></a><span class="co">#&gt; sexl.n females males</span></span>
+<span id="cb50-23"><a href="#cb50-23" tabindex="-1"></a><span class="co">#&gt;      1     126     0</span></span>
+<span id="cb50-24"><a href="#cb50-24" tabindex="-1"></a><span class="co">#&gt;      2       0    79</span></span></code></pre></div>
 </div>
 <div id="sessioninfo" class="section level1">
 <h1>SessionInfo</h1>
-<div class="sourceCode" id="cb51"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb51-1"><a href="#cb51-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sessionInfo</span>()</span>
-<span id="cb51-2"><a href="#cb51-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; R version 4.2.2 (2022-10-31)</span></span>
-<span id="cb51-3"><a href="#cb51-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Platform: aarch64-apple-darwin22.1.0 (64-bit)</span></span>
-<span id="cb51-4"><a href="#cb51-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Running under: macOS Ventura 13.1</span></span>
-<span id="cb51-5"><a href="#cb51-5" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb51-6"><a href="#cb51-6" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Matrix products: default</span></span>
-<span id="cb51-7"><a href="#cb51-7" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; BLAS:   /opt/homebrew/Cellar/openblas/0.3.21/lib/libopenblasp-r0.3.21.dylib</span></span>
-<span id="cb51-8"><a href="#cb51-8" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; LAPACK: /opt/homebrew/Cellar/r/4.2.2_1/lib/R/lib/libRlapack.dylib</span></span>
-<span id="cb51-9"><a href="#cb51-9" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb51-10"><a href="#cb51-10" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; locale:</span></span>
-<span id="cb51-11"><a href="#cb51-11" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] en_US.UTF-8/en_US.UTF-8/en_US.UTF-8/C/en_US.UTF-8/en_US.UTF-8</span></span>
-<span id="cb51-12"><a href="#cb51-12" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb51-13"><a href="#cb51-13" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; attached base packages:</span></span>
-<span id="cb51-14"><a href="#cb51-14" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] stats     graphics  grDevices utils     datasets  methods   base     </span></span>
-<span id="cb51-15"><a href="#cb51-15" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb51-16"><a href="#cb51-16" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; other attached packages:</span></span>
-<span id="cb51-17"><a href="#cb51-17" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] mets_1.3.2     timereg_2.0.5  survival_3.4-0</span></span>
-<span id="cb51-18"><a href="#cb51-18" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb51-19"><a href="#cb51-19" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; loaded via a namespace (and not attached):</span></span>
-<span id="cb51-20"><a href="#cb51-20" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  [1] Rcpp_1.0.9          bslib_0.4.2         compiler_4.2.2     </span></span>
-<span id="cb51-21"><a href="#cb51-21" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  [4] jquerylib_0.1.4     tools_4.2.2         digest_0.6.31      </span></span>
-<span id="cb51-22"><a href="#cb51-22" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  [7] jsonlite_1.8.4      evaluate_0.19       lifecycle_1.0.3    </span></span>
-<span id="cb51-23"><a href="#cb51-23" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [10] lattice_0.20-45     rlang_1.0.6         Matrix_1.5-1       </span></span>
-<span id="cb51-24"><a href="#cb51-24" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [13] cli_3.5.0           yaml_2.3.6          parallel_4.2.2     </span></span>
-<span id="cb51-25"><a href="#cb51-25" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [16] mvtnorm_1.1-3       xfun_0.36           fastmap_1.1.0      </span></span>
-<span id="cb51-26"><a href="#cb51-26" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [19] stringr_1.5.0       knitr_1.41          vctrs_0.5.1        </span></span>
-<span id="cb51-27"><a href="#cb51-27" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [22] sass_0.4.4          globals_0.16.2      grid_4.2.2         </span></span>
-<span id="cb51-28"><a href="#cb51-28" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [25] glue_1.6.2          listenv_0.9.0       R6_2.5.1           </span></span>
-<span id="cb51-29"><a href="#cb51-29" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [28] future.apply_1.10.0 parallelly_1.34.0   rmarkdown_2.19     </span></span>
-<span id="cb51-30"><a href="#cb51-30" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [31] lava_1.7.2          magrittr_2.0.3      codetools_0.2-18   </span></span>
-<span id="cb51-31"><a href="#cb51-31" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [34] htmltools_0.5.4     splines_4.2.2       future_1.30.0      </span></span>
-<span id="cb51-32"><a href="#cb51-32" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [37] numDeriv_2016.8-1.1 stringi_1.7.8       cachem_1.0.6</span></span></code></pre></div>
+<div class="sourceCode" id="cb51"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb51-1"><a href="#cb51-1" tabindex="-1"></a><span class="fu">sessionInfo</span>()</span>
+<span id="cb51-2"><a href="#cb51-2" tabindex="-1"></a><span class="co">#&gt; R version 4.3.2 (2023-10-31)</span></span>
+<span id="cb51-3"><a href="#cb51-3" tabindex="-1"></a><span class="co">#&gt; Platform: aarch64-apple-darwin22.6.0 (64-bit)</span></span>
+<span id="cb51-4"><a href="#cb51-4" tabindex="-1"></a><span class="co">#&gt; Running under: macOS Ventura 13.6.2</span></span>
+<span id="cb51-5"><a href="#cb51-5" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb51-6"><a href="#cb51-6" tabindex="-1"></a><span class="co">#&gt; Matrix products: default</span></span>
+<span id="cb51-7"><a href="#cb51-7" tabindex="-1"></a><span class="co">#&gt; BLAS:   /Users/kkzh/.asdf/installs/R/4.3.2/lib/R/lib/libRblas.dylib </span></span>
+<span id="cb51-8"><a href="#cb51-8" tabindex="-1"></a><span class="co">#&gt; LAPACK: /Users/kkzh/.asdf/installs/R/4.3.2/lib/R/lib/libRlapack.dylib;  LAPACK version 3.11.0</span></span>
+<span id="cb51-9"><a href="#cb51-9" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb51-10"><a href="#cb51-10" tabindex="-1"></a><span class="co">#&gt; locale:</span></span>
+<span id="cb51-11"><a href="#cb51-11" tabindex="-1"></a><span class="co">#&gt; [1] en_US.UTF-8/en_US.UTF-8/en_US.UTF-8/C/en_US.UTF-8/en_US.UTF-8</span></span>
+<span id="cb51-12"><a href="#cb51-12" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb51-13"><a href="#cb51-13" tabindex="-1"></a><span class="co">#&gt; time zone: Europe/Copenhagen</span></span>
+<span id="cb51-14"><a href="#cb51-14" tabindex="-1"></a><span class="co">#&gt; tzcode source: internal</span></span>
+<span id="cb51-15"><a href="#cb51-15" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb51-16"><a href="#cb51-16" tabindex="-1"></a><span class="co">#&gt; attached base packages:</span></span>
+<span id="cb51-17"><a href="#cb51-17" tabindex="-1"></a><span class="co">#&gt; [1] stats     graphics  grDevices utils     datasets  methods   base     </span></span>
+<span id="cb51-18"><a href="#cb51-18" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb51-19"><a href="#cb51-19" tabindex="-1"></a><span class="co">#&gt; other attached packages:</span></span>
+<span id="cb51-20"><a href="#cb51-20" tabindex="-1"></a><span class="co">#&gt; [1] mets_1.3.3     timereg_2.0.5  survival_3.5-7</span></span>
+<span id="cb51-21"><a href="#cb51-21" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb51-22"><a href="#cb51-22" tabindex="-1"></a><span class="co">#&gt; loaded via a namespace (and not attached):</span></span>
+<span id="cb51-23"><a href="#cb51-23" tabindex="-1"></a><span class="co">#&gt;  [1] cli_3.6.1           knitr_1.45          rlang_1.1.1        </span></span>
+<span id="cb51-24"><a href="#cb51-24" tabindex="-1"></a><span class="co">#&gt;  [4] xfun_0.41           jsonlite_1.8.7      listenv_0.9.0      </span></span>
+<span id="cb51-25"><a href="#cb51-25" tabindex="-1"></a><span class="co">#&gt;  [7] future.apply_1.11.0 lava_1.7.4          htmltools_0.5.6.1  </span></span>
+<span id="cb51-26"><a href="#cb51-26" tabindex="-1"></a><span class="co">#&gt; [10] sass_0.4.7          rmarkdown_2.25      grid_4.3.2         </span></span>
+<span id="cb51-27"><a href="#cb51-27" tabindex="-1"></a><span class="co">#&gt; [13] evaluate_0.23       jquerylib_0.1.4     fastmap_1.1.1      </span></span>
+<span id="cb51-28"><a href="#cb51-28" tabindex="-1"></a><span class="co">#&gt; [16] mvtnorm_1.2-3       yaml_2.3.7          numDeriv_2016.8-1.1</span></span>
+<span id="cb51-29"><a href="#cb51-29" tabindex="-1"></a><span class="co">#&gt; [19] compiler_4.3.2      codetools_0.2-19    Rcpp_1.0.11.6      </span></span>
+<span id="cb51-30"><a href="#cb51-30" tabindex="-1"></a><span class="co">#&gt; [22] future_1.33.0       lattice_0.22-5      digest_0.6.33      </span></span>
+<span id="cb51-31"><a href="#cb51-31" tabindex="-1"></a><span class="co">#&gt; [25] R6_2.5.1            parallelly_1.36.0   parallel_4.3.2     </span></span>
+<span id="cb51-32"><a href="#cb51-32" tabindex="-1"></a><span class="co">#&gt; [28] splines_4.3.2       bslib_0.5.1         Matrix_1.6-3       </span></span>
+<span id="cb51-33"><a href="#cb51-33" tabindex="-1"></a><span class="co">#&gt; [31] tools_4.3.2         globals_0.16.2      cachem_1.0.8</span></span></code></pre></div>
 </div>
 
 
