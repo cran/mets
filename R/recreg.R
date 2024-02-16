@@ -23,7 +23,7 @@
 ##' Events, deaths and censorings are specified via stop start structure and the Event call, that via a status vector 
 ##' and cause (code), censoring-codes (cens.code) and death-codes (death.code) indentifies these. See example and vignette. 
 ##'
-##' @param formula formula with 'EventCens' outcome
+##' @param formula formula with 'Event' outcome
 ##' @param data data frame
 ##' @param cause of interest
 ##' @param death.code codes for death (terminating event)
@@ -42,7 +42,7 @@
 ##' data(drcumhaz)
 ##' Lam1 <- base1cumhaz;  Lam2 <- base4cumhaz;  LamD <- drcumhaz
 ##' ## simulates recurrent events of types 1 and 2 and with terminal event D and censoring
-##' rr <- simRecurrentII(1000,Lam1,cumhaz2=Lam2,death.cumhaz=LamD,cens=3/5000)
+##' rr <- simRecurrentII(100,Lam1,cumhaz2=Lam2,death.cumhaz=LamD,cens=3/5000)
 ##' rr <- count.history(rr)
 ##' rr$cens <- 0
 ##' nid <- max(rr$id)
@@ -529,7 +529,7 @@ recreg01 <- function(data,X,entry,exit,status,id=NULL,strata=NULL,offset=NULL,we
     varmc <-  crossprod(Uiid)
 
     ## compute regression augmentation for censoring martingale 
-    if ((!is.null(augment.model)) & (length(other)>1)  & (length(whereC)>0)) {## {{{
+    if ((!is.null(augment.model)) & (length(whereC)>0)) {## {{{
 
 	CovZXstrata <- function(X,Ej,Z,Sign,strata,nstrata,jumps) 
 	{# {{{
@@ -557,6 +557,7 @@ recreg01 <- function(data,X,entry,exit,status,id=NULL,strata=NULL,offset=NULL,we
 	###    Gcj <- exp(-cr2$cumhaz[,2])
 
     rr0 <- c(xx2$sign)
+    jumpsC <- which((xx2$Z[,1] %in% cens.code) & xx2$sign==1)
     strataCxx2 <- xx2$Z[,2]
     S0iC2  <-  S0iC <- rep(0,length(xx2$status))
     S0rrr <- revcumsumstrata(rr0,strataCxx2,nCstrata)
@@ -1031,11 +1032,14 @@ recregIPCW <- function(formula,data=data,cause=1,cens.code=0,death.code=2,
 strataAugment <- survival:::strata
 
 simGLcox <- function(n,base1,drcumhaz,var.z=0,r1=NULL,rd=NULL,rc=NULL,fz=NULL,fdz=NULL,
-		     model=c("twostage","frailty","shared","multiplicative"),type=NULL,share=1,cens=NULL,nmax=200)
+	     model=c("twostage","frailty","shared","multiplicative"),type=NULL,share=1,cens=NULL,nmax=200,by=1)
 {# {{{
 ## setting up baselines for simulations 
-base1 <- predictCumhaz(rbind(0,as.matrix(base1)),1:round(tail(base1[,1],1)) )
-cumD <- predictCumhaz(rbind(0,as.matrix(drcumhaz)),base1[,1])
+maxt <- tail(base1[,1],1)
+seqt <- seq(by,maxt,by=by)
+base1 <- predictCumhaz(rbind(0, as.matrix(base1)), seqt)
+cumD <- predictCumhaz(rbind(0, as.matrix(drcumhaz)), seqt)
+###
 St <- exp(-cumD[,2])
 Stm <- cbind(base1[,1],St)
 ###
@@ -1090,7 +1094,7 @@ if (!is.null(fdz)) { fdzz <- fdz(z); rd <- rd*fdzz; z <- rep(1,n);}
      type <- 3
  }
  ## type=2 draw recurrent process given X,Z with rate:
- ##  1/S(t|X,Z) exp(X^t beta_1) d \Lambda_1(t)
+ ##  Z exp(X^t beta_1) d \Lambda_1(t)/S(t|X,Z) 
  ## such that GL model holds with exp(X^t beta_1) \Lambda_1(t)
  ## type=3, observed hazards on Cox form among survivors
  ## W_1 ~ N1, W_1+W_2 ~ D observed hazards on Cox form among survivors
@@ -1253,34 +1257,45 @@ out <- FGprediid(...,model="GL")
 return(out)
 }# }}}
 
-boottwostageREC <- function(margsurv,recurrent,data,bootstrap=100,id="id",...) 
+boottwostageREC <- function(margsurv,recurrent,data,bootstrap=100,id="id",stepsize=0.5,...) 
 {# {{{
 n <- max(margsurv$id)
 K <- bootstrap
-  formid <- as.formula(paste("~",id))
-  rrb <- blocksample(data, size = n*K, formid)
-  rrb$strata <- floor((rrb[,id]-0.01)/n)
+formid <- as.formula(paste("~",id))
+rrb <- blocksample(data, size = n*K, formid)
+rrb$strata <- floor((rrb[,id]-0.01)/n)
 
-  outb <- c()
+  outb <- outd <- outr <- c()
   for (i in 1:K)
   {
      rrbs <- subset(rrb,strata==i-1)
      drb <- phreg(margsurv$formula,data=rrbs)
-     xrb <- phreg(recurrent$formula,data=rrbs)
-     outbl <- tryCatch(twostageREC(drb,xrb,rrbs,...),error=function(x) NULL)
+    if (inherits(recurrent,"recreg")) {
+	 xrb <- recreg(recurrent$formula,data=rrbs,
+      cause=recurrent$cause,death.code=recurrent$death.code,cens.code=recurrent$cens.code,cox.prep=TRUE)
+    } else xrb <- phreg(recurrent$formula,data=rrbs)
+     outbl <- tryCatch(twostageREC(drb,xrb,rrbs,numderiv=0,control=list(stepsize=stepsize),...),error=function(x) NULL)
      if (!is.null(outbl)) outb <- rbind(outb,outbl$coef)
+     outd <- rbind(outd,coef(drb))
+     outr <- rbind(outr,coef(xrb))
   }
-  var <- var(outb)
+  varb <- cov(outb)
+  vard <- cov(outd)
+  varr <- cov(outr)
 
-  list(var=var, se=diag(var)^.5,outb=outb)
+  list(outb=outb,var=varb,se=diag(varb)^.5,se.coxD=diag(vard)^.5,se.coxR=diag(varr)^.5)
 }# }}}
 
 ##' @export
-twostageREC  <-  function (margsurv,recurrent, data = parent.frame(), theta = NULL, model=c("full","shared","non-shared"),
-  theta.des = NULL, var.link = 0, method = "NR", no.opt = FALSE, weights = NULL, se.cluster = NULL, nufix=0,nu=NULL,at.risk=1,...)
+twostageREC  <-  function (margsurv,recurrent, data = parent.frame(), theta = NULL, model=c("full","shared","non-shared"),ghosh.lin=NULL,
+  theta.des = NULL, var.link = 0, method = "NR", no.opt = FALSE, weights = NULL, se.cluster = NULL, 
+  fnu=NULL,nufix=0,nu=NULL,at.risk=1,numderiv=1,derivmethod=c("simple","Richardson"),...)
 {# {{{
     if (!inherits(margsurv, "phreg")) stop("Must use phreg for death model\n")
     if (!inherits(recurrent, "phreg")) stop("Must use phreg for recurrent model\n")
+    if (is.null(recurrent$cox.prep)) stop("recreg must be called with cox.prep=TRUE\n")
+    if (inherits(recurrent, "recreg") & is.null(ghosh.lin))  ghosh.lin <- 1 
+    if ((!inherits(recurrent, "recreg")) & is.null(ghosh.lin))  ghosh.lin <- 0 
     clusters <- margsurv$cox.prep$id
     n <-  max(clusters)+1
     if (is.null(theta.des) == TRUE) ptheta <- 1
@@ -1291,7 +1306,7 @@ twostageREC  <-  function (margsurv,recurrent, data = parent.frame(), theta = NU
         if (var.link == 1) theta <- rep(0, ptheta)
         if (var.link == 0) theta <- rep(1, ptheta)
     }
-    if (is.null(nu)  & (nufix==0)) nu <- 0 
+    if (is.null(nu)  & (nufix==0)) { if (is.null(fnu))  nu <-  0.5 else nu <- fnu[[1]](0.5) }
     if (length(theta) != ptheta) theta <- rep(theta[1], ptheta)
     if (length(nu) != ptheta) nu <- rep(nu,ptheta)
     theta.score <- rep(0, ptheta)
@@ -1358,7 +1373,7 @@ twostageREC  <-  function (margsurv,recurrent, data = parent.frame(), theta = NU
 ###        tildeL <- .Call("_mets_tildeLambda1",S01i,cumhazD,r1,rd,thetai,xx$id)
 ###	if (at.risk==1)  
 ###		tildeL <- apply(tildeL*c(xr$sign),2,cumsumstrata,xr$id,mid)
-        tildeL <- .Call("_mets_tildeLambda1R",S01i,cumhazD,r1,rd,thetai,xr$id,xr$sign)
+        tildeL <- .Call("_mets_tildeLambda1R",S01i,cumhazD,r1,rd,thetai+1*ghosh.lin,xr$id,xr$sign)
         tildeLast <- tildeL[lastid,]
 	Ht <- thetav*tildeL[,1]+exp(thetav*HD)
 	Hr <- thetai*tildeLast[,1]+exp(thetai*cumDL)
@@ -1464,7 +1479,9 @@ twostageREC  <-  function (margsurv,recurrent, data = parent.frame(), theta = NU
     }
 # }}}
 
-   fw <- function(x) 1/(1+exp(x))
+    ## default is simple identity 
+###    if (is.null(fnu)) { fw <- function(x) 1/(1+exp(x)); Dfw <- function(x) -exp(x)/(1+exp(x))^2;} else { 
+   if (is.null(fnu)) { fw <- function(x) x; Dfw <- function(x) 1;} else { fw <- fnu[[1]]; Dfw <- fnu[[2]]; } 
    nudes <- theta.des  
    p <- ncol(theta.des)
 
@@ -1478,10 +1495,7 @@ twostageREC  <-  function (margsurv,recurrent, data = parent.frame(), theta = NU
         thetai <- thetav[firstid]; tbeta1i <- tbeta1[firstid]; tbeta2i <- tbeta2[firstid]
 	###
 	R <-  exp( - thetav*HD);  DR <- -HD*exp( - thetav* HD); D2R <-  HD^2*exp( - thetav* HD) 
-###        tildeL <- .Call("_mets_tildeLambda1",S01i,cumhazD,r1,rd,thetai,xx$id)
-###	if (at.risk==1)  
-###		tildeL <- apply(tildeL*c(xr$sign),2,cumsumstrata,xr$id,mid)
-        tildeL <- .Call("_mets_tildeLambda1R",S01i,cumhazD,r1,rd,thetai,xr$id,xr$sign)
+        tildeL <- .Call("_mets_tildeLambda1R",S01i,cumhazD,r1,rd,thetai+1*ghosh.lin,xr$id,xr$sign)
 	tildeLast <- tildeL[lastid,]
 	Ht <- (thetav/tbeta1)*tildeL[,1]+exp(thetav*HD)
 	Hr <- (thetai/tbeta1i)*tildeLast[,1]+exp(thetai*cumDL)
@@ -1532,7 +1546,7 @@ twostageREC  <-  function (margsurv,recurrent, data = parent.frame(), theta = NU
         ###
 	if (nufix==1)
         scoreiid <- thetaX * c(Dltheta)
-        else  scoreiid <- cbind(thetaX * c(Dltheta),nuX*c(Dlnu)*(-exp(nu1i)*tbeta1i^2))
+        else  scoreiid <- cbind(thetaX * c(Dltheta),nuX*c(Dlnu)*Dfw(nu1i))
         ###   ###
         Dl11s <- -sumstrata(N1sum$lagsum^2/(tbeta1 + thetav * N1sum$lagsum)^2 * statusxb, xx$id, mid)
         Dl3s <- (2*tbeta1i/thetai^2) * DHr/Hr -(tbeta1i/thetai+ N1i.tau)*(D2Hr*Hr-DHr^2)/Hr^2 - (2*tbeta1i/thetai^3) * log(Hr) 
@@ -1554,9 +1568,7 @@ twostageREC  <-  function (margsurv,recurrent, data = parent.frame(), theta = NU
 ###	    hessian <- rbind(hessian,cbind(t(hessianp),hessiann))
 	}
         hess2 <- crossprod(scoreiid)
-        val <- list(id = xx$id, score.iid = scoreiid, logl.iid = logliid,
-            ploglik = ploglik, gradient = gradient, hessian = -hess2,
-            hess2 = hess2)
+        val <- list(id = xx$id, score.iid = scoreiid, logl.iid = logliid, ploglik = ploglik, gradient = gradient, hessian = -hess2, hess2 = hess2)
         if (all)
             return(val)
 ###        with(val, structure(-ploglik, gradient = -gradient, hessian = -hessian))
@@ -1595,6 +1607,16 @@ twostageREC  <-  function (margsurv,recurrent, data = parent.frame(), theta = NU
         rownames(theta) <- thetanames
         names(val$coef)  <- thetanames
     }
+
+    if (numderiv==1 & model[1]=="shared") {
+	    dobj <- function(p) {
+		    oo <- obj(p)
+		    return(attr(oo,"gradient"))
+	    }
+	    hessian <- numDeriv::jacobian(dobj,val$coef,method=derivmethod[1])
+	    val$hessian <- -hessian
+    }
+
     hessianI <- solve(val$hessian)
     val$theta.iid.naive <- val$score.iid %*% hessianI
 
@@ -1615,9 +1637,11 @@ twostageREC  <-  function (margsurv,recurrent, data = parent.frame(), theta = NU
     val <- c(val, list(theta = theta, var.theta = var,n=mid,p=ncol(thetaX),var.link=var.link,
                        robvar.theta = var, var = var, thetanames = thetanames,
                        model = model[1], se = diag(var)^0.5), 
-	     var.naive = naive.var,no.opt=no.opt)
+	     var.naive = naive.var,no.opt=no.opt,ghosh.lin=ghosh.lin)
     class(val) <- "twostageREC"
     attr(val, "clusters") <- clusters
+    attr(val, "fnu") <- fw
+    attr(val, "Dfnu") <- Dfw
     attr(val, "secluster") <- c(se.cluster)
     attr(val, "var.link") <- var.link
     attr(val, "ptheta") <- ptheta
@@ -1630,30 +1654,30 @@ twostageREC  <-  function (margsurv,recurrent, data = parent.frame(), theta = NU
 # }}}
 
 ##' @export
-summary.twostageREC <- function(object,...) {# {{{
+summary.twostageREC <- function(object,vcov=NULL,delta=0,...) {# {{{
     I <- -solve(object$hessian)
-    V <- object$var
+    if (!is.null(vcov)) V <- vcov else V <- object$var
     ncluster <- object$n
-    cc <- cbind(object$coef,diag(V)^0.5,diag(I)^0.5)
-    cc  <- cbind(cc,2*(pnorm(abs(cc[,1]/cc[,2]),lower.tail=FALSE)))
-    colnames(cc) <- c("Estimate","S.E.","dU^-1/2","P-value")
-    if (length(class(object))==1) if (!is.null(ncluster <- attributes(V)$ncluster))
-    rownames(cc) <- names(coef(object))
+    cc <- estimate(coef=object$coef,vcov=V)$coefmat
     pd <- object$p
     if (object$var.link==1 & object$model=="full") f <- function(p) exp(p)
     if (object$var.link==0 & object$model=="full") f <- function(p) p
-    if (object$var.link==1 & object$model=="shared") f <- function(p) c(exp(p[1:pd]),1/(1+exp(p[(pd+1):2*pd])))
-    if (object$var.link==0 & object$model=="shared") f <- function(p) c(p[1:pd],1/(1+exp(p[(pd+1):2*pd])))
-    expC <- lava::estimate(coef=object$coef,vcov=V,f=f)$coefmat[,c(1,3,4),drop=FALSE]
+    if (object$var.link==1 & object$model=="shared") f <- function(p) c(exp(p[1]),attr(object,"fnu")(p[2]))
+    if (object$var.link==0 & object$model=="shared") f <- function(p) c(p[1],attr(object,"fnu")(p[2]))
+    if (delta==1 | object$model=="full") 
+    expC <- lava::estimate(coef=object$coef,vcov=V,f=f)$coefmat ##[,c(1,3,4),drop=FALSE]
+    else expC <- apply(cc[,c(1,3,4),drop=FALSE],2,f) 
   n <- object$n
-  res <- list(coef=cc,n=n,nevent=object$nevent,ncluster=ncluster,var=V,exp.coef=expC,var.link=object$var.link)
+  res <- list(coef=cc,n=n,nevent=object$nevent,ncluster=ncluster,var=V,exp.coef=expC,var.link=object$var.link,
+	      ghosh.lin=object$ghosh.lin)
   class(res) <- "summary.twostageREC"
   res
-}
-# }}}
+} # }}}
 
 ##' @export
 print.summary.twostageREC  <- function(x,max.strata=5,...) {# {{{
+  if (x$ghosh.lin==0) cat("Cox(recurrent)-Cox(terminal) intensity model\n"); 
+  if (x$ghosh.lin==1) cat("Ghosh-Lin(recurrent)-Cox(terminal) mean model\n"); 
   if (!is.null(x$ncluster)) cat("\n ", x$ncluster, " clusters\n",sep="")
   if (!is.null(x$coef)) {
     cat("coeffients:\n")
@@ -1666,3 +1690,7 @@ print.summary.twostageREC  <- function(x,max.strata=5,...) {# {{{
   cat("\n")
 } # }}}
 
+##' @export
+print.twostageREC  <- function(x,...) {# {{{
+  print(summary(x),...)
+} # }}}

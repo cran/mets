@@ -12,7 +12,7 @@
 
 <meta name="author" content="Klaus Holst &amp; Thomas Scheike" />
 
-<meta name="date" content="2023-12-04" />
+<meta name="date" content="2024-02-16" />
 
 <title>Analysis of bivariate binomial data: Twin analysis</title>
 
@@ -341,7 +341,7 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 <h1 class="title toc-ignore">Analysis of bivariate binomial data: Twin
 analysis</h1>
 <h4 class="author">Klaus Holst &amp; Thomas Scheike</h4>
-<h4 class="date">2023-12-04</h4>
+<h4 class="date">2024-02-16</h4>
 
 
 
@@ -464,7 +464,7 @@ transform of a Gamma distributed random effect with <span class="math inline">\(
 <li>Estimating the marginal parameters via GEE</li>
 <li>Using marginal estimates, estimate dependence parameters</li>
 </ul>
-<p>To deal with multiple random effects we consider random effects <span class="math inline">\(Z_i i=1,...,d\)</span> such that <span class="math inline">\(Z_i\)</span> is gamma distributed with * mean:
+<p>To deal with multiple random effects we consider random effects <span class="math inline">\(Z_i  i=1,...,d\)</span> such that <span class="math inline">\(Z_i\)</span> is gamma distributed with * mean:
 <span class="math inline">\(\lambda_j/\lambda_{\bullet}\)</span> *
 variance: <span class="math inline">\(\lambda_j/\lambda_{\bullet}^2\)</span>, where we
 define the scalar <span class="math inline">\(\lambda_{\bullet}\)</span>
@@ -1025,7 +1025,7 @@ now consider instead the AE model.</p>
 <div class="sourceCode" id="cb18"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" tabindex="-1"></a><span class="fu">sessionInfo</span>()</span>
 <span id="cb18-2"><a href="#cb18-2" tabindex="-1"></a><span class="co">#&gt; R version 4.3.2 (2023-10-31)</span></span>
 <span id="cb18-3"><a href="#cb18-3" tabindex="-1"></a><span class="co">#&gt; Platform: aarch64-apple-darwin22.6.0 (64-bit)</span></span>
-<span id="cb18-4"><a href="#cb18-4" tabindex="-1"></a><span class="co">#&gt; Running under: macOS Ventura 13.6.2</span></span>
+<span id="cb18-4"><a href="#cb18-4" tabindex="-1"></a><span class="co">#&gt; Running under: macOS Sonoma 14.3.1</span></span>
 <span id="cb18-5"><a href="#cb18-5" tabindex="-1"></a><span class="co">#&gt; </span></span>
 <span id="cb18-6"><a href="#cb18-6" tabindex="-1"></a><span class="co">#&gt; Matrix products: default</span></span>
 <span id="cb18-7"><a href="#cb18-7" tabindex="-1"></a><span class="co">#&gt; BLAS:   /Users/kkzh/.asdf/installs/R/4.3.2/lib/R/lib/libRblas.dylib </span></span>
@@ -1041,20 +1041,20 @@ now consider instead the AE model.</p>
 <span id="cb18-17"><a href="#cb18-17" tabindex="-1"></a><span class="co">#&gt; [1] stats     graphics  grDevices utils     datasets  methods   base     </span></span>
 <span id="cb18-18"><a href="#cb18-18" tabindex="-1"></a><span class="co">#&gt; </span></span>
 <span id="cb18-19"><a href="#cb18-19" tabindex="-1"></a><span class="co">#&gt; other attached packages:</span></span>
-<span id="cb18-20"><a href="#cb18-20" tabindex="-1"></a><span class="co">#&gt; [1] mets_1.3.3     timereg_2.0.5  survival_3.5-7</span></span>
+<span id="cb18-20"><a href="#cb18-20" tabindex="-1"></a><span class="co">#&gt; [1] mets_1.3.4     timereg_2.0.5  survival_3.5-7</span></span>
 <span id="cb18-21"><a href="#cb18-21" tabindex="-1"></a><span class="co">#&gt; </span></span>
 <span id="cb18-22"><a href="#cb18-22" tabindex="-1"></a><span class="co">#&gt; loaded via a namespace (and not attached):</span></span>
-<span id="cb18-23"><a href="#cb18-23" tabindex="-1"></a><span class="co">#&gt;  [1] cli_3.6.1           knitr_1.45          rlang_1.1.1        </span></span>
-<span id="cb18-24"><a href="#cb18-24" tabindex="-1"></a><span class="co">#&gt;  [4] xfun_0.41           jsonlite_1.8.7      listenv_0.9.0      </span></span>
-<span id="cb18-25"><a href="#cb18-25" tabindex="-1"></a><span class="co">#&gt;  [7] future.apply_1.11.0 lava_1.7.4          htmltools_0.5.6.1  </span></span>
+<span id="cb18-23"><a href="#cb18-23" tabindex="-1"></a><span class="co">#&gt;  [1] cli_3.6.2           knitr_1.45          rlang_1.1.3        </span></span>
+<span id="cb18-24"><a href="#cb18-24" tabindex="-1"></a><span class="co">#&gt;  [4] xfun_0.41           jsonlite_1.8.8      listenv_0.9.1      </span></span>
+<span id="cb18-25"><a href="#cb18-25" tabindex="-1"></a><span class="co">#&gt;  [7] future.apply_1.11.1 lava_1.7.4          htmltools_0.5.6.1  </span></span>
 <span id="cb18-26"><a href="#cb18-26" tabindex="-1"></a><span class="co">#&gt; [10] sass_0.4.7          rmarkdown_2.25      grid_4.3.2         </span></span>
 <span id="cb18-27"><a href="#cb18-27" tabindex="-1"></a><span class="co">#&gt; [13] evaluate_0.23       jquerylib_0.1.4     fastmap_1.1.1      </span></span>
-<span id="cb18-28"><a href="#cb18-28" tabindex="-1"></a><span class="co">#&gt; [16] mvtnorm_1.2-3       yaml_2.3.7          numDeriv_2016.8-1.1</span></span>
+<span id="cb18-28"><a href="#cb18-28" tabindex="-1"></a><span class="co">#&gt; [16] mvtnorm_1.2-4       yaml_2.3.7          numDeriv_2016.8-1.1</span></span>
 <span id="cb18-29"><a href="#cb18-29" tabindex="-1"></a><span class="co">#&gt; [19] compiler_4.3.2      codetools_0.2-19    ucminf_1.2.0       </span></span>
-<span id="cb18-30"><a href="#cb18-30" tabindex="-1"></a><span class="co">#&gt; [22] Rcpp_1.0.11.6       future_1.33.0       lattice_0.22-5     </span></span>
-<span id="cb18-31"><a href="#cb18-31" tabindex="-1"></a><span class="co">#&gt; [25] digest_0.6.33       R6_2.5.1            parallelly_1.36.0  </span></span>
+<span id="cb18-30"><a href="#cb18-30" tabindex="-1"></a><span class="co">#&gt; [22] Rcpp_1.0.12         future_1.33.1       lattice_0.22-5     </span></span>
+<span id="cb18-31"><a href="#cb18-31" tabindex="-1"></a><span class="co">#&gt; [25] digest_0.6.34       R6_2.5.1            parallelly_1.37.0  </span></span>
 <span id="cb18-32"><a href="#cb18-32" tabindex="-1"></a><span class="co">#&gt; [28] parallel_4.3.2      splines_4.3.2       bslib_0.5.1        </span></span>
-<span id="cb18-33"><a href="#cb18-33" tabindex="-1"></a><span class="co">#&gt; [31] Matrix_1.6-3        tools_4.3.2         globals_0.16.2     </span></span>
+<span id="cb18-33"><a href="#cb18-33" tabindex="-1"></a><span class="co">#&gt; [31] Matrix_1.6-5        tools_4.3.2         globals_0.16.2     </span></span>
 <span id="cb18-34"><a href="#cb18-34" tabindex="-1"></a><span class="co">#&gt; [34] cachem_1.0.8</span></span></code></pre></div>
 </div>
 

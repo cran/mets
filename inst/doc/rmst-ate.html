@@ -12,7 +12,7 @@
 
 <meta name="author" content="Klaus Holst &amp; Thomas Scheike" />
 
-<meta name="date" content="2023-12-04" />
+<meta name="date" content="2024-02-16" />
 
 <title>Average treatment effect (ATE) for Restricted mean survival and years lost of Competing risks</title>
 
@@ -341,7 +341,7 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 <h1 class="title toc-ignore">Average treatment effect (ATE) for
 Restricted mean survival and years lost of Competing risks</h1>
 <h4 class="author">Klaus Holst &amp; Thomas Scheike</h4>
-<h4 class="date">2023-12-04</h4>
+<h4 class="date">2024-02-16</h4>
 
 
 
@@ -547,7 +547,7 @@ years lost in competing risks situation</p>
 <div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a><span class="fu">sessionInfo</span>()</span>
 <span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a><span class="co">#&gt; R version 4.3.2 (2023-10-31)</span></span>
 <span id="cb3-3"><a href="#cb3-3" tabindex="-1"></a><span class="co">#&gt; Platform: aarch64-apple-darwin22.6.0 (64-bit)</span></span>
-<span id="cb3-4"><a href="#cb3-4" tabindex="-1"></a><span class="co">#&gt; Running under: macOS Ventura 13.6.2</span></span>
+<span id="cb3-4"><a href="#cb3-4" tabindex="-1"></a><span class="co">#&gt; Running under: macOS Sonoma 14.3.1</span></span>
 <span id="cb3-5"><a href="#cb3-5" tabindex="-1"></a><span class="co">#&gt; </span></span>
 <span id="cb3-6"><a href="#cb3-6" tabindex="-1"></a><span class="co">#&gt; Matrix products: default</span></span>
 <span id="cb3-7"><a href="#cb3-7" tabindex="-1"></a><span class="co">#&gt; BLAS:   /Users/kkzh/.asdf/installs/R/4.3.2/lib/R/lib/libRblas.dylib </span></span>
@@ -564,24 +564,24 @@ years lost in competing risks situation</p>
 <span id="cb3-18"><a href="#cb3-18" tabindex="-1"></a><span class="co">#&gt; [8] base     </span></span>
 <span id="cb3-19"><a href="#cb3-19" tabindex="-1"></a><span class="co">#&gt; </span></span>
 <span id="cb3-20"><a href="#cb3-20" tabindex="-1"></a><span class="co">#&gt; other attached packages:</span></span>
-<span id="cb3-21"><a href="#cb3-21" tabindex="-1"></a><span class="co">#&gt; [1] ggplot2_3.4.4  cowplot_1.1.1  mets_1.3.3     timereg_2.0.5  survival_3.5-7</span></span>
+<span id="cb3-21"><a href="#cb3-21" tabindex="-1"></a><span class="co">#&gt; [1] ggplot2_3.4.4  cowplot_1.1.1  mets_1.3.4     timereg_2.0.5  survival_3.5-7</span></span>
 <span id="cb3-22"><a href="#cb3-22" tabindex="-1"></a><span class="co">#&gt; </span></span>
 <span id="cb3-23"><a href="#cb3-23" tabindex="-1"></a><span class="co">#&gt; loaded via a namespace (and not attached):</span></span>
-<span id="cb3-24"><a href="#cb3-24" tabindex="-1"></a><span class="co">#&gt;  [1] sass_0.4.7          utf8_1.2.4          future_1.33.0      </span></span>
-<span id="cb3-25"><a href="#cb3-25" tabindex="-1"></a><span class="co">#&gt;  [4] generics_0.1.3      lattice_0.22-5      listenv_0.9.0      </span></span>
-<span id="cb3-26"><a href="#cb3-26" tabindex="-1"></a><span class="co">#&gt;  [7] digest_0.6.33       magrittr_2.0.3      evaluate_0.23      </span></span>
-<span id="cb3-27"><a href="#cb3-27" tabindex="-1"></a><span class="co">#&gt; [10] grid_4.3.2          mvtnorm_1.2-3       fastmap_1.1.1      </span></span>
-<span id="cb3-28"><a href="#cb3-28" tabindex="-1"></a><span class="co">#&gt; [13] jsonlite_1.8.7      Matrix_1.6-3        fansi_1.0.5        </span></span>
+<span id="cb3-24"><a href="#cb3-24" tabindex="-1"></a><span class="co">#&gt;  [1] sass_0.4.7          utf8_1.2.4          future_1.33.1      </span></span>
+<span id="cb3-25"><a href="#cb3-25" tabindex="-1"></a><span class="co">#&gt;  [4] generics_0.1.3      lattice_0.22-5      listenv_0.9.1      </span></span>
+<span id="cb3-26"><a href="#cb3-26" tabindex="-1"></a><span class="co">#&gt;  [7] digest_0.6.34       magrittr_2.0.3      evaluate_0.23      </span></span>
+<span id="cb3-27"><a href="#cb3-27" tabindex="-1"></a><span class="co">#&gt; [10] grid_4.3.2          mvtnorm_1.2-4       fastmap_1.1.1      </span></span>
+<span id="cb3-28"><a href="#cb3-28" tabindex="-1"></a><span class="co">#&gt; [13] jsonlite_1.8.8      Matrix_1.6-5        fansi_1.0.6        </span></span>
 <span id="cb3-29"><a href="#cb3-29" tabindex="-1"></a><span class="co">#&gt; [16] scales_1.2.1        isoband_0.2.7       codetools_0.2-19   </span></span>
 <span id="cb3-30"><a href="#cb3-30" tabindex="-1"></a><span class="co">#&gt; [19] numDeriv_2016.8-1.1 jquerylib_0.1.4     lava_1.7.4         </span></span>
-<span id="cb3-31"><a href="#cb3-31" tabindex="-1"></a><span class="co">#&gt; [22] cli_3.6.1           rlang_1.1.1         parallelly_1.36.0  </span></span>
-<span id="cb3-32"><a href="#cb3-32" tabindex="-1"></a><span class="co">#&gt; [25] future.apply_1.11.0 munsell_0.5.0       withr_2.5.2        </span></span>
+<span id="cb3-31"><a href="#cb3-31" tabindex="-1"></a><span class="co">#&gt; [22] cli_3.6.2           rlang_1.1.3         parallelly_1.37.0  </span></span>
+<span id="cb3-32"><a href="#cb3-32" tabindex="-1"></a><span class="co">#&gt; [25] future.apply_1.11.1 munsell_0.5.0       withr_3.0.0        </span></span>
 <span id="cb3-33"><a href="#cb3-33" tabindex="-1"></a><span class="co">#&gt; [28] cachem_1.0.8        yaml_2.3.7          tools_4.3.2        </span></span>
 <span id="cb3-34"><a href="#cb3-34" tabindex="-1"></a><span class="co">#&gt; [31] parallel_4.3.2      ucminf_1.2.0        dplyr_1.1.3        </span></span>
-<span id="cb3-35"><a href="#cb3-35" tabindex="-1"></a><span class="co">#&gt; [34] colorspace_2.1-0    globals_0.16.2      vctrs_0.6.4        </span></span>
-<span id="cb3-36"><a href="#cb3-36" tabindex="-1"></a><span class="co">#&gt; [37] R6_2.5.1            lifecycle_1.0.3     MASS_7.3-60        </span></span>
+<span id="cb3-35"><a href="#cb3-35" tabindex="-1"></a><span class="co">#&gt; [34] colorspace_2.1-0    globals_0.16.2      vctrs_0.6.5        </span></span>
+<span id="cb3-36"><a href="#cb3-36" tabindex="-1"></a><span class="co">#&gt; [37] R6_2.5.1            lifecycle_1.0.4     MASS_7.3-60        </span></span>
 <span id="cb3-37"><a href="#cb3-37" tabindex="-1"></a><span class="co">#&gt; [40] pkgconfig_2.0.3     bslib_0.5.1         pillar_1.9.0       </span></span>
-<span id="cb3-38"><a href="#cb3-38" tabindex="-1"></a><span class="co">#&gt; [43] gtable_0.3.4        glue_1.6.2          Rcpp_1.0.11.6      </span></span>
+<span id="cb3-38"><a href="#cb3-38" tabindex="-1"></a><span class="co">#&gt; [43] gtable_0.3.4        glue_1.7.0          Rcpp_1.0.12        </span></span>
 <span id="cb3-39"><a href="#cb3-39" tabindex="-1"></a><span class="co">#&gt; [46] tidyselect_1.2.0    xfun_0.41           tibble_3.2.1       </span></span>
 <span id="cb3-40"><a href="#cb3-40" tabindex="-1"></a><span class="co">#&gt; [49] highr_0.10          knitr_1.45          farver_2.1.1       </span></span>
 <span id="cb3-41"><a href="#cb3-41" tabindex="-1"></a><span class="co">#&gt; [52] htmltools_0.5.6.1   labeling_0.4.3      rmarkdown_2.25     </span></span>

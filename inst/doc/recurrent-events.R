@@ -143,7 +143,7 @@ out <- recurrentMarginal(xr,dr)
 mets::summaryTimeobject(out$times,out$mu,times=times,se.mu=out$se.mu)
 
 ## -----------------------------------------------------------------------------
-n <- 200
+n <- 100
 X <- matrix(rbinom(n*2,1,0.5),n,2)
 colnames(X) <- paste("X",1:2,sep="")
 ###
@@ -151,7 +151,7 @@ r1 <- exp( X %*% c(0.3,-0.3))
 rd <- exp( X %*% c(0.3,-0.3))
 rc <- exp( X %*% c(0,0))
 fz <- NULL
-rr <- mets:::simGLcox(n,base1,ddr,var.z=0,r1=r1,rd=rd,rc=rc,fz,model="twostage",cens=3/5000) 
+rr <- mets:::simGLcox(n,base1,ddr,var.z=1,r1=r1,rd=rd,rc=rc,fz,cens=1/5000,type=2) 
 rr <- cbind(rr,X[rr$id+1,])
 
  out  <- recreg(Event(start,stop,statusD)~X1+X2+cluster(id),data=rr,cause=1,death.code=3,cens.code=0)
@@ -212,6 +212,14 @@ GLprediid(baseiid,rr[1:5,])
 		augment.model=~Nt+X1+X2,augment=outi$lindyn.augment)
  summary(outA)$coef
 
+
+## -----------------------------------------------------------------------------
+ out  <- recreg(Event(start,stop,statusD)~X1+X2+cluster(id),data=rr,
+		cause=1,death.code=3,cens.code=0,cox.prep=TRUE)
+ outs <- phreg(Event(start,stop,statusD==3)~X1+X2+cluster(id),data=rr)
+
+ tsout <- twostageREC(outs,out,data=rr)
+ summary(tsout)
 
 ## -----------------------------------------------------------------------------
 n <- 100

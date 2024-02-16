@@ -91,6 +91,28 @@ using namespace arma;
 //}/*}}}*/
 //
 
+uvec arma_sort(vec y,Col<int> z,Col<int> x,Col<int> id) {/*{{{*/
+    // we order by y unless there's a tie, then order by z,x,id
+    // First create a vector of indices
+    uvec idx = regspace<uvec>(0, y.size() - 1);
+    // Then sort that vector by the values of y,z,x,id
+    std::sort(idx.begin(), idx.end(), [&](int i, int j){
+        if ( y[i] == y[j] ) {
+	    if (z[i]==z[j])  {
+	       if (x[i]==x[j])  {
+	           return id[i] < id[j];
+	       } 
+	       return x[j] < x[i]; 
+	    } 
+	    return z[j] < z[i];
+        }
+        return y[i] < y[j];
+    });
+    // And return that order
+    return idx;
+}
+/*}}}*/
+
 RcppExport SEXP FastCoxPrepStrata(SEXP EntrySEXP, SEXP ExitSEXP, SEXP StatusSEXP, SEXP XSEXP, SEXP IdSEXP, SEXP TruncationSEXP, SEXP strataSEXP, SEXP weightsSEXP, SEXP offsetsSEXP, SEXP ZSEXP, SEXP caseweightsSEXP
 		) {/*{{{*/
 	BEGIN_RCPP
@@ -152,7 +174,6 @@ RcppExport SEXP FastCoxPrepStrata(SEXP EntrySEXP, SEXP ExitSEXP, SEXP StatusSEXP
 			if (Truncation) ZX.row(i+n/2) = ZX.row(i);
 		}
 
-
 	arma::Col<int> Sign;
 	Sign.reshape(n,1); Sign.fill(1);
 	if (Truncation) {
@@ -174,20 +195,22 @@ RcppExport SEXP FastCoxPrepStrata(SEXP EntrySEXP, SEXP ExitSEXP, SEXP StatusSEXP
 	// also sorting after id to use multiple phregs together
 	// ts 20/3-2018
 	arma::uvec idx00 = sort_index(Id,"ascend");
-	arma::uvec idx0 = stable_sort_index(Status.elem(idx00),"descend");
+	// 12/12-2023
+	arma::uvec idx0 = stable_sort_index(Sign.elem(idx00),"descend");
+	idx00 = idx00.elem(idx0);
+	idx0 = stable_sort_index(Status.elem(idx00),"descend");
 	idx0 = idx00.elem(idx0);
 	arma::uvec idx = stable_sort_index(Exit.elem(idx0),"ascend");
 	idx = idx0.elem(idx);
 
-	//  arma::uvec idx0 = stable_sort_index(Status.elem(idx00),"descend");
+	// ts 20/3-2018
+//	arma::uvec idx00 = sort_index(Id,"ascend");
+//	arma::uvec idx0 = stable_sort_index(Status.elem(idx00),"descend");
+//	idx0 = idx00.elem(idx0);
+//	arma::uvec idx = stable_sort_index(Exit.elem(idx0),"ascend");
+//	idx = idx0.elem(idx);
 
-	//  arma::uvec idx0 = sort_index(Status,"descend");
-	//  arma::uvec idx = stable_sort_index(Exit.elem(idx0),"ascend");
-	//  idx = idx0.elem(idx);
-
-	//  arma::uvec idx00 = stable_sort_index(Id.elem(idx),"ascend");
-	//  idx = idx00.elem(idx);
-
+//      arma::uvec idx=arma_sort(Exit,Status,Sign,Id); 
 
 	//Rcout << "idx=" << idx << std::endl;
 	if (Truncation) {
@@ -595,7 +618,7 @@ RcppExport SEXP revcumsum2stratafdNR(SEXP ia, SEXP idN, SEXP istrata, SEXP instr
 
 	unsigned n = a.n_rows;
 	vec at(nstrata); at.zeros();
-	for (unsigned i=0; i<nstrata; i++) at(i)=starta(i);
+	for (int i=0; i<nstrata; i++) at(i)=starta(i);
 
 	mat tmpsum(nstrata,nstrata2); tmpsum.zeros();
 	colvec res = a;
@@ -604,7 +627,7 @@ RcppExport SEXP revcumsum2stratafdNR(SEXP ia, SEXP idN, SEXP istrata, SEXP instr
 		int ss=strata(n-i-1); int ss2=strata2(n-i-1);
 		at(ss)=a(n-i-1);
 		lagres(n-i-1)=tmpsum(ss,ss2);
-	        for (unsigned k=0;k<nstrata; k++) tmpsum(k,ss2)+=at(k)*dN(n-i-1);
+	        for (int k=0;k<nstrata; k++) tmpsum(k,ss2)+=at(k)*dN(n-i-1);
 //		printf(" %lf %lf \n",at(ss),dN(n-i-1));
 //		tmpsum.print("tmpsum");
 		res(n-i-1)=tmpsum(ss,ss2);
@@ -1453,11 +1476,11 @@ mat lower2fullXX(rowvec a, int p)
 {/*{{{*/
 	mat XX(p,p); 
 	unsigned kj=0;
-	for (unsigned i=0; i<p; i++) 
-	for (unsigned j=i; j<p; j++) { XX(j,i)=a(kj);  kj=kj+1; }
+	for (int i=0; i<p; i++) 
+	for (int j=i; j<p; j++) { XX(j,i)=a(kj);  kj=kj+1; }
 
-        for (unsigned i=0; i<p-1; i++) 
-	for (unsigned j=i+1; j<p; j++) XX(i,j)=XX(j,i);
+        for (int i=0; i<p-1; i++) 
+	for (int j=i+1; j<p; j++) XX(i,j)=XX(j,i);
 	return(XX);
 } /*}}}*/
 
@@ -1466,7 +1489,7 @@ RcppExport SEXP XXMatFULL(SEXP XXSEXP,SEXP XP)
 	BEGIN_RCPP
         mat XX = Rcpp::as<mat>(XXSEXP);
 	int p = Rcpp::as<int>(XP);
-	unsigned xxp = XX.n_cols;
+//	unsigned xxp = XX.n_cols;
 	unsigned n = XX.n_rows;
 
 	mat XXf(n,p*p);
