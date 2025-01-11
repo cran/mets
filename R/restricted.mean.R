@@ -3,19 +3,21 @@
 ##' Simple and fast version for IPCW regression for just one time-point thus fitting the model 
 ##' \deqn{E( min(T, t) | X ) = exp( X^T beta) } or in the case of competing risks data
 ##' \deqn{E( I(epsilon=1) (t - min(T ,t)) | X ) = exp( X^T beta) } thus given years lost to 
-##' cause.
+##' cause, see \code{binreg} for the arguments. 
 ##'
 ##' When the status is binary assumes it is a survival setting and default is to consider outcome Y=min(T,t), 
 ##' if status has more than two levels, then computes years lost due to the specified cause, thus
-##* using the response \deqn{ (min(T,t)-t) I(status==cause) }
+##' using the response \deqn{ Y = (t-min(T,t)) I(status=cause) }
 ##'
 ##' Based on binomial regresion IPCW response estimating equation: 
-##' \deqn{ X ( \Delta (min(T , t))/G_c(min(T_i,t)) - exp( X^T beta)) = 0 }
-##' for IPCW adjusted responses. Here \deqn{ \Delta(min(T,t)) I ( min(T ,t) \leq C ) } is indicator of
-##' being uncensored. 
+##' \deqn{ X ( \Delta(min(T,t)) Y /G_c(min(T,t)) - exp( X^T beta)) = 0 }
+##' for IPCW adjusted responses. Here \deqn{ \Delta(min(T,t)) = I ( min(T ,t) \leq C ) } is indicator of
+##' being uncensored.  Concretely, the uncensored observations at time t will count those with an event (of any type) before t and those
+##' with a censoring time at t or further out. One should therefore be a bit careful when data has been constructed such that
+##' some of the event times T are equivalent to t. 
 ##'
 ##' Can also solve the binomial regresion IPCW response estimating equation: 
-##' \deqn{ h(X) X ( \Delta (min(T, t))/G_c(min(T_i,t)) - exp( X^T beta)) = 0 }
+##' \deqn{ h(X) X ( \Delta(min(T,t)) Y /G_c(min(T,t)) - exp( X^T beta)) = 0 }
 ##' for IPCW adjusted responses where $h$ is given as an argument together with iid of censoring with h. 
 ##' 
 ##' By using appropriately  the h argument we can also do the efficient IPCW estimator estimator.
@@ -24,7 +26,7 @@
 ##' under known censoring model. 
 ##' 
 ##' When Ydirect is given it solves : 
-##' \deqn{ X ( \Delta( min(T,t)) Ydirect /G_c(min(T_i,t)) - exp( X^T beta)) = 0 }
+##' \deqn{ X ( \Delta(min(T,t)) Ydirect /G_c(min(T,t)) - exp( X^T beta)) = 0 }
 ##' for IPCW adjusted responses. 
 ##'
 ##' The actual influence (type="II") function is based on augmenting with \deqn{ X \int_0^t E(Y | T>s) /G_c(s) dM_c(s) }
@@ -32,26 +34,8 @@
 ##'
 ##' Censoring model may depend on strata. 
 ##'
-##' @param formula formula with outcome (see \code{coxph})
+##' @param formula formula with outcome on Event form 
 ##' @param data data frame
-##' @param cause cause of interest
-##' @param time  time of interest 
-##' @param type of estimator
-##' @param beta starting values 
-##' @param offset offsets for partial likelihood 
-##' @param weights for score equations 
-##' @param cens.weights censoring weights 
-##' @param cens.model only stratified cox model without covariates
-##' @param se to compute se's  based on IPCW 
-##' @param kaplan.meier uses Kaplan-Meier for IPCW in contrast to exp(-Baseline)
-##' @param cens.code gives censoring code
-##' @param no.opt to not optimize 
-##' @param method for optimization 
-##' @param model exp or linear 
-##' @param augmentation to augment binomial regression 
-##' @param h  h for estimating equation 
-##' @param MCaugment iid of h and censoring model 
-##' @param Ydirect to bypass the construction of the response Y=min(T,tau) and use this instead
 ##' @param ... Additional arguments to lower level funtions
 ##' @author Thomas Scheike
 ##' @examples
@@ -62,7 +46,7 @@
 ##'                 time=50,cens.model=~strata(platelet),model="exp")
 ##' summary(out)
 ##' 
-##'  ### same as Kaplan-Meier for full censoring model 
+##' ### same as Kaplan-Meier for full censoring model 
 ##' bmt$int <- with(bmt,strata(tcell,platelet))
 ##' out <- resmeanIPCW(Event(time,cause!=0)~-1+int,bmt,time=30,
 ##'                              cens.model=~strata(platelet,tcell),model="lin")
@@ -79,8 +63,15 @@
 ##' rmc1 <- cif.yearslost(Event(time,cause)~strata(tcell,platelet),data=bmt,times=30)
 ##' summary(rmc1)
 ##' @export
-##' @aliases rmstIPCW 
-resmeanIPCW  <- function(formula,data,cause=1,time=NULL,type=c("II","I"),
+##' @aliases rmstIPCW resmeanIPCWold 
+resmeanIPCW  <- function(formula,data,...)
+{# {{{
+   out <- binreg(formula,data,outcome="rmst",...)
+   return(out)
+}# }}}
+
+##' @export
+resmeanIPCWold  <- function(formula,data,cause=1,time=NULL,type=c("II","I"),
    beta=NULL,offset=NULL,weights=NULL,cens.weights=NULL,cens.model=~+1,se=TRUE,
    kaplan.meier=TRUE,cens.code=0,no.opt=FALSE,method="nr",model="exp",
    augmentation=NULL,h=NULL,MCaugment=NULL,Ydirect=NULL,...)
@@ -143,21 +134,23 @@ resmeanIPCW  <- function(formula,data,cause=1,time=NULL,type=c("II","I"),
 # }}}
 
   if (is.null(time)) stop("Must give time for logistic modelling \n"); 
-  statusC <- (status==cens.code) 
-  statusE <- (status==cause) & (exit<= time) 
+  statusC <- (status %in% cens.code) 
+  statusE <- (status %in% cause) & (exit<= time) 
   if ((sum(statusE)==0) & is.null(Ydirect)) warning("No events of type 1 before time \n"); 
   kmt <- kaplan.meier
 
-  statusC <- (status==cens.code) 
   ucauses  <-  sort(unique(status))
-  ccc <- which(ucauses==cens.code)
+  ccc <- which(ucauses %in% cens.code)
   if (length(ccc)==0) Causes <- ucauses else Causes <- ucauses[-ccc]
   competing  <-  (length(Causes)>1) 
   data$id <- id
   data$exit <- exit
   data$statusC <- statusC 
-
   cens.strata <- cens.nstrata <- NULL 
+
+ nevent <- sum((status %in% cause)*(exit<=time))
+ ## if event before time or alive, then uncensored, equality for both censored and events  
+ obs <- (exit<=time & (status %in% Causes)) | (exit>=time)
 
   if (is.null(cens.weights))  {
       formC <- update.formula(cens.model,Surv(exit,statusC)~ . +cluster(id))
@@ -168,34 +161,30 @@ resmeanIPCW  <- function(formula,data,cause=1,time=NULL,type=c("II","I"),
       ## strata from original data 
       cens.strata <- resC$strata[order(resC$ord)]
       cens.nstrata <- resC$nstrata
-  } else formC <- NULL
+  } else { se <- FALSE; resC <- formC <- NULL;}
   expit  <- function(z) 1/(1+exp(-z)) ## expit
 
-  if (is.null(beta)) beta <- rep(0,ncol(X))
   p <- ncol(X)
-
+  if (is.null(beta)) beta <- rep(0,p)
+  if (is.null(augmentation))  augmentation=rep(0,p)
   X <-  as.matrix(X)
-  X2  <- .Call("vecMatMat",X,X)$vXZ
-  ## if event before time or alive, then uncensored  
-  obs <- (exit<=time & (status %in% Causes)) | (exit>time)
+###  X2  <- .Call("vecMatMat",X,X)$vXZ
+  X2  <- .Call("vecCPMat",X)$XX
   if (is.null(Ydirect))  {
-	  if (!competing) Y <- c(pmin(exit,time)*obs)/cens.weights else 
-	                  Y <- c((status==cause)*(time-pmin(exit,time))*obs)/cens.weights
+      if (!competing) Y <- c(pmin(exit,time)*obs)/cens.weights else 
+                      Y <- c((status==cause)*(time-pmin(exit,time))*obs)/cens.weights
   } else Y <- c(Ydirect*obs)/cens.weights
 
- if (is.null(augmentation))  augmentation=rep(0,p)
- nevent <- sum((status==cause)*(exit<=time))
 
  h.call <- h
  if (is.null(h))  h <- rep(1,length(exit))
-
  if (!is.null(MCaugment)) {se <- FALSE;}
 
  if (se) {## {{{ censoring adjustment of variance 
-
     ### order of sorted times
     ord <- resC$ord
     X <-  X[ord,,drop=FALSE]
+    X2 <- X2[ord,,drop=FALSE]
     status <- status[ord]
     exit <- exit[ord]
     weights <- weights[ord]
@@ -203,12 +192,12 @@ resmeanIPCW  <- function(formula,data,cause=1,time=NULL,type=c("II","I"),
     if (!is.null(Ydirect)) Ydirect <- Ydirect[ord]
     cens.weights <- cens.weights[ord]
     h <- h[ord]
-###    lp <- c(X %*% val$coef+offset)
-###    p <- exp(lp)
-    obs <- (exit<=time & status==cause) | (exit>time)
+###  lp <- c(X %*% val$coef+offset)
+###  p <- exp(lp)
+    obs <- (exit<=time & (status %in% Causes)) | (exit>=time)
     if (is.null(Ydirect))  {
 	  if (!competing) Y <- c(pmin(exit,time)*obs)/cens.weights else 
-	                  Y <- c((status==cause)*(time-pmin(exit,time))*obs)/cens.weights
+	                  Y <- c((status %in% cause)*(time-pmin(exit,time))*obs)/cens.weights
     } else Y <- c(Ydirect*obs)/cens.weights
     if (model=="exp" & is.null(h.call))  ph <- 1
     if (model=="exp" & !is.null(h.call)) ph <- h
@@ -216,43 +205,50 @@ resmeanIPCW  <- function(formula,data,cause=1,time=NULL,type=c("II","I"),
     if (model!="exp" & !is.null(h.call)) ph <- h 
     Xd <- ph*X
 
-	    xx <- resC$cox.prep
-	    S0i2 <- S0i <- rep(0,length(xx$strata))
-	    S0i[xx$jumps+1]  <- 1/resC$S0
-	    S0i2[xx$jumps+1] <- 1/resC$S0^2
-	    ## compute function h(s) = \sum_i X_i Y_i(t) I(s \leq T_i) 
-	    ## to make \int h(s)/Ys  dM_i^C(s) 
-	    btime <- 1*(exit<time)
+    xx <- resC$cox.prep
+    S0i2 <- S0i <- rep(0,length(xx$strata))
+    S0i[xx$jumps+1]  <- 1/resC$S0
+    S0i2[xx$jumps+1] <- 1/resC$S0^2
+    ## compute function h(s) = \sum_i X_i Y_i(t) I(s \leq T_i) 
+    ## to make \int h(s)/Ys  dM_i^C(s) 
+    btime <- 1*(exit<time)
+    S0t <- revcumsumstrata(rep(1,length(xx$strata)),xx$strata,xx$nstrata)
 
-	    ht  <-  apply(Xd*Y,2,revcumsumstrata,xx$strata,xx$nstrata)
-	    ### Cens-Martingale as a function of time and for all subjects to handle strata 
-	    ## to make \int h(s)/Ys  dM_i^C(s)  = \int h(s)/Ys  dN_i^C(s) - dLambda_i^C(s)
-	    IhdLam0 <- apply(ht*S0i2*btime,2,cumsumstrata,xx$strata,xx$nstrata)
-	    U <- matrix(0,nrow(xx$X),ncol(X))
-	    U[xx$jumps+1,] <- (resC$jumptimes<=time)*ht[xx$jumps+1,]/c(resC$S0)
-	    MGt <- (U[,drop=FALSE]-IhdLam0)*c(xx$weights)
+    ht  <-  apply(Xd*Y,2,revcumsumstrata,xx$strata,xx$nstrata)
+    ### Cens-Martingale as a function of time and for all subjects to handle strata 
+    ## to make \int h(s)/Ys  dM_i^C(s)  = \int h(s)/Ys  dN_i^C(s) - dLambda_i^C(s)
+    IhdLam0 <- apply(ht*S0i2*btime,2,cumsumstrata,xx$strata,xx$nstrata)
+    U <- matrix(0,nrow(xx$X),ncol(X))
+    U[xx$jumps+1,] <- (resC$jumptimes<=time)*ht[xx$jumps+1,]/c(resC$S0)
+    MGt <- (U[,drop=FALSE]-IhdLam0)*c(xx$weights)
+    mid <- max(xx$id)
+    MGCiid <- apply(MGt,2,sumstrata,xx$id,mid+1)
 
-	    ### Censoring Variance Adjustment  \int h^2(s) / y.(s) d Lam_c(s) estimated by \int h^2(s) / y.(s)^2  d N.^C(s) 
-	    MGCiid <- apply(MGt,2,sumstrata,xx$id,max(id)+1)
-
-           if (type[1]=="II") { ## psedo-value type augmentation
-	    hYt  <-  revcumsumstrata(Y,xx$strata,xx$nstrata)
-	    IhdLam0 <- cumsumstrata(hYt*S0i2*btime,xx$strata,xx$nstrata)
-	    U <- rep(0,length(xx$strata))
-	    U[xx$jumps+1] <- (resC$jumptimes<=time)*hYt[xx$jumps+1]/c(resC$S0)
-	    MGt <- Xd*c(U-IhdLam0)*c(xx$weights)
-	    MGtiid <- apply(MGt,2,sumstrata,xx$id,max(id)+1)
-
-	    ### Censoring Variance Adjustment  \int h^2(s) / y.(s) d Lam_c(s) estimated by \int h^2(s) / y.(s)^2  d N.^C(s) 
-	    MGCiid <- MGtiid
-	    augmentation  <-  apply(MGCiid,2,sum) + augmentation
-           }
+   if (type[1]=="II") { ##  pseudo-value type augmentation
+    hYt  <-  revcumsumstrata(Y,xx$strata,xx$nstrata)
+    IhdLam0 <- cumsumstrata(hYt*S0i2*btime,xx$strata,xx$nstrata)
+    U <- rep(0,length(xx$strata))
+    U[xx$jumps+1] <- (resC$jumptimes<time)*hYt[xx$jumps+1]/c(resC$S0)
+    MGt <- Xd*c(U-IhdLam0)*c(xx$weights)
+    MGtiid <- apply(MGt,2,sumstrata,xx$id,mid+1)
+    augmentation  <-  apply(MGtiid,2,sum) + augmentation
+    ###
+    EXt  <-  apply(Xd,2,revcumsumstrata,xx$strata,xx$nstrata)
+    IEXhYtdLam0 <- apply(EXt*c(hYt)*S0i*S0i2*btime,2,cumsumstrata,xx$strata,xx$nstrata)
+    U <- matrix(0,nrow(xx$X),ncol(X))
+    U[xx$jumps+1,] <- (resC$jumptimes<time)*hYt[xx$jumps+1]*EXt[xx$jumps+1,]/c(resC$S0)^2
+    MGt2 <- (U[,drop=FALSE]-IEXhYtdLam0)*c(xx$weights)
+    ###
+    MGCiid2 <- apply(MGt2,2,sumstrata,xx$id,mid+1)
+    ### Censoring Variance Adjustment 
+    MGCiid <- MGtiid+ MGCiid-MGCiid2
+   }
+   ## use data ordered by time (keeping track of id also)
+   id <- xx$id
    }  else {
-	  MGCiid <- 0
+          MGCiid <- 0
+          mid <- max(id)
   }## }}}
-
- ## use data ordered by time (keeping track of id also)
- id <- xx$id
 
 obj <- function(pp,all=FALSE)
 { # {{{
@@ -272,12 +268,14 @@ D2logl <- c(weights*ph)*X2
 }
 D2log <- apply(D2logl,2,sum)
 gradient <- apply(Dlogl,2,sum)+augmentation
-hessian <- matrix(D2log,length(pp),length(pp))
+###hessian <- matrix(D2log,length(pp),length(pp))
+np <- length(pp)
+hessian <- matrix(.Call("XXMatFULL",matrix(D2log,nrow=1),np,PACKAGE="mets")$XXf,np,np)
 
   if (all) {
       ihess <- solve(hessian)
       beta.iid <- Dlogl %*% ihess ## %*% t(Dlogl) 
-      beta.iid <- apply(beta.iid,2,sumstrata,id,max(id)+1)
+      beta.iid <- apply(beta.iid,2,sumstrata,id,mid+1)
       robvar <- crossprod(beta.iid)
       val <- list(par=pp,ploglik=ploglik,gradient=gradient,hessian=hessian,ihessian=ihess,
 	 id=id,Dlogl=Dlogl,iid=beta.iid,robvar=robvar,var=robvar,se.robust=diag(robvar)^.5)
@@ -285,7 +283,6 @@ hessian <- matrix(D2log,length(pp),length(pp))
   }  
  structure(-ploglik,gradient=-gradient,hessian=hessian)
 }# }}}
-
 
   p <- ncol(X)
   opt <- NULL
@@ -342,7 +339,7 @@ hessian <- matrix(D2log,length(pp),length(pp))
 ##' @export
 rmstIPCW <- function(formula,data,...)
 {# {{{
-   out <- resmeanIPCW(formula,data,...)
+   out <- binreg(formula,data,outcome="rmst",...)
    return(out)
 }# }}}
 
@@ -413,15 +410,13 @@ return(list(Mc=Mc,Xaugment=Xaugment,Faugment=Faugment,hXaugment=augment,h=h,hh=h
 ##' Under the standard causal assumptions  we can estimate the average treatment effect E(Y(1) - Y(0)). We need Consistency, ignorability ( Y(1), Y(0) indep A given X), and positivity.
 ##'
 ##' The first covariate in the specification of the competing risks regression model must be the treatment effect that is a factor. If the factor has more than two levels
-##' then it uses the mlogit for propensity score modelling.  We consider the outcome mint(T;tau) or
-##' I(epsion==cause1)(t- min(T;t)) that gives years lost due to cause "cause".  
-##* The default model is the exp(X^ \beta) 
+##' then it uses the mlogit for propensity score modelling.  We consider the outcome mint(T;tau) or  I(epsion==cause1)(t- min(T;t)) that gives years lost due to cause "cause" depending on 
+##' the number of causes. The default model is the exp(X^ beta) and otherwise a linear model is used. 
 ##'
 ##' Estimates the ATE using the the standard binary double robust estimating equations that are IPCW censoring adjusted.
 ##'
 ##' @param formula formula with 'Event' outcome 
 ##' @param data data-frame 
-##' @param outcome  "rmst"=E( min(T, t) | X) , or "rmst-cause"=E( I(epsilon==cause) ( t - mint(T,t)) ) | X) 
 ##' @param model possible exp model for relevant mean model that is exp(X^t beta) 
 ##' @param ... Additional arguments to pass to binregATE 
 ##' @author Thomas Scheike
@@ -430,22 +425,22 @@ return(list(Mc=Mc,Xaugment=Xaugment,Faugment=Faugment,hXaugment=augment,h=h,hh=h
 ##' out <- resmeanATE(Event(time,event)~tcell+platelet,data=bmt,time=40,treat.model=tcell~platelet)
 ##' summary(out)
 ##' 
-##' out1 <- resmeanATE(Event(time,cause)~tcell+platelet,data=bmt,cause=1,outcome="rmst-cause",
-##'                    time=40,treat.model=tcell~platelet)
+##' out1 <- resmeanATE(Event(time,cause)~tcell+platelet,data=bmt,cause=1,time=40,
+##'                    treat.model=tcell~platelet)
 ##' summary(out1)
 ##' 
 ##' @export
 ##' @aliases rmstATE
-resmeanATE <- function(formula,data,outcome=c("rmst","rmst-cause"),model="exp",...)
+resmeanATE <- function(formula,data,model="exp",...)
 {# {{{
-out <- 	binregATE(formula,data,...,outcome=outcome,model=model) 
+out <- 	binregATE(formula,data,outcome="rmst",model=model,...) 
 return(out)
 }# }}}
 
 ##' @export
-rmstATE <- function(formula,data,outcome=c("rmst","rmst-cause"),model="exp",...)
+rmstATE <- function(formula,data,model="exp",...)
 {# {{{
-out <- 	resmeanATE(formula,data,...,outcome=outcome,model=model) 
+out <- 	binregATE(formula,data,outcome="rmst",model=model,...) 
 return(out)
 }# }}}
 

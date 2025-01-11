@@ -27,7 +27,6 @@ bb <- binregTSR(Event(entry,time,status)~+1+cluster(id),datat,time=2,cause=c(1),
 bb
 
 estimate(coef=bb$riskG$riskG01[,1],vcov=crossprod(bb$riskG.iid$riskG01))
-
 estimate(coef=bb$riskG$riskG01[,1],vcov=crossprod(bb$riskG.iid$riskG01),f=function(p) c(p[1]/p[2],p[3]/p[4]))
 estimate(coef=bb$riskG$riskG01[,1],vcov=crossprod(bb$riskG.iid$riskG01),f=function(p) c(p[1]-p[2],p[3]-p[4]))
 
@@ -92,6 +91,20 @@ bb <- binregTSR(Event(entry,time,status)~+1+cluster(id),datat,time=2,cause=c(1),
 		augmentR0=~X01+X02, augmentR1=~X11+X12,
 		augmentC=~X01+X02+A11t+A12t+X11+X12+TR, cens.model=~strata(A0.f),estpr=c(1,0),pi1=c(0.5,1))
 bb
+
+## -----------------------------------------------------------------------------
+data(calgb8923)
+calgt <- calgb8923
+
+tm=At.f~factor(Count2)+age+sex+wbc
+tm=At.f~factor(Count2)
+ll0 <- phreg_IPTW(Event(start,time,status==1)~strata(A0,A10)+cluster(id),calgt,treat.model=tm)
+pll0 <- predict(ll0,expand.grid(A0=0:1,A10=0,id=1))
+ll1 <- phreg_IPTW(Event(start,time,status==1)~strata(A0,A11)+cluster(id),calgt,treat.model=tm)
+pll1 <- predict(ll1,expand.grid(A0=0:1,A11=1,id=1))
+plot(pll0,se=1,lwd=2,col=1:2,lty=1,xlab="time (months)")
+plot(pll1,add=TRUE,col=3:4,se=1,lwd=2,lty=1)
+legend("topright",c("A1B1","A2B1","A1B2","A2B2"),col=c(1,2,3,4),lty=1)
 
 ## -----------------------------------------------------------------------------
 sessionInfo()

@@ -1,0 +1,828 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+<meta name="author" content="Klaus Holst &amp; Thomas Scheike" />
+
+<meta name="date" content="2025-01-11" />
+
+<title>Two-Stage Randomization for Cox Type rate models</title>
+
+<script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
+// be compatible with the behavior of Pandoc < 2.8).
+document.addEventListener('DOMContentLoaded', function(e) {
+  var hs = document.querySelectorAll("div.section[class*='level'] > :first-child");
+  var i, h, a;
+  for (i = 0; i < hs.length; i++) {
+    h = hs[i];
+    if (!/^h[1-6]$/i.test(h.tagName)) continue;  // it should be a header h1-h6
+    a = h.attributes;
+    while (a.length > 0) h.removeAttribute(a[0].name);
+  }
+});
+</script>
+
+<style type="text/css">
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+span.underline{text-decoration: underline;}
+div.column{display: inline-block; vertical-align: top; width: 50%;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+</style>
+
+
+
+<style type="text/css">
+code {
+white-space: pre;
+}
+.sourceCode {
+overflow: visible;
+}
+</style>
+<style type="text/css" data-origin="pandoc">
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+{ counter-reset: source-line 0; }
+pre.numberSource code > span
+{ position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+{ content: counter(source-line);
+position: relative; left: -1em; text-align: right; vertical-align: baseline;
+border: none; display: inline-block;
+-webkit-touch-callout: none; -webkit-user-select: none;
+-khtml-user-select: none; -moz-user-select: none;
+-ms-user-select: none; user-select: none;
+padding: 0 4px; width: 4em;
+color: #aaaaaa;
+}
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa; padding-left: 4px; }
+div.sourceCode
+{ }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } 
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.at { color: #7d9029; } 
+code span.bn { color: #40a070; } 
+code span.bu { color: #008000; } 
+code span.cf { color: #007020; font-weight: bold; } 
+code span.ch { color: #4070a0; } 
+code span.cn { color: #880000; } 
+code span.co { color: #60a0b0; font-style: italic; } 
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.do { color: #ba2121; font-style: italic; } 
+code span.dt { color: #902000; } 
+code span.dv { color: #40a070; } 
+code span.er { color: #ff0000; font-weight: bold; } 
+code span.ex { } 
+code span.fl { color: #40a070; } 
+code span.fu { color: #06287e; } 
+code span.im { color: #008000; font-weight: bold; } 
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.kw { color: #007020; font-weight: bold; } 
+code span.op { color: #666666; } 
+code span.ot { color: #007020; } 
+code span.pp { color: #bc7a00; } 
+code span.sc { color: #4070a0; } 
+code span.ss { color: #bb6688; } 
+code span.st { color: #4070a0; } 
+code span.va { color: #19177c; } 
+code span.vs { color: #4070a0; } 
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } 
+</style>
+<script>
+// apply pandoc div.sourceCode style to pre.sourceCode instead
+(function() {
+  var sheets = document.styleSheets;
+  for (var i = 0; i < sheets.length; i++) {
+    if (sheets[i].ownerNode.dataset["origin"] !== "pandoc") continue;
+    try { var rules = sheets[i].cssRules; } catch (e) { continue; }
+    var j = 0;
+    while (j < rules.length) {
+      var rule = rules[j];
+      // check if there is a div.sourceCode rule
+      if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") {
+        j++;
+        continue;
+      }
+      var style = rule.style.cssText;
+      // check if color or background-color is set
+      if (rule.style.color === '' && rule.style.backgroundColor === '') {
+        j++;
+        continue;
+      }
+      // replace div.sourceCode by a pre.sourceCode rule
+      sheets[i].deleteRule(j);
+      sheets[i].insertRule('pre.sourceCode{' + style + '}', j);
+    }
+  }
+})();
+</script>
+
+
+
+
+<style type="text/css">body {
+background-color: #fff;
+margin: 1em auto;
+max-width: 700px;
+overflow: visible;
+padding-left: 2em;
+padding-right: 2em;
+font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+font-size: 14px;
+line-height: 1.35;
+}
+#TOC {
+clear: both;
+margin: 0 0 10px 10px;
+padding: 4px;
+width: 400px;
+border: 1px solid #CCCCCC;
+border-radius: 5px;
+background-color: #f6f6f6;
+font-size: 13px;
+line-height: 1.3;
+}
+#TOC .toctitle {
+font-weight: bold;
+font-size: 15px;
+margin-left: 5px;
+}
+#TOC ul {
+padding-left: 40px;
+margin-left: -1.5em;
+margin-top: 5px;
+margin-bottom: 5px;
+}
+#TOC ul ul {
+margin-left: -2em;
+}
+#TOC li {
+line-height: 16px;
+}
+table {
+margin: 1em auto;
+border-width: 1px;
+border-color: #DDDDDD;
+border-style: outset;
+border-collapse: collapse;
+}
+table th {
+border-width: 2px;
+padding: 5px;
+border-style: inset;
+}
+table td {
+border-width: 1px;
+border-style: inset;
+line-height: 18px;
+padding: 5px 5px;
+}
+table, table th, table td {
+border-left-style: none;
+border-right-style: none;
+}
+table thead, table tr.even {
+background-color: #f7f7f7;
+}
+p {
+margin: 0.5em 0;
+}
+blockquote {
+background-color: #f6f6f6;
+padding: 0.25em 0.75em;
+}
+hr {
+border-style: solid;
+border: none;
+border-top: 1px solid #777;
+margin: 28px 0;
+}
+dl {
+margin-left: 0;
+}
+dl dd {
+margin-bottom: 13px;
+margin-left: 13px;
+}
+dl dt {
+font-weight: bold;
+}
+ul {
+margin-top: 0;
+}
+ul li {
+list-style: circle outside;
+}
+ul ul {
+margin-bottom: 0;
+}
+pre, code {
+background-color: #f7f7f7;
+border-radius: 3px;
+color: #333;
+white-space: pre-wrap; 
+}
+pre {
+border-radius: 3px;
+margin: 5px 0px 10px 0px;
+padding: 10px;
+}
+pre:not([class]) {
+background-color: #f7f7f7;
+}
+code {
+font-family: Consolas, Monaco, 'Courier New', monospace;
+font-size: 85%;
+}
+p > code, li > code {
+padding: 2px 0px;
+}
+div.figure {
+text-align: center;
+}
+img {
+background-color: #FFFFFF;
+padding: 2px;
+border: 1px solid #DDDDDD;
+border-radius: 3px;
+border: 1px solid #CCCCCC;
+margin: 0 5px;
+}
+h1 {
+margin-top: 0;
+font-size: 35px;
+line-height: 40px;
+}
+h2 {
+border-bottom: 4px solid #f7f7f7;
+padding-top: 10px;
+padding-bottom: 2px;
+font-size: 145%;
+}
+h3 {
+border-bottom: 2px solid #f7f7f7;
+padding-top: 10px;
+font-size: 120%;
+}
+h4 {
+border-bottom: 1px solid #f7f7f7;
+margin-left: 8px;
+font-size: 105%;
+}
+h5, h6 {
+border-bottom: 1px solid #ccc;
+font-size: 105%;
+}
+a {
+color: #0033dd;
+text-decoration: none;
+}
+a:hover {
+color: #6666ff; }
+a:visited {
+color: #800080; }
+a:visited:hover {
+color: #BB00BB; }
+a[href^="http:"] {
+text-decoration: underline; }
+a[href^="https:"] {
+text-decoration: underline; }
+
+code > span.kw { color: #555; font-weight: bold; } 
+code > span.dt { color: #902000; } 
+code > span.dv { color: #40a070; } 
+code > span.bn { color: #d14; } 
+code > span.fl { color: #d14; } 
+code > span.ch { color: #d14; } 
+code > span.st { color: #d14; } 
+code > span.co { color: #888888; font-style: italic; } 
+code > span.ot { color: #007020; } 
+code > span.al { color: #ff0000; font-weight: bold; } 
+code > span.fu { color: #900; font-weight: bold; } 
+code > span.er { color: #a61717; background-color: #e3d2d2; } 
+</style>
+
+
+
+
+</head>
+
+<body>
+
+
+
+
+<h1 class="title toc-ignore">Two-Stage Randomization for Cox Type rate
+models</h1>
+<h4 class="author">Klaus Holst &amp; Thomas Scheike</h4>
+<h4 class="date">2025-01-11</h4>
+
+
+
+<div id="two-stage-randomization-for-counting-process-outcomes" class="section level1">
+<h1>Two-Stage Randomization for counting process outcomes</h1>
+<p>Specify rate models of <span class="math inline">\(N_1(t)\)</span>.</p>
+<ul>
+<li>survival data</li>
+<li>competing risks, cause specific hazards.</li>
+<li>recurrent events data</li>
+</ul>
+<p>Under simple randomization we can estimate the rate Cox model</p>
+<ul>
+<li><span class="math inline">\(\lambda_0(t) \exp(A_0
+\beta_0)\)</span></li>
+</ul>
+<p>Under two-stage randomization we can estimate the rate Cox model</p>
+<ul>
+<li><span class="math inline">\(\lambda_0(t) \exp(A_0 \beta_0 + A_1(t)
+\beta_1 )\)</span></li>
+</ul>
+<p>Starting point is that Cox’s partial likelihood score can be used for
+estimating parameters <span class="math display">\[\begin{align*}
+   U(\beta) &amp; = \int (A(t) - e(t)) dN_1(t)
+\end{align*}\]</span> where <span class="math inline">\(A(t)\)</span> is
+the combined treatments over time.</p>
+<ul>
+<li>the solution will converge to <span class="math inline">\(\beta^*\)</span> the Struthers-Kalbfleisch
+solution of the score and will have robust standard errors Lin-Wei.</li>
+</ul>
+<p>The estimator can be agumented in different ways using additional
+covariates at the time of randomization and a censoring augmentation.
+The solved estimating eqution is <span class="math display">\[\begin{align*}
+\sum_i   U_i - AUG_0 - AUG_1 + AUG_C   = 0
+\end{align*}\]</span> using the covariates from augmentR0 to augment
+with <span class="math display">\[\begin{align*}
+AUG_0 = ( A_0 - \pi_0(X_0) ) X_0 \gamma_0
+\end{align*}\]</span> where possibly <span class="math inline">\(P(A_0=1|X_0)=\pi_0(X_0)\)</span> but does not
+depend on covariates under randomization, and furhter using the
+covariates from augmentR1, to augment with R indiciating that the
+randomization takes place or not, <span class="math display">\[\begin{align*}
+AUG_1 = R ( A_1 - \pi_1(X_1))  X_1 \gamma_1
+\end{align*}\]</span> and the dynamic censoring augmenting<br />
+<span class="math display">\[\begin{align*}
+  AUG_C =  \int_0^t \gamma_c(s)^T (e(s) - \bar e(s))  \frac{1}{G_c(s) }
+dM_c(s)
+\end{align*}\]</span> where <span class="math inline">\(\gamma_c(s)\)</span> is chosen to minimize the
+variance given the dynamic covariates specified by augmentC.</p>
+<p>The propensity score models are always estimated unless it is
+requested to use some fixed number <span class="math inline">\(\pi_0=1/2\)</span> for example, but always better
+to be adaptive and estimate <span class="math inline">\(\pi_0\)</span>.
+Also <span class="math inline">\(\gamma_0\)</span> and <span class="math inline">\(\gamma_1\)</span> are estimated to reduce variance
+of <span class="math inline">\(U_i\)</span>.</p>
+<ul>
+<li>The treatment’s must be given as factors.</li>
+<li>Treatment for 2nd randomization may depend on response.
+<ul>
+<li>Treatment probabilities are estimated by default and uncertainty
+from this adjusted for.</li>
+<li>treat.model must then typically allow for interaction with treatment
+number and covariates</li>
+</ul></li>
+<li>Randomization augmentation for 1’st and 2’nd randomization possible.
+<ul>
+<li>typesR=c(“R0”,“R1”,“R01”)</li>
+</ul></li>
+<li>Censoring model possibly stratified on observed covariates (at time
+0).
+<ul>
+<li>default model is to stratify after randomization R0</li>
+<li>cens.model can be specified</li>
+</ul></li>
+<li>Censoring augmentation done dynamically over time with
+time-dependent covariates.
+<ul>
+<li>typesC=c(“C”,“dynC”), C fixed coefficients and dynC dynamic</li>
+<li>done for each strata in censoring model</li>
+</ul></li>
+</ul>
+<p>Standard errors are estimated using the influence function of all
+estimators and tests of differences can therefore be computed
+subsequently.</p>
+<ul>
+<li>variance adjustment for censoring augmentation computed subtracting
+variance gain</li>
+<li>influence functions given for case with R0 only</li>
+</ul>
+<p>The times of randomization is specified by</p>
+<ul>
+<li>treat.var is “1” when a randomization is given
+<ul>
+<li>default is to assume that all time-points corresponds to a
+treatment, the survival case without time-dependent covariates</li>
+<li>recurrent events situation must be specified as first record of each
+subject, see below example.</li>
+</ul></li>
+</ul>
+<p>Data must be given on start,stop,status survival format with</p>
+<ul>
+<li>one code of status indicating events of interest</li>
+<li>one code for the censorings</li>
+</ul>
+<p>The phreg_rct can be used for counting process style data, and thus
+covers situations with</p>
+<ul>
+<li>recurrent events</li>
+<li>survival data</li>
+<li>cause-specific hazards (competing risks)</li>
+</ul>
+<p>and will in all cases compute augmentations</p>
+<ul>
+<li>dynamic censoring augmentation
+<ul>
+<li>dynC</li>
+</ul></li>
+<li>RCT augmentation
+<ul>
+<li>R0, R1 and R01</li>
+</ul></li>
+</ul>
+</div>
+<div id="simple-randomization-lu-tsiatis-marginal-cox-model" class="section level1">
+<h1>Simple Randomization: Lu-Tsiatis marginal Cox model</h1>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="fu">library</span>(mets) </span>
+<span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">100</span>)</span>
+<span id="cb1-3"><a href="#cb1-3" tabindex="-1"></a></span>
+<span id="cb1-4"><a href="#cb1-4" tabindex="-1"></a><span class="do">## Lu, Tsiatis simulation</span></span>
+<span id="cb1-5"><a href="#cb1-5" tabindex="-1"></a>data <span class="ot">&lt;-</span> mets<span class="sc">:::</span><span class="fu">simLT</span>(<span class="fl">0.7</span>,<span class="dv">100</span>)</span>
+<span id="cb1-6"><a href="#cb1-6" tabindex="-1"></a><span class="fu">dfactor</span>(data) <span class="ot">&lt;-</span> Z.f<span class="sc">~</span>Z</span>
+<span id="cb1-7"><a href="#cb1-7" tabindex="-1"></a> </span>
+<span id="cb1-8"><a href="#cb1-8" tabindex="-1"></a>out <span class="ot">&lt;-</span> <span class="fu">phreg_rct</span>(<span class="fu">Surv</span>(time,status)<span class="sc">~</span>Z.f,<span class="at">data=</span>data,<span class="at">augmentR0=</span><span class="sc">~</span>X,<span class="at">augmentC=</span><span class="sc">~</span><span class="fu">factor</span>(Z)<span class="sc">:</span>X)</span>
+<span id="cb1-9"><a href="#cb1-9" tabindex="-1"></a><span class="fu">summary</span>(out)</span>
+<span id="cb1-10"><a href="#cb1-10" tabindex="-1"></a><span class="co">#&gt;                 Estimate   Std.Err       2.5%     97.5%   P-value</span></span>
+<span id="cb1-11"><a href="#cb1-11" tabindex="-1"></a><span class="co">#&gt; Marginal-Z.f1 0.29263400 0.2739159 -0.2442313 0.8294993 0.2853693</span></span>
+<span id="cb1-12"><a href="#cb1-12" tabindex="-1"></a><span class="co">#&gt; R0_C:Z.f1     0.07166242 0.2234066 -0.3662065 0.5095313 0.7483838</span></span>
+<span id="cb1-13"><a href="#cb1-13" tabindex="-1"></a><span class="co">#&gt; R0_dynC:Z.f1  0.08321604 0.2221710 -0.3522312 0.5186633 0.7079889</span></span>
+<span id="cb1-14"><a href="#cb1-14" tabindex="-1"></a><span class="co">#&gt; attr(,&quot;class&quot;)</span></span>
+<span id="cb1-15"><a href="#cb1-15" tabindex="-1"></a><span class="co">#&gt; [1] &quot;summary.phreg_rct&quot;</span></span>
+<span id="cb1-16"><a href="#cb1-16" tabindex="-1"></a><span class="do">###out &lt;- phreg_rct(Surv(time,status)~Z.f,data=data,augmentR0=~X,augmentC=~X)</span></span>
+<span id="cb1-17"><a href="#cb1-17" tabindex="-1"></a><span class="do">###out &lt;- phreg_rct(Surv(time,status)~Z.f,data=data,augmentR0=~X,augmentC=~factor(Z):X,cens.model=~+1)</span></span></code></pre></div>
+<p>Results consitent with speff of library(speff2trial)</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a><span class="do">###library(speff2trial) </span></span>
+<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a><span class="fu">library</span>(mets)</span>
+<span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a><span class="fu">data</span>(ACTG175)</span>
+<span id="cb2-4"><a href="#cb2-4" tabindex="-1"></a><span class="do">###</span></span>
+<span id="cb2-5"><a href="#cb2-5" tabindex="-1"></a>data <span class="ot">&lt;-</span> ACTG175[ACTG175<span class="sc">$</span>arms<span class="sc">==</span><span class="dv">0</span> <span class="sc">|</span> ACTG175<span class="sc">$</span>arms<span class="sc">==</span><span class="dv">1</span>, ]</span>
+<span id="cb2-6"><a href="#cb2-6" tabindex="-1"></a>data <span class="ot">&lt;-</span> <span class="fu">na.omit</span>(data[,<span class="fu">c</span>(<span class="st">&quot;days&quot;</span>,<span class="st">&quot;cens&quot;</span>,<span class="st">&quot;arms&quot;</span>,<span class="st">&quot;strat&quot;</span>,<span class="st">&quot;cd40&quot;</span>,<span class="st">&quot;cd80&quot;</span>,<span class="st">&quot;age&quot;</span>)])</span>
+<span id="cb2-7"><a href="#cb2-7" tabindex="-1"></a>data<span class="sc">$</span>days <span class="ot">&lt;-</span> data<span class="sc">$</span>days<span class="sc">+</span><span class="fu">runif</span>(<span class="fu">nrow</span>(data))<span class="sc">*</span><span class="fl">0.01</span></span>
+<span id="cb2-8"><a href="#cb2-8" tabindex="-1"></a><span class="fu">dfactor</span>(data) <span class="ot">&lt;-</span> arms.f<span class="sc">~</span>arms</span>
+<span id="cb2-9"><a href="#cb2-9" tabindex="-1"></a>notrun <span class="ot">&lt;-</span> <span class="dv">1</span></span>
+<span id="cb2-10"><a href="#cb2-10" tabindex="-1"></a></span>
+<span id="cb2-11"><a href="#cb2-11" tabindex="-1"></a><span class="cf">if</span> (notrun<span class="sc">==</span><span class="dv">0</span>) { </span>
+<span id="cb2-12"><a href="#cb2-12" tabindex="-1"></a>fit1 <span class="ot">&lt;-</span> <span class="fu">speffSurv</span>(<span class="fu">Surv</span>(days,cens)<span class="sc">~</span>cd40<span class="sc">+</span>cd80<span class="sc">+</span>age,<span class="at">data=</span>data,<span class="at">trt.id=</span><span class="st">&quot;arms&quot;</span>,<span class="at">fixed=</span><span class="cn">TRUE</span>)</span>
+<span id="cb2-13"><a href="#cb2-13" tabindex="-1"></a><span class="fu">summary</span>(fit1)</span>
+<span id="cb2-14"><a href="#cb2-14" tabindex="-1"></a>}</span>
+<span id="cb2-15"><a href="#cb2-15" tabindex="-1"></a><span class="co"># </span></span>
+<span id="cb2-16"><a href="#cb2-16" tabindex="-1"></a><span class="co"># Treatment effect</span></span>
+<span id="cb2-17"><a href="#cb2-17" tabindex="-1"></a><span class="co">#             Log HR       SE   LowerCI   UpperCI           p</span></span>
+<span id="cb2-18"><a href="#cb2-18" tabindex="-1"></a><span class="co"># Prop Haz  -0.70375  0.12352  -0.94584  -0.46165  1.2162e-08</span></span>
+<span id="cb2-19"><a href="#cb2-19" tabindex="-1"></a><span class="co"># Speff     -0.72430  0.12051  -0.96050  -0.48810  1.8533e-09</span></span>
+<span id="cb2-20"><a href="#cb2-20" tabindex="-1"></a></span>
+<span id="cb2-21"><a href="#cb2-21" tabindex="-1"></a>out <span class="ot">&lt;-</span> <span class="fu">phreg_rct</span>(<span class="fu">Surv</span>(days,cens)<span class="sc">~</span>arms.f,<span class="at">data=</span>data,<span class="at">augmentR0=</span><span class="sc">~</span>cd40<span class="sc">+</span>cd80<span class="sc">+</span>age,<span class="at">augmentC=</span><span class="sc">~</span>cd40<span class="sc">+</span>cd80<span class="sc">+</span>age)</span>
+<span id="cb2-22"><a href="#cb2-22" tabindex="-1"></a><span class="fu">summary</span>(out)</span>
+<span id="cb2-23"><a href="#cb2-23" tabindex="-1"></a><span class="co">#&gt;                    Estimate   Std.Err       2.5%      97.5%      P-value</span></span>
+<span id="cb2-24"><a href="#cb2-24" tabindex="-1"></a><span class="co">#&gt; Marginal-arms.f1 -0.7036460 0.1224406 -0.9436251 -0.4636669 9.092786e-09</span></span>
+<span id="cb2-25"><a href="#cb2-25" tabindex="-1"></a><span class="co">#&gt; R0_C:arms.f1     -0.7265342 0.1197607 -0.9612610 -0.4918075 1.306891e-09</span></span>
+<span id="cb2-26"><a href="#cb2-26" tabindex="-1"></a><span class="co">#&gt; R0_dynC:arms.f1  -0.7204699 0.1196158 -0.9549125 -0.4860272 1.710025e-09</span></span>
+<span id="cb2-27"><a href="#cb2-27" tabindex="-1"></a><span class="co">#&gt; attr(,&quot;class&quot;)</span></span>
+<span id="cb2-28"><a href="#cb2-28" tabindex="-1"></a><span class="co">#&gt; [1] &quot;summary.phreg_rct&quot;</span></span></code></pre></div>
+<p>The study is actually block-randomized according (?) so the standard
+should be computed with an adjustment that is equivalent to augmenting
+with this block as factor</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a><span class="fu">dtable</span>(data,<span class="sc">~</span>strat<span class="sc">+</span>arms)</span>
+<span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb3-3"><a href="#cb3-3" tabindex="-1"></a><span class="co">#&gt;       arms   0   1</span></span>
+<span id="cb3-4"><a href="#cb3-4" tabindex="-1"></a><span class="co">#&gt; strat             </span></span>
+<span id="cb3-5"><a href="#cb3-5" tabindex="-1"></a><span class="co">#&gt; 1          223 213</span></span>
+<span id="cb3-6"><a href="#cb3-6" tabindex="-1"></a><span class="co">#&gt; 2           96 106</span></span>
+<span id="cb3-7"><a href="#cb3-7" tabindex="-1"></a><span class="co">#&gt; 3          213 203</span></span>
+<span id="cb3-8"><a href="#cb3-8" tabindex="-1"></a><span class="fu">dfactor</span>(data) <span class="ot">&lt;-</span> strat.f<span class="sc">~</span>strat</span>
+<span id="cb3-9"><a href="#cb3-9" tabindex="-1"></a>out <span class="ot">&lt;-</span> <span class="fu">phreg_rct</span>(<span class="fu">Surv</span>(days,cens)<span class="sc">~</span>arms.f,<span class="at">data=</span>data,<span class="at">augmentR0=</span><span class="sc">~</span>strat.f)</span>
+<span id="cb3-10"><a href="#cb3-10" tabindex="-1"></a><span class="fu">summary</span>(out)</span>
+<span id="cb3-11"><a href="#cb3-11" tabindex="-1"></a><span class="co">#&gt;                    Estimate   Std.Err       2.5%      97.5%      P-value</span></span>
+<span id="cb3-12"><a href="#cb3-12" tabindex="-1"></a><span class="co">#&gt; Marginal-arms.f1 -0.7036460 0.1224406 -0.9436251 -0.4636669 9.092786e-09</span></span>
+<span id="cb3-13"><a href="#cb3-13" tabindex="-1"></a><span class="co">#&gt; R0_none:arms.f1  -0.7009844 0.1217138 -0.9395390 -0.4624298 8.447051e-09</span></span>
+<span id="cb3-14"><a href="#cb3-14" tabindex="-1"></a><span class="co">#&gt; attr(,&quot;class&quot;)</span></span>
+<span id="cb3-15"><a href="#cb3-15" tabindex="-1"></a><span class="co">#&gt; [1] &quot;summary.phreg_rct&quot;</span></span></code></pre></div>
+</div>
+<div id="recurrent-events-simple-randomization" class="section level1">
+<h1>Recurrent events: Simple Randomization</h1>
+<p>Recurrents events simulation with death and censoring.</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a>n <span class="ot">&lt;-</span> <span class="dv">1000</span></span>
+<span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a>beta <span class="ot">&lt;-</span> <span class="fl">0.15</span>; </span>
+<span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a><span class="fu">data</span>(base1cumhaz)</span>
+<span id="cb4-4"><a href="#cb4-4" tabindex="-1"></a><span class="fu">data</span>(base4cumhaz)</span>
+<span id="cb4-5"><a href="#cb4-5" tabindex="-1"></a><span class="fu">data</span>(drcumhaz)</span>
+<span id="cb4-6"><a href="#cb4-6" tabindex="-1"></a>dr <span class="ot">&lt;-</span> <span class="fu">scalecumhaz</span>(drcumhaz,<span class="dv">1</span>)</span>
+<span id="cb4-7"><a href="#cb4-7" tabindex="-1"></a>base1 <span class="ot">&lt;-</span> <span class="fu">scalecumhaz</span>(base1cumhaz,<span class="dv">1</span>)</span>
+<span id="cb4-8"><a href="#cb4-8" tabindex="-1"></a>base4 <span class="ot">&lt;-</span> <span class="fu">scalecumhaz</span>(base4cumhaz,<span class="fl">0.5</span>)</span>
+<span id="cb4-9"><a href="#cb4-9" tabindex="-1"></a>cens <span class="ot">&lt;-</span> <span class="fu">rbind</span>(<span class="fu">c</span>(<span class="dv">0</span>,<span class="dv">0</span>),<span class="fu">c</span>(<span class="dv">2000</span>,<span class="fl">0.5</span>),<span class="fu">c</span>(<span class="dv">5110</span>,<span class="dv">3</span>))</span>
+<span id="cb4-10"><a href="#cb4-10" tabindex="-1"></a>ce <span class="ot">&lt;-</span> <span class="dv">3</span>; betao1 <span class="ot">&lt;-</span> <span class="dv">0</span></span>
+<span id="cb4-11"><a href="#cb4-11" tabindex="-1"></a></span>
+<span id="cb4-12"><a href="#cb4-12" tabindex="-1"></a>varz <span class="ot">&lt;-</span> <span class="dv">1</span>; dep<span class="ot">=</span><span class="dv">4</span>; X <span class="ot">&lt;-</span> z <span class="ot">&lt;-</span> <span class="fu">rgamma</span>(n,<span class="dv">1</span><span class="sc">/</span>varz)<span class="sc">*</span>varz</span>
+<span id="cb4-13"><a href="#cb4-13" tabindex="-1"></a>Z0 <span class="ot">&lt;-</span> <span class="cn">NULL</span></span>
+<span id="cb4-14"><a href="#cb4-14" tabindex="-1"></a>px <span class="ot">&lt;-</span> <span class="fl">0.5</span></span>
+<span id="cb4-15"><a href="#cb4-15" tabindex="-1"></a><span class="cf">if</span> (betao1<span class="sc">!=</span><span class="dv">0</span>) px <span class="ot">&lt;-</span> lava<span class="sc">::</span><span class="fu">expit</span>(betao1<span class="sc">*</span>X)      </span>
+<span id="cb4-16"><a href="#cb4-16" tabindex="-1"></a>A0 <span class="ot">&lt;-</span> <span class="fu">rbinom</span>(n,<span class="dv">1</span>,px)</span>
+<span id="cb4-17"><a href="#cb4-17" tabindex="-1"></a>r1 <span class="ot">&lt;-</span> <span class="fu">exp</span>(A0<span class="sc">*</span>beta[<span class="dv">1</span>])</span>
+<span id="cb4-18"><a href="#cb4-18" tabindex="-1"></a>rd <span class="ot">&lt;-</span> <span class="fu">exp</span>( A0 <span class="sc">*</span> <span class="fl">0.15</span>)</span>
+<span id="cb4-19"><a href="#cb4-19" tabindex="-1"></a>rc <span class="ot">&lt;-</span> <span class="fu">exp</span>( A0 <span class="sc">*</span> <span class="dv">0</span> )</span>
+<span id="cb4-20"><a href="#cb4-20" tabindex="-1"></a><span class="do">###</span></span>
+<span id="cb4-21"><a href="#cb4-21" tabindex="-1"></a>rr <span class="ot">&lt;-</span>    mets<span class="sc">:::</span><span class="fu">simLUCox</span>(n,base1,<span class="at">death.cumhaz=</span>dr,<span class="at">r1=</span>r1,<span class="at">Z0=</span>X,<span class="at">dependence=</span>dep,<span class="at">var.z=</span>varz,<span class="at">cens=</span>ce<span class="sc">/</span><span class="dv">5000</span>)</span>
+<span id="cb4-22"><a href="#cb4-22" tabindex="-1"></a>rr<span class="sc">$</span>A0 <span class="ot">&lt;-</span> A0[rr<span class="sc">$</span>id]</span>
+<span id="cb4-23"><a href="#cb4-23" tabindex="-1"></a>rr<span class="sc">$</span>z1 <span class="ot">&lt;-</span> <span class="fu">attr</span>(rr,<span class="st">&quot;z&quot;</span>)[rr<span class="sc">$</span>id]</span>
+<span id="cb4-24"><a href="#cb4-24" tabindex="-1"></a>rr<span class="sc">$</span>lz1 <span class="ot">&lt;-</span> <span class="fu">log</span>(rr<span class="sc">$</span>z1)</span>
+<span id="cb4-25"><a href="#cb4-25" tabindex="-1"></a>rr<span class="sc">$</span>X <span class="ot">&lt;-</span> rr<span class="sc">$</span>lz1 </span>
+<span id="cb4-26"><a href="#cb4-26" tabindex="-1"></a>rr<span class="sc">$</span>lX <span class="ot">&lt;-</span> rr<span class="sc">$</span>z1</span>
+<span id="cb4-27"><a href="#cb4-27" tabindex="-1"></a>rr<span class="sc">$</span>statusD <span class="ot">&lt;-</span> rr<span class="sc">$</span>status</span>
+<span id="cb4-28"><a href="#cb4-28" tabindex="-1"></a>rr <span class="ot">&lt;-</span> <span class="fu">dtransform</span>(rr,<span class="at">statusD=</span><span class="dv">2</span>,death<span class="sc">==</span><span class="dv">1</span>)</span>
+<span id="cb4-29"><a href="#cb4-29" tabindex="-1"></a>rr <span class="ot">&lt;-</span> <span class="fu">count.history</span>(rr)</span>
+<span id="cb4-30"><a href="#cb4-30" tabindex="-1"></a>rr<span class="sc">$</span>Z <span class="ot">&lt;-</span> rr<span class="sc">$</span>A0</span>
+<span id="cb4-31"><a href="#cb4-31" tabindex="-1"></a>data <span class="ot">&lt;-</span> rr</span>
+<span id="cb4-32"><a href="#cb4-32" tabindex="-1"></a>data<span class="sc">$</span>Z.f <span class="ot">&lt;-</span> <span class="fu">as.factor</span>(data<span class="sc">$</span>Z)</span>
+<span id="cb4-33"><a href="#cb4-33" tabindex="-1"></a>data<span class="sc">$</span>treattime <span class="ot">&lt;-</span> <span class="dv">0</span></span>
+<span id="cb4-34"><a href="#cb4-34" tabindex="-1"></a>data <span class="ot">&lt;-</span> <span class="fu">dtransform</span>(data,<span class="at">treattime=</span><span class="dv">1</span>,lbnr__id<span class="sc">==</span><span class="dv">1</span>)</span>
+<span id="cb4-35"><a href="#cb4-35" tabindex="-1"></a><span class="fu">dlist</span>(data,start<span class="sc">+</span>stop<span class="sc">+</span>statusD<span class="sc">+</span>A0<span class="sc">+</span>z1<span class="sc">+</span>treattime<span class="sc">+</span>Count1<span class="sc">~</span>id<span class="sc">|</span>id <span class="sc">%in%</span> <span class="fu">c</span>(<span class="dv">4</span>,<span class="dv">5</span>))</span>
+<span id="cb4-36"><a href="#cb4-36" tabindex="-1"></a><span class="co">#&gt; id: 4</span></span>
+<span id="cb4-37"><a href="#cb4-37" tabindex="-1"></a><span class="co">#&gt;      start   stop    statusD A0 z1    treattime Count1</span></span>
+<span id="cb4-38"><a href="#cb4-38" tabindex="-1"></a><span class="co">#&gt; 4      0.000   9.565 1       0  0.471 1         0     </span></span>
+<span id="cb4-39"><a href="#cb4-39" tabindex="-1"></a><span class="co">#&gt; 1003   9.565 372.057 1       0  0.471 0         1     </span></span>
+<span id="cb4-40"><a href="#cb4-40" tabindex="-1"></a><span class="co">#&gt; 1468 372.057 389.831 0       0  0.471 0         2     </span></span>
+<span id="cb4-41"><a href="#cb4-41" tabindex="-1"></a><span class="co">#&gt; ------------------------------------------------------------ </span></span>
+<span id="cb4-42"><a href="#cb4-42" tabindex="-1"></a><span class="co">#&gt; id: 5</span></span>
+<span id="cb4-43"><a href="#cb4-43" tabindex="-1"></a><span class="co">#&gt;   start stop  statusD A0 z1    treattime Count1</span></span>
+<span id="cb4-44"><a href="#cb4-44" tabindex="-1"></a><span class="co">#&gt; 5 0     213.9 2       1  2.338 1         0</span></span></code></pre></div>
+<p>Now we fit the model</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a>fit2 <span class="ot">&lt;-</span> <span class="fu">phreg_rct</span>(<span class="fu">Event</span>(start,stop,statusD)<span class="sc">~</span>Z.f<span class="sc">+</span><span class="fu">cluster</span>(id),<span class="at">data=</span>data,</span>
+<span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a>     <span class="at">treat.var=</span><span class="st">&quot;treattime&quot;</span>,<span class="at">typesR=</span><span class="fu">c</span>(<span class="st">&quot;non&quot;</span>,<span class="st">&quot;R0&quot;</span>),<span class="at">typesC=</span><span class="fu">c</span>(<span class="st">&quot;non&quot;</span>,<span class="st">&quot;C&quot;</span>,<span class="st">&quot;dynC&quot;</span>),</span>
+<span id="cb5-3"><a href="#cb5-3" tabindex="-1"></a>     <span class="at">augmentR0=</span><span class="sc">~</span>z1,<span class="at">augmentC=</span><span class="sc">~</span>z1<span class="sc">+</span>Count1)</span>
+<span id="cb5-4"><a href="#cb5-4" tabindex="-1"></a><span class="fu">summary</span>(fit2)</span>
+<span id="cb5-5"><a href="#cb5-5" tabindex="-1"></a><span class="co">#&gt;                Estimate    Std.Err       2.5%     97.5%      P-value</span></span>
+<span id="cb5-6"><a href="#cb5-6" tabindex="-1"></a><span class="co">#&gt; Marginal-Z.f1 0.2870649 0.09632565 0.09827011 0.4758597 0.0028810700</span></span>
+<span id="cb5-7"><a href="#cb5-7" tabindex="-1"></a><span class="co">#&gt; non_C:Z.f1    0.2826049 0.09631924 0.09382262 0.4713871 0.0033457707</span></span>
+<span id="cb5-8"><a href="#cb5-8" tabindex="-1"></a><span class="co">#&gt; non_dynC:Z.f1 0.1926888 0.08864883 0.01894025 0.3664373 0.0297337758</span></span>
+<span id="cb5-9"><a href="#cb5-9" tabindex="-1"></a><span class="co">#&gt; R0_non:Z.f1   0.3110880 0.08049844 0.15331399 0.4688621 0.0001113067</span></span>
+<span id="cb5-10"><a href="#cb5-10" tabindex="-1"></a><span class="co">#&gt; R0_C:Z.f1     0.3066141 0.08049078 0.14885504 0.4643731 0.0001393570</span></span>
+<span id="cb5-11"><a href="#cb5-11" tabindex="-1"></a><span class="co">#&gt; R0_dynC:Z.f1  0.2164684 0.07113356 0.07704922 0.3558877 0.0023413376</span></span>
+<span id="cb5-12"><a href="#cb5-12" tabindex="-1"></a><span class="co">#&gt; attr(,&quot;class&quot;)</span></span>
+<span id="cb5-13"><a href="#cb5-13" tabindex="-1"></a><span class="co">#&gt; [1] &quot;summary.phreg_rct&quot;</span></span></code></pre></div>
+<ul>
+<li>Censoring model was stratified on Z.f</li>
+<li>treatment probabilities were estimated using the data</li>
+</ul>
+</div>
+<div id="twostage-randomization-recurrent-events" class="section level1">
+<h1>Twostage Randomization: Recurrent events</h1>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a>n <span class="ot">&lt;-</span> <span class="dv">500</span></span>
+<span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a>beta<span class="ot">=</span><span class="fu">c</span>(<span class="fl">0.3</span>,<span class="fl">0.3</span>);betatr<span class="ot">=</span><span class="fl">0.3</span>;betac<span class="ot">=</span><span class="dv">0</span>;betao<span class="ot">=</span><span class="dv">0</span>;betao1<span class="ot">=</span><span class="dv">0</span>;ce<span class="ot">=</span><span class="dv">3</span>;fixed<span class="ot">=</span><span class="dv">1</span>;sim<span class="ot">=</span><span class="dv">1</span>;dep<span class="ot">=</span><span class="dv">4</span>;varz<span class="ot">=</span><span class="dv">1</span>;ztr<span class="ot">=</span><span class="dv">0</span>; ce <span class="ot">&lt;-</span> <span class="dv">3</span></span>
+<span id="cb6-3"><a href="#cb6-3" tabindex="-1"></a><span class="do">## take possible frailty </span></span>
+<span id="cb6-4"><a href="#cb6-4" tabindex="-1"></a>Z0 <span class="ot">&lt;-</span> <span class="fu">rgamma</span>(n,<span class="dv">1</span><span class="sc">/</span>varz)<span class="sc">*</span>varz</span>
+<span id="cb6-5"><a href="#cb6-5" tabindex="-1"></a>px0 <span class="ot">&lt;-</span> <span class="fl">0.5</span>; <span class="cf">if</span> (betao<span class="sc">!=</span><span class="dv">0</span>) px0 <span class="ot">&lt;-</span> <span class="fu">expit</span>(betao<span class="sc">*</span>Z0)</span>
+<span id="cb6-6"><a href="#cb6-6" tabindex="-1"></a>A0 <span class="ot">&lt;-</span> <span class="fu">rbinom</span>(n,<span class="dv">1</span>,px0)</span>
+<span id="cb6-7"><a href="#cb6-7" tabindex="-1"></a>r1 <span class="ot">&lt;-</span> <span class="fu">exp</span>(A0<span class="sc">*</span>beta[<span class="dv">1</span>])</span>
+<span id="cb6-8"><a href="#cb6-8" tabindex="-1"></a><span class="co">#</span></span>
+<span id="cb6-9"><a href="#cb6-9" tabindex="-1"></a>px1 <span class="ot">&lt;-</span> <span class="fl">0.5</span>; <span class="cf">if</span> (betao1<span class="sc">!=</span><span class="dv">0</span>) px1 <span class="ot">&lt;-</span> <span class="fu">expit</span>(betao1<span class="sc">*</span>Z0)</span>
+<span id="cb6-10"><a href="#cb6-10" tabindex="-1"></a>A1 <span class="ot">&lt;-</span> <span class="fu">rbinom</span>(n,<span class="dv">1</span>,px1)</span>
+<span id="cb6-11"><a href="#cb6-11" tabindex="-1"></a>r2 <span class="ot">&lt;-</span> <span class="fu">exp</span>(A1<span class="sc">*</span>beta[<span class="dv">2</span>])</span>
+<span id="cb6-12"><a href="#cb6-12" tabindex="-1"></a>rtr <span class="ot">&lt;-</span> <span class="fu">exp</span>(A0<span class="sc">*</span>betatr[<span class="dv">1</span>])</span>
+<span id="cb6-13"><a href="#cb6-13" tabindex="-1"></a>rr <span class="ot">&lt;-</span>  mets<span class="sc">:::</span><span class="fu">simLUCox</span>(n,base1,<span class="at">death.cumhaz=</span>dr,<span class="at">cumhaz2=</span>base1,<span class="at">rtr=</span>rtr,<span class="at">betatr=</span><span class="fl">0.3</span>,<span class="at">A0=</span>A0,<span class="at">Z0=</span>Z0,</span>
+<span id="cb6-14"><a href="#cb6-14" tabindex="-1"></a>        <span class="at">r1=</span>r1,<span class="at">r2=</span>r2,<span class="at">dependence=</span>dep,<span class="at">var.z=</span>varz,<span class="at">cens=</span>ce<span class="sc">/</span><span class="dv">5000</span>,<span class="at">ztr=</span>ztr)</span>
+<span id="cb6-15"><a href="#cb6-15" tabindex="-1"></a>rr<span class="sc">$</span>z1 <span class="ot">&lt;-</span> <span class="fu">attr</span>(rr,<span class="st">&quot;z&quot;</span>)[rr<span class="sc">$</span>id]</span>
+<span id="cb6-16"><a href="#cb6-16" tabindex="-1"></a>rr<span class="sc">$</span>A1 <span class="ot">&lt;-</span> A1[rr<span class="sc">$</span>id]</span>
+<span id="cb6-17"><a href="#cb6-17" tabindex="-1"></a>rr<span class="sc">$</span>A0 <span class="ot">&lt;-</span> A0[rr<span class="sc">$</span>id]</span>
+<span id="cb6-18"><a href="#cb6-18" tabindex="-1"></a>rr<span class="sc">$</span>lz1 <span class="ot">&lt;-</span> <span class="fu">log</span>(rr<span class="sc">$</span>z1)</span>
+<span id="cb6-19"><a href="#cb6-19" tabindex="-1"></a>rr <span class="ot">&lt;-</span> <span class="fu">count.history</span>(rr)</span>
+<span id="cb6-20"><a href="#cb6-20" tabindex="-1"></a>rr<span class="sc">$</span>A1t <span class="ot">&lt;-</span> <span class="dv">0</span></span>
+<span id="cb6-21"><a href="#cb6-21" tabindex="-1"></a>rr <span class="ot">&lt;-</span> <span class="fu">dtransform</span>(rr,<span class="at">A1t=</span>A1,Count2<span class="sc">==</span><span class="dv">1</span>) </span>
+<span id="cb6-22"><a href="#cb6-22" tabindex="-1"></a>rr<span class="sc">$</span>At.f <span class="ot">&lt;-</span> rr<span class="sc">$</span>A0</span>
+<span id="cb6-23"><a href="#cb6-23" tabindex="-1"></a>rr<span class="sc">$</span>A0.f <span class="ot">&lt;-</span> <span class="fu">factor</span>(rr<span class="sc">$</span>A0)</span>
+<span id="cb6-24"><a href="#cb6-24" tabindex="-1"></a>rr<span class="sc">$</span>A1.f <span class="ot">&lt;-</span> <span class="fu">factor</span>(rr<span class="sc">$</span>A1)</span>
+<span id="cb6-25"><a href="#cb6-25" tabindex="-1"></a>rr <span class="ot">&lt;-</span> <span class="fu">dtransform</span>(rr, <span class="at">At.f =</span> A1, Count2 <span class="sc">==</span> <span class="dv">1</span>)</span>
+<span id="cb6-26"><a href="#cb6-26" tabindex="-1"></a>rr<span class="sc">$</span>At.f <span class="ot">&lt;-</span> <span class="fu">factor</span>(rr<span class="sc">$</span>At.f)</span>
+<span id="cb6-27"><a href="#cb6-27" tabindex="-1"></a><span class="fu">dfactor</span>(rr)  <span class="ot">&lt;-</span>  A0.f<span class="sc">~</span>A0</span>
+<span id="cb6-28"><a href="#cb6-28" tabindex="-1"></a>rr<span class="sc">$</span>treattime <span class="ot">&lt;-</span> <span class="dv">0</span></span>
+<span id="cb6-29"><a href="#cb6-29" tabindex="-1"></a>rr <span class="ot">&lt;-</span> <span class="fu">dtransform</span>(rr,<span class="at">treattime=</span><span class="dv">1</span>,lbnr__id<span class="sc">==</span><span class="dv">1</span>)</span>
+<span id="cb6-30"><a href="#cb6-30" tabindex="-1"></a>rr<span class="sc">$</span>lagCount2 <span class="ot">&lt;-</span> <span class="fu">dlag</span>(rr<span class="sc">$</span>Count2)</span>
+<span id="cb6-31"><a href="#cb6-31" tabindex="-1"></a>rr <span class="ot">&lt;-</span> <span class="fu">dtransform</span>(rr,<span class="at">treattime=</span><span class="dv">1</span>,Count2<span class="sc">==</span><span class="dv">1</span> <span class="sc">&amp;</span> (Count2<span class="sc">!=</span>lagCount2))</span>
+<span id="cb6-32"><a href="#cb6-32" tabindex="-1"></a><span class="fu">dlist</span>(rr,start<span class="sc">+</span>stop<span class="sc">+</span>statusD<span class="sc">+</span>A0<span class="sc">+</span>A1<span class="sc">+</span>A1t<span class="sc">+</span>At.f<span class="sc">+</span>Count2<span class="sc">+</span>z1<span class="sc">+</span>treattime<span class="sc">+</span>Count1<span class="sc">~</span>id<span class="sc">|</span>id <span class="sc">%in%</span> <span class="fu">c</span>(<span class="dv">5</span>,<span class="dv">10</span>))</span>
+<span id="cb6-33"><a href="#cb6-33" tabindex="-1"></a><span class="co">#&gt; id: 5</span></span>
+<span id="cb6-34"><a href="#cb6-34" tabindex="-1"></a><span class="co">#&gt;   start stop  statusD A0 A1 A1t At.f Count2 z1     treattime Count1</span></span>
+<span id="cb6-35"><a href="#cb6-35" tabindex="-1"></a><span class="co">#&gt; 5 0     132.3 3       1  1  0   1    0      0.2316 1         0     </span></span>
+<span id="cb6-36"><a href="#cb6-36" tabindex="-1"></a><span class="co">#&gt; ------------------------------------------------------------ </span></span>
+<span id="cb6-37"><a href="#cb6-37" tabindex="-1"></a><span class="co">#&gt; id: 10</span></span>
+<span id="cb6-38"><a href="#cb6-38" tabindex="-1"></a><span class="co">#&gt;     start stop    statusD A0 A1 A1t At.f Count2 z1      treattime Count1</span></span>
+<span id="cb6-39"><a href="#cb6-39" tabindex="-1"></a><span class="co">#&gt; 10   0.00   33.12 2       1  0  0   1    0      0.06891 1         0     </span></span>
+<span id="cb6-40"><a href="#cb6-40" tabindex="-1"></a><span class="co">#&gt; 509 33.12 1363.53 0       1  0  0   0    1      0.06891 1         0</span></span></code></pre></div>
+<p>Now fitting the model and computing different augmentations (true
+values 0.3 and 0.3)</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a>sse <span class="ot">&lt;-</span> <span class="fu">phreg_rct</span>(<span class="fu">Event</span>(start,time,statusD)<span class="sc">~</span>A0.f<span class="sc">+</span>A1t<span class="sc">+</span><span class="fu">cluster</span>(id),<span class="at">data=</span>rr,</span>
+<span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a>     <span class="at">typesR=</span><span class="fu">c</span>(<span class="st">&quot;non&quot;</span>,<span class="st">&quot;R0&quot;</span>,<span class="st">&quot;R1&quot;</span>,<span class="st">&quot;R01&quot;</span>),<span class="at">typesC=</span><span class="fu">c</span>(<span class="st">&quot;non&quot;</span>,<span class="st">&quot;C&quot;</span>,<span class="st">&quot;dynC&quot;</span>),<span class="at">treat.var=</span><span class="st">&quot;treattime&quot;</span>,</span>
+<span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a>     <span class="at">treat.model=</span>At.f<span class="sc">~</span><span class="fu">factor</span>(Count2),</span>
+<span id="cb7-4"><a href="#cb7-4" tabindex="-1"></a>     <span class="at">augmentR0=</span><span class="sc">~</span>z1,<span class="at">augmentR1=</span><span class="sc">~</span>z1,<span class="at">augmentC=</span><span class="sc">~</span>z1<span class="sc">+</span>Count1<span class="sc">+</span>A1t)</span>
+<span id="cb7-5"><a href="#cb7-5" tabindex="-1"></a><span class="fu">summary</span>(sse)</span>
+<span id="cb7-6"><a href="#cb7-6" tabindex="-1"></a><span class="co">#&gt;                 Estimate   Std.Err        2.5%     97.5%      P-value</span></span>
+<span id="cb7-7"><a href="#cb7-7" tabindex="-1"></a><span class="co">#&gt; Marginal-A0.f1 0.3179631 0.1418023  0.04003574 0.5958904 0.0249420566</span></span>
+<span id="cb7-8"><a href="#cb7-8" tabindex="-1"></a><span class="co">#&gt; Marginal-A1t   0.3290147 0.1472363  0.04043683 0.6175925 0.0254434247</span></span>
+<span id="cb7-9"><a href="#cb7-9" tabindex="-1"></a><span class="co">#&gt; non_C:A0.f1    0.3002782 0.1391490  0.02755115 0.5730053 0.0309308283</span></span>
+<span id="cb7-10"><a href="#cb7-10" tabindex="-1"></a><span class="co">#&gt; non_C:A1t      0.4151190 0.1405664  0.13961382 0.6906241 0.0031451130</span></span>
+<span id="cb7-11"><a href="#cb7-11" tabindex="-1"></a><span class="co">#&gt; non_dynC:A0.f1 0.3104992 0.1314476  0.05286660 0.5681318 0.0181692114</span></span>
+<span id="cb7-12"><a href="#cb7-12" tabindex="-1"></a><span class="co">#&gt; non_dynC:A1t   0.4374223 0.1300991  0.18243265 0.6924119 0.0007731772</span></span>
+<span id="cb7-13"><a href="#cb7-13" tabindex="-1"></a><span class="co">#&gt; R0_non:A0.f1   0.4142867 0.1176773  0.18364338 0.6449300 0.0004306830</span></span>
+<span id="cb7-14"><a href="#cb7-14" tabindex="-1"></a><span class="co">#&gt; R0_non:A1t     0.3382185 0.1470378  0.05002979 0.6264072 0.0214360247</span></span>
+<span id="cb7-15"><a href="#cb7-15" tabindex="-1"></a><span class="co">#&gt; R0_C:A0.f1     0.3962505 0.1144662  0.17190089 0.6206002 0.0005367253</span></span>
+<span id="cb7-16"><a href="#cb7-16" tabindex="-1"></a><span class="co">#&gt; R0_C:A1t       0.4242165 0.1403584  0.14911904 0.6993140 0.0025079567</span></span>
+<span id="cb7-17"><a href="#cb7-17" tabindex="-1"></a><span class="co">#&gt; R0_dynC:A0.f1  0.4066624 0.1049692  0.20092652 0.6123983 0.0001070147</span></span>
+<span id="cb7-18"><a href="#cb7-18" tabindex="-1"></a><span class="co">#&gt; R0_dynC:A1t    0.4464941 0.1298744  0.19194497 0.7010432 0.0005862621</span></span>
+<span id="cb7-19"><a href="#cb7-19" tabindex="-1"></a><span class="co">#&gt; R1_non:A0.f1   0.3269008 0.1416813  0.04921043 0.6045911 0.0210383383</span></span>
+<span id="cb7-20"><a href="#cb7-20" tabindex="-1"></a><span class="co">#&gt; R1_non:A1t     0.2104421 0.1254571 -0.03544923 0.4563335 0.0934636201</span></span>
+<span id="cb7-21"><a href="#cb7-21" tabindex="-1"></a><span class="co">#&gt; R1_C:A0.f1     0.3092275 0.1390258  0.03674199 0.5817130 0.0261319083</span></span>
+<span id="cb7-22"><a href="#cb7-22" tabindex="-1"></a><span class="co">#&gt; R1_C:A1t       0.2976811 0.1175580  0.06727171 0.5280905 0.0113347106</span></span>
+<span id="cb7-23"><a href="#cb7-23" tabindex="-1"></a><span class="co">#&gt; R1_dynC:A0.f1  0.3194771 0.1313171  0.06210024 0.5768540 0.0149798139</span></span>
+<span id="cb7-24"><a href="#cb7-24" tabindex="-1"></a><span class="co">#&gt; R1_dynC:A1t    0.3202318 0.1048176  0.11479297 0.5256706 0.0022496121</span></span>
+<span id="cb7-25"><a href="#cb7-25" tabindex="-1"></a><span class="co">#&gt; R01_non:A0.f1  0.4092668 0.1176428  0.17869115 0.6398424 0.0005034879</span></span>
+<span id="cb7-26"><a href="#cb7-26" tabindex="-1"></a><span class="co">#&gt; R01_non:A1t    0.2280764 0.1243165 -0.01557936 0.4717322 0.0665584775</span></span>
+<span id="cb7-27"><a href="#cb7-27" tabindex="-1"></a><span class="co">#&gt; R01_C:A0.f1    0.3912859 0.1144307  0.16700576 0.6155659 0.0006275647</span></span>
+<span id="cb7-28"><a href="#cb7-28" tabindex="-1"></a><span class="co">#&gt; R01_C:A1t      0.3150865 0.1163399  0.08706445 0.5431086 0.0067623432</span></span>
+<span id="cb7-29"><a href="#cb7-29" tabindex="-1"></a><span class="co">#&gt; R01_dynC:A0.f1 0.4016977 0.1049305  0.19603760 0.6073577 0.0001290708</span></span>
+<span id="cb7-30"><a href="#cb7-30" tabindex="-1"></a><span class="co">#&gt; R01_dynC:A1t   0.3375831 0.1034497  0.13482542 0.5403408 0.0011013908</span></span>
+<span id="cb7-31"><a href="#cb7-31" tabindex="-1"></a><span class="co">#&gt; attr(,&quot;class&quot;)</span></span>
+<span id="cb7-32"><a href="#cb7-32" tabindex="-1"></a><span class="co">#&gt; [1] &quot;summary.phreg_rct&quot;</span></span></code></pre></div>
+<ul>
+<li>treat.model has A0 and A1 coded as At.f and we here allow a model
+that depends on the randomization to be as adaptive as possible.</li>
+<li>for the observational case one can here also adjust for
+covarites.</li>
+<li>Censoring model was stratified on A0.f</li>
+</ul>
+</div>
+<div id="causal-assumptions-for-twostage-randomization-recurrent-events" class="section level1">
+<h1>Causal assumptions for Twostage Randomization: Recurrent events</h1>
+<p>We take interest in <span class="math inline">\(N_1\)</span> but also
+have death <span class="math inline">\(N_d\)</span>.</p>
+<p>Now we need that given <span class="math inline">\(X_0\)</span></p>
+<ul>
+<li><span class="math inline">\(A_0 \perp  N_1^0(), N_1^1(), N_d^0(),
+N_d^1() | X_0\)</span></li>
+<li>positivity <span class="math inline">\(1 &gt; \pi_0(X_0) &gt;
+0\)</span></li>
+</ul>
+<p>and given <span class="math inline">\(\bar X_1\)</span> the history
+accumulated at time <span class="math inline">\(T_R\)</span> of 2nd
+randomization</p>
+<ul>
+<li><span class="math inline">\(A_1 \perp  N_1^0(), N_1^1(), N_d^0(),
+N_d^1() | \bar X_1\)</span></li>
+<li>positivity <span class="math inline">\(1 &gt; \pi_1(X_1) &gt;
+0\)</span></li>
+</ul>
+<p>and</p>
+<ul>
+<li>consistency</li>
+</ul>
+<p>to link the counterfactual quantities to observed data.</p>
+<p>We must use IPTW weighted Cox score and augment as before</p>
+<p>In addition we need that the censoring is independent given for
+example <span class="math inline">\(A_0\)</span></p>
+<ul>
+<li>Independent censoring</li>
+</ul>
+<p>To use the phreg_rct in this situation</p>
+<ul>
+<li>RCT=FALSE</li>
+<li>propensity score models must be specified</li>
+<li>marginal estimate is based on IPTW cox model phreg_IPTW
+<ul>
+<li>when the same model is used for the propensity scores and the
+augmentation models the augmentation models are not needed due to the
+adaptive nature from fitting the propensity score models.</li>
+</ul></li>
+</ul>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a>fit2 <span class="ot">&lt;-</span> <span class="fu">phreg_rct</span>(<span class="fu">Event</span>(start,stop,statusD)<span class="sc">~</span>Z.f<span class="sc">+</span><span class="fu">cluster</span>(id),<span class="at">data=</span>data,</span>
+<span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a>     <span class="at">treat.var=</span><span class="st">&quot;treattime&quot;</span>,<span class="at">typesR=</span><span class="fu">c</span>(<span class="st">&quot;non&quot;</span>,<span class="st">&quot;R0&quot;</span>),<span class="at">typesC=</span><span class="fu">c</span>(<span class="st">&quot;non&quot;</span>,<span class="st">&quot;C&quot;</span>,<span class="st">&quot;dynC&quot;</span>),</span>
+<span id="cb8-3"><a href="#cb8-3" tabindex="-1"></a>     <span class="at">RCT=</span><span class="cn">FALSE</span>,<span class="at">treat.model=</span>Z.f<span class="sc">~</span>z1,<span class="at">augmentR0=</span><span class="sc">~</span>z1,<span class="at">augmentC=</span><span class="sc">~</span>z1<span class="sc">+</span>Count1)</span>
+<span id="cb8-4"><a href="#cb8-4" tabindex="-1"></a><span class="fu">summary</span>(fit2)</span>
+<span id="cb8-5"><a href="#cb8-5" tabindex="-1"></a><span class="co">#&gt;                Estimate    Std.Err       2.5%     97.5%      P-value</span></span>
+<span id="cb8-6"><a href="#cb8-6" tabindex="-1"></a><span class="co">#&gt; Marginal-Z.f1 0.3111195 0.08058494 0.15317593 0.4690631 0.0001130326</span></span>
+<span id="cb8-7"><a href="#cb8-7" tabindex="-1"></a><span class="co">#&gt; non_C:Z.f1    0.3067348 0.08057748 0.14880581 0.4646637 0.0001408301</span></span>
+<span id="cb8-8"><a href="#cb8-8" tabindex="-1"></a><span class="co">#&gt; non_dynC:Z.f1 0.2169383 0.07119837 0.07739205 0.3564845 0.0023117164</span></span>
+<span id="cb8-9"><a href="#cb8-9" tabindex="-1"></a><span class="co">#&gt; R0_non:Z.f1   0.3111195 0.08058494 0.15317593 0.4690631 0.0001130326</span></span>
+<span id="cb8-10"><a href="#cb8-10" tabindex="-1"></a><span class="co">#&gt; R0_C:Z.f1     0.3067348 0.08057748 0.14880581 0.4646637 0.0001408301</span></span>
+<span id="cb8-11"><a href="#cb8-11" tabindex="-1"></a><span class="co">#&gt; R0_dynC:Z.f1  0.2169383 0.07119837 0.07739205 0.3564845 0.0023117164</span></span>
+<span id="cb8-12"><a href="#cb8-12" tabindex="-1"></a><span class="co">#&gt; attr(,&quot;class&quot;)</span></span>
+<span id="cb8-13"><a href="#cb8-13" tabindex="-1"></a><span class="co">#&gt; [1] &quot;summary.phreg_rct&quot;</span></span></code></pre></div>
+<p>and for twostage randomization</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" tabindex="-1"></a>sse <span class="ot">&lt;-</span> <span class="fu">phreg_rct</span>(<span class="fu">Event</span>(start,time,statusD)<span class="sc">~</span>A0.f<span class="sc">+</span>A1t<span class="sc">+</span><span class="fu">cluster</span>(id),<span class="at">data=</span>rr,</span>
+<span id="cb9-2"><a href="#cb9-2" tabindex="-1"></a>     <span class="at">typesR=</span><span class="fu">c</span>(<span class="st">&quot;non&quot;</span>,<span class="st">&quot;R0&quot;</span>,<span class="st">&quot;R1&quot;</span>,<span class="st">&quot;R01&quot;</span>),<span class="at">typesC=</span><span class="fu">c</span>(<span class="st">&quot;non&quot;</span>,<span class="st">&quot;C&quot;</span>,<span class="st">&quot;dynC&quot;</span>),</span>
+<span id="cb9-3"><a href="#cb9-3" tabindex="-1"></a>     <span class="at">treat.var=</span><span class="st">&quot;treattime&quot;</span>,</span>
+<span id="cb9-4"><a href="#cb9-4" tabindex="-1"></a>     <span class="at">RCT=</span><span class="cn">FALSE</span>, <span class="at">treat.model=</span>At.f<span class="sc">~</span>z1<span class="sc">*</span><span class="fu">factor</span>(Count2),</span>
+<span id="cb9-5"><a href="#cb9-5" tabindex="-1"></a>     <span class="at">augmentR0=</span><span class="sc">~</span>z1,<span class="at">augmentR1=</span><span class="sc">~</span>z1,<span class="at">augmentC=</span><span class="sc">~</span>z1<span class="sc">+</span>Count1<span class="sc">+</span>A1t)</span>
+<span id="cb9-6"><a href="#cb9-6" tabindex="-1"></a><span class="fu">summary</span>(sse)</span>
+<span id="cb9-7"><a href="#cb9-7" tabindex="-1"></a><span class="co">#&gt;                 Estimate    Std.Err        2.5%     97.5%      P-value</span></span>
+<span id="cb9-8"><a href="#cb9-8" tabindex="-1"></a><span class="co">#&gt; Marginal-A0.f1 0.3817476 0.13188068  0.12326622 0.6402290 0.0037958891</span></span>
+<span id="cb9-9"><a href="#cb9-9" tabindex="-1"></a><span class="co">#&gt; Marginal-A1t   0.2259319 0.12344157 -0.01600910 0.4678730 0.0672089296</span></span>
+<span id="cb9-10"><a href="#cb9-10" tabindex="-1"></a><span class="co">#&gt; non_C:A0.f1    0.3765255 0.12594711  0.12967369 0.6233773 0.0027938653</span></span>
+<span id="cb9-11"><a href="#cb9-11" tabindex="-1"></a><span class="co">#&gt; non_C:A1t      0.3187675 0.11256529  0.09814361 0.5393914 0.0046280182</span></span>
+<span id="cb9-12"><a href="#cb9-12" tabindex="-1"></a><span class="co">#&gt; non_dynC:A0.f1 0.3797091 0.11214290  0.15991306 0.5995051 0.0007093493</span></span>
+<span id="cb9-13"><a href="#cb9-13" tabindex="-1"></a><span class="co">#&gt; non_dynC:A1t   0.3514300 0.09297578  0.16920079 0.5336591 0.0001569535</span></span>
+<span id="cb9-14"><a href="#cb9-14" tabindex="-1"></a><span class="co">#&gt; R0_non:A0.f1   0.3817476 0.13188068  0.12326622 0.6402290 0.0037958891</span></span>
+<span id="cb9-15"><a href="#cb9-15" tabindex="-1"></a><span class="co">#&gt; R0_non:A1t     0.2259319 0.12344157 -0.01600910 0.4678730 0.0672089296</span></span>
+<span id="cb9-16"><a href="#cb9-16" tabindex="-1"></a><span class="co">#&gt; R0_C:A0.f1     0.3765255 0.12594711  0.12967369 0.6233773 0.0027938653</span></span>
+<span id="cb9-17"><a href="#cb9-17" tabindex="-1"></a><span class="co">#&gt; R0_C:A1t       0.3187675 0.11256529  0.09814361 0.5393914 0.0046280182</span></span>
+<span id="cb9-18"><a href="#cb9-18" tabindex="-1"></a><span class="co">#&gt; R0_dynC:A0.f1  0.3797091 0.11214290  0.15991306 0.5995051 0.0007093493</span></span>
+<span id="cb9-19"><a href="#cb9-19" tabindex="-1"></a><span class="co">#&gt; R0_dynC:A1t    0.3514300 0.09297578  0.16920079 0.5336591 0.0001569535</span></span>
+<span id="cb9-20"><a href="#cb9-20" tabindex="-1"></a><span class="co">#&gt; R1_non:A0.f1   0.3817476 0.13188068  0.12326622 0.6402290 0.0037958891</span></span>
+<span id="cb9-21"><a href="#cb9-21" tabindex="-1"></a><span class="co">#&gt; R1_non:A1t     0.2259319 0.12344157 -0.01600910 0.4678730 0.0672089296</span></span>
+<span id="cb9-22"><a href="#cb9-22" tabindex="-1"></a><span class="co">#&gt; R1_C:A0.f1     0.3765255 0.12594711  0.12967369 0.6233773 0.0027938653</span></span>
+<span id="cb9-23"><a href="#cb9-23" tabindex="-1"></a><span class="co">#&gt; R1_C:A1t       0.3187675 0.11256529  0.09814361 0.5393914 0.0046280182</span></span>
+<span id="cb9-24"><a href="#cb9-24" tabindex="-1"></a><span class="co">#&gt; R1_dynC:A0.f1  0.3797091 0.11214290  0.15991306 0.5995051 0.0007093493</span></span>
+<span id="cb9-25"><a href="#cb9-25" tabindex="-1"></a><span class="co">#&gt; R1_dynC:A1t    0.3514300 0.09297578  0.16920080 0.5336591 0.0001569535</span></span>
+<span id="cb9-26"><a href="#cb9-26" tabindex="-1"></a><span class="co">#&gt; R01_non:A0.f1  0.3817476 0.13185641  0.12331378 0.6401814 0.0037894525</span></span>
+<span id="cb9-27"><a href="#cb9-27" tabindex="-1"></a><span class="co">#&gt; R01_non:A1t    0.2259319 0.12307282 -0.01528637 0.4671502 0.0663934395</span></span>
+<span id="cb9-28"><a href="#cb9-28" tabindex="-1"></a><span class="co">#&gt; R01_C:A0.f1    0.3765255 0.12592170  0.12972349 0.6233275 0.0027883528</span></span>
+<span id="cb9-29"><a href="#cb9-29" tabindex="-1"></a><span class="co">#&gt; R01_C:A1t      0.3187675 0.11216079  0.09893641 0.5385986 0.0044823275</span></span>
+<span id="cb9-30"><a href="#cb9-30" tabindex="-1"></a><span class="co">#&gt; R01_dynC:A0.f1 0.3797091 0.11211436  0.15996900 0.5994492 0.0007071245</span></span>
+<span id="cb9-31"><a href="#cb9-31" tabindex="-1"></a><span class="co">#&gt; R01_dynC:A1t   0.3514300 0.09248564  0.17016144 0.5326985 0.0001447938</span></span>
+<span id="cb9-32"><a href="#cb9-32" tabindex="-1"></a><span class="co">#&gt; attr(,&quot;class&quot;)</span></span>
+<span id="cb9-33"><a href="#cb9-33" tabindex="-1"></a><span class="co">#&gt; [1] &quot;summary.phreg_rct&quot;</span></span></code></pre></div>
+</div>
+<div id="sessioninfo" class="section level1">
+<h1>SessionInfo</h1>
+<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" tabindex="-1"></a><span class="fu">sessionInfo</span>()</span>
+<span id="cb10-2"><a href="#cb10-2" tabindex="-1"></a><span class="co">#&gt; R version 4.4.2 (2024-10-31)</span></span>
+<span id="cb10-3"><a href="#cb10-3" tabindex="-1"></a><span class="co">#&gt; Platform: aarch64-apple-darwin24.2.0</span></span>
+<span id="cb10-4"><a href="#cb10-4" tabindex="-1"></a><span class="co">#&gt; Running under: macOS Sequoia 15.2</span></span>
+<span id="cb10-5"><a href="#cb10-5" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb10-6"><a href="#cb10-6" tabindex="-1"></a><span class="co">#&gt; Matrix products: default</span></span>
+<span id="cb10-7"><a href="#cb10-7" tabindex="-1"></a><span class="co">#&gt; BLAS:   /Users/klaus/.asdf/installs/R/4.4.2/lib/R/lib/libRblas.dylib </span></span>
+<span id="cb10-8"><a href="#cb10-8" tabindex="-1"></a><span class="co">#&gt; LAPACK: /Users/klaus/.asdf/installs/R/4.4.2/lib/R/lib/libRlapack.dylib;  LAPACK version 3.12.0</span></span>
+<span id="cb10-9"><a href="#cb10-9" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb10-10"><a href="#cb10-10" tabindex="-1"></a><span class="co">#&gt; locale:</span></span>
+<span id="cb10-11"><a href="#cb10-11" tabindex="-1"></a><span class="co">#&gt; [1] en_US.UTF-8/en_US.UTF-8/en_US.UTF-8/C/en_US.UTF-8/en_US.UTF-8</span></span>
+<span id="cb10-12"><a href="#cb10-12" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb10-13"><a href="#cb10-13" tabindex="-1"></a><span class="co">#&gt; time zone: Europe/Copenhagen</span></span>
+<span id="cb10-14"><a href="#cb10-14" tabindex="-1"></a><span class="co">#&gt; tzcode source: internal</span></span>
+<span id="cb10-15"><a href="#cb10-15" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb10-16"><a href="#cb10-16" tabindex="-1"></a><span class="co">#&gt; attached base packages:</span></span>
+<span id="cb10-17"><a href="#cb10-17" tabindex="-1"></a><span class="co">#&gt; [1] stats     graphics  grDevices utils     datasets  methods   base     </span></span>
+<span id="cb10-18"><a href="#cb10-18" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb10-19"><a href="#cb10-19" tabindex="-1"></a><span class="co">#&gt; other attached packages:</span></span>
+<span id="cb10-20"><a href="#cb10-20" tabindex="-1"></a><span class="co">#&gt; [1] mets_1.3.5     timereg_2.0.6  survival_3.8-3</span></span>
+<span id="cb10-21"><a href="#cb10-21" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb10-22"><a href="#cb10-22" tabindex="-1"></a><span class="co">#&gt; loaded via a namespace (and not attached):</span></span>
+<span id="cb10-23"><a href="#cb10-23" tabindex="-1"></a><span class="co">#&gt;  [1] cli_3.6.3           knitr_1.49          rlang_1.1.4        </span></span>
+<span id="cb10-24"><a href="#cb10-24" tabindex="-1"></a><span class="co">#&gt;  [4] xfun_0.50           jsonlite_1.8.9      listenv_0.9.1      </span></span>
+<span id="cb10-25"><a href="#cb10-25" tabindex="-1"></a><span class="co">#&gt;  [7] future.apply_1.11.3 lava_1.8.1          htmltools_0.5.8.1  </span></span>
+<span id="cb10-26"><a href="#cb10-26" tabindex="-1"></a><span class="co">#&gt; [10] sass_0.4.9          rmarkdown_2.29      grid_4.4.2         </span></span>
+<span id="cb10-27"><a href="#cb10-27" tabindex="-1"></a><span class="co">#&gt; [13] evaluate_1.0.1      jquerylib_0.1.4     fastmap_1.2.0      </span></span>
+<span id="cb10-28"><a href="#cb10-28" tabindex="-1"></a><span class="co">#&gt; [16] mvtnorm_1.3-2       yaml_2.3.10         lifecycle_1.0.4    </span></span>
+<span id="cb10-29"><a href="#cb10-29" tabindex="-1"></a><span class="co">#&gt; [19] numDeriv_2016.8-1.1 compiler_4.4.2      codetools_0.2-20   </span></span>
+<span id="cb10-30"><a href="#cb10-30" tabindex="-1"></a><span class="co">#&gt; [22] ucminf_1.2.2        Rcpp_1.0.13-1       future_1.34.0      </span></span>
+<span id="cb10-31"><a href="#cb10-31" tabindex="-1"></a><span class="co">#&gt; [25] lattice_0.22-6      digest_0.6.37       R6_2.5.1           </span></span>
+<span id="cb10-32"><a href="#cb10-32" tabindex="-1"></a><span class="co">#&gt; [28] parallelly_1.41.0   parallel_4.4.2      splines_4.4.2      </span></span>
+<span id="cb10-33"><a href="#cb10-33" tabindex="-1"></a><span class="co">#&gt; [31] bslib_0.8.0         Matrix_1.7-1        tools_4.4.2        </span></span>
+<span id="cb10-34"><a href="#cb10-34" tabindex="-1"></a><span class="co">#&gt; [34] globals_0.16.3      cachem_1.1.0</span></span></code></pre></div>
+</div>
+
+
+
+<!-- code folding -->
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>

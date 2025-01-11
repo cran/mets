@@ -35,6 +35,9 @@ library(mets)
  plot(pfg,ylim=c(0,0.2))
 
 ## -----------------------------------------------------------------------------
+gofFG(Event(time,status)~Z1+Z2,data=dats,cause=1)
+
+## -----------------------------------------------------------------------------
 ### predictions with CI based on iid decomposition of baseline and beta
 fg <- cifreg(Event(time,status)~Z1+Z2,data=dats,cause=1,propodds=NULL,cox.prep=TRUE)
 Biid <- IIDbaseline.cifreg(fg,time=5)

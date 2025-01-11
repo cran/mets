@@ -387,6 +387,214 @@ form1 <- as.formula(Surv(entry__,exit__,status__cause)~cluster(id__))
 
   Gcdata <- exp(-cpred(cr$cumhaz,exit)[,2])
 
+  if (!is.null(augment.model)) {
+	  form <- as.formula(paste("Surv(entry__,exit__,statusC__)~+1"))
+	  desform <- update.formula(augment.model,~Hst + . + cluster(id__))
+	  form[[3]] <- desform[[2]]
+	  nterms <- length(all.vars(form[[3]]))-1
+  }
+
+  if (!is.null(times)) {
+       semuPA <-  muPA <- semuPA.times <-  muPA.times <- rep(0,length(times))
+       ww <- fast.approx(timeJ,times,type="left")
+       muP.times <- cumhazP[ww,2]
+       semuP.times <- clgl$se.mu[ww]
+
+  if (!is.null(augment.model)) {
+  for (i in seq_along(times)) {
+     timel <- times[i]
+     data$Hst <- revcumsumstrata((exit<timel)*(status %in% cause)/Gcdata,id,nid)
+     cr2 <- phreg(form,data=data,no.opt=TRUE,no.var=1)
+     nterms <- cr2$p-1
+
+     dhessian <- cr2$hessianttime
+     dhessian <-  .Call("XXMatFULL",dhessian,cr2$p,PACKAGE="mets")$XXf
+     ###  matrix(apply(dhessian,2,sum),3,3)
+     timeb <- which(cr$cumhaz[,1]<timel)
+     ### take relevant \sum H_i(s,t) (e_i - \bar e)
+     covts <- dhessian[timeb,1+1:nterms,drop=FALSE]
+     ### construct relevant \sum (e_i - \bar e)^2
+     Pt <- dhessian[timeb,-c((1:(nterms+1)),(1:(nterms))*(nterms+1)+1),drop=FALSE]
+     ###  matrix(apply(dhessian[,c(5,6,8,9)],2,sum),2,2)
+     gammahat <- .Call("CubeVec",Pt,covts,1,PACKAGE="mets")$XXbeta
+     S0 <- cr$S0[timeb]
+     gammahat[is.na(gammahat)] <- 0
+     gammahat[gammahat==Inf] <- 0
+     Gctb <- Gc[cr$cox.prep$jumps+1][timeb]
+     augment.times <- sum(apply(gammahat*cr2$U[timeb,1+1:nterms,drop=FALSE],1,sum))/nid
+     mterms <- length(terms)
+     mterms <- nterms
+     ###
+     varZ <- matrix(apply(Pt/Gctb^2,2,sum),mterms,mterms)
+     gamma <- .Call("CubeVec",matrix(c(varZ),nrow=1),matrix(apply(covts/Gctb,2,sum),nrow=1),1,PACKAGE="mets")$XXbeta
+     gamma <- c(gamma)
+     gamma[is.na(gamma)] <- 0
+     gamma[gamma=Inf] <- 0
+     augment <- sum(apply(gamma*t(cr2$U[timeb,1+1:nterms,drop=FALSE])/Gctb,2,sum))/nid
+     ###
+     muPA[i] <- muP.times[i]+augment
+     semuPA[i] <- (semuP.times[i]^2 +(gamma %*% varZ %*% gamma)/nid^2)^.5
+     muPA.times[i] <- muP.times[i]+augment.times
+     semuPA.times[i] <- (semuP.times[i]^2+sum(gammahat*.Call("CubeVec",Pt,gammahat,0,PACKAGE="mets")$XXbeta)/(nid^2))^.5
+  } }
+  else { Gctb <- NULL;gammahat <- NULL; muPA.times <-semuPA.times <- muPA  <- semuPA <- NULL }
+  } else stop("must give times\n") 
+# }}}
+
+  return(list(censoring.weights=Gctb,muP.all=cumhazP,Gcjump=Gc[jump1],gamma=gamma,gamma.time=gammahat,times=times,
+  muP=muP.times,semuP=semuP.times, muPAt=muPA.times,semuPAt=semuPA.times, muPA=muPA,semuPA=semuPA))
+}# }}}
+
+recurrentMarginalAIPCW <- function(formula,data=data,cause=1,cens.code=0,death.code=2,
+	  cens.model=~1,km=TRUE,times=NULL,augment.model=~Nt,...)
+{# {{{
+    cl <- match.call()# {{{
+    m <- match.call(expand.dots = TRUE)[1:3]
+    special <- c("strata", "cluster","offset")
+    Terms <- terms(formula, special, data = data)
+    m$formula <- Terms
+    m[[1]] <- as.name("model.frame")
+    m <- eval(m, parent.frame())
+    Y <- model.extract(m, "response")
+    if (!inherits(Y,"Event")) stop("Expected a 'Event'-object")
+    if (ncol(Y)==2) {
+        exit <- Y[,1]
+        entry <- NULL ## rep(0,nrow(Y))
+        status <- Y[,2]
+    } else {
+        entry <- Y[,1]
+        exit <- Y[,2]
+        status <- Y[,3]
+    }
+    id <- strata <- NULL
+    if (!is.null(attributes(Terms)$specials$cluster)) {
+        ts <- survival::untangle.specials(Terms, "cluster")
+        pos.cluster <- ts$terms
+        Terms  <- Terms[-ts$terms]
+        id <- m[[ts$vars]]
+    } else pos.cluster <- NULL
+    if (!is.null(stratapos <- attributes(Terms)$specials$strata)) {
+        ts <- survival::untangle.specials(Terms, "strata")
+        pos.strata <- ts$terms
+        Terms  <- Terms[-ts$terms]
+        strata <- m[[ts$vars]]
+        strata.name <- ts$vars
+    }  else { strata.name <- NULL; pos.strata <- NULL}
+    if (!is.null(offsetpos <- attributes(Terms)$specials$offset)) {
+        ts <- survival::untangle.specials(Terms, "offset")
+        Terms  <- Terms[-ts$terms]
+        offset <- m[[ts$vars]]
+    }
+    X <- model.matrix(Terms, m)
+    if (!is.null(intpos  <- attributes(Terms)$intercept))
+        X <- X[,-intpos,drop=FALSE]
+    if (ncol(X)==0) X <- matrix(nrow=0,ncol=0)
+    ## }}}
+
+   if (!is.null(id)) {
+        ids <- unique(id)
+        nid <- length(ids)
+        if (is.numeric(id))
+            id <-  fast.approx(ids,id)-1
+        else  {
+            id <- as.integer(factor(id,labels=seq(nid)))-1
+        }
+    } else { id <- as.integer(seq_along(entry))-1;  nid <- nrow(X); }
+    ## orginal id coding into integers 1:...
+    id.orig <- id+1;
+
+   ### setting up with artificial names
+ data$status__ <-  status 
+ data$id__ <-  id
+ ## lave Countcause
+ data <- count.history(data,status="status__",id="id__",types=cause,multitype=TRUE)
+ data$Count1__ <- data[,paste("Count",cause[1],sep="")]
+ data$death__ <- (status %in% death.code)*1
+ data$entry__ <- entry 
+ data$exit__ <- exit 
+ data$statusC__ <- (status %in% cens.code)*1
+ data$status__cause <- (status %in% cause)*1
+
+  xr <- phreg(Surv(entry__,exit__,status__cause)~Count1__+death__+cluster(id__),data=data,no.opt=TRUE,no.var=1)
+
+  formC <- update.formula(cens.model,Surv(entry__,exit__,statusC__)~ . +cluster(id__))
+  cr <- phreg(formC,data=data)
+  whereC <- which(status %in% cens.code)
+
+  if (length(whereC)>0) {# {{{
+  ### censoring weights
+  strat <- cr$strata[cr$jumps]
+  x <- cr
+  xx <- x$cox.prep
+  S0i2 <- S0i <- rep(0,length(xx$strata))
+  S0i[xx$jumps+1] <-  1/x$S0
+  S0i2[xx$jumps+1] <- 1/x$S0^2
+  ## survival at t- to also work in competing risks situation
+  if (!km) { 
+    cumhazD <- c(cumsumstratasum(S0i,xx$strata,xx$nstrata)$lagsum)
+    St      <- exp(-cumhazD)
+  } else St <- c(exp(cumsumstratasum(log(1-S0i),xx$strata,xx$nstrata)$lagsum))
+  } else  St <- rep(1,nrow(xx$strata))
+  Gc <- St
+  ## }}}
+
+  
+formD <- as.formula(Surv(entry__,exit__,death__)~cluster(id__))
+form1L <- as.formula(Surv(entry__,exit__,status__cause)~Count1__+death__+statusC__+cluster(id__))
+form1 <- as.formula(Surv(entry__,exit__,status__cause)~cluster(id__))
+
+ xr <- phreg(form1L,data=data,no.opt=TRUE,no.var=1)
+ dr <- phreg(formD,data=data,no.opt=TRUE,no.var=1)
+
+ ### augmenting partioned estimator computing \hat H_i(s,t) for fixed t
+ data$Gctrr <- exp(-cpred(cr$cumhaz,exit)[,2])
+
+ ### cook-lawless-ghosh-lin
+ xr0 <- phreg(form1,data=data,no.opt=TRUE)
+ clgl  <- recurrentMarginal(xr0,dr)
+### bplot(clgl,se=1); print(cpred(clgl$cumhaz,times)); print(cpred(clgl$se.cumhaz,times)); 
+
+  ####  First \mu_ipcw(t) \sum_i I(T_i /\ t \leq C_i)/G_c(T_i /\ t ) N_(T_i /\ t) {{{
+  x <- xr
+  xx <- xr$cox.prep
+  S0i2 <- S0i <- rep(0,length(xx$strata))
+  S0i[xx$jumps+1] <-  1/x$S0
+  S0i2[xx$jumps+1] <- 1/x$S0^2
+  ## stay with N(D_i) when t is large so no -1 when death
+  ## xx$X[,1] er Count1 dvs N(t-)
+  Nt <- revcumsumstrata(xx$X[,1]*xx$sign,xx$strata,xx$nstrata)
+  Nt <- Nt/Gc
+  ## counting N(D) forward in time skal ikke checke ud når man dør N_(D_i) er i spil efter D_i
+  NtD <- cumsumstrata(xx$X[,1]*(xx$X[,2]==1)*(xx$sign==1)/Gc,xx$strata,xx$nstrata)
+  jump1 <- xx$jumps+1
+  timeJ <- xx$time[jump1]
+  avNtD <- (NtD+Nt)[jump1]/nid
+  strataN1J <- xx$strata[jump1]
+
+  varIPCW1 <- NULL
+  seIPCW1 <- NULL
+
+  ### IPCW estimator 
+  cumhaz <- cbind(timeJ,avNtD)
+# }}}
+
+  ### Partitioned estimator , same as Lin, Lawless & Cook estimator {{{
+  cumhazP <- c(cumsumstrata(1/Gc[jump1],strataN1J,xx$nstrata)/nid)
+  cumhazP <- cbind(timeJ,cumhazP)
+
+  ### variance of partitioned estimator 
+
+  ### calculate E(H,s,t) = E(H,t) - E(H,s) 
+  ### E(H,t) = 1/(S(t)*n) \sum_ \int Y_i(s)/G_c(s) dN_{1i} = 1/(S(t)) (\mu_p(t) - \mu_p(s)) 
+  ### \hat H_i for all subjects, and look at together with Hst, eHst 
+  ### for censoring martingale 
+  data$Nt <- data$Count1__
+  data$Nt2 <- data$Nt^2
+  data$expNt <- exp(-data$Nt)
+  data$NtexpNt <- data$Nt*exp(-data$Nt)
+
+  Gcdata <- exp(-cpred(cr$cumhaz,exit)[,2])
+
   form <- as.formula(paste("Surv(entry__,exit__,statusC__)~+1"))
   desform <- update.formula(augment.model,~Hst + . + cluster(id__))
   form[[3]] <- desform[[2]]
@@ -434,14 +642,14 @@ form1 <- as.formula(Surv(entry__,exit__,status__cause)~cluster(id__))
      muPA.times[i] <- muP.times[i]+augment.times
      semuPA.times[i] <- (semuP.times[i]^2+sum(gammahat*.Call("CubeVec",Pt,gammahat,0,PACKAGE="mets")$XXbeta)/(nid^2))^.5
   }
-  }
+  } else { Gctb <- NULL;gammahat <- NULL; 
+  muPA.times <-semuPA.times <- muPA  <- semuPA <- NULL }
 # }}}
 
   return(list(censoring.weights=Gctb,muP.all=cumhazP,Gcjump=Gc[jump1],gamma=gamma,gamma.time=gammahat,times=times,
   muP=muP.times,semuP=semuP.times, muPAt=muPA.times,semuPAt=semuPA.times, muPA=muPA,semuPA=semuPA))
 }# }}}
 
-##' @export
 recurrentMarginalAIPCWdata <- function(rr,times,km=TRUE,terms=1,idt=1,x.design=NULL,
    id="id",start="start",stop="stop",status="status",death="death",cause=1,...)
 {# {{{
@@ -585,7 +793,6 @@ form1 <- as.formula(paste("Surv(",start,",",stop,",",status,"==",cause,")~cluste
   muP=muP.times,semuP=semuP.times, muPAt=muPA.times,semuPAt=semuPA.times, muPA=muPA,semuPA=semuPA))
 }# }}}
 
-
 ##' @export
 recurrentMarginalIPCW <- function(rr,km=TRUE,times=NULL,...)
 {# {{{
@@ -684,7 +891,7 @@ recmarg <- function(recurrent,death,Xr=NULL,Xd=NULL,km=TRUE,...)
 }# }}}
 
 ##' @export
-squareintHdM <- function(phreg,ft=NULL,fixbeta=NULL,...)
+squareintHdM <- function(phreg,ft=NULL,fixbeta=NULL,beta.iid=NULL,...)
 {# {{{
 ###  sum_k ( int_0^t f(s)/S_0^r(s) dM_k.^r(s) )^2
 ###  strata "r" from object and "k" id from cluster 
@@ -696,9 +903,11 @@ squareintHdM <- function(phreg,ft=NULL,fixbeta=NULL,...)
 
   x <- phreg
   xx <- x$cox.prep
+  ww <- xx$caseweights*xx$weights
+ 
   S0i2 <- S0i <- rep(0,length(xx$strata))
   S0i[xx$jumps+1] <-  1/x$S0
-  S0i2[xx$jumps+1] <- 1/x$S0^2
+  S0i2[xx$jumps+1] <- 1/(x$S0^2*ww[xx$jump+1])
   Z <- xx$X
   U <- E <- matrix(0,nrow(xx$X),x$p)
   E[xx$jumps+1,] <- x$E
@@ -716,7 +925,7 @@ squareintHdM <- function(phreg,ft=NULL,fixbeta=NULL,...)
   mid <- max(id)+1
   ### also weights 
   w <- c(xx$weights)
-  xxx <- (ft*S0i-rr*cumS0i2)
+  xxx <- (ft*S0i-rr*cumS0i2*w)
   ssf <- cumsumidstratasum(xxx,id,mid,xx$strata,xx$nstrata)$sumsquare
   ss <-  revcumsumidstratasum(w*rr,id,mid,xx$strata,xx$nstrata)$lagsumsquare*cumS0i2^2
   covv <- covfridstrata(xxx,w*rr,id,mid,xx$strata,xx$nstrata)$covs*cumS0i2
@@ -724,17 +933,19 @@ squareintHdM <- function(phreg,ft=NULL,fixbeta=NULL,...)
 
   vbeta <- betaiidR <- NULL
   if (fixbeta==0) {# {{{
-     invhess <- -solve(x$hessian)
-     MGt <- U[,drop=FALSE]-(Z*cumhaz[,2]-EdLam0)*rr*c(xx$weights)
-     UU <- apply(MGt,2,sumstrata,id,mid)
-     betaiidR <- UU %*% invhess
+    if (!is.null(beta.iid))  betaiidR <- beta.iid else {
+	     invhess <- -solve(x$hessian)
+	     MGt <- U[,drop=FALSE]-(Z*cumhaz[,2]-EdLam0)*rr*c(xx$weights)
+	     UU <- apply(MGt,2,sumstrata,id,mid)
+	     betaiidR <- UU %*% invhess
+     }
      vbeta <- crossprod(betaiidR)
      varbetat <-   rowSums((Ht %*% vbeta)*Ht)
      ### writing each beta for all individuals 
      betakt <- betaiidR[id+1,,drop=FALSE]
      covk1 <- apply(xxx*betakt,2,cumsumidstratasum,id,mid,xx$strata,xx$nstrata,type="sum")
      covk2 <- apply(w*rr*betakt,2,revcumsumidstratasum,id,mid,xx$strata,xx$nstrata,type="lagsum")
-     covk2 <- c(covk2)*cumS0i2
+     covk2 <- covk2*cumS0i2
      covv <- covk1-covk2
      varA1 <- varA1+varbetat-2*apply(covv*Ht,1,sum)
   }# }}}
@@ -820,39 +1031,45 @@ covIntH1dM1IntH2dM2 <- function(square1,square2,fixbeta=1,mu=NULL)
 } # }}}
 
 ##' @export
-tie.breaker <- function(data,stop="time",start="entry",status="status",id=NULL,ddt=NULL,exit.unique=TRUE)
+tie.breaker <- function(data,stop="time",start="entry",status="status",id=NULL,ddt=NULL,exit.unique=TRUE,cause=NULL,cens.code=0)
 {# {{{
 
    if (!is.null(id)) id <- data[,id]
    ord <- 1:nrow(data)
    stat <- data[,status]
    time <- data[,stop]
+   if (is.null(cause)) cause <- unique(stat)
+   type0 <- which(cause %in% cens.code)
+   cause <- cause[-type0]
+   jumps <- stat %in% cause
    dupexit <- duplicated(time)
-   time1 <- data[stat==1,stop]
-   time0 <- data[stat!=1,stop]
+   time1 <- data[jumps,stop]
+   time0 <- data[!jumps,stop]
    lt0 <- length(time0)
    ddp <- duplicated(c(time0,time1))
    if (exit.unique) ties <-ddp[(lt0+1):nrow(data)] else ties <- duplicated(c(time1))
    nties <- sum(ties)
-   ordties <- ord[stat==1][ties]
-   if (is.null(ddt)) {
-	   abd <- abs(diff(data[,stop]))
-	   abd <- min(abd[abd>0])
-	   ddt <- abd*0.5
-   }
-   time[ordties] <- time[ordties]+runif(nties)*ddt
+   if (nties>1) {
+	   ordties <- ord[jumps][ties]
+	   if (is.null(ddt)) {
+		   abd <- abs(diff(data[,stop]))
+		   abd <- min(abd[abd>0])
+		   ddt <- abd*0.5
+	   }
+	   time[ordties] <- time[ordties]+runif(nties)*ddt
 
-   data[ordties,stop] <- time[ordties]
-   ties <- (ord %in% ordties)
-   if (!is.null(id)) {
-   lagties <- dlag(ties)
-   ### also move next start time if id the same 
-   change.start <- lagties==TRUE & id==dlag(id)
-   change.start[is.na(change.start)] <- FALSE
-   ocs <- ord[change.start]
-   data[ocs,start] <- data[ocs-1,stop]
-   data[,"tiebreaker"] <- FALSE
-   data[ocs,"tiebreaker"] <- TRUE
+	   data[ordties,stop] <- time[ordties]
+	   ties <- (ord %in% ordties)
+	   if (!is.null(id)) {
+	   lagties <- dlag(ties)
+	   ### also move next start time if id the same 
+	   change.start <- lagties==TRUE & id==dlag(id)
+	   change.start[is.na(change.start)] <- FALSE
+	   ocs <- ord[change.start]
+	   data[ocs,start] <- data[ocs-1,stop]
+	   data[,"tiebreaker"] <- FALSE
+	   data[ocs,"tiebreaker"] <- TRUE
+	   }
    }
    
    return(data)
@@ -907,7 +1124,7 @@ tie.breaker <- function(data,stop="time",start="entry",status="status",id=NULL,d
 ##' rr <- simRecurrent(5,base1,death.cumhaz=dr)
 ##' dlist(rr,.~id,n=0)
 ##'
-##' rr <- simRecurrent(100,base1,death.cumhaz=dr)
+##' rr <- simRecurrent(10000,base1,death.cumhaz=dr)
 ##' par(mfrow=c(1,3))
 ##' showfitsim(causes=1,rr,dr,base1,base1)
 ##' ######################################################################
@@ -921,13 +1138,20 @@ tie.breaker <- function(data,stop="time",start="entry",status="status",id=NULL,d
 ##' ### now with two event types and second type has same rate as death rate
 ##' ######################################################################
 ##' set.seed(100)
-##' rr <- simRecurrentII(100,base1,base4,death.cumhaz=dr)
+##' rr <- simRecurrentII(10000,base1,base4,death.cumhaz=dr)
 ##' dtable(rr,~death+status)
 ##' par(mfrow=c(2,2))
 ##' showfitsim(causes=2,rr,dr,base1,base4)
 ##'
+##' set.seed(100)
+##' cumhaz <- list(base1,base1,base4)
+##' drl <- list(dr,base4)
+##' rr <- simRecurrentIII(100,cumhaz,death.cumhaz=drl,dep=0)
+##' dtable(rr,~death+status)
+##' showfitsimIII(rr,cumhaz,drl) 
+##'
 ##' @export
-##' @aliases simRecurrent showfitsim  covIntH1dM1IntH2dM2 squareintHdM 
+##' @aliases sim.recurrent simRecurrent showfitsim  covIntH1dM1IntH2dM2 squareintHdM  simRecurrentIII showfitsimIII
 simRecurrentII <- function(n,cumhaz,cumhaz2,death.cumhaz=NULL,r1=NULL,r2=NULL,rd=NULL,rc=NULL,
     gap.time=FALSE,max.recurrent=100,dhaz=NULL,haz2=NULL,dependence=0,var.z=0.22,cor.mat=NULL,cens=NULL,...) 
 {# {{{
@@ -1041,6 +1265,8 @@ simRecurrentII <- function(n,cumhaz,cumhaz2,death.cumhaz=NULL,r1=NULL,r2=NULL,rd
   dsort(tall) <- ~id+entry+time
   tall$start <- tall$entry
   tall$stop  <- tall$time
+  tall$rr1 <- tall$rr
+  tall$rr <- NULL
 
   attr(tall,"death.cumhaz") <- cumhazd
   attr(tall,"cumhaz") <- cumhaz
@@ -1049,6 +1275,179 @@ simRecurrentII <- function(n,cumhaz,cumhaz2,death.cumhaz=NULL,r1=NULL,r2=NULL,rd
 
   return(tall)
   }# }}}
+
+##' @export
+showfitsimIII <- function(rr,cumhaz,dr)  {# {{{
+ colp <- max(length(cumhaz),length(dr))
+ par(mfrow=c(2,colp))
+ for (i in 1:length(cumhaz)) {
+	 pp <- phreg(Surv(entry,time,status==i)~+1,rr)
+	 plot(pp); 
+	 lines(cumhaz[[i]],col=2,lwd=2)
+ }
+ for (i in 1:length(dr)) {
+	 pp <- phreg(Surv(entry,time,death==i)~+1,rr)
+	 plot(pp); 
+	 lines(dr[[i]],col=2,lwd=2)
+ }
+}
+# }}}
+
+##' @export
+simRecurrentIII <- function(n,cumhaz,death.cumhaz=NULL,rr=NULL,rd=NULL,rc=NULL,zzr=NULL,zzd=NULL,
+  gap.time=FALSE,max.recurrent=100,dhaz=NULL,haz2=NULL,dependence=0,var.z=1,cor.mat=NULL,cens=NULL,...) 
+{# {{{
+  status <- fdeath <- dtime <- NULL # to avoid R-check 
+
+  if (dependence==0) { # {{{
+	  z <- z1 <- z2 <- zd <- rep(1,n) 
+	  if (is.null(zzr)) zzr <- matrix(z,n,length(cumhaz)) 
+	  if (!is.null(death.cumhaz))
+	  if (is.null(zzd)) zzd <- matrix(zd,n,length(death.cumhaz))
+     } else if (dependence==1) {
+	  z <- rgamma(n,1/var.z[1])*var.z[1]
+	  z1 <- z; z2 <- z; zd <- z
+	  if (is.null(zzr)) zzr <- matrix(z,n,length(cumhaz)) 
+	  if (!is.null(death.cumhaz))
+	  if (is.null(zzd)) zzd <- matrix(zd,n,length(death.cumhaz))
+     } else if (dependence==4) {
+	      zz <- rgamma(n,1/var.z[1])*var.z[1]
+	      z1 <- zz; z2 <- zz; zd <- rep(1,n) 
+	      z <- z1
+	  if (is.null(zzr)) zzr <- matrix(z,n,length(cumhaz)) 
+	  if (!is.null(death.cumhaz))
+	  if (is.null(zzd)) zzd <- matrix(zd,n,length(death.cumhaz))
+     }    else stop("dependence 0,1,4"); # }}}
+
+   if (is.null(rr)) rr <- matrix(1,n,length(cumhaz))
+   if (!is.null(death.cumhaz))
+   if (is.null(rd)) rd <- matrix(1,n,length(death.cumhaz))
+   if (is.null(rc)) rc <- rep(1,n)
+
+  ## extend cumulative for death to full range  of cause 1
+  if (!is.null(death.cumhaz)) {
+     out <- extendCums(c(cumhaz,death.cumhaz),NULL)
+     l <- length(cumhaz)
+     ld <- length(death.cumhaz)
+     cumhaz <- out[1:l]
+     cumhazd <- out[(l+1):(l+ld)]
+  } else {
+     out <- extendCums(cumhaz,NULL)
+     l <- length(cumhaz)
+     cumhaz <- out[1:l]
+  }
+  max.time <- tail(cumhaz[[1]][,1],1)
+
+  rrz <- rr*zzr
+  tall <- rchazl(cumhaz,rrz) 
+  tall$id <- 1:n
+
+### death time simulated
+  if (!is.null(death.cumhaz)) {# {{{
+          rrzd <- rd*zzd
+	  timed   <- rchazl(cumhazd,rrzd)
+	  tall$dtime <- timed$time
+	  tall$fdeath <- timed$status
+	  if (!is.null(cens)) { 
+             ctime <- rexp(n)/(rc*cens)
+	     tall$fdeath[tall$dtime>ctime] <- 0; 
+	     tall$dtime[tall$dtime>ctime] <- ctime[tall$dtime>ctime] 
+	  }
+  } else { 
+	  tall$dtime <- max.time; 
+	  tall$fdeath <- 0; 
+	  cumhazd <- NULL 
+	  if (!is.null(cens)) { 
+             ctime <- rexp(n)/(rc*cens)
+	     tall$fdeath[tall$dtime>ctime] <- 0; 
+	     tall$dtime[tall$dtime>ctime] <- ctime[tall$dtime>ctime] 
+	  }
+  }
+# }}}
+
+### fixing the first time to event
+  tall$death <- 0
+  tall <- dtransform(tall,death=fdeath,time>dtime)
+  tall <- dtransform(tall,status=0,time>dtime)
+  tall <- dtransform(tall,time=dtime,time>dtime)
+  tt <- tall
+  i <- 1; 
+  while (any((tt$time<tt$dtime) & (tt$status!=0) & (i < max.recurrent))) {
+	  i <- i+1
+	  still <- subset(tt,time<dtime & status!=0)
+	  nn <- nrow(still)
+          tt <- rchazl(cumhaz,rrz[still$id,,drop=FALSE],entry=(1-gap.time)*still$time) 
+	  if (gap.time) {
+		  tt$entry <- still$time
+		  tt$time  <- tt$time+still$time
+	  }
+          ###
+	  tt <- cbind(tt,dkeep(still,~id+dtime+death+fdeath),row.names=NULL)
+	  tt <- dtransform(tt,death=fdeath,time>dtime)
+	  tt <- dtransform(tt,status=0,time>dtime)
+	  tt <- dtransform(tt,time=dtime,time>dtime)
+	  nt <- nrow(tt)
+	  tall <- rbind(tall,tt[1:nn,],row.names=NULL)
+  } 
+  dsort(tall) <- ~id+entry+time
+  tall$start <- tall$entry
+  tall$stop  <- tall$time
+  tall$rr <- NULL
+
+  attr(tall,"death.cumhaz") <- cumhazd
+  attr(tall,"cumhaz") <- cumhaz
+  attr(tall,"rr") <- rr
+  attr(tall,"z") <- z
+
+  return(tall)
+  }# }}}
+
+#' @export sim.recurrent
+#' @usage sim.recurrent(cox1,coxd=NULL,coxc=NULL,n=1,data=NULL,type=c("default","cox-cox","gl-cox"),id="id",varz=1,share=1,cens=0.001,scale1=1,scaled=1,dependence=NULL,...)
+sim.recurrent <- function(cox1,coxd=NULL,coxc=NULL,n=1,data=NULL,type=c("default","cox-cox","gl-cox"),id="id",varz=1,share=1,cens=0.001,scale1=1,scaled=1,dependence=NULL,...) {# {{{
+## exp censoring default
+death <- NULL
+
+if (type[1]=="default" & inherits(cox1,"recreg")) type <- "gl-cox" 
+if (type[1]=="default" & inherits(cox1,"phreg")) type <- "cox-cox" 
+
+scox1 <- read.phreg(cox1,n,data=data)
+if (!is.null(coxd)) scoxd <- read.phreg(coxd,n,data=data,drawZ=FALSE,id=scox1$id)
+if (!is.null(coxc)) scoxc <- read.phreg(coxc,n,data=data,drawZ=FALSE,id=scox1$id)
+if (type[1]=="cox-cox") type <- 3 else type <- 2
+data <- scox1$data
+ind <-  match(names(scox1$data), names(scoxd$data))
+ind <- ind[!is.na(ind)]
+if (length(ind)<ncol(scoxd$data))  data <- cbind(data,scoxd$data[,-ind])
+
+Lam1 <- scalecumhaz(scox1$cumhaz,scale1); r1 <- scox1$rr
+if (!is.null(coxc)) rc <-  scoxc$rr else rc <- rep(1,n)
+if (!is.null(coxd))  {
+LamD <- scalecumhaz(scoxd$cumhaz,scaled); rd <- scoxd$rr 
+} else { LamD <- NULL; rd <- NULL; }
+Lam2 <- scalecumhaz(scox1$cumhaz,0)
+if (is.null(dependence) & (!is.null(LamD))) {
+rrs <- simGLcox(n,Lam1,LamD,var.z=varz,r1=r1,rd=rd,rc=rc,model="twostage",cens=cens,type=type,share=share)
+} else { 
+if (is.null(dependence)) dependence <- 0
+###rrs <- simRecurrentII(n,Lam1,Lam2,death.cumhaz=LamD,r1=r1,rd=rd,rc=rc,cens=cens,var.z=varz,dependence=dependence)
+if (!is.null(LamD)) 
+rrs <- simRecurrentIII(n,list(Lam1),death.cumhaz=list(LamD),rr=matrix(r1,ncol=1),rd=matrix(rd,ncol=1),rc=rc,cens=cens,var.z=varz,dependence=dependence)
+else rrs <- simRecurrentIII(n,list(Lam1),rr=matrix(r1,ncol=1),rc=rc,cens=cens,var.z=varz,dependence=dependence)
+
+rrs$statusD <- rrs$status
+if (!is.null(LamD))  {
+rrs <- dtransform(rrs,statusD=3,death==1)
+}
+rrs$id <- rrs$id-1
+}
+
+## add covariates 
+rrs <- cbind(rrs,data[rrs$id+1,])
+
+return(rrs)
+}
+# }}}
 
 ##' @export
 simRecurrent <- function(n,cumhaz,death.cumhaz=NULL,...) 
@@ -1415,7 +1814,6 @@ simMultistate <- function(n,cumhaz,cumhaz2,death.cumhaz,death.cumhaz2,
   return(tall)
   }# }}}
 
-
 ##' @export
 extendCums <- function(cumA,cumB,haza=NULL)
 {# {{{
@@ -1425,6 +1823,7 @@ extendCums <- function(cumA,cumB,haza=NULL)
  maxx <- unlist(lapply(cumA,function(x) tail(x,1)[1]))
  mm <- which.max(maxx)
  nn <- length(cumA)
+ if (!is.null(haza)) if (length(haza)!=length(cumA)) haza <- rep(haza,length(cumA))
 
 for (i in seq(nn)[-mm]) {
   cumB <- as.matrix(cumA[[i]]); 

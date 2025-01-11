@@ -83,16 +83,16 @@ summary(ll)
 if (runb>0) { bll <- BootmediatorSurv(aaMss,fit,data=dat,k.boot=k.boot); summary(bll)}
 
 ## ----label=multinom, cache=TRUE, eval=fullVignette----------------------------
-#  data(tTRACE)
-#  dcut(tTRACE) <- ~.
-#  
-#  weightmodel <- fit <- mlogit(wmicat.4 ~agecat.4+vf+chf,data=tTRACE,family=binomial)
-#  wdata <- medweight(fit,data=tTRACE)
-#  
-#  aaMss <- binreg(Event(time,status)~agecat.40+ agecat.41+ vf+chf+cluster(id),data=wdata,
-#  		time=7,weights=wdata$weights,cause=9)
-#  summary(aaMss)
-#  MultMed <- mediatorSurv(aaMss,fit,data=tTRACE,wdata=wdata)
+# data(tTRACE)
+# dcut(tTRACE) <- ~.
+# 
+# weightmodel <- fit <- mlogit(wmicat.4 ~agecat.4+vf+chf,data=tTRACE,family=binomial)
+# wdata <- medweight(fit,data=tTRACE)
+# 
+# aaMss <- binreg(Event(time,status)~agecat.40+ agecat.41+ vf+chf+cluster(id),data=wdata,
+# 		time=7,weights=wdata$weights,cause=9)
+# summary(aaMss)
+# MultMed <- mediatorSurv(aaMss,fit,data=tTRACE,wdata=wdata)
 
 ## ----results="hide", echo=FALSE-----------------------------------------------
 ## To save time building the vignettes on CRAN, we cache time consuming computations

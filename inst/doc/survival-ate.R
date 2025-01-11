@@ -20,9 +20,16 @@ fg2 <- cifreg(Event(time,cause)~tcell+platelet+age,bmt,cause=2,
 	      cox.prep=TRUE,propodds=NULL)
 summary(survivalG(fg2,bmt,50))
 
-ss <- phreg(Surv(time,event)~tcell+platelet+age,bmt)
-summary(survivalG(ss,bmt,50))
+cif1time <- survivalGtime(fg1,bmt)
+plot(cif1time,type="risk"); 
 
+## -----------------------------------------------------------------------------
+ss <- phreg(Surv(time,event)~tcell+platelet+age,bmt)
+sss <- survivalG(ss,bmt,50)
+summary(sss)
+
+Gtime <- survivalGtime(ss,bmt)
+plot(Gtime)
 
 ## -----------------------------------------------------------------------------
 
@@ -38,7 +45,6 @@ estimate(coef=sr1$riskDR,vcov=sr1$var.riskDR,f=function(p) p[2]/p[1],null=1)
 br1 <- binregATE(Event(time,cause)~tcell+platelet+age,bmt,cause=1,
 		 time=40,treat.model=tcell~platelet+age)
 summary(br1)
-
 
 ## -----------------------------------------------------------------------------
 br1 <- binreg(Event(time,cause)~tcell+platelet+age,bmt,cause=1,time=40)

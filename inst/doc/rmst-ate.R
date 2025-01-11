@@ -6,9 +6,10 @@ knitr::opts_chunk$set(
 library(mets)
 
 ## -----------------------------------------------------------------------------
-set.seed(100)
+set.seed(101)
 
      data(bmt); bmt$time <- bmt$time+runif(nrow(bmt))*0.001
+
      # E( min(T;t) | X ) = exp( a+b X) with IPCW estimation 
      out <- resmeanIPCW(Event(time,cause!=0)~tcell+platelet+age,bmt,
                      time=50,cens.model=~strata(platelet),model="exp")
@@ -39,18 +40,17 @@ set.seed(100)
      plot(rmc1,cause=2,se=1)
 
 ## -----------------------------------------------------------------------------
-
  dfactor(bmt) <- tcell~tcell
  bmt$event <- (bmt$cause!=0)*1
  out <- resmeanATE(Event(time,event)~tcell+platelet,data=bmt,time=40,treat.model=tcell~platelet)
  summary(out)
  
- out1 <- resmeanATE(Event(time,cause)~tcell+platelet,data=bmt,cause=1,outcome="rmst-cause",
-		    time=40,treat.model=tcell~platelet)
+ out1 <- resmeanATE(Event(time,cause)~tcell+platelet,data=bmt,cause=1,time=40,
+		    treat.model=tcell~platelet)
  summary(out1)
 
- out2 <- resmeanATE(Event(time,cause)~tcell+platelet,data=bmt,cause=2,outcome="rmst-cause",
-		    time=40,treat.model=tcell~platelet)
+ out2 <- resmeanATE(Event(time,cause)~tcell+platelet,data=bmt,cause=2,time=40,
+		    treat.model=tcell~platelet)
  summary(out2)
 
 ## -----------------------------------------------------------------------------

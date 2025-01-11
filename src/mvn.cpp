@@ -1,4 +1,5 @@
-// [[Rcpp::interfaces(cpp)]]
+// [[Rcpp::interfaces(r, cpp)]]
+// [[Rcpp::depends(RcppArmadillo)]]
 
 #include "mvn.h"
 #include "tools.h"
@@ -254,11 +255,16 @@ END_RCPP
 
 // END_RCPP
 
-mat scoremvn(mat &Y,
-	     mat &Mu, mat &dMu,
-	     mat &S, mat &dS, double itol=0.0) {
-	     // mat &Z,  mat &Su, mat &dSu,
-	     // mat &Threshold, mat &dThreshold) {
+
+// [[Rcpp::export(name = ".scoreMVN")]]
+arma::mat scoreMVN(arma::mat &Y,
+                   arma::mat &Mu,
+                   arma::mat &dMu,
+                   arma::mat &S,
+                   arma::mat &dS,
+                   double itol=0.0) {
+  // mat &Z,  mat &Su, mat &dSu,
+  // mat &Threshold, mat &dThreshold) {
 
   int n = Y.n_rows;
   int p = dMu.n_cols;
@@ -269,7 +275,7 @@ mat scoremvn(mat &Y,
   mat U(n,p);
   U.fill(0);
   colvec A = -0.5*trans(dS)*vectorise(iS);
-    for (int i=0; i<n; i++) {
+  for (int i=0; i<n; i++) {
     colvec zi = trans(z.row(i));
     U.row(i) = trans( A+0.5*trans(dS)*vectorise(zi*trans(zi))
                       + trans(dMu)*zi ) ;
@@ -277,10 +283,10 @@ mat scoremvn(mat &Y,
   return(U);
 }
 
-vec loglikmvn(mat &Yl, mat &Yu, uvec &Status,
-	      mat &Mu, mat &S,
-	      mat &Z,  mat &Su,
-	      mat &Threshold, double itol=0.0) {
+vec loglikmvn(mat &Yl, mat &Yu, uvec &Status, mat &Mu, mat &S,
+              mat &Z, mat &Su,
+              mat &Threshold,
+              double itol=0.0, bool nonconstvar = false) {
 
   int k = Yl.n_cols;
   int n = Yl.n_rows;
@@ -291,10 +297,7 @@ vec loglikmvn(mat &Yl, mat &Yu, uvec &Status,
   int nObs = Obs.size();
   int nNonObs = NonObs.size();
   int nOrd = Ord.size();
-  int nu = Su.n_cols;
-  bool nonconstvar = (nu>0);
-
-  double logdetS0, logdetS, sign;
+  double logdetS0;
   mat Se,S0,iS0;
 
   vec loglik(n); loglik.fill(0);
@@ -310,11 +313,10 @@ vec loglikmvn(mat &Yl, mat &Yu, uvec &Status,
     for (int i=0; i<n; i++) { // Iterate over subjects
 
       if (nonconstvar) {
-	mat Z0 = reshape(Z.row(i),k,nu);
-	S0 = Se+Z0.rows(Obs)*Su*trans(Z0.rows(Obs));
-	iS0 = Inv(S0, logdetS0, itol);
-	// iS0 = inv(S0);
-	// log_det(logdetS0, sign, S0);
+        unsigned nu = Su.n_cols;
+        mat Z0 = reshape(Z.row(i),k,nu);
+        S0 = Se+Z0.rows(Obs)*Su*trans(Z0.rows(Obs));
+        iS0 = Inv(S0, logdetS0, itol);
       }
 
       loglik(i) = -0.5*(logdetS0 + as_scalar(Y0.row(i)*iS0*trans(Y0.row(i))));
@@ -334,7 +336,7 @@ vec loglikmvn(mat &Yl, mat &Yu, uvec &Status,
       mat iS1 = Inv(S.submat(Obs,Obs),logdetS0, itol);
       // mat iS1 = inv(S.submat(Obs,Obs));
       MuNonObs = MuNonObs +
-	trans(S01*iS1*trans(Yl.cols(Obs)-Mu.cols(Obs)));
+        trans(S01*iS1*trans(Yl.cols(Obs)-Mu.cols(Obs)));
       //      MuNonObs.each_row() += Mu.(NonObs);
       SNonObs = SNonObs - S01*iS1*trans(S01);
 
@@ -344,14 +346,14 @@ vec loglikmvn(mat &Yl, mat &Yu, uvec &Status,
 
     Se = S0 = iL*SNonObs*iL; // Correlation matrix
     int ncor = nNonObs*(nNonObs-1)/2;
-    rowvec Cor(ncor);
+    rowvec Cor(std::max(1, ncor)); // We allocate a 1x1 matrix even when ncor=0
     if (ncor>0) {
       int j = 0;
       for (int r=0; r<nNonObs; r++) {
-	for (int c=r+1; c<nNonObs; c++) {
-	  Cor(j) = S0(r,c);
-	  j++;
-	}
+        for (int c=r+1; c<nNonObs; c++) {
+          Cor(j) = S0(r,c);
+          j++;
+        }
       }
     }
     int nthresmax = Threshold.n_cols;
@@ -376,42 +378,43 @@ vec loglikmvn(mat &Yl, mat &Yu, uvec &Status,
       upper = Yu.submat(currow,NonObs);
 
       if (nonconstvar) {
-	mat Z0 = reshape(Z.row(i),k,nu);
-	mat SS = S+Z0*Su*trans(Z0);
+        unsigned nu = Su.n_cols;
+        mat Z0 = reshape(Z.row(i),k,nu);
+        mat SS = S+Z0*Su*trans(Z0);
 
-	if (nObs>0) {
-	  S0 = SS.submat(NonObs,NonObs);
-	  mat S01 = SS.submat(NonObs,Obs);
-	  mat iS1 = Inv(SS.submat(Obs,Obs), logdetS0, itol);
-	  // mat iS1 = inv(SS.submat(Obs,Obs));
-	  Mi = Mi +
-	    trans(S01*iS1*trans(Yl.submat(currow,Obs)-Mu.submat(currow,Obs)));
+        if (nObs>0) {
+          mat S0 =  SS.submat(NonObs,NonObs);
+          mat S01 = SS.submat(NonObs,Obs);
+          mat iS1 = Inv(SS.submat(Obs,Obs), logdetS0, itol);
+          // mat iS1 = inv(SS.submat(Obs,Obs));
+          Mi = Mi +
+            trans(S01*iS1*trans(Yl.submat(currow,Obs)-Mu.submat(currow,Obs)));
 
-	  SNonObs = S0 - S01*iS1*trans(S01);
-	} else {
-	  SNonObs = SS;
-	}
+          SNonObs = S0 - S01*iS1*trans(S01);
+        } else {
+          SNonObs = SS;
+        }
 
-	il = 1/sqrt(diagvec(SNonObs));
-	iL = diagmat(il);
-	Se = S0 = iL*SNonObs*iL; // Correlation matrix
-	if (ncor>0) {
-	  int j = 0;
-	  for (int r=0; r<nNonObs; r++) {
-	    for (int c=r+1; c<nNonObs; c++) {
-	      Cor(j) = S0(r,c);
-	      j++;
-	    }
-	  }
-	}
+        il = 1/sqrt(diagvec(SNonObs));
+        iL = diagmat(il);
+        Se = S0 = iL*SNonObs*iL; // Correlation matrix
+        if (ncor>0) {
+          int j = 0;
+          for (int r=0; r<nNonObs; r++) {
+            for (int c=r+1; c<nNonObs; c++) {
+              Cor(j) = S0(r,c);
+              j++;
+            }
+          }
+        }
       }
 
       umat StatusNonObs = Status.elem(NonObs);
       infin.fill(2);
 
       for (int j=0; j<nNonObs; j++) {
-	if (upper(j)==datum::inf && StatusNonObs(j)==1) infin(j) = 1;
-	if (lower(j)==-datum::inf && StatusNonObs(j)==1) infin(j) = 0;
+        if (upper(j)==datum::inf && StatusNonObs(j)==1) infin(j) = 1;
+        if (lower(j)==-datum::inf && StatusNonObs(j)==1) infin(j) = 0;
       }
       // uvec infplus = find(upper==datum::inf);
       // uvec infminus = find(lower==-datum::inf);
@@ -419,42 +422,40 @@ vec loglikmvn(mat &Yl, mat &Yu, uvec &Status,
       // if (infminus.size()>0) { infin.elem(infminus) -= 2; }
 
       if (nOrd>0) {
-	for (int j=0; j<nOrd; j++) {
-	  int jj = OrdNonObs(j);
-	  int yval = (int) lower(jj);
-	  if (yval<1) { // if Y=0
-	    infin(jj) = 0; // Integrate over left tail
-	    upper(jj) = Thres(j,0);
-	  } else { // Y>1
-	    if (yval>=nthresmax) { // Y=k (last)
-	      double val = Thres(j,yval-1);
-	      infin(jj) = 1; // Integrate over right tail
-	      lower(jj) = val;
-	    } else {
-	      double val = Thres(j,yval-1);
-	      double val2 = Thres(j,yval);
-	      if (val>=val2) { // Also Y=k (last)
-		infin(jj) = 1;
-		lower(jj) = val;
-	      } else { //Y=k-i (in between)
-		lower(jj) = val;
-		upper(jj) = val2;
-	      }
-	    }
-	  }
-	}
+        for (int j=0; j<nOrd; j++) {
+          int jj = OrdNonObs(j);
+          int yval = (int) lower(jj);
+          if (yval<1) { // if Y=0
+            infin(jj) = 0; // Integrate over left tail
+            upper(jj) = Thres(j,0);
+          } else { // Y>1
+            if (yval>=nthresmax) { // Y=k (last)
+              double val = Thres(j,yval-1);
+              infin(jj) = 1; // Integrate over right tail
+              lower(jj) = val;
+            } else {
+              double val = Thres(j,yval-1);
+              double val2 = Thres(j,yval);
+              if (val>=val2) { // Also Y=k (last)
+                infin(jj) = 1;
+                lower(jj) = val;
+              } else { //Y=k-i (in between)
+                lower(jj) = val;
+                upper(jj) = val2;
+              }
+            }
+          }
+        }
       }
 
       lower = (lower-Mi)%trans(il);
       upper = (upper-Mi)%trans(il);
 
       double val;
-      val = mvtdst(&nNonObs, &_mvt_df,
-      		   &lower[0], &upper[0],
-      		   &infin[0], &Cor[0],
-      		   &_mvt_delta[0], &_mvt_maxpts,
-      		   &_mvt_abseps, &_mvt_releps,
-      		   &_mvt_error[0], &val, &_mvt_inform);
+      val = mvtdst(&nNonObs, &_mvt_df, &lower[0], &upper[0], &infin[0], &Cor[0],
+                   &_mvt_delta[0], &_mvt_maxpts, &_mvt_abseps, &_mvt_releps,
+                   &_mvt_error[0], &val, &_mvt_inform);
+
 
       // if (isnan(val)) {
       // 	cerr << "***i=" << i << endl;
@@ -481,34 +482,14 @@ vec loglikmvn(mat &Yl, mat &Yu, uvec &Status,
 }
 
 
-
-
 // [[Rcpp::export(name = ".loglikMVN")]]
-arma::mat loglikMVN(arma::mat Yl, SEXP yu,
-		    SEXP status,
-		    arma::mat Mu, SEXP dmu,
-		    arma::mat S,  SEXP ds,
-		    SEXP z, SEXP su, SEXP dsu,
-		    SEXP threshold, SEXP dthreshold,
-		    bool Score, double itol) {
-  // mat Yl = Rcpp::as<mat>(yl);
-  // mat Mu = Rcpp::as<mat>(mu);
-  // mat S = Rcpp::as<mat>(s);
-  // bool Score = Rcpp::as<bool>(score);
-  if (Score) {
-    mat dS = Rcpp::as<mat>(ds);
-    mat dMu = Rcpp::as<mat>(dmu);
-    mat U = scoremvn(Yl,
-		     Mu, dMu,
-		     S, dS,
-		     itol);
-		 // Z,  Su, dSu,
-		 // Threshold, dThreshold) {
-    return(U);
-  }
-
-  uvec Status = Rcpp::as<uvec>(status);
-  mat Yu = Rcpp::as<mat>(yu);
+arma::mat loglikMVN(arma::mat Yl, arma::mat Yu,
+                    arma::uvec Status,
+                    arma::mat Mu,
+                    arma::mat S,
+                    arma::mat Threshold,
+                    SEXP z, SEXP su,
+                    double itol) {
 
   if ((Mu.n_cols!=Yl.n_cols) || (Mu.n_rows!=Yl.n_rows))
     throw(Rcpp::exception("Dimension of 'mu' and 'yl' did not agree","mvn.cpp",1));
@@ -521,7 +502,6 @@ arma::mat loglikMVN(arma::mat Yl, SEXP yu,
   uvec Ord = find(Status>1);
   // int nObs = Obs.size();
   // int nNonObs = NonObs.size();
-  int nOrd = Ord.size();
   int nCens = Cens.size();
   unsigned n = Yl.n_rows;
   mat Z,Zsub;
@@ -534,12 +514,13 @@ arma::mat loglikMVN(arma::mat Yl, SEXP yu,
     if (Z.n_rows!=n)
       throw(Rcpp::exception("Dimension of 'z' and 'yl' did not agree","mvn.cpp",1));
   }
-  mat Threshold;
-  if (nOrd>0) {
-    Threshold = Rcpp::as<mat>(threshold);
-    if (Threshold.n_rows!=Yl.n_cols)
-      throw(Rcpp::exception("Dimension of 'threshold' and 'yl' did not agree","mvn.cpp",1));
-  }
+  // int nOrd = Ord.size();
+  // mat Threshold;
+  // if (nOrd>0) {
+  //   Threshold = Rcpp::as<mat>(threshold);
+  //   if (Threshold.n_rows!=Yl.n_cols)
+  //     throw(Rcpp::exception("Dimension of 'threshold' and 'yl' did not agree","mvn.cpp",1));
+  // }
 
   vec loglik(n); loglik.fill(0);
   if (nCens>0) {
@@ -559,19 +540,9 @@ arma::mat loglikMVN(arma::mat Yl, SEXP yu,
       mat Yusub = Yu.rows(idx);
       mat Musub = Mu.rows(idx);
       if (!Rf_isNull(z)) Zsub = Z.rows(idx);
-      // cerr << "i=" << i << endl;
-      // cerr << "idx =" << idx << endl;
-      // cerr << "Yl =" << Ylsub << endl;
-      // cerr << "Yu =" << Yusub << endl;
-      // cerr << "Musub =" << Musub << endl;
-      // cerr << "Zsub =" << Zzub << endl;
-      // cerr << "Status =" << NewStatus << endl;
 
-      vec ll = loglikmvn(Ylsub, Yusub, NewStatus,
-			 Musub, S,
-			 Zsub,  Su,
-			 Threshold,
-			 itol);
+      vec ll = loglikmvn(Ylsub, Yusub, NewStatus, Musub, S, Zsub, S, Threshold,
+			               itol);
       loglik.elem(idx) = ll;
     }
   } else {
@@ -599,18 +570,18 @@ void cov2cor0(const mat &x, rowvec &Cor, rowvec &sx, bool nrm=true) {
   for (unsigned r=0; r<p; r++) {
     for (unsigned c=r+1; c<p; c++) {
       if (nrm)
-	Cor(j) = x(r,c)*sx(r)*sx(c);
+        Cor(j) = x(r,c)*sx(r)*sx(c);
       else
-	Cor(j) = x(r,c);
+        Cor(j) = x(r,c);
       j++;
     }
   }
 }
 
 RcppExport SEXP pmvn0(SEXP lower, SEXP upper,
-		      SEXP mu, SEXP sigma, SEXP cor) {
-BEGIN_RCPP
-  mat Sigma = Rcpp::as<mat>(sigma);
+                      SEXP mu, SEXP sigma, SEXP cor) {
+  BEGIN_RCPP
+    mat Sigma = Rcpp::as<mat>(sigma);
   bool asCor = Rcpp::as<bool>(cor);
   mat Mu = Rcpp::as<mat>(mu);
   mat Lower = Rcpp::as<mat>(lower);
@@ -656,11 +627,11 @@ BEGIN_RCPP
       Upper0 = Upper.row(i)-Mu0;
       infin.fill(2); // (a,b)
       for (unsigned j=0; j<(unsigned)p; j++) {
-	if (Upper0(0,j)==datum::inf) infin(j) = 1; // (a,Inf)
-	if (Lower0(0,j)==-datum::inf) {
-	  if (infin(j)==1) infin(j) = -1; // (-Inf,Inf)
-	  else infin(j) = 0; // (-Inf,b)
-	}
+        if (Upper0(0,j)==datum::inf) infin(j) = 1; // (a,Inf)
+        if (Lower0(0,j)==-datum::inf) {
+          if (infin(j)==1) infin(j) = -1; // (-Inf,Inf)
+          else infin(j) = 0; // (-Inf,b)
+        }
       }
     } else {
       Lower0 = Lower.row(0)-Mu0;
@@ -669,11 +640,11 @@ BEGIN_RCPP
     // We use that Phi(a,b,S,mu) = Phi(L(a-mu),L(b-mu),R,0); R=LSL
     if (nSigma) {
       if (asCor) {
-	Cor = Sigma.row(i);
+        Cor = Sigma.row(i);
       } else { // p*p row
-	mat Sigma0 = Sigma.row(i);
-	Sigma0.reshape(p,p);
-	cov2cor0(Sigma0,Cor,L,true);
+        mat Sigma0 = Sigma.row(i);
+        Sigma0.reshape(p,p);
+        cov2cor0(Sigma0,Cor,L,true);
       }
     }
     if (!asCor) {
@@ -687,16 +658,16 @@ BEGIN_RCPP
     // std::cerr << "mvtdelta" << _mvt_delta;
     // std::cerr << "mvt_df" << _mvt_df;
     mvtdst(&p, &_mvt_df,
-	   &Lower0[0], &Upper0[0],
-	   &infin[0], &Cor[0],
-	   &_mvt_delta[0], &_mvt_maxpts,
-	   &_mvt_abseps, &_mvt_releps,
-	   &_mvt_error[0], &val, &_mvt_inform);
+           &Lower0[0], &Upper0[0],
+           &infin[0], &Cor[0],
+           &_mvt_delta[0], &_mvt_maxpts,
+           &_mvt_abseps, &_mvt_releps,
+           &_mvt_error[0], &val, &_mvt_inform);
     res(i) = val;
   }
   return(Rcpp::wrap(res));
-END_RCPP
-}
+  END_RCPP
+    }
 
 
 //////////////////////////////////////////////////
@@ -704,25 +675,6 @@ END_RCPP
 //////////////////////////////////////////////////
 
 RcppExport SEXP bvncdf(SEXP a, SEXP b, SEXP r) {
-  // double u[2];
-  // u[0] = Rcpp::as<double>(a);
-  // u[1] = Rcpp::as<double>(b);
-  // double cr = Rcpp::as<double>(r);
-  // double val;
-  // int n = 2;
-  // int inttype[2];
-  // inttype[0] = 0;
-  // inttype[1] = 0;
-  // double _mvt_delta[2]; // Non-centrality parameter
-  // void C_bvtlr            (int *NU, double *DH, double *DK, double *R, double *BVTL);
-  // _mvt_delta[0] = 0;
-  // _mvt_delta[1] = 0;
-  // val = mvtdst(&n, &_mvt_df,
-  // 	       &u[0], &u[0],
-  // 	       &inttype[0], &cr,
-  // 	       &_mvt_delta[0], &_mvt_maxpts,
-  // 	       &_mvt_abseps, &_mvt_releps,
-  // 	       &_mvt_error[0], &val, &_mvt_inform);
   double u1 = -Rcpp::as<double>(a);
   double u2 = -Rcpp::as<double>(b);
   double rho = Rcpp::as<double>(r);
@@ -754,17 +706,6 @@ vecmat Dbvn(double y1, double y2, double R) {
 }
 
 double Sbvn(double &l1, double &l2, double &r) {
-  // int n = 2;
-  // double l[] = {l1, l2};
-  // int inttype[] = {1, 1};
-  // double _mvt_delta[] {0.0, 0.0}; // Non-centrality parameter
-  // double val;
-  // val = mvtdst(&n, &_mvt_df,
-  // 	       &l[0], &l[0],
-  // 	       &inttype[0], &r,
-  // 	       &_mvt_delta[0], &_mvt_maxpts,
-  // 	       &_mvt_abseps, &_mvt_releps,
-  // 	       &_mvt_error[0], &val, &_mvt_inform);
   double val = bvnd_(&l1, &l2, &r);
   return(val);
 }

@@ -3,72 +3,15 @@
 \name{resmeanIPCW}
 \alias{resmeanIPCW}
 \alias{rmstIPCW}
+\alias{resmeanIPCWold}
 \title{Restricted IPCW mean for censored survival data}
 \usage{
-resmeanIPCW(
-  formula,
-  data,
-  cause = 1,
-  time = NULL,
-  type = c("II", "I"),
-  beta = NULL,
-  offset = NULL,
-  weights = NULL,
-  cens.weights = NULL,
-  cens.model = ~+1,
-  se = TRUE,
-  kaplan.meier = TRUE,
-  cens.code = 0,
-  no.opt = FALSE,
-  method = "nr",
-  model = "exp",
-  augmentation = NULL,
-  h = NULL,
-  MCaugment = NULL,
-  Ydirect = NULL,
-  ...
-)
+resmeanIPCW(formula, data, ...)
 }
 \arguments{
-\item{formula}{formula with outcome (see \code{coxph})}
+\item{formula}{formula with outcome on Event form}
 
 \item{data}{data frame}
-
-\item{cause}{cause of interest}
-
-\item{time}{time of interest}
-
-\item{type}{of estimator}
-
-\item{beta}{starting values}
-
-\item{offset}{offsets for partial likelihood}
-
-\item{weights}{for score equations}
-
-\item{cens.weights}{censoring weights}
-
-\item{cens.model}{only stratified cox model without covariates}
-
-\item{se}{to compute se's  based on IPCW}
-
-\item{kaplan.meier}{uses Kaplan-Meier for IPCW in contrast to exp(-Baseline)}
-
-\item{cens.code}{gives censoring code}
-
-\item{no.opt}{to not optimize}
-
-\item{method}{for optimization}
-
-\item{model}{exp or linear}
-
-\item{augmentation}{to augment binomial regression}
-
-\item{h}{h for estimating equation}
-
-\item{MCaugment}{iid of h and censoring model}
-
-\item{Ydirect}{to bypass the construction of the response Y=min(T,tau) and use this instead}
 
 \item{...}{Additional arguments to lower level funtions}
 }
@@ -76,19 +19,22 @@ resmeanIPCW(
 Simple and fast version for IPCW regression for just one time-point thus fitting the model 
 \deqn{E( min(T, t) | X ) = exp( X^T beta) } or in the case of competing risks data
 \deqn{E( I(epsilon=1) (t - min(T ,t)) | X ) = exp( X^T beta) } thus given years lost to 
-cause.
+cause, see \code{binreg} for the arguments.
 }
 \details{
 When the status is binary assumes it is a survival setting and default is to consider outcome Y=min(T,t), 
 if status has more than two levels, then computes years lost due to the specified cause, thus
+using the response \deqn{ Y = (t-min(T,t)) I(status=cause) }
 
 Based on binomial regresion IPCW response estimating equation: 
-\deqn{ X ( \Delta (min(T , t))/G_c(min(T_i,t)) - exp( X^T beta)) = 0 }
-for IPCW adjusted responses. Here \deqn{ \Delta(min(T,t)) I ( min(T ,t) \leq C ) } is indicator of
-being uncensored. 
+\deqn{ X ( \Delta(min(T,t)) Y /G_c(min(T,t)) - exp( X^T beta)) = 0 }
+for IPCW adjusted responses. Here \deqn{ \Delta(min(T,t)) = I ( min(T ,t) \leq C ) } is indicator of
+being uncensored.  Concretely, the uncensored observations at time t will count those with an event (of any type) before t and those
+with a censoring time at t or further out. One should therefore be a bit careful when data has been constructed such that
+some of the event times T are equivalent to t. 
 
 Can also solve the binomial regresion IPCW response estimating equation: 
-\deqn{ h(X) X ( \Delta (min(T, t))/G_c(min(T_i,t)) - exp( X^T beta)) = 0 }
+\deqn{ h(X) X ( \Delta(min(T,t)) Y /G_c(min(T,t)) - exp( X^T beta)) = 0 }
 for IPCW adjusted responses where $h$ is given as an argument together with iid of censoring with h. 
 
 By using appropriately  the h argument we can also do the efficient IPCW estimator estimator.
@@ -97,7 +43,7 @@ Variance is based on  \deqn{ \sum w_i^2 } also with IPCW adjustment, and naive.v
 under known censoring model. 
 
 When Ydirect is given it solves : 
-\deqn{ X ( \Delta( min(T,t)) Ydirect /G_c(min(T_i,t)) - exp( X^T beta)) = 0 }
+\deqn{ X ( \Delta(min(T,t)) Ydirect /G_c(min(T,t)) - exp( X^T beta)) = 0 }
 for IPCW adjusted responses. 
 
 The actual influence (type="II") function is based on augmenting with \deqn{ X \int_0^t E(Y | T>s) /G_c(s) dM_c(s) }
@@ -113,7 +59,7 @@ out <- resmeanIPCW(Event(time,cause!=0)~tcell+platelet+age,bmt,
                 time=50,cens.model=~strata(platelet),model="exp")
 summary(out)
 
- ### same as Kaplan-Meier for full censoring model 
+### same as Kaplan-Meier for full censoring model 
 bmt$int <- with(bmt,strata(tcell,platelet))
 out <- resmeanIPCW(Event(time,cause!=0)~-1+int,bmt,time=30,
                              cens.model=~strata(platelet,tcell),model="lin")

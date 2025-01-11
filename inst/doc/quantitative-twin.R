@@ -14,8 +14,8 @@ knitr::opts_chunk$set(
 library("mets")
 
 ## ----install, eval=FALSE, echo=FALSE------------------------------------------
-#  # install.packages("remotes")
-#  remotes::install_github("kkholst/mets", dependencies="Suggests")
+# # install.packages("remotes")
+# remotes::install_github("kkholst/mets", dependencies="Suggests")
 
 ## ----twinbmi------------------------------------------------------------------
 library(mets)
@@ -99,10 +99,10 @@ legend("bottomright", c("Male","Female"),
 dd <- na.omit(twinbmi)
 
 ## ----lmsat, eval=FALSE--------------------------------------------------------
-#  l0 <- twinlm(bmi ~ age+gender, data=dd, DZ="DZ", zyg="zyg", id="tvparnr", type="sat")
+# l0 <- twinlm(bmi ~ age+gender, data=dd, DZ="DZ", zyg="zyg", id="tvparnr", type="sat")
 
 ## ----lmflex, eval=FALSE-------------------------------------------------------
-#  lf <- twinlm(bmi ~ age+gender, data=dd,DZ="DZ", zyg="zyg", id="tvparnr", type="flex")
+# lf <- twinlm(bmi ~ age+gender, data=dd,DZ="DZ", zyg="zyg", id="tvparnr", type="flex")
 
 ## ----lmeqmarg-----------------------------------------------------------------
 lu <- twinlm(bmi ~ age+gender, data=dd, DZ="DZ", zyg="zyg", id="tvparnr", type="eqmarg")

@@ -55,8 +55,14 @@ sup <- matrix(0,n.sim,nrow(ii))
 hatti <- matrix(0,nd,nrow(ii))
 obs <- apply(abs(Ut),2,max)
 
-if (is.null(robust)) 
+if (is.null(robust)) {
    if (!is.null(object$call.id)) robust <- TRUE else robust <- FALSE
+   if (inherits(object,c("cifreg"))) {
+	   robust <- FALSE  ## approximative test using MG framework
+###	   if (is.null(object$cox.prep)) stop("Must be called with cox.prep=TRUE\n")
+   }
+}
+
 
    ### cluster call or robust \hat M_i(t) based  
 if (robust) {# {{{
@@ -68,8 +74,8 @@ if (robust) {# {{{
    nn <- nrow(Z)
 
    tt <- system.time(simcox1<- .Call("PropTestCoxClust",UdN,Pt,rrw,xx$X,
-	     object$S0,object$E,
-             10,obs,nn,xx$id,xx$strata,xx$nstrata,object$strata.jumps,xx$jumps))
+     object$S0,object$E,
+     10,obs,nn,xx$id,xx$strata,xx$nstrata,object$strata.jumps,xx$jumps))
 
    prt <- n.sim*tt[3]/(10*60)
    if (prt>1 & silent==0) cat(paste("Predicted time minutes",signif(prt,2),"\n"))
@@ -99,7 +105,6 @@ out <- list(jumptimes=object$jumptimes,supUsim=sup,res=res,supU=obs,
 class(out) <- "gof.phreg"
 return(out)
 }# }}}
-
 
 ##' GOF for Cox covariates in  PH regression
 ##'
@@ -403,19 +408,20 @@ for (j in (i+1):(nstrata-1)) {
       if ((fixbeta==0 | sim==0) & lm ) 
       graphics::legend("topleft",c("Nonparametric","lm"),lty=1,col=1:2)
       ab <- lm(cumhazi[,2]~-1+cumhazj[,2])
-      if (sim==1 & fixbeta==0) {
-             Pt <- DLambeta.t <- apply(x$E/c(x$S0),2,cumsumstrata,strata,nstrata)
-             II <- -solve(x$hessian)
-             betaiid <- t(II %*% t(x$U))
-	     simband <-  .Call("simBandCumHazCox",1/x$S0,Pt,betaiid,50,rep(1,nrow(Pt)),PACKAGE="mets")
-	     simU <-simband$simUt
-	     for (k in 1:50)
-	     {
-	      di <- cpred(cbind(jumptimes[ii],simU[ii,k]),dijjumps)[,2]
-	      dj <- cpred(cbind(jumptimes[ij],simU[ij,k]),dijjumps)[,2]
-	      lines(cumhazj[,2]+dj,cumhazi[,2]+di,type="s",lwd=0.1,col=3)
-	     }
-      }
+      ## TODO: simBandCumHazCox
+      ## if (sim==1 & fixbeta==0) {
+      ##   Pt <- DLambeta.t <- apply(x$E/c(x$S0),2,cumsumstrata,strata,nstrata)
+      ##   II <- -solve(x$hessian)
+      ##   betaiid <- t(II %*% t(x$U))
+      ##   simband <-  .Call("simBandCumHazCox",1/x$S0,Pt,betaiid,50,rep(1,nrow(Pt)),PACKAGE="mets")
+      ##   simU <-simband$simUt
+      ##   for (k in 1:50)
+      ##   {
+	  ##     di <- cpred(cbind(jumptimes[ii],simU[ii,k]),dijjumps)[,2]
+	  ##     dj <- cpred(cbind(jumptimes[ij],simU[ij,k]),dijjumps)[,2]
+	  ##     lines(cumhazj[,2]+dj,cumhazi[,2]+di,type="s",lwd=0.1,col=3)
+      ##   }
+      ## }
       lines(cumhazj[,2],cumhazi[,2],type="s",lwd=2,col=1)
       if (lm==TRUE) abline(c(0,coef(ab)),col=2,lwd=2)
 }

@@ -1,7 +1,14 @@
+# mets 1.3.5
+  - `sim.phreg` and `sim.recurrent` for simulations 
+  - combining `binreg`, `binregATE` with `resmeanIPCW` and `resmeanATE`
+
+# mets 1.3.4
+  - Maintenance release
+  
 # mets 1.3.3
+  - Lu-Tsiatis efficient logrank test and dynamic censoring augmentation: `phreg_rct`
   - Inverse Probability of treatment weighted Cox model: `phreg_IPTW`
-  - Twostage randomization for survival outcome: `binregTSR`
-  - Lu-Tsiatis efficient logrank test and dynamic censoring augmentation: `phreg_lt`
+  - Twostage randomization for survival outcome: `binregTSR` 
 
 # mets 1.3.2
   - Extension of `recreg` (Ghosh-Lin model) to deal with composite outcomes.

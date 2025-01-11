@@ -1,3 +1,6 @@
+#' @keywords internal
+"_PACKAGE"
+
 ##' Analysis of Multivariate Events
 ##'
 ##' Implementation of various statistical models for multivariate
@@ -5,7 +8,6 @@
 ##' and bivariate random effects probit models (Liability models)
 ##'
 ##' @name mets-package
-##' @docType package
 ##' @author Klaus K. Holst and Thomas Scheike
 ##' @useDynLib mets, .registration=TRUE
 ##' @import stats splines Rcpp mvtnorm
@@ -15,13 +17,14 @@
 ##'   eventTime Expand getoutcome gof intercept<- Inverse kill<- latent latent<-
 ##'   lava.options lvm Model multigroup parameter<- pars regression regression<-
 ##'   revdiag trim IC expit logit
-##' @importFrom timereg two.stage predict.two.stage sindex.prodlim Cpred Event
-##' @importFrom survival Surv is.Surv concordance strata
+##' @importFrom survival Surv is.Surv concordance strata finegray 
+##' @importFrom timereg two.stage predict.two.stage sindex.prodlim 
 ##' @importFrom utils head tail getS3method glob2rx capture.output
 ##' @importFrom graphics matplot lines plot polygon par points abline title
 ##'   matlines legend
+##' @importFrom methods hasArg
 ##' @importFrom grDevices dev.list devAskNewPage dev.interactive
-##' @keywords package
+##' @aliases mets mets-package
 ##' @examples
 ##'
 ##' ## To appear
@@ -87,6 +90,43 @@ NULL
 ##' data(dermalridgesMZ)
 ##' fast.reshape(dermalridgesMZ,id="id",varying=c("left","right"))
 NULL
+
+##' CALGB 8923, twostage randomization SMART design
+##'
+##' Data from CALGB 8923 
+##' @name calgb8923 
+##' @docType data
+##' @keywords data
+##' @format Data from smart design
+##' @source  https://github.com/ycchao/code_Joint_model_SMART
+##' @examples
+##' data(calgb8923)
+NULL
+
+##' ACTG175, block randmized study from speff2trial package
+##'
+##' Data from speff2trial
+##' @name ACTG175
+##' @docType data
+##' @keywords data
+##' @format Randomized study 
+##' @source  Hammer et al. 1996, speff2trial package.
+##' @examples
+##' data(ACTG175)
+NULL
+
+##' hfaction, subset of block randmized study HF-ACtion from WA package  
+##'
+##' Data from HF-action trial slightly modified from WA package
+##' @name hfaction_cpx12
+##' @docType data
+##' @keywords data
+##' @format Randomized study 
+##' @source  WA package, Connor et al. 2009
+##' @examples
+##' data(hfaction_cpx12)
+NULL
+
 
 ##' Menarche data set
 ##'

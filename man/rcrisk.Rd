@@ -4,9 +4,20 @@
 \alias{rcrisk}
 \alias{cause.pchazard.sim}
 \alias{rcrisks}
+\alias{rchazl}
 \title{Simulation of Piecewise constant hazard models with two causes (Cox).}
 \usage{
-rcrisk(cumhaz1, cumhaz2, rr1, rr2, n = NULL, cens = NULL, rrc = NULL, ...)
+rcrisk(
+  cumhaz1,
+  cumhaz2,
+  rr1,
+  rr2,
+  n = NULL,
+  cens = NULL,
+  rrc = NULL,
+  extend = TRUE,
+  ...
+)
 }
 \arguments{
 \item{cumhaz1}{cumulative hazard of cause 1}
@@ -23,6 +34,8 @@ rcrisk(cumhaz1, cumhaz2, rr1, rr2, n = NULL, cens = NULL, rrc = NULL, ...)
 
 \item{rrc}{retlativ risk for censoring.}
 
+\item{extend}{to extend the cumulative hazards to largest end-point}
+
 \item{...}{arguments for rchaz}
 }
 \description{
@@ -31,8 +44,7 @@ Cox type. Censor data at highest value of the break points for either of the
 cumulatives.
 }
 \examples{
-library(mets); data(bmt); library(survival)
-
+data(bmt); 
 cox1 <- phreg(Surv(time,cause==1)~tcell+platelet,data=bmt)
 cox2 <- phreg(Surv(time,cause==2)~tcell+platelet,data=bmt)
 

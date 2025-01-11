@@ -79,6 +79,11 @@ outX <- recmarg(xr,dr,Xr=1,Xd=1)
 bplot(outX,add=TRUE,col=3)
 
 ## -----------------------------------------------------------------------------
+rr <- simRecurrentIII(100,list(base1,base1,base4),death.cumhaz=list(ddr,base4),cens=3/5000,dependence=0)
+dtable(rr,~status+death,level=2)
+mets:::showfitsimIII(rr,list(base1,base1,base4),list(ddr,base4))
+
+## -----------------------------------------------------------------------------
 rr <- simRecurrentII(200,base1,base4,death.cumhaz=ddr,cens=3/5000,dependence=4,var.z=1)
 rr <-  count.history(rr)
 
@@ -199,19 +204,16 @@ rr <- cbind(rr,X[rr$id+1,])
  bplot(outCW,col=3,add=TRUE)
 
 ## -----------------------------------------------------------------------------
-out  <- recreg(Event(start,stop,statusD)~X1+X2+cluster(id),data=rr,cause=1,death.code=3,
-	        cens.code=0,cox.prep=TRUE)
+out  <- recreg(Event(start,stop,statusD)~X1+X2+cluster(id),data=rr,cause=1,death.code=3,cens.code=0,
+	       cox.prep=TRUE)
+summary(out)
 baseiid <- IIDbaseline.cifreg(out,time=3000)
 GLprediid(baseiid,rr[1:5,])
 
 ## -----------------------------------------------------------------------------
- outi  <- recreg(Event(start,stop,statusD)~X1+X2+cluster(id),data=rr,cause=1,death.code=3,cens.code=0,
-		augment.model=~Nt+X1+X2)
- summary(outi)$coef
- outA  <- recreg(Event(start,stop,statusD)~X1+X2+cluster(id),data=rr,cause=1,death.code=3,cens.code=0,
-		augment.model=~Nt+X1+X2,augment=outi$lindyn.augment)
+ outA  <- recreg(Event(start,stop,statusD)~X1+X2+cluster(id),data=rr,cause=1,death.code=3,
+		 cens.code=0,augment.model=~Nt+X1+X2)
  summary(outA)$coef
-
 
 ## -----------------------------------------------------------------------------
  out  <- recreg(Event(start,stop,statusD)~X1+X2+cluster(id),data=rr,
@@ -242,6 +244,12 @@ estimate(recurrent)
 par(mfrow=c(1,2)); 
 plot(margsurv); lines(ddr,col=3); 
 plot(recurrent); lines(base1,col=3)
+
+## -----------------------------------------------------------------------------
+simcoxcox <- sim.recurrent(recurrent,margsurv,n=10,data=rr)
+
+recurrentGL <- recreg(Event(start,stop,statusD)~X1+X2+cluster(id),rr,death.code=3)
+simglcox <- sim.recurrent(recurrentGL,margsurv,n=10,data=rr)
 
 ## -----------------------------------------------------------------------------
 ###cor.mat <- corM <- rbind(c(1.0, 0.6, 0.9), c(0.6, 1.0, 0.5), c(0.9, 0.5, 1.0))
@@ -295,96 +303,96 @@ covrpS <- covarianceRecurrentS(rr,1,2,status="status",death="death",
         start="entry",stop="time",strata="strata",id="id",names.count="Count")
 
 ## ----eval=FALSE---------------------------------------------------------------
-#  times <- seq(500,5000,500)
-#  
-#  coo1 <- covarianceRecurrent(rr,1,2,status="status",start="entry",stop="time")
-#  #
-#  mug <- Cpred(cbind(coo1$time,coo1$EN1N2),times)[,2]
-#  mui <- Cpred(cbind(coo1$time,coo1$EIN1N2),times)[,2]
-#  mu2.1 <- Cpred(cbind(coo1$time,coo1$mu2.1),times)[,2]
-#  mu2.i <- Cpred(cbind(coo1$time,coo1$mu2.i),times)[,2]
-#  mu1.2 <- Cpred(cbind(coo1$time,coo1$mu1.2),times)[,2]
-#  mu1.i <- Cpred(cbind(coo1$time,coo1$mu1.i),times)[,2]
-#  cbind(times,mu2.1,mu2.i)
-#  cbind(times,mu1.2,mu1.i)
+# times <- seq(500,5000,500)
+# 
+# coo1 <- covarianceRecurrent(rr,1,2,status="status",start="entry",stop="time")
+# #
+# mug <- Cpred(cbind(coo1$time,coo1$EN1N2),times)[,2]
+# mui <- Cpred(cbind(coo1$time,coo1$EIN1N2),times)[,2]
+# mu2.1 <- Cpred(cbind(coo1$time,coo1$mu2.1),times)[,2]
+# mu2.i <- Cpred(cbind(coo1$time,coo1$mu2.i),times)[,2]
+# mu1.2 <- Cpred(cbind(coo1$time,coo1$mu1.2),times)[,2]
+# mu1.i <- Cpred(cbind(coo1$time,coo1$mu1.i),times)[,2]
+# cbind(times,mu2.1,mu2.i)
+# cbind(times,mu1.2,mu1.i)
 
 ## ----eval=FALSE---------------------------------------------------------------
-#  bt1 <- BootcovariancerecurrenceS(rr,1,2,status="status",start="entry",stop="time",K=100,times=times)
-#  #bt1 <- Bootcovariancerecurrence(rr,1,2,status="status",start="entry",stop="time",K=K,times=times)
-#  
-#  BCoutput <- list(bt1=bt1,mug=mug,mui=mui,
-#          bse.mug=bt1$se.mug,bse.mui=bt1$se.mui,
-#          dmugi=mug-mui,
-#  	bse.dmugi=apply(bt1$EN1N2-bt1$EIN1N2,1,sd),
-#  	mu2.1 = mu2.1 , mu2.i = mu2.i , dmu2.i=mu2.1-mu2.i,
-#  	mu1.2 = mu1.2 , mu1.i = mu1.i , dmu1.i=mu1.2-mu1.i,
-#  	bse.mu2.1=apply(bt1$mu2.i,1,sd), bse.mu2.1=apply(bt1$mu2.1,1,sd),
-#  	bse.dmu2.i=apply(bt1$mu2.1-bt1$mu2.i,1,sd),
-#  	bse.mu1.2=apply(bt1$mu1.2,1,sd), bse.mu1.i=apply(bt1$mu1.i,1,sd),
-#  	bse.dmu1.i=apply(bt1$mu1.2-bt1$mu1.i,1,sd)
-#  	)
+# bt1 <- BootcovariancerecurrenceS(rr,1,2,status="status",start="entry",stop="time",K=100,times=times)
+# #bt1 <- Bootcovariancerecurrence(rr,1,2,status="status",start="entry",stop="time",K=K,times=times)
+# 
+# BCoutput <- list(bt1=bt1,mug=mug,mui=mui,
+#         bse.mug=bt1$se.mug,bse.mui=bt1$se.mui,
+#         dmugi=mug-mui,
+# 	bse.dmugi=apply(bt1$EN1N2-bt1$EIN1N2,1,sd),
+# 	mu2.1 = mu2.1 , mu2.i = mu2.i , dmu2.i=mu2.1-mu2.i,
+# 	mu1.2 = mu1.2 , mu1.i = mu1.i , dmu1.i=mu1.2-mu1.i,
+# 	bse.mu2.1=apply(bt1$mu2.i,1,sd), bse.mu2.1=apply(bt1$mu2.1,1,sd),
+# 	bse.dmu2.i=apply(bt1$mu2.1-bt1$mu2.i,1,sd),
+# 	bse.mu1.2=apply(bt1$mu1.2,1,sd), bse.mu1.i=apply(bt1$mu1.i,1,sd),
+# 	bse.dmu1.i=apply(bt1$mu1.2-bt1$mu1.i,1,sd)
+# 	)
 
 ## ----eval=FALSE---------------------------------------------------------------
-#  tt  <- BCoutput$dmugi/BCoutput$bse.dmugi
-#  cbind(times,2*(1-pnorm(abs(tt))))
+# tt  <- BCoutput$dmugi/BCoutput$bse.dmugi
+# cbind(times,2*(1-pnorm(abs(tt))))
 
 ## ----eval=FALSE---------------------------------------------------------------
-#  t21  <- BCoutput$dmu1.i/BCoutput$bse.dmu1.i
-#  t12  <- BCoutput$dmu2.i/BCoutput$bse.dmu2.i
-#  cbind(times,2*(1-pnorm(abs(t21))),2*(1-pnorm(abs(t12))))
+# t21  <- BCoutput$dmu1.i/BCoutput$bse.dmu1.i
+# t12  <- BCoutput$dmu2.i/BCoutput$bse.dmu2.i
+# cbind(times,2*(1-pnorm(abs(t21))),2*(1-pnorm(abs(t12))))
 
 ## ----eval=FALSE---------------------------------------------------------------
-#  par(mfrow=c(1,2))
-#  matplot(BCoutput$bt1$time,BCoutput$bt1$EN1N2,type="l",lwd=0.3)
-#  matplot(BCoutput$bt1$time,BCoutput$bt1$EIN1N2,type="l",lwd=0.3)
+# par(mfrow=c(1,2))
+# matplot(BCoutput$bt1$time,BCoutput$bt1$EN1N2,type="l",lwd=0.3)
+# matplot(BCoutput$bt1$time,BCoutput$bt1$EIN1N2,type="l",lwd=0.3)
 
 ## ----eval=FALSE---------------------------------------------------------------
-#    data(base1cumhaz)
-#    data(base4cumhaz)
-#    data(drcumhaz)
-#    dr <- drcumhaz
-#    base1 <- base1cumhaz
-#    base4 <- base4cumhaz
-#  
-#    par(mfrow=c(1,3))
-#    var.z <- c(0.5,0.5,0.5)
-#    # death related to  both causes in same way
-#    cor.mat <- corM <- rbind(c(1.0, 0.0, 0.0), c(0.0, 1.0, 0.0), c(0.0, 0.0, 1.0))
-#    rr <- simRecurrentII(200,base1,base4,death.cumhaz=dr,var.z=var.z,cor.mat=cor.mat,dependence=2)
-#    rr <- count.history(rr,types=1:2)
-#    cor(attr(rr,"z"))
-#    coo <- covarianceRecurrent(rr,1,2,status="status",start="entry",stop="time")
-#    plot(coo,main ="Scenario I")
+#   data(base1cumhaz)
+#   data(base4cumhaz)
+#   data(drcumhaz)
+#   dr <- drcumhaz
+#   base1 <- base1cumhaz
+#   base4 <- base4cumhaz
+# 
+#   par(mfrow=c(1,3))
+#   var.z <- c(0.5,0.5,0.5)
+#   # death related to  both causes in same way
+#   cor.mat <- corM <- rbind(c(1.0, 0.0, 0.0), c(0.0, 1.0, 0.0), c(0.0, 0.0, 1.0))
+#   rr <- simRecurrentII(200,base1,base4,death.cumhaz=dr,var.z=var.z,cor.mat=cor.mat,dependence=2)
+#   rr <- count.history(rr,types=1:2)
+#   cor(attr(rr,"z"))
+#   coo <- covarianceRecurrent(rr,1,2,status="status",start="entry",stop="time")
+#   plot(coo,main ="Scenario I")
 
 ## ----eval=FALSE---------------------------------------------------------------
-#    var.z <- c(0.5,0.5,0.5)
-#    # death related to  both causes in same way
-#    cor.mat <- corM <- rbind(c(1.0, 0.0, 0.5), c(0.0, 1.0, 0.5), c(0.5, 0.5, 1.0))
-#    rr <- simRecurrentII(200,base1,base4,death.cumhaz=dr,var.z=var.z,cor.mat=cor.mat,dependence=2)
-#    rr <- count.history(rr,types=1:2)
-#    coo <- covarianceRecurrent(rr,1,2,status="status",start="entry",stop="time")
-#    par(mfrow=c(1,3))
-#    plot(coo,main ="Scenario II")
+#   var.z <- c(0.5,0.5,0.5)
+#   # death related to  both causes in same way
+#   cor.mat <- corM <- rbind(c(1.0, 0.0, 0.5), c(0.0, 1.0, 0.5), c(0.5, 0.5, 1.0))
+#   rr <- simRecurrentII(200,base1,base4,death.cumhaz=dr,var.z=var.z,cor.mat=cor.mat,dependence=2)
+#   rr <- count.history(rr,types=1:2)
+#   coo <- covarianceRecurrent(rr,1,2,status="status",start="entry",stop="time")
+#   par(mfrow=c(1,3))
+#   plot(coo,main ="Scenario II")
 
 ## ----eval=FALSE---------------------------------------------------------------
-#    var.z <- c(0.5,0.5,0.5)
-#    # positive dependence for N1 and N2 all related in same way
-#    cor.mat <- corM <- rbind(c(1.0, 0.5, 0.5), c(0.5, 1.0, 0.5), c(0.5, 0.5, 1.0))
-#    rr <- simRecurrentII(200,base1,base4,death.cumhaz=dr,var.z=var.z,cor.mat=cor.mat,dependence=2)
-#    rr <- count.history(rr,types=1:2)
-#    coo <- covarianceRecurrent(rr,1,2,status="status",start="entry",stop="time")
-#    par(mfrow=c(1,3))
-#    plot(coo,main="Scenario III")
+#   var.z <- c(0.5,0.5,0.5)
+#   # positive dependence for N1 and N2 all related in same way
+#   cor.mat <- corM <- rbind(c(1.0, 0.5, 0.5), c(0.5, 1.0, 0.5), c(0.5, 0.5, 1.0))
+#   rr <- simRecurrentII(200,base1,base4,death.cumhaz=dr,var.z=var.z,cor.mat=cor.mat,dependence=2)
+#   rr <- count.history(rr,types=1:2)
+#   coo <- covarianceRecurrent(rr,1,2,status="status",start="entry",stop="time")
+#   par(mfrow=c(1,3))
+#   plot(coo,main="Scenario III")
 
 ## ----eval=FALSE---------------------------------------------------------------
-#    var.z <- c(0.5,0.5,0.5)
-#    # negative dependence for N1 and N2 all related in same way
-#    cor.mat <- corM <- rbind(c(1.0, -0.4, 0.5), c(-0.4, 1.0, 0.5), c(0.5, 0.5, 1.0))
-#    rr <- simRecurrentII(200,base1,base4,death.cumhaz=dr,var.z=var.z,cor.mat=cor.mat,dependence=2)
-#    rr <- count.history(rr,types=1:2)
-#    coo <- covarianceRecurrent(rr,1,2,status="status",start="entry",stop="time")
-#    par(mfrow=c(1,3))
-#    plot(coo,main="Scenario IV")
+#   var.z <- c(0.5,0.5,0.5)
+#   # negative dependence for N1 and N2 all related in same way
+#   cor.mat <- corM <- rbind(c(1.0, -0.4, 0.5), c(-0.4, 1.0, 0.5), c(0.5, 0.5, 1.0))
+#   rr <- simRecurrentII(200,base1,base4,death.cumhaz=dr,var.z=var.z,cor.mat=cor.mat,dependence=2)
+#   rr <- count.history(rr,types=1:2)
+#   coo <- covarianceRecurrent(rr,1,2,status="status",start="entry",stop="time")
+#   par(mfrow=c(1,3))
+#   plot(coo,main="Scenario IV")
 
 ## -----------------------------------------------------------------------------
 sessionInfo()

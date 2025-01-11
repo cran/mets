@@ -2,16 +2,18 @@
 % Please edit documentation in R/recreg.R
 \name{recreg}
 \alias{recreg}
+\alias{IIDbaseline.recreg}
 \alias{strataAugment}
 \alias{scalecumhaz}
 \alias{GLprediid}
 \alias{recregIPCW}
 \alias{twostageREC}
+\alias{simGLcox}
 \title{Recurrent events regression with terminal event}
 \usage{
 recreg(
   formula,
-  data = data,
+  data,
   cause = 1,
   death.code = c(2),
   cens.code = 0,
@@ -20,6 +22,7 @@ recreg(
   offset = NULL,
   Gc = NULL,
   wcomp = NULL,
+  augmentation.type = c("lindyn.augment", "lin.augment"),
   ...
 )
 }
@@ -28,11 +31,11 @@ recreg(
 
 \item{data}{data frame}
 
-\item{cause}{of interest}
+\item{cause}{of interest (1 default)}
 
-\item{death.code}{codes for death (terminating event)}
+\item{death.code}{codes for death (terminating event, 2 default)}
 
-\item{cens.code}{code of censoring (1 default)}
+\item{cens.code}{code of censoring (0 default)}
 
 \item{cens.model}{for stratified Cox model without covariates}
 
@@ -43,6 +46,8 @@ recreg(
 \item{Gc}{censoring weights for time argument, default is to calculate these with a Kaplan-Meier estimator, should then give G_c(T_i-)}
 
 \item{wcomp}{weights for composite outcome, so when cause=c(1,3), we might have wcomp=c(1,2).}
+
+\item{augmentation.type}{of augmentation when augmentation model is given}
 
 \item{...}{Additional arguments to lower level funtions}
 }
