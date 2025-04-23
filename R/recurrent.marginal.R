@@ -1,6 +1,6 @@
 ##' Fast recurrent marginal mean when death is possible
 ##'
-##' Fast Marginal means of recurrent events. Using the Lin and Ghosh (2000) 
+##' Fast Marginal means of recurrent events using the Lin and Ghosh (2000) 
 ##' standard errors.  
 ##' Fitting two models for death and recurent events these are
 ##' combined to prducte the estimator 
@@ -11,89 +11,153 @@
 ##'  \deqn{\Lambda_d(u|x=0) } being the cumulative baseline for death.
 ##' 
 ##' Assumes no ties in the sense that jump times needs to be unique, this is particularly so for the stratified version.
-##' 
-##' @param recurrent phreg object with recurrent events
-##' @param death     phreg object with deaths
-##' @param fixbeta   to force the estimation of standard errors to think of regression coefficients as known/fixed
-##' @param km  if true then uses Kaplan-Meier for death, otherwise exp(- Nelson-Aalen ) 
+##'
+##' @param formula with Event object
+##' @param data data frame for computation
+##' @param cause of interest (1 default)
 ##' @param ... Additional arguments to lower level funtions
+##' @param death.code codes for death (terminating event, 2 default)
 ##' @author Thomas Scheike
 ##' 
 ##' @references 
 ##' Cook, R. J. and Lawless, J. F. (1997) Marginal analysis of recurrent events and a terminating event. Statist. Med., 16, 911–924.
 ##' Ghosh and Lin (2002) Nonparametric Analysis of Recurrent events and death, Biometrics, 554--562.
 ##' @examples
+##' library(mets)
+##' data(hfactioncpx12)
+##' hf <- hfactioncpx12
+##' hf$x <- as.numeric(hf$treatment) 
 ##'
-##' data(base1cumhaz)
-##' data(base4cumhaz)
-##' data(drcumhaz)
-##' dr <- drcumhaz
-##' base1 <- base1cumhaz
-##' base4 <- base4cumhaz
-##' rr <- simRecurrent(1000,base1,death.cumhaz=dr)
-##' rr$x <- rnorm(nrow(rr)) 
-##' rr$strata <- floor((rr$id-0.01)/500)
-##' 
 ##' ##  to fit non-parametric models with just a baseline 
-##' xr <- phreg(Surv(entry,time,status)~cluster(id),data=rr)
-##' dr <- phreg(Surv(entry,time,death)~cluster(id),data=rr)
+##' xr <- phreg(Surv(entry,time,status==1)~cluster(id),data=hf)
+##' dr <- phreg(Surv(entry,time,status==2)~cluster(id),data=hf)
 ##' par(mfrow=c(1,3))
-##' bplot(dr,se=TRUE)
+##' plot(dr,se=TRUE)
 ##' title(main="death")
-##' bplot(xr,se=TRUE)
+##' plot(xr,se=TRUE)
 ##' ### robust standard errors 
-##' rxr <-   robust.phreg(xr,fixbeta=1)
-##' bplot(rxr,se=TRUE,robust=TRUE,add=TRUE,col=4)
+##' rxr <-  robust.phreg(xr,fixbeta=1)
+##' plot(rxr,se=TRUE,robust=TRUE,add=TRUE,col=4)
 ##' 
 ##' ## marginal mean of expected number of recurrent events 
-##' out <- recurrentMarginal(xr,dr)
-##' bplot(out,se=TRUE,ylab="marginal mean",col=2)
+##' ## out <- recurrentMarginalPhreg(xr,dr)
+##' ## summary(out,times=1:5) 
+##' 
+##' ## marginal mean using formula  
+##' outN <- recurrentMarginal(Event(entry,time,status)~cluster(id),hf,cause=1,death.code=2)
+##' plot(outN,se=TRUE,col=2,add=TRUE)
+##' summary(outN,times=1:5) 
 ##' 
 ##' ########################################################################
 ##' ###   with strata     ##################################################
 ##' ########################################################################
-##' xr <- phreg(Surv(entry,time,status)~strata(strata)+cluster(id),data=rr)
-##' dr <- phreg(Surv(entry,time,death)~strata(strata)+cluster(id),data=rr)
-##' par(mfrow=c(1,3))
-##' bplot(dr,se=TRUE)
-##' title(main="death")
-##' bplot(xr,se=TRUE)
-##' rxr <-   robust.phreg(xr,fixbeta=1)
-##' bplot(rxr,se=TRUE,robust=TRUE,add=TRUE,col=1:2)
-##'
-##' out <- recurrentMarginal(xr,dr)
-##' bplot(out,se=TRUE,ylab="marginal mean",col=1:2)
-##'
-##' ########################################################################
-##' ###   cox case        ##################################################
-##' ########################################################################
-##' xr <- phreg(Surv(entry,time,status)~x+cluster(id),data=rr)
-##' dr <- phreg(Surv(entry,time,death)~x+cluster(id),data=rr)
-##' par(mfrow=c(1,3))
-##' bplot(dr,se=TRUE)
-##' title(main="death")
-##' bplot(xr,se=TRUE)
-##' rxr <-   robust.phreg(xr)
-##' bplot(rxr,se=TRUE,robust=TRUE,add=TRUE,col=1:2)
-##'
-##' out <- recurrentMarginal(xr,dr)
-##' bplot(out,se=TRUE,ylab="marginal mean",col=1:2)
+##' out <- recurrentMarginal(Event(entry,time,status)~strata(treatment)+cluster(id),
+##'                          data=hf,cause=1,death.code=2)
+##' plot(out,se=TRUE,ylab="marginal mean",col=1:2)
 ##' 
-##' ########################################################################
-##' ###   CIF  #############################################################
-##' ########################################################################
-##' ### use of function to compute cumulative incidence (cif) with robust standard errors
-##'  data(bmt)
-##'  bmt$id <- 1:nrow(bmt)
-##'  xr  <- phreg(Surv(time,cause==1)~cluster(id),data=bmt)
-##'  dr  <- phreg(Surv(time,cause!=0)~cluster(id),data=bmt)
-##' 
-##'  out <- recurrentMarginal(xr,dr,km=TRUE)
-##'  bplot(out,se=TRUE,ylab="cumulative incidence")
-##' 
-##' @aliases tie.breaker recmarg recurrentMarginalIPCW recurrentMarginalAIPCW recurrentMarginalAIPCWdata 
+##' summary(out,times=1:5) 
+##'
+##' @aliases tie.breaker recmarg recurrentMarginalAIPCW  recurrentMarginalPhreg
 ##' @export
-recurrentMarginal <- function(recurrent,death,fixbeta=NULL,km=TRUE,...)
+recurrentMarginal <- function(formula,data,cause=1,...,death.code=2)
+{# {{{
+  if (missing(formula)) { # Fall-back to recurrentMarginalPhreg for backward compatibility <= 1.3.5
+    return(recurrentMarginalPhreg(...))
+  }
+  cl <- match.call()
+  m <- match.call(expand.dots = TRUE)[1:3]
+  special <- c("strata", "cluster","offset")
+  Terms <- terms(formula, special, data = data)
+  m$formula <- Terms
+  m[[1]] <- as.name("model.frame")
+  m <- eval(m, parent.frame())
+  Y <- model.extract(m, "response")
+  if (!inherits(Y,"Event")) stop("Expected a 'Event'-object")
+  if (ncol(Y)==2) {
+    exit <- Y[,1]
+    entry <- NULL ## rep(0,nrow(Y))
+    status <- Y[,2]
+  } else {
+    entry <- Y[,1]
+    exit <- Y[,2]
+    status <- Y[,3]
+  }
+  id <- strata <- NULL
+  if (!is.null(attributes(Terms)$specials$cluster)) {
+    ts <- survival::untangle.specials(Terms, "cluster")
+    Terms  <- Terms[-ts$terms]
+    id <- m[[ts$vars]]
+  }
+  if (!is.null(stratapos <- attributes(Terms)$specials$strata)) {
+    ts <- survival::untangle.specials(Terms, "strata")
+    Terms  <- Terms[-ts$terms]
+    strata <- m[[ts$vars]]
+    strata.name <- ts$vars
+  }  else strata.name <- NULL
+  if (!is.null(offsetpos <- attributes(Terms)$specials$offset)) {
+    ts <- survival::untangle.specials(Terms, "offset")
+    Terms  <- Terms[-ts$terms]
+    offset <- m[[ts$vars]]
+  }  
+  X <- model.matrix(Terms, m)
+  if (!is.null(intpos  <- attributes(Terms)$intercept))
+    X <- X[,-intpos,drop=FALSE]
+  if (ncol(X)==0) X <- matrix(nrow=0,ncol=0)
+
+  id.orig <- id; 
+  if (!is.null(id)) {
+	  ids <- sort(unique(id))
+	  nid <- length(ids)
+      if (is.numeric(id)) id <-  fast.approx(ids,id)-1 else  {
+      id <- as.integer(factor(id,labels=seq(nid)))-1
+     }
+   } else id <- as.integer(seq_along(exit))-1; 
+
+  statusE <- 1*(status %in% cause)
+###  if (is.null(death.code)) statusD <- 1*(!(status %in% cens.code)) else 
+  statusD <- 1*(status %in% death.code)
+  data$statusE__ <- statusE
+  data$statusD__ <- statusD
+  data$strata__  <- strata
+
+  ### setting up formulae for the two phreg (cause of interest and death)
+  if (is.null(id.orig)) { 
+     formid <- update.formula(formula,~.+cluster(id)) 
+     data$id <- id
+     tt <- terms(formid)
+     tt <- delete.response(tt)
+     formid <- formula(tt)
+  }  else formid <- formula
+  tt <- terms(formid)
+  tt <- delete.response(tt)
+  formid <- formula(tt)
+
+  if (ncol(Y)==3) {
+     formE <- as.formula(paste("Surv(entry,exit,statusE__)~+1"))
+     formD <- as.formula(paste("Surv(entry,exit,statusD__)~+1"))
+  } else {
+     formE <- as.formula(paste("Surv(exit,statusE__)~+1"))
+     formD <- as.formula(paste("Surv(exit,statusD__)~+1"))
+  }
+ formE <- update.formula(formE,formid)
+ formD <- update.formula(formD,formid)
+
+  if (sum(statusE)==0) warning("No events of type 1\n"); 
+  coxE <- phreg(formE,data=data,...)
+  coxS <- phreg(formD,data=data,...)
+
+  ### cif 
+  if (sum(statusE)>0) meano <- recurrentMarginalPhreg(coxE,coxS) else meano <- coxE
+  ## to work with predict function
+  meano$no.opt <- TRUE
+
+  attr(meano,"cause") <- cause
+  attr(meano,"death.code") <- death.code
+  return(meano)
+}# }}}
+
+##' @export
+recurrentMarginalPhreg <- function(recurrent,death,fixbeta=NULL,km=TRUE)
 {# {{{
   xr <- recurrent
   dr <- death 
@@ -166,75 +230,100 @@ recurrentMarginal <- function(recurrent,death,fixbeta=NULL,km=TRUE,...)
      St=varrs$St,
      cumhaz=cbind(varrs$time,varrs$mu),se.cumhaz=cbind(varrs$time,varrs$se.mu),
      strata=varrs$strata,nstrata=xr$nstrata,jumps=1:nrow(varrs),
-     strata.name=xr$strata.name,strata.level=recurrent$strata.level)
- class(out) <- "recurrent"
+     strata.name=xr$strata.name,strata.level=recurrent$strata.level,call=xr$call,
+     formula=xr$formula,no.opt=TRUE,exit=varrs$time,p=0)
+ class(out) <- rep("recurrent",2)
  return(out)
 }# }}}
 
 ##' @export
-summary.recurrent <- function(object,times=NULL,strata=NULL,estimates=FALSE,...) {# {{{
- if (is.null(times)) times <- object$times
+plot.recurrent <- function(x,ylab=NULL,...) {# {{{
+ if (inherits(x,"recurrent") & is.null(ylab)) ylab <- "Mean events"
+ baseplot(x,ylab=ylab,...)
+}# }}}
 
-if (object$nstrata==1) {
-   where <- fast.approx(c(0,object$times),times,type="left")
-   mu <- c(0,object$mu)[where]
-   se.mu <- c(0,object$se.mu)[where]
-   stratao <- 0
-} else {
- nstrata <- object$nstrata
- if (is.null(strata))  {
-    where <- indexstratarightR(object$times,object$strata,
-    rep(times,each=nstrata),rep((nstrata-1):0,length(times)),nstrata,type="left")
+##' @export
+summary.recurrent <- function(object,...) {# {{{
+out <- summaryRecurrentobject(object,...)
+return(out)
+}# }}}
 
- times <- rep(times,each=nstrata)
- strata <- rep((nstrata-1):0,length(times))
+##' @export
+summaryRecurrentobject <- function(object,times=NULL,strata=NULL,estimates=FALSE,
+			      name="mean",cumhaz="cumhaz",se.cumhaz="se.cumhaz",robust=FALSE,
+	      conf.type=c("log","log-log","plain"),...) {# {{{
+base <- basecumhaz(object,joint=1,robust=robust,cumhaz=cumhaz,se.cumhaz=se.cumhaz)
+nstrata <- object$nstrata
+stratobs <- attr(base,"stratobs")
 
- } else where <- indexstratarightR(object$times,object$strata,times,strata,nstrata,type="left")
+baseci <- rep(list(NULL),nstrata)
+if (length(stratobs)>0) 
+ for (i in stratobs) {
+   cumhaz <- base[[i+1]]$cumhaz
+   if (nrow(cumhaz)>=1) {
+     mu <- base[[i+1]]$cumhaz[,2]
+     se.mu <- base[[i+1]]$cumhaz[,3]
+	   if (length(mu)>=1) {
+	   conf <- conftype(mu,se.mu,conf.type=conf.type[1],...)
+	   out <- data.frame(times=cumhaz[,1],mu=mu,se.mu=se.mu,lower=conf$lower,upper=conf$upper,strata=i)
+	   names(out) <- c("times",name,"se","CI-2.5%","CI-97.5%","strata")
+	   baseci[[i+1]] <- out
+	   } 
+   } 
+   }
 
-   mu <- object$mu[where]
-   se.mu <- object$se.mu[where]
-   stratao <- object$strata[where] 
+i <- stratobs
+pbaseci <- NULL
+if (!is.null(times)) {
+ if (length(stratobs)>0) 
+ for (i in stratobs) 
+if (!is.null(baseci[[i+1]])) pbaseci[[i+1]] <- predictCumhaz(rbind(0,baseci[[i+1]]),times) 
 }
+out <- list(baseci=baseci,pbaseci=pbaseci,times=times)
 
- se.logmu=se.mu/mu
- lower <- exp(log(mu) - 1.96*se.logmu)
- upper <- exp(log(mu) + 1.96*se.logmu)
-
- out <- data.frame(times=times,mu=mu,se.mu=se.mu,lower=lower,upper=upper,
- strata=stratao)
- names(out) <- c("times","mean","se-mean","CI-2.5%","CI-97.5%","strata")
- if (estimates) {
-         attr(out,"where") <- where
-	 attr(out,"estimates") <- cbind(object$cumhaz,object$strata)[where,]
- }
- return(out)
+class(out) <- "summary.recurrent"
+return(out)
 }# }}}
+
+###summary.recurrent <- function(object,times=NULL,strata=NULL,estimates=FALSE,
+###			      name="mean",robust=FALSE,
+###	      conf.type=c("log","log-log","plain"),...) {# {{{
+###base <- basecumhaz(object,joint=1,robust=robust)
+###nstrata <- object$nstrata
+###stratobs <- attr(base,"stratobs")
+###
+###baseci <- rep(list(NULL),nstrata)
+###if (length(stratobs)>0) 
+### for (i in stratobs) {
+###   cumhaz <- base[[i+1]]$cumhaz
+###   if (nrow(cumhaz)>=1) {
+###     mu <- base[[i+1]]$cumhaz[,2]
+###     se.mu <- base[[i+1]]$cumhaz[,3]
+###	   if (length(mu)>=1) {
+###	   conf <- conftype(mu,se.mu,conf.type=conf.type[1],...)
+###	   out <- data.frame(times=cumhaz[,1],mu=mu,se.mu=se.mu,lower=conf$lower,upper=conf$upper,strata=i)
+###	   names(out) <- c("times",name,"se","CI-2.5%","CI-97.5%","strata")
+###	   baseci[[i+1]] <- out
+###	   } 
+###   } 
+###   }
+###
+###pbaseci <- NULL
+###if (!is.null(times)) {
+### if (length(stratobs)>0) 
+### for (i in stratobs) 
+###if (!is.null(baseci[[i+1]])) pbaseci[[i+1]] <- predictCumhaz(rbind(0,baseci[[i+1]]),times) 
+###}
+###out <- list(baseci=baseci,pbaseci=pbaseci,times=times)
+###
+###class(out) <- "summary.recurrent"
+###return(out)
+###}# }}}
 
 ##' @export
-summaryTimeobject <-function(mutimes,mu,se.mu=NULL,times=NULL,type="log",...) {# {{{
- if (is.null(times)) times <- mutimes
-
- where <- fast.approx(c(0,mutimes),times,type="left")
-
- ##  see if object is vector or matrix
- if (is.matrix(mu)) mu <- rbind(0,mu)[where,] else mu <- c(0,mu)[where]
- if (!is.null(se.mu)) {
-     if (is.matrix(se.mu)) se.mu <- rbind(0,se.mu)[where,] else se.mu <- c(0,se.mu)[where]
- se.logmu=se.mu/mu
- if (type=="log") {
- lower <- exp(log(mu) - 1.96*se.logmu)
- upper <- exp(log(mu) + 1.96*se.logmu)
- } else {
- lower <- mu - 1.96*se.mu
- upper <- mu + 1.96*se.mu
- }
- } else {se.mu <- se.logmu <- lower <- upper <- NA}
-
-
- out <- data.frame(times=times,mu=mu,se.mu=se.mu,lower=lower,upper=upper)
- names(out) <- c("times","mean","se-mean","CI-2.5%","CI-97.5%")
- return(out)
-}# }}}
+print.summary.recurrent  <- function(x,...) {# {{{
+if (is.null(x$times)) print(x$baseci) else print(x$pbaseci)
+} # }}}
 
 ##' @export
 recurrentMarginalAIPCW <- function(formula,data=data,cause=1,cens.code=0,death.code=2,
@@ -343,215 +432,7 @@ form1 <- as.formula(Surv(entry__,exit__,status__cause)~cluster(id__))
 
  ### cook-lawless-ghosh-lin
  xr0 <- phreg(form1,data=data,no.opt=TRUE)
- clgl  <- recurrentMarginal(xr0,dr)
-### bplot(clgl,se=1); print(cpred(clgl$cumhaz,times)); print(cpred(clgl$se.cumhaz,times)); 
-
-  ####  First \mu_ipcw(t) \sum_i I(T_i /\ t \leq C_i)/G_c(T_i /\ t ) N_(T_i /\ t) {{{
-  x <- xr
-  xx <- xr$cox.prep
-  S0i2 <- S0i <- rep(0,length(xx$strata))
-  S0i[xx$jumps+1] <-  1/x$S0
-  S0i2[xx$jumps+1] <- 1/x$S0^2
-  ## stay with N(D_i) when t is large so no -1 when death
-  ## xx$X[,1] er Count1 dvs N(t-)
-  Nt <- revcumsumstrata(xx$X[,1]*xx$sign,xx$strata,xx$nstrata)
-  Nt <- Nt/Gc
-  ## counting N(D) forward in time skal ikke checke ud når man dør N_(D_i) er i spil efter D_i
-  NtD <- cumsumstrata(xx$X[,1]*(xx$X[,2]==1)*(xx$sign==1)/Gc,xx$strata,xx$nstrata)
-  jump1 <- xx$jumps+1
-  timeJ <- xx$time[jump1]
-  avNtD <- (NtD+Nt)[jump1]/nid
-  strataN1J <- xx$strata[jump1]
-
-  varIPCW1 <- NULL
-  seIPCW1 <- NULL
-
-  ### IPCW estimator 
-  cumhaz <- cbind(timeJ,avNtD)
-# }}}
-
-  ### Partitioned estimator , same as Lin, Lawless & Cook estimator {{{
-  cumhazP <- c(cumsumstrata(1/Gc[jump1],strataN1J,xx$nstrata)/nid)
-  cumhazP <- cbind(timeJ,cumhazP)
-
-  ### variance of partitioned estimator 
-
-  ### calculate E(H,s,t) = E(H,t) - E(H,s) 
-  ### E(H,t) = 1/(S(t)*n) \sum_ \int Y_i(s)/G_c(s) dN_{1i} = 1/(S(t)) (\mu_p(t) - \mu_p(s)) 
-  ### \hat H_i for all subjects, and look at together with Hst, eHst 
-  ### for censoring martingale 
-  data$Nt <- data$Count1__
-  data$Nt2 <- data$Nt^2
-  data$expNt <- exp(-data$Nt)
-  data$NtexpNt <- data$Nt*exp(-data$Nt)
-
-  Gcdata <- exp(-cpred(cr$cumhaz,exit)[,2])
-
-  if (!is.null(augment.model)) {
-	  form <- as.formula(paste("Surv(entry__,exit__,statusC__)~+1"))
-	  desform <- update.formula(augment.model,~Hst + . + cluster(id__))
-	  form[[3]] <- desform[[2]]
-	  nterms <- length(all.vars(form[[3]]))-1
-  }
-
-  if (!is.null(times)) {
-       semuPA <-  muPA <- semuPA.times <-  muPA.times <- rep(0,length(times))
-       ww <- fast.approx(timeJ,times,type="left")
-       muP.times <- cumhazP[ww,2]
-       semuP.times <- clgl$se.mu[ww]
-
-  if (!is.null(augment.model)) {
-  for (i in seq_along(times)) {
-     timel <- times[i]
-     data$Hst <- revcumsumstrata((exit<timel)*(status %in% cause)/Gcdata,id,nid)
-     cr2 <- phreg(form,data=data,no.opt=TRUE,no.var=1)
-     nterms <- cr2$p-1
-
-     dhessian <- cr2$hessianttime
-     dhessian <-  .Call("XXMatFULL",dhessian,cr2$p,PACKAGE="mets")$XXf
-     ###  matrix(apply(dhessian,2,sum),3,3)
-     timeb <- which(cr$cumhaz[,1]<timel)
-     ### take relevant \sum H_i(s,t) (e_i - \bar e)
-     covts <- dhessian[timeb,1+1:nterms,drop=FALSE]
-     ### construct relevant \sum (e_i - \bar e)^2
-     Pt <- dhessian[timeb,-c((1:(nterms+1)),(1:(nterms))*(nterms+1)+1),drop=FALSE]
-     ###  matrix(apply(dhessian[,c(5,6,8,9)],2,sum),2,2)
-     gammahat <- .Call("CubeVec",Pt,covts,1,PACKAGE="mets")$XXbeta
-     S0 <- cr$S0[timeb]
-     gammahat[is.na(gammahat)] <- 0
-     gammahat[gammahat==Inf] <- 0
-     Gctb <- Gc[cr$cox.prep$jumps+1][timeb]
-     augment.times <- sum(apply(gammahat*cr2$U[timeb,1+1:nterms,drop=FALSE],1,sum))/nid
-     mterms <- length(terms)
-     mterms <- nterms
-     ###
-     varZ <- matrix(apply(Pt/Gctb^2,2,sum),mterms,mterms)
-     gamma <- .Call("CubeVec",matrix(c(varZ),nrow=1),matrix(apply(covts/Gctb,2,sum),nrow=1),1,PACKAGE="mets")$XXbeta
-     gamma <- c(gamma)
-     gamma[is.na(gamma)] <- 0
-     gamma[gamma=Inf] <- 0
-     augment <- sum(apply(gamma*t(cr2$U[timeb,1+1:nterms,drop=FALSE])/Gctb,2,sum))/nid
-     ###
-     muPA[i] <- muP.times[i]+augment
-     semuPA[i] <- (semuP.times[i]^2 +(gamma %*% varZ %*% gamma)/nid^2)^.5
-     muPA.times[i] <- muP.times[i]+augment.times
-     semuPA.times[i] <- (semuP.times[i]^2+sum(gammahat*.Call("CubeVec",Pt,gammahat,0,PACKAGE="mets")$XXbeta)/(nid^2))^.5
-  } }
-  else { Gctb <- NULL;gammahat <- NULL; muPA.times <-semuPA.times <- muPA  <- semuPA <- NULL }
-  } else stop("must give times\n") 
-# }}}
-
-  return(list(censoring.weights=Gctb,muP.all=cumhazP,Gcjump=Gc[jump1],gamma=gamma,gamma.time=gammahat,times=times,
-  muP=muP.times,semuP=semuP.times, muPAt=muPA.times,semuPAt=semuPA.times, muPA=muPA,semuPA=semuPA))
-}# }}}
-
-recurrentMarginalAIPCW <- function(formula,data=data,cause=1,cens.code=0,death.code=2,
-	  cens.model=~1,km=TRUE,times=NULL,augment.model=~Nt,...)
-{# {{{
-    cl <- match.call()# {{{
-    m <- match.call(expand.dots = TRUE)[1:3]
-    special <- c("strata", "cluster","offset")
-    Terms <- terms(formula, special, data = data)
-    m$formula <- Terms
-    m[[1]] <- as.name("model.frame")
-    m <- eval(m, parent.frame())
-    Y <- model.extract(m, "response")
-    if (!inherits(Y,"Event")) stop("Expected a 'Event'-object")
-    if (ncol(Y)==2) {
-        exit <- Y[,1]
-        entry <- NULL ## rep(0,nrow(Y))
-        status <- Y[,2]
-    } else {
-        entry <- Y[,1]
-        exit <- Y[,2]
-        status <- Y[,3]
-    }
-    id <- strata <- NULL
-    if (!is.null(attributes(Terms)$specials$cluster)) {
-        ts <- survival::untangle.specials(Terms, "cluster")
-        pos.cluster <- ts$terms
-        Terms  <- Terms[-ts$terms]
-        id <- m[[ts$vars]]
-    } else pos.cluster <- NULL
-    if (!is.null(stratapos <- attributes(Terms)$specials$strata)) {
-        ts <- survival::untangle.specials(Terms, "strata")
-        pos.strata <- ts$terms
-        Terms  <- Terms[-ts$terms]
-        strata <- m[[ts$vars]]
-        strata.name <- ts$vars
-    }  else { strata.name <- NULL; pos.strata <- NULL}
-    if (!is.null(offsetpos <- attributes(Terms)$specials$offset)) {
-        ts <- survival::untangle.specials(Terms, "offset")
-        Terms  <- Terms[-ts$terms]
-        offset <- m[[ts$vars]]
-    }
-    X <- model.matrix(Terms, m)
-    if (!is.null(intpos  <- attributes(Terms)$intercept))
-        X <- X[,-intpos,drop=FALSE]
-    if (ncol(X)==0) X <- matrix(nrow=0,ncol=0)
-    ## }}}
-
-   if (!is.null(id)) {
-        ids <- unique(id)
-        nid <- length(ids)
-        if (is.numeric(id))
-            id <-  fast.approx(ids,id)-1
-        else  {
-            id <- as.integer(factor(id,labels=seq(nid)))-1
-        }
-    } else { id <- as.integer(seq_along(entry))-1;  nid <- nrow(X); }
-    ## orginal id coding into integers 1:...
-    id.orig <- id+1;
-
-   ### setting up with artificial names
- data$status__ <-  status 
- data$id__ <-  id
- ## lave Countcause
- data <- count.history(data,status="status__",id="id__",types=cause,multitype=TRUE)
- data$Count1__ <- data[,paste("Count",cause[1],sep="")]
- data$death__ <- (status %in% death.code)*1
- data$entry__ <- entry 
- data$exit__ <- exit 
- data$statusC__ <- (status %in% cens.code)*1
- data$status__cause <- (status %in% cause)*1
-
-  xr <- phreg(Surv(entry__,exit__,status__cause)~Count1__+death__+cluster(id__),data=data,no.opt=TRUE,no.var=1)
-
-  formC <- update.formula(cens.model,Surv(entry__,exit__,statusC__)~ . +cluster(id__))
-  cr <- phreg(formC,data=data)
-  whereC <- which(status %in% cens.code)
-
-  if (length(whereC)>0) {# {{{
-  ### censoring weights
-  strat <- cr$strata[cr$jumps]
-  x <- cr
-  xx <- x$cox.prep
-  S0i2 <- S0i <- rep(0,length(xx$strata))
-  S0i[xx$jumps+1] <-  1/x$S0
-  S0i2[xx$jumps+1] <- 1/x$S0^2
-  ## survival at t- to also work in competing risks situation
-  if (!km) { 
-    cumhazD <- c(cumsumstratasum(S0i,xx$strata,xx$nstrata)$lagsum)
-    St      <- exp(-cumhazD)
-  } else St <- c(exp(cumsumstratasum(log(1-S0i),xx$strata,xx$nstrata)$lagsum))
-  } else  St <- rep(1,nrow(xx$strata))
-  Gc <- St
-  ## }}}
-
-  
-formD <- as.formula(Surv(entry__,exit__,death__)~cluster(id__))
-form1L <- as.formula(Surv(entry__,exit__,status__cause)~Count1__+death__+statusC__+cluster(id__))
-form1 <- as.formula(Surv(entry__,exit__,status__cause)~cluster(id__))
-
- xr <- phreg(form1L,data=data,no.opt=TRUE,no.var=1)
- dr <- phreg(formD,data=data,no.opt=TRUE,no.var=1)
-
- ### augmenting partioned estimator computing \hat H_i(s,t) for fixed t
- data$Gctrr <- exp(-cpred(cr$cumhaz,exit)[,2])
-
- ### cook-lawless-ghosh-lin
- xr0 <- phreg(form1,data=data,no.opt=TRUE)
- clgl  <- recurrentMarginal(xr0,dr)
+ clgl  <- recurrentMarginalPhreg(xr0,dr)
 ### bplot(clgl,se=1); print(cpred(clgl$cumhaz,times)); print(cpred(clgl$se.cumhaz,times)); 
 
   ####  First \mu_ipcw(t) \sum_i I(T_i /\ t \leq C_i)/G_c(T_i /\ t ) N_(T_i /\ t) {{{
@@ -650,201 +531,30 @@ form1 <- as.formula(Surv(entry__,exit__,status__cause)~cluster(id__))
   muP=muP.times,semuP=semuP.times, muPAt=muPA.times,semuPAt=semuPA.times, muPA=muPA,semuPA=semuPA))
 }# }}}
 
-recurrentMarginalAIPCWdata <- function(rr,times,km=TRUE,terms=1,idt=1,x.design=NULL,
-   id="id",start="start",stop="stop",status="status",death="death",cause=1,...)
-{# {{{
-
- if (missing(times)) stop("times of estimation must be given")
-
- # to avoid R check warning 
- revnr <- NULL
-
- formsort <- paste("~",id,"+",start)
- dsort(rr) <- as.formula(formsort) 
- rr$revnr <- NULL
- rr$cens <- 0
- rr <- count.history(rr,status=status,id=id)
-
- nid <- max(rr[,id])
- rr$revnr2 <-  c(revcumsumstrata(rep(1,nrow(rr)),rr[,id]-1,nid))
- rr$cens[rr$revnr2==1 & rr$death==0] <- 1
-
-###
-formC <- as.formula(paste("Surv(",start,",",stop,",cens)~cluster(",id,")",sep=""))
-formD <- as.formula(paste("Surv(",start,",",stop,",",death,")~cluster(",id,")",sep=""))
-form1L <- as.formula(paste("Surv(",start,",",stop,",",status,"==",cause,")~Count",cause,"+death+cens+cluster(",id,")",sep=""))
-form1 <- as.formula(paste("Surv(",start,",",stop,",",status,"==",cause,")~cluster(",id,")",sep=""))
-
- xr <- phreg(form1L,data=rr,no.opt=TRUE,no.var=1)
- cr <- phreg(formC,data=rr,no.opt=TRUE,no.var=1)
- dr <- phreg(formD,data=rr,no.opt=TRUE,no.var=1)
-
- ### augmenting partioned estimator computing \hat H_i(s,t) for fixed t
- rr$Gctrr <- exp(-cpred(cr$cumhaz,rr[,stop])[,2])
-
- ### cook-lawless ghosh-lin
- xr0 <- phreg(form1,data=rr,no.opt=TRUE)
- clgl  <- recurrentMarginal(xr0,dr)
-
-  ### censoring weights
-  strat <- cr$strata[cr$jumps+1]
-  x <- cr
-  xx <- x$cox.prep
-  S0iD <- S0i2 <- S0i <- rep(0,length(xx$strata))
-  S0i[xx$jumps+1] <-  1/x$S0
-  S0i2[xx$jumps+1] <- 1/x$S0^2
-  ## survival at t- to also work in competing risks situation
-  if (!km) { 
-    cumhazD <- c(cumsumstratasum(S0i,xx$strata,xx$nstrata)$lagsum)
-    Gc      <- exp(-cumhazD)
-  } else Gc <- c(exp(cumsumstratasum(log(1-S0i),xx$strata,xx$nstrata)$lagsum))
-  S0it <- revcumsumstrata(xx$sign,xx$strata,xx$nstrata)
-
-  ####  First \mu_ipcw(t) \sum_i I(T_i /\ t \leq C_i)/G_c(T_i /\ t ) N_(T_i /\ t) {{{
-  x <- xr
-  xx <- xr$cox.prep
-  S0i2 <- S0i <- rep(0,length(xx$strata))
-  S0i[xx$jumps+1] <-  1/x$S0
-  S0i2[xx$jumps+1] <- 1/x$S0^2
-  ## stay with N(D_i) when t is large so no -1 when death
-  ## xx$X[,1] er Count1 dvs N(t-)
-  Nt <- revcumsumstrata(xx$X[,1]*xx$sign,xx$strata,xx$nstrata)
-  Nt <- Nt/Gc
-  ## counting N(D) forward in time skal ikke checke ud når man dør N_(D_i) er i spil efter D_i
-  NtD <- cumsumstrata(xx$X[,1]*(xx$X[,2]==1)*(xx$sign==1)/Gc,xx$strata,xx$nstrata)
-  jump1 <- xx$jumps+1
-  timeJ <- xx$time[jump1]
-  avNtD <- (NtD+Nt)[jump1]/nid
-  strataN1J <- xx$strata[jump1]
-
-  varIPCW1 <- NULL
-  seIPCW1 <- NULL
-
-  ### IPCW estimator 
-  cumhaz <- cbind(timeJ,avNtD)
-# }}}
-
-  ### Partitioned estimator , same as Lin, Lawless & Cook estimator {{{
-  cumhazP <- c(cumsumstrata(1/Gc[jump1],strataN1J,xx$nstrata)/nid)
-  cumhazP <- cbind(timeJ,cumhazP)
-
-  ### variance of partitioned estimator 
-
-  ### calculate E(H,s,t) = E(H,t) - E(H,s) 
-  ### E(H,t) = 1/(S(t)*n) \sum_ \int Y_i(s)/G_c(s) dN_{1i} = 1/(S(t)) (\mu_p(t) - \mu_p(s)) 
-  ### \hat H_i for all subjects, and look at together with Hst, eHst 
-  ### for censoring martingale 
-  rr$Count1s <- rr$Count1^2
-  rr$eCount1 <- exp(-rr$Count1)
-  rr$CeCount1 <- rr$Count1*exp(-rr$Count1)
-
-  if (!is.null(times)) {
-       semuPA <-  muPA <- semuPA.times <-  muPA.times <- rep(0,length(times))
-
-       ww <- fast.approx(timeJ,times,type="left")
-       muP.times <- cumhazP[ww,2]
-       semuP.times <- clgl$se.mu[ww]
-       Aterms <- c("Count1","Count1s","eCount1","CeCount1")[terms]
-       modP <- NULL
-       if (length(Aterms)>=1) modP <- Aterms
-       if (!is.null(x.design)) modP <- c(modP,x.design)
-       nterms <- length(modP)
-       modP <- paste(modP,collapse="+") 
-       form <- as.formula(paste("Surv(",start,",",stop,",cens)~Hst+",modP,"+cluster(id)"))
-
-  for (i in seq_along(times)) {
-     timel <- times[i]
-     rr$Hst <- revcumsumstrata((rr[,stop]<timel)*(rr[,status]==1)/rr$Gctrr,rr$id-1,nid)
-     cr2 <- phreg(form,data=rr,no.opt=TRUE,no.var=1)
-     nterms <- cr2$p-1
-
-     dhessian <- cr2$hessianttime
-     dhessian <-  .Call("XXMatFULL",dhessian,cr2$p,PACKAGE="mets")$XXf
-     ###  matrix(apply(dhessian,2,sum),3,3)
-     timeb <- which(cr$cumhaz[,1]<timel)
-     ### take relevant \sum H_i(s,t) (e_i - \bar e)
-     covts <- dhessian[timeb,1+1:nterms,drop=FALSE]
-     ### construct relevant \sum (e_i - \bar e)^2
-     Pt <- dhessian[timeb,-c((1:(nterms+1)),(1:(nterms))*(nterms+1)+1),drop=FALSE]
-     ###  matrix(apply(dhessian[,c(5,6,8,9)],2,sum),2,2)
-     gammahat <- .Call("CubeVec",Pt,covts,1,PACKAGE="mets")$XXbeta
-     S0 <- cr$S0[timeb]
-     gammahat[is.na(gammahat)] <- 0
-     gammahat[gammahat==Inf] <- 0
-     Gctb <- Gc[cr$jumps][timeb]
-     augment.times <- sum(apply(gammahat*cr2$U[timeb,1+1:nterms,drop=FALSE],1,sum))/nid
-     ###
-     varZ <- matrix(apply(Pt/Gctb^2,2,sum),nterms,nterms)
-     gamma <- .Call("CubeVec",matrix(c(varZ),nrow=1),matrix(apply(covts/Gctb,2,sum),nrow=1),1,PACKAGE="mets")$XXbeta
-     gamma <- c(gamma)
-     gamma[is.na(gamma)] <- 0
-     gamma[gamma=Inf] <- 0
-     augment <- sum(apply(gamma*t(cr2$U[timeb,1+1:nterms,drop=FALSE])/Gctb,2,sum))/nid
-     ###
-     muPA[i] <- muP.times[i]+augment
-     semuPA[i] <- (semuP.times[i]^2 +(gamma %*% varZ %*% gamma)/nid^2)^.5
-     muPA.times[i] <- muP.times[i]+augment.times
-     semuPA.times[i] <- (semuP.times[i]^2+sum(gammahat*.Call("CubeVec",Pt,gammahat,0,PACKAGE="mets")$XXbeta)/(nid^2))^.5
-  }
-  }
-# }}}
-
-  return(list(censoring.weights=Gctb,muP.all=cumhazP,Gcjump=Gc[jump1],gamma=gamma,gamma.time=gammahat,times=times,
-  muP=muP.times,semuP=semuP.times, muPAt=muPA.times,semuPAt=semuPA.times, muPA=muPA,semuPA=semuPA))
-}# }}}
-
 ##' @export
-recurrentMarginalIPCW <- function(rr,km=TRUE,times=NULL,...)
-{# {{{
+summaryTimeobject <-function(mutimes,mu,se.mu=NULL,times=NULL,type="log",...) {# {{{
+ if (is.null(times)) times <- mutimes
 
- # to ovoid R check warning 
- death <- revnr <- NULL
+ where <- fast.approx(c(0,mutimes),times,type="left")
 
- rr$revnr <- NULL
- rr$cens <- 0
- rr <- count.history(rr)
- dsort(rr) <- ~id-start
- nid <- max(rr$id)
- rr$revnr <- cumsumstrata(rep(1,nrow(rr)),rr$id-1,nid)
- dsort(rr) <- ~id+start
- rr <- dtransform(rr,cens=1,revnr==1 & death==0)
+ ##  see if object is vector or matrix
+ if (is.matrix(mu)) mu <- rbind(0,mu)[where,] else mu <- c(0,mu)[where]
+ if (!is.null(se.mu)) {
+     if (is.matrix(se.mu)) se.mu <- rbind(0,se.mu)[where,] else se.mu <- c(0,se.mu)[where]
+ se.logmu=se.mu/mu
+ if (type=="log") {
+ lower <- exp(log(mu) - 1.96*se.logmu)
+ upper <- exp(log(mu) + 1.96*se.logmu)
+ } else {
+ lower <- mu - 1.96*se.mu
+ upper <- mu + 1.96*se.mu
+ }
+ } else {se.mu <- se.logmu <- lower <- upper <- NA}
 
-  xr <- phreg(Surv(entry,time,status==1)~Count1+death+cluster(id),data=rr,no.opt=TRUE,no.var=1)
-  cr <- phreg(Surv(entry,time,cens)~cluster(id),data=rr)
-  dr <- phreg(Surv(entry,time,death)~cluster(id),data=rr)
 
-  ### censoring weights
-  strat <- cr$strata[cr$jumps]
-  x <- cr
-  xx <- x$cox.prep
-  S0i2 <- S0i <- rep(0,length(xx$strata))
-  S0i[xx$jumps+1] <-  1/x$S0
-  S0i2[xx$jumps+1] <- 1/x$S0^2
-  ## survival at t- to also work in competing risks situation
-  if (!km) { 
-    cumhazD <- c(cumsumstratasum(S0i,xx$strata,xx$nstrata)$lagsum)
-    St      <- exp(-cumhazD)
-  } else St <- c(exp(cumsumstratasum(log(1-S0i),xx$strata,xx$nstrata)$lagsum))
-  x <- xr
-  xx <- xr$cox.prep
-  S0i2 <- S0i <- rep(0,length(xx$strata))
-  S0i[xx$jumps+1] <-  1/x$S0
-  S0i2[xx$jumps+1] <- 1/x$S0^2
-  ## stay with N(D_i) when t is large so no -1 when death
-  signm <- xx$sign
-  signm[xx$X[,2]==1 & xx$sign==-1] <- 0
-  Nt <- revcumsumstrata(xx$X[,1]*xx$sign,xx$strata,xx$nstrata)
-  Nt <- Nt/St
-  ## counting N(D) forward in time skal ikke checke ud når man dør N_(D_i) er i spil efter D_i
-  NtD <- cumsumstrata(xx$X[,1]*(xx$X[,2]==1)*(xx$sign==1)/St,xx$strata,xx$nstrata)
-  risk <- revcumsumstrata(xx$sign,xx$strata,xx$nstrata)
-  timeJ <- xx$time[xx$jumps+1]
-  avNtD <- (NtD+Nt)[xx$jumps+1]/nid
-  xxJ <- xx$jumps+1
-
-  cumhaz <- cbind(timeJ,avNtD)
-
-  return(list(cumhaz=cumhaz))
+ out <- data.frame(times=times,mu=mu,se.mu=se.mu,lower=lower,upper=upper)
+ names(out) <- c("times","mean","se-mean","CI-2.5%","CI-97.5%")
+ return(out)
 }# }}}
 
 ##' @export
@@ -1434,6 +1144,7 @@ if (is.null(dependence)) dependence <- 0
 if (!is.null(LamD)) 
 rrs <- simRecurrentIII(n,list(Lam1),death.cumhaz=list(LamD),rr=matrix(r1,ncol=1),rd=matrix(rd,ncol=1),rc=rc,cens=cens,var.z=varz,dependence=dependence)
 else rrs <- simRecurrentIII(n,list(Lam1),rr=matrix(r1,ncol=1),rc=rc,cens=cens,var.z=varz,dependence=dependence)
+rrs$Z <- attr(rrs,"z")[rrs$id]
 
 rrs$statusD <- rrs$status
 if (!is.null(LamD))  {
@@ -1590,10 +1301,10 @@ if (2 %in% which) {
   }
   }
 if (3 %in% which) {
-  meanr1 <-   recurrentMarginal(xrr,drr)
+  meanr1 <-   recurrentMarginalPhreg(xrr,drr)
   basehazplot.phreg(meanr1,se=TRUE)
   if (causes>=2) {
-	  meanr2 <-   recurrentMarginal(xrr2,drr)
+	  meanr2 <-   recurrentMarginalPhreg(xrr2,drr)
 	  basehazplot.phreg(meanr2,se=TRUE,add=TRUE,col=2)
   }
 }
@@ -2142,17 +1853,14 @@ return(data)
 ##' In contrast the probability of exceeding k events can also be computed as a 
 ##' counting process integral, and this is implemented in prob.exceedRecurrent
 ##'
-##' @param data data-frame
-##' @param type type of evnent (code) related to status
-##' @param status name of status 
-##' @param death  name of death indicator 
-##' @param start start stop call of Hist() of prodlim 
-##' @param stop start stop call of Hist() of prodlim 
-##' @param id  id 
-##' @param times time at which to get probabilites P(N1(t) >= n)
-##' @param exceed n's for which which to compute probabilites P(N1(t) >= n)
+##' @param formula formula
+##' @param data  data-frame 
+##' @param cause of interest 
+##' @param death.code for status 
+##' @param cens.code censoring codes
+##' @param exceed values (if not given then all observed values)
+##' @param marks may be give for jump-times and then exceed values needs to be specified
 ##' @param cifmets if true uses cif of mets package rather than prodlim 
-##' @param strata to stratify according to variable, only for cifmets=TRUE, when strata is given then only consider the output in the all.cifs
 ##' @param all.cifs if true then returns list of all fitted objects in cif.exceed 
 ##' @param ... Additional arguments to lower level funtions
 ##' @author Thomas Scheike
@@ -2162,54 +1870,178 @@ return(data)
 ##'             with a terminal event,  JRSS-C
 ##'
 ##' @examples
-##'
-##' ########################################
-##' ## getting some rates to mimick 
-##' ########################################
-##'
-##' data(base1cumhaz)
-##' data(base4cumhaz)
-##' data(drcumhaz)
-##' dr <- drcumhaz
-##' base1 <- base1cumhaz
-##' base4 <- base4cumhaz
-##'
-##' cor.mat <- corM <- rbind(c(1.0, 0.6, 0.9), c(0.6, 1.0, 0.5), c(0.9, 0.5, 1.0))
-##' rr <- simRecurrentII(1000,base4,cumhaz2=base4,death.cumhaz=dr,cens=2/5000)
-##' rr <-  count.history(rr)
-##' dtable(rr,~death+status)
+##' data(hfactioncpx12)
+##' dtable(hfactioncpx12,~status)
 ##' 
-##' oo <- prob.exceedRecurrent(rr,1)
-##' bplot(oo)
+##' oo <- prob.exceed.recurrent(Event(entry,time,status)~cluster(id),
+##'         hfactioncpx12,cause=1,death.code=2)
+##' plot(oo)
 ##' 
-##' par(mfrow=c(1,2))
-##' with(oo,plot(time,mu,col=2,type="l"))
-##' ###
-##' with(oo,plot(time,varN,type="l"))
-##' 
-##' 
-##' ### Bivariate probability of exceeding 
-##' oo <- prob.exceedBiRecurrent(rr,1,2,exceed1=c(1,5),exceed2=c(1,2))
-##' with(oo, matplot(time,pe1e2,type="s"))
-##' nc <- ncol(oo$pe1e2)
-##' legend("topleft",legend=colnames(oo$pe1e2),lty=1:nc,col=1:nc)
-##' 
-##' 
-##' \donttest{
-##' ### do not test to avoid dependence on prodlim 
-##' ### now estimation based on cumualative incidence, but do not test to avoid dependence on prodlim 
-##' ### library(prodlim)
-##' pp <- prob.exceed.recurrent(rr,1,status="status",death="death",start="entry",stop="time",id="id")
-##' with(pp, matplot(times,prob,type="s"))
-##' ###
-##' with(pp, matlines(times,se.lower,type="s"))
-##' with(pp, matlines(times,se.upper,type="s"))
-##' }
 ##' @export
-##' @aliases prob.exceedRecurrent prob.exceedBiRecurrent prob.exceedRecurrentStrata prob.exceedBiRecurrentStrata summaryTimeobject
-prob.exceed.recurrent <- function(data,type,status="status",death="death",
- start="start",stop="stop",id="id",times=NULL,exceed=NULL,cifmets=TRUE,
- strata=NULL,all.cifs=FALSE,...)
+##' @aliases prob.exceedRecurrent prob.exceedBiRecurrent prob.exceedRecurrentStrata prob.exceedBiRecurrentStrata summaryRecurrentobject summaryTimeobject
+##' @export
+prob.exceed.recurrent <- function(formula,data,
+                                   cause=1,
+                                   death.code=2,
+                                   cens.code=0,
+                                   exceed=NULL,marks=NULL,cifmets=TRUE,all.cifs=FALSE,...)
+{# {{{
+    cl <- match.call()# {{{
+    m <- match.call(expand.dots = TRUE)[1:3]
+    special <- c("strata", "cluster","offset")
+    Terms <- terms(formula, special, data = data)
+    m$formula <- Terms
+    m[[1]] <- as.name("model.frame")
+    m <- eval(m, parent.frame())
+    Y <- model.extract(m, "response")
+    if (!inherits(Y,"Event")) stop("Expected a 'Event'-object")
+    if (ncol(Y)==2) {
+        exit <- Y[,1]
+        entry <- rep(0,nrow(Y))
+        status <- Y[,2]
+    } else {
+        entry <- Y[,1]
+        exit <- Y[,2]
+        status <- Y[,3]
+    }
+    id <- strata <- NULL
+    if (!is.null(attributes(Terms)$specials$cluster)) {
+        ts <- survival::untangle.specials(Terms, "cluster")
+        pos.cluster <- ts$terms
+        Terms  <- Terms[-ts$terms]
+        id <- m[[ts$vars]]
+    } else pos.cluster <- NULL
+    if (!is.null(stratapos <- attributes(Terms)$specials$strata)) {
+        ts <- survival::untangle.specials(Terms, "strata")
+        pos.strata <- ts$terms
+        Terms  <- Terms[-ts$terms]
+        strata <- m[[ts$vars]]
+        strata.name <- ts$vars
+    }  else { strata.name <- NULL; pos.strata <- NULL}
+    if (!is.null(offsetpos <- attributes(Terms)$specials$offset)) {
+        ts <- survival::untangle.specials(Terms, "offset")
+        Terms  <- Terms[-ts$terms]
+        offset <- m[[ts$vars]]
+    }
+    X <- model.matrix(Terms, m)
+###    if (!is.null(intpos  <- attributes(Terms)$intercept))
+###        X <- X[,-intpos,drop=FALSE]
+    if (ncol(X)==0) X <- matrix(nrow=0,ncol=0)
+    ## }}}
+
+   ## {{{
+   if (!is.null(id)) {
+        ids <- unique(id)
+        nid <- length(ids)
+        if (is.numeric(id))
+            id <-  fast.approx(ids,id)-1
+        else  {
+            id <- as.integer(factor(id,labels=seq(nid)))-1
+        }
+    } else { ids  <- id <- as.integer(seq_along(entry))-1;  nid <- nrow(X); }
+    ## orginal id coding into integers 1:...
+    orig.id <- id.orig <- id+1;
+    nid <- length(unique(id))
+    ## }}}
+    times <- NULL
+
+statusD <- (status %in% death.code)*1
+statusE <- (status %in% cause)*1
+if (sum(statusE)==0) stop("none of type events")
+if (!is.null(strata) & !cifmets) stop("strata only for cifmets=TRUE\n")
+marks.call <- marks
+if (is.null(marks)) marks <- rep(1,length(statusE))
+
+ allvars <- all.vars(formula)
+ if (is.null(times)) times <- sort(unique(exit[statusE==1]))
+
+ countE <- cumsumstrata(statusE*marks,id,nid)
+ if (is.null(marks.call)) {
+ mc <- max(countE)+1
+ idcount <- id*mc+countE
+ idcount <- cumsumstrata(rep(1,length(idcount)),idcount,mc*(nid+1))
+ } else {
+  ex <- outer(countE,exceed,">=")[,1,]
+  exC <- apply(ex,2,cumsumstrata,id,nid)
+  idcount <- exC
+ }
+
+ if (is.null(exceed)) exceed <- sort(unique(countE))
+ w0 <- which(exceed==0)
+ if (length(w0)>=1) exceed <- exceed[-w0]
+
+if (!cifmets) {
+## can not handle start stop and id, so uses MG standard errors 
+pp <- as.formula(paste("Hist(entry=",allvars[1],",",allvars[2],",statN)~+1",sep=""))
+###rhs <- update(formula,-1~.)
+###form <- as.formula(update.formula(rhs,pp))
+form <- as.formula(pp)
+} else {
+pp <- as.formula(paste("Event(",allvars[1],",",allvars[2],",statN)~.",sep=""))
+rhs <- update(formula,-1~.)
+form <- as.formula(update.formula(rhs,pp))
+}
+
+cif.exceed <- NULL
+if (all.cifs) cif.exceed <- list() 
+se.probs <- probs <- matrix(0,length(times),length(exceed)+1)
+lower <-  matrix(0,length(times),length(exceed)+1)
+upper <-  matrix(0,length(times),length(exceed)+1)
+i <- 1
+for (n1 in exceed) {# {{{
+	i <- i+1
+	### first time that get to n1
+        if (is.null(marks.call)) keep <- (countE<n1 ) | (countE==n1 & idcount==1) else keep <- exC[,i-1]<=1 
+###	keep <- (countE<n1 ) | (firsttoE==n1)
+
+	### status, censoring, get to n1, or die
+        statN <- rep(0,nrow(data))
+        if (is.null(marks.call)) statN[countE==n1] <- 1 else statN[exC[,i-1]==1] <- 1
+	statN[statusD==1] <- 2
+	statN <- statN[keep]
+	dataN <- data[keep,]
+	dataN$statN <- statN
+
+        if (!cifmets) pN1 <-  suppressWarnings(prodlim::prodlim(form,data=dataN)) else pN1 <-  suppressWarnings(cif(form,data=dataN))
+	if (all.cifs) cif.exceed[[i-1]] <- pN1
+
+	if ((sum(statN==1)==0) | !cifmets) {
+	lower[,i] <- upper[,i] <- se.probs[,i] <- probs[,i] <- rep(0,length(times)) } else  {
+
+        where <- fast.approx(c(0,pN1$times),times,type="left")
+###     cifs <-cbind(pN1$times,vecAllStrata(pN1$cumhaz[,2],pN1$strata,pN1$nstrata))
+###     se.cifs <-cbind(pN1$times,vecAllStrata(pN1$se.cumhaz[,2],pN1$strata,pN1$nstrata))
+	probs[,i] <- c(0,pN1$mu)[where]
+	se.probs[,i] <- c(0,pN1$se.mu)[where]
+	lower[,i] <- c(0,exp(log(pN1$mu)-1.96*pN1$se.mu/pN1$mu))[where]
+	upper[,i] <- c(0,exp(log(pN1$mu)+1.96*pN1$se.mu/pN1$mu))[where]
+	}
+	if (i==2) { probs[,1]    <- 1-probs[,2]; 
+                    se.probs[,1] <- se.probs[,2]; 
+                    lower[,1] <- 1-lower[,2]; 
+                    upper[,1] <- 1-upper[,2]; 
+	}
+}# }}}
+
+if (is.null(marks.call)) {
+dp <- -t(apply(cbind(probs[,-1],0),1,diff))
+meanN <- apply(probs[,-1,drop=FALSE],1,sum)
+meanN2 <- apply(t(exceed^2 * t(dp)),1,sum)
+varN <- meanN2-meanN^2
+} else dp <- meanN <- meanN2 <- varN <- NULL
+ 
+colnames(probs) <- c(paste("N<",exceed[1],sep=""),paste("exceed>=",exceed,sep=""))
+colnames(se.probs) <- c(paste("N<",exceed[1],sep=""),paste("exceed>=",exceed,sep=""))
+
+out <- list(time=times,times=times,prob=probs,se.prob=se.probs,meanN=meanN,
+	    lower=lower,upper=upper,meanN2=meanN2,varN=varN,exceed=exceed[-1],formula=form,
+	    cif.exceed=cif.exceed)
+class(out) <- "exceed"
+return(out)
+}# }}}
+
+prob.exceed.recurrentO <- function(data,type,status="status",death="death",
+ start="start",stop="stop",id="id",times=NULL,exceed=NULL,cifmets=TRUE,strata=NULL,all.cifs=FALSE,...)
 {# {{{
 ### setting up data 
 stat <-     data[,status]
@@ -2314,931 +2146,29 @@ return(list(time=times,times=times,prob=probs,se.prob=se.probs,meanN=meanN,probs
 }# }}}
 
 ##' @export
-prob.exceedRecurrent <- function(data,type,km=TRUE,status="status",death="death",start="start",stop="stop",id="id",names.count="Count",...)
-{# {{{
-
-formdr <- as.formula(paste("Surv(",start,",",stop,",",death,")~ cluster(",id,")",sep=""))
-form1 <- as.formula(paste("Surv(",start,",",stop,",",status,"==",type,")~cluster(",id,")",sep=""))
-###
-form1C <- as.formula(paste("Surv(",start,",",stop,",",status,"==",type,")~strata(",names.count,type,")+cluster(",id,")",sep=""))
-
-dr <- phreg(formdr,data=data)
-base1   <- phreg(form1,data=data)
-base1.2 <- phreg(form1C,data=data)
-
-###cc <- base1$cox.prep
-###risk <- revcumsumstrata(cc$sign,cc$strata,cc$nstrata)
-######### risk stratified after count 1
-###cc <- base1.2$cox.prep
-###risk1 <- revcumsumstrata(cc$sign,cc$strata,cc$nstrata)
-###pstrata <- risk1/risk
-###pstrata[risk1==0] <- 0
-
-### marginal int_0^t G(s) P(N1(t-)==k|D>t) \lambda_{1,N1=k}(s) ds 
-### strata og count skal passe sammen
-  # {{{
-  strat <- dr$strata[dr$jumps]
-  x <- dr
-  xx <- x$cox.prep
-  S0i2 <- S0i <- rep(0,length(xx$strata))
-  S0i[xx$jumps+1] <-  1/x$S0
-  if (!km) { 
-     cumhazD <- c(cumsumstratasum(S0i,xx$strata,xx$nstrata)$lagsum)
-     St      <- exp(-cumhazD)
-  } else St <- c(exp(cumsumstratasum(log(1-S0i),xx$strata,xx$nstrata)$lagsum))
-  x <- base1
-  xx <- x$cox.prep
-  lss <- length(xx$strata)
-  S0i2 <- S0i <- rep(0,lss)
-  S0i[xx$jumps+1] <-  1/x$S0
-  risktot <- x$S0
-  mu <- c(cumsumstrata(St*S0i,xx$strata,xx$nstrata))
-###
-  x <- base1.2
-  xx <- x$cox.prep
-  lss <- length(xx$strata)
-###  S0i2 <- S0i <- rep(0,lss)
-###  S0i[xx$jumps+1] <-  1/x$S0
-  riskstrata <- x$S0
-  xstrata <- xx$strata
-  vals1 <- sort(unique(data[,paste("Count",type,sep="")]))
-  valjumps <- vals1[xx$strata+1]
-  fk <- (valjumps+1)^2-valjumps^2
-###  EN2 <- c(cumsumstrata(fk*St*pstrata*S0i,rep(0,lss),1))
-  EN2 <- c(cumsumstrata(fk*St*S0i,rep(0,lss),1))
-  pcumhaz <- cbind(xx$time,cumsumstrata(St*S0i,xx$strata,xx$nstrata))
-# }}}
-  EN2     <- EN2[xx$jumps+1]
-  cumhaz <- pcumhaz[xx$jumps+1,]
-  mu     <- mu[xx$jumps+1]
-  pstrata <- riskstrata/risktot
-
-  exceed.name <- paste("Exceed>=",vals1+1,sep="")
-
-  out=list(cumhaz=cumhaz,time=cumhaz[,1],varN=EN2-mu^2,mu=mu,
-	nstrata=base1.2$nstrata,strata=base1.2$strata[xx$jumps+1],
-	jumps=1:nrow(cumhaz),riskstrata=pstrata,risktot=risktot,
-	strat.cox.name=base1.2$strata.name,
-	strat.cox.level=base1.2$strata.level,exceed=vals1+1,
-        strata.name=exceed.name,strata.level=exceed.name)
-
-### use recurrentMarginal estimator til dette via strata i base1 
-### strata og count skal passe sammen
-### see beregning via recurrent marginal function
-###  base1$cox.prep$strata <- base1.2$cox.prep$strata
-###  base1$cox.prep$nstrata <- base1.2$cox.prep$nstrata
-###  base1$nstrata <- base1.2$cox.prep$nstrata
-###  base1$strata <- base1.2$strata
-###  base1$strata.name <- base1.2$strata.name
-###  base1$strata.level <- base1.2$strata.level
-
-###  mm <- recurrentMarginal(base1,dr,km=km,...)
-###  out=c(mm,list(varN=EN2-mu^2))
-
-  return(out)
-}# }}}
+plot.exceed <- function(x,types=NULL,se=1,where=0.6,legend=NULL,...) { ## {{{ 
+if (is.null(types)) types <- 1:ncol(x$prob)
+matplot(x$time,x$prob[,types],type="s",xlab="time",ylab="probabilty",xlim=range(c(0,x$times)),...)
+if (se==1) 
+for (i in types) plotConfRegion(x$time,cbind(x$lower[,i],x$upper[,i]),col=i)
+if (!is.null(where)) {
+if (is.null(legend)) legend <- colnames(x$prob)[types]
+legend(0,0.6,legend=legend,lty=types,col=types)
+}
+} ## }}}
 
 ##' @export
-prob.exceedRecurrentStrata <- function(data,type,km=TRUE,status="status",death="death",
-                start="start",stop="stop",id="id",names.count="Count",strata=NULL,...)
-{# {{{
-
-if (is.null(strata)) {
-formdr <- as.formula(paste("Surv(",start,",",stop,",",death,")~ cluster(",id,")",sep=""))
-## bring count as covariate to use later and get sorted as data 
-form1 <- as.formula(paste("Surv(",start,",",stop,",",status,"==",type,")~",names.count,type,"+cluster(",id,")",sep=""))
-} else {
-formdr <- as.formula(paste("Surv(",start,",",stop,",",death,")~strata(",strata,")+cluster(",id,")",sep=""))
-## bring count as covariate to use later and get sorted as data 
-form1 <- as.formula(paste("Surv(",start,",",stop,",",status,"==",type,")~",names.count,type,"+strata(",strata,")+cluster(",id,")",sep=""))
-}
-
-dr      <- phreg(formdr,data=data,no.opt=TRUE,no.var=1)
-base1   <- phreg(form1,data=data,no.opt=TRUE,no.var=1)
-
-### marginal int_0^t G(s) P(N1(t-)==k|D>t) \lambda_{1,N1=k}(s) ds 
-### strata og count skal passe sammen
-  # {{{
-  strat <- dr$strata[dr$jumps]
-  x <- dr
-  xx <- x$cox.prep
-  S0i2 <- S0i <- rep(0,length(xx$strata))
-  S0i[xx$jumps+1] <-  1/x$S0
-  if (!km) { 
-     cumhazD <- c(cumsumstratasum(S0i,xx$strata,xx$nstrata)$lagsum)
-     St      <- exp(-cumhazD)
-  } else St <- c(exp(cumsumstratasum(log(1-S0i),xx$strata,xx$nstrata)$lagsum))
-  x <- base1
-  xx <- x$cox.prep
-  lss <- length(xx$strata)
-  S0i2 <- S0i <- rep(0,lss)
-  S0i[xx$jumps+1] <-  1/x$S0
-  risktot <- x$S0
-  mu <- c(cumsumstrata(St*S0i,xx$strata,xx$nstrata))
-  ###
-  vals1 <- xx$X[,1]
-  fk <- (vals1+1)^2-vals1^2
-  EN2 <- c(cumsumstrata(fk*St*S0i,xx$strata,xx$nstrata))
-  inc <- St[xx$jumps+1]*S0i[xx$jumps+1]
-
-  ## new-strata names  
-  valjump <- vals1[xx$jumps+1]
-  xxs <- xx$strata[xx$jumps+1]
-  newstrata <- mystrata(list(id=xxs,exceed=valjump))
-  nnn <- !duplicated(newstrata$sindex)
-  nnstrata <- attr(newstrata,"nlevel")
-  newstrata <- newstrata$sindex
-  exceed <- valjump[nnn]+1
-  if (!is.null(strata)) 
-	  exceed.levels <- paste(base1$strata.level[xxs[nnn]+1],
-				 paste("Exceed",exceed,sep=">="),sep="-") 
-  else exceed.levels <- paste("Exceed",exceed,sep=">=")
-
-  newstrata <- as.numeric(strata(xx$strata[xx$jumps+1],valjump))-1
-  nnstrata <- length(unique(newstrata))
-  pcumhaz <- cbind(x$jumptimes,cumsumstrata(inc,newstrata,nnstrata))
-# }}}
-
-  EN2     <- EN2[xx$jumps+1]
-  mu     <- mu[xx$jumps+1]
-  cumhaz <- pcumhaz
-  pstrata <- NULL 
-
-  out=list(cumhaz=cumhaz,time=cumhaz[,1],varN=EN2-mu^2,mu=mu,
-	nstrata=nnstrata,strata=newstrata,
-	strat.cox.name=base1$strata.name,
-	strat.cox.level=base1$strata.level,exceed=exceed,
-	jumps=1:nrow(cumhaz),riskstrata=pstrata,risktot=risktot,
-        strata.name="",strata.level=exceed.levels)
-
-
-  return(out)
-}# }}}
+summary.exceed <- function(object,times=NULL,types=NULL,...) { ## {{{ 
+if (is.null(types)) types <- 1:ncol(object$prob)
+prob <- cbind(object$time,object$prob[,types])
+se <- cbind(object$time,object$se.prob[,types])
+lower <- cbind(object$time,object$lower[,types])
+upper <- cbind(object$time,object$upper[,types])
+out <- list(prob=prob,se=se,lower=lower,upper=upper)
+return(out)
+} ## }}}
 
 ##' @export
-prob.exceedBiRecurrent <- function(data,type1,type2,km=TRUE,status="status",death="death",
-      start="start",stop="stop",id="id",names.count="Count",exceed1=NULL,exceed2=NULL)
-{# {{{
+print.exceed  <- function(x,...) summary.exceed(x,...)
 
-formdr <- as.formula(paste("Surv(",start,",",stop,",",death,")~ cluster(",id,")",sep=""))
-form1 <- as.formula(paste("Surv(",start,",",stop,",",status,"==",type1,")~cluster(",id,")",sep=""))
-form2 <- as.formula(paste("Surv(",start,",",stop,",",status,"==",type2,")~cluster(",id,")",sep=""))
-###
-###form1C <- as.formula(paste("Surv(",start,",",stop,",",status,"==",type1,")~strata(",names.count,type1,",",names.count,type2,")+cluster(",id,")",sep=""))
-###form2C <- as.formula(paste("Surv(",start,",",stop,",",status,"==",type2,")~
-###  strata(",names.count,type1,",",names.count,type2,")+cluster(",id,")",sep=""))
-
-form2Ccc <- as.formula(paste("Surv(",start,",",stop,",",status,"==",type2,")~
-  ",names.count,type1,"+",names.count,type2,"+","
-  strata(",names.count,type1,",",names.count,type2,")+cluster(",id,")",sep=""))
-form1Ccc <- as.formula(paste("Surv(",start,",",stop,",",status,"==",type1,")~
-  ",names.count,type1,"+",names.count,type2,"+","
-  strata(",names.count,type1,",",names.count,type2,")+cluster(",id,")",sep=""))
-
-### stratified and with counts in covariate matrix 
-bb2.12 <- phreg(form2Ccc,data=data,no.opt=TRUE,no.var=1)
-bb1.12 <- phreg(form1Ccc,data=data,no.opt=TRUE,no.var=1)
-
-dr <- phreg(formdr,data=data)
-base1   <- phreg(form1,data=data,no.var=1)
-base2   <- phreg(form2,data=data,no.var=1)
-
-cc <- base1$cox.prep
-risk1 <- revcumsumstrata(cc$sign,cc$strata,cc$nstrata)
-###### risk stratified after count 1 og count2
-cc <- bb1.12$cox.prep
-risk1.12 <- revcumsumstrata(cc$sign,cc$strata,cc$nstrata)
-pstrata1 <- risk1.12/risk1
-pstrata1[1] <- 0
-
-cc <- base2$cox.prep
-risk2 <- revcumsumstrata(cc$sign,cc$strata,cc$nstrata)
-###### risk stratified after count 1 og count2
-cc <- bb2.12$cox.prep
-risk2.12 <- revcumsumstrata(cc$sign,cc$strata,cc$nstrata)
-pstrata2 <- risk2.12/risk2
-pstrata2[1] <- 0
-
-### marginal int_0^t G(s) P(N1(t-)==k|D>t) \lambda_{1,N1=k}(s) ds 
-### strata og count skal passe sammen
-
-  # {{{
-  strat <- dr$strata[dr$jumps]
-  Gt <- exp(-dr$cumhaz[,2])
-  ###
-  x <- dr
-  xx <- x$cox.prep
-  S0i2 <- S0i <- rep(0,length(xx$strata))
-  S0i[xx$jumps+1] <-  1/x$S0
-  if (!km) { 
-     cumhazD <- c(cumsumstratasum(S0i,xx$strata,xx$nstrata)$lagsum)
-     St      <- exp(-cumhazD)
-  } else St <- c(exp(cumsumstratasum(log(1-S0i),xx$strata,xx$nstrata)$lagsum))
-  x <- base1
-  xx <- x$cox.prep
-  lss <- length(xx$strata)
-  S0i2 <- S0i <- rep(0,lss)
-  S0i[xx$jumps+1] <-  1/x$S0
-  mu <- c(cumsumstrata(St*S0i,rep(0,lss),1))
-###
-
-  x <- bb1.12
-  xx1 <- x$cox.prep
-  lss <- length(xx$strata)
-  S0i2 <- S0i <- rep(0,lss)
-  S0i[xx1$jumps+1] <-  1/x$S0
-  dcumhaz1 <- cbind(xx1$time,pstrata1*St*S0i)
-###              cumsumstrata(pstrata1*St*S0i,xx1$strata,xx1$nstrata))
-  x <- bb2.12
-  xx2 <- x$cox.prep
-  lss <- length(xx2$strata)
-  S0i2 <- S0i <- rep(0,lss)
-  S0i[xx2$jumps+1] <-  1/x$S0
-  dcumhaz2 <- cbind(xx2$time,pstrata2*St*S0i)
-###   cumsumstrata(pstrata2*St*S0i,xx2$strata,xx2$nstrata))
-
-  n1 <- length(xx1$jumps)
-  n2 <- length(xx2$jumps)
-  ojumps <- order(c(xx1$jumps,xx2$jumps))
-  jumps <- sort(c(xx1$jumps,xx2$jumps))
-  times <- xx1$time[jumps+1]
-
-  dcumhaz1 <-  dcumhaz1[jumps+1,] 
-  dcumhaz2 <-  dcumhaz2[jumps+1,] 
-  x1 <- xx1$X[jumps+1,]
-  x2 <- xx2$X[jumps+1,]
-
-###  dcumhaz1 <- dcumhaz1[xx1$jumps+1,]
-###  dcumhaz2 <- dcumhaz2[xx2$jumps+1,]
-###  x1 <- xx1$X[xx1$jumps+1,]
-###  x2 <- xx2$X[xx2$jumps+1,]
-# }}}
-
-  if (is.null(exceed1)) exceed1 <- 1:max(x1[,1])
-  if (is.null(exceed2)) exceed2 <- 1:max(x1[,2])
-
-  pe1e2 <- matrix(0,n1+n2,length(exceed1)*length(exceed2))
-  m <- 0; nn <- c()
-  for (i in exceed1) 
-  for (j in exceed2)  {
-	  m <- m+1
-	  strat1 <- (x1[,2]>=j)*(x1[,1]==(i-1))
-	  strat2 <- (x2[,1]>=i)*(x2[,2]==(j-1))
-	  pe1e2[,m] <- cumsum(strat1*dcumhaz1[,2]) + cumsum(strat2*dcumhaz2[,2])
-	  nn <- c(nn,paste("N_1(t)>=",i,",N_2(t)>=",j,sep="")) 
-  }
-
-  colnames(pe1e2) <- nn
-
-  out=list(time=times,pe1e2=pe1e2,x1=x1,x2=x2,
-	   nstrata=base1$nstrata,
-	   strata.name=base1$strata.name,strata.level=base1$strata.levels)
-  class(out) <- "BiRecurrent"
-
-  return(out)
-}# }}}
-
-##' @export
-plot.BiRecurrent <- function(x,stratas=NULL,add=FALSE,...)
-{# {{{
-
-   strat <- x$strata
-   ## all strata
-   if (is.null(stratas)) stratas <- 0:(x$nstrata-1) 
-
-   for (s in stratas)  {
-   if (add==FALSE)
-    with(x, matplot(time[strata==s],pe1e2[strata==s,],type="s",...))
-    else 
-    with(x, matlines(time[strata==s],pe1e2[strata==s,],type="s",...))
-   nc <- ncol(x$pe1e2)
-   legend("topleft",colnames(x$pe1e2),lty=1:nc,col=1:nc)
-   }
-}# }}}
-
-
-##' @export
-prob.exceedBiRecurrentStrata <- function(data,type1,type2,km=TRUE,status="status",
-  death="death",start="start",stop="stop",id="id",names.count="Count",
-  strata=NULL,twinstrata=FALSE,exceed1=NULL,exceed2=NULL)
-{# {{{
-
-if (is.null(strata)) {
-formdr <- as.formula(paste("Surv(",start,",",stop,",",death,")~ cluster(",id,")",sep=""))
-## use count and status as covariates to use later and get sorted as data 
-form <- as.formula(paste("Surv(",start,",",stop,",",status,"!=0)~",status,"+",names.count,type1,"+",names.count,type2,"+cluster(",id,")",sep=""))
-} else {
-formdr <- as.formula(paste("Surv(",start,",",stop,",",death,")~strata(",strata,")+cluster(",id,")",sep=""))
-## use count and status as covariates to use later and get sorted as data 
-form <- as.formula(paste("Surv(",start,",",stop,",",status,"!=0)~",status,"+",
-     names.count,type1,"+",names.count,type2,"+","strata(",strata,")+cluster(",id,")",sep=""))
-	if (twinstrata) { ## to allow different strata for the two twins
-	form <- as.formula(paste("Surv(",start,",",stop,",",status,"==",type2,")~",status,"+",
-	  names.count,type1,"+",names.count,type2,"+","strata(",strata,type2,")+cluster(",id,")",sep=""))
-	}
-}
-
-dr     <- phreg(formdr,data=data)
-base   <- phreg(form,data=data,no.opt=TRUE)
-
-  # {{{
-  strat <- dr$strata[dr$jumps]
-  x <- dr
-  xx <- x$cox.prep
-  S0i2 <- S0i <- rep(0,length(xx$strata))
-  S0i[xx$jumps+1] <-  1/x$S0
-  if (!km) { 
-     cumhazD <- c(cumsumstratasum(S0i,xx$strata,xx$nstrata)$lagsum)
-     St      <- exp(-cumhazD)
-  } else St <- c(exp(cumsumstratasum(log(1-S0i),xx$strata,xx$nstrata)$lagsum))
-
-  xx <- base$cox.prep
-  lss <- length(xx$strata)
-  xxjump <- xx$jumps+1
-  S0i <-  1/base$S0
-  times <- base$jumptimes
-
-  ## jumps for N1 and N2, sorted 
-  xxstrata <- xx$strata[xxjump]
-  St <- St[xxjump]
-  statusj <- xx$X[xxjump,1]
-  count1 <- xx$X[xxjump,2]
-  count2 <- xx$X[xxjump,3]
-
-  if (is.null(exceed1)) { exceed1 <- sort(unique(count1))+1 }
-  if (is.null(exceed2)) { exceed2 <- sort(unique(count2))+1 }
-  n <- length(xxjump)
-
-  m <- 1; nn <- c(); 
-  pe1e2 <- matrix(0,n,length(exceed1)*length(exceed2))
-  for (i in exceed1) 
-  for (j in exceed2)  {
-	  escape <- (count2>=j)*(count1==(i-1))*(statusj==1)+(count1>=i)*(count2==(j-1))*(statusj==2)
-	  pe1e2[,m] <- cumsumstrata(escape*St*S0i,xxstrata,xx$nstrata)  
-	  nn <- c(nn,paste("N_1(t)>=",i,",N_2(t)>=",j,sep="")) 
-	  m <- m+1
-  }
-
-  colnames(pe1e2) <- nn
-# }}}
-
-
-  out=list(time=times,pe1e2=pe1e2,strata=xxstrata,nstrata=xx$nstrata,
-	   cumhazard=cbind(times,pe1e2), jumps=1:length(times), nstrata=xx$nstrata,
-	   strata.name=base$strata.name,strata.level=base$strata.levels)
-  class(out) <- "BiRecurrent"
-
-  return(out)
-}# }}}
-
-
-##' Estimation of covariance for bivariate recurrent events with terminal event
-##'
-##' Estimation of probability of more that k events for recurrent events process
-##' where there is terminal event 
-##'
-##' @param data data-frame
-##' @param type1 type of first event (code) related to status
-##' @param type2 type of second event (code) related to status
-##' @param status name of status 
-##' @param death  name of death indicator 
-##' @param start start stop call of Hist() of prodlim 
-##' @param stop start stop call of Hist() of prodlim 
-##' @param id  id 
-##' @param names.count name of count for number of previous event of different types, here generated by count.history()
-##' @author Thomas Scheike
-##' @references 
-##'             Scheike, Eriksson, Tribler (2019) 
-##'             The mean, variance and correlation for bivariate recurrent events
-##'             with a terminal event,  JRSS-C
-##'
-##' @examples
-##'
-##' ########################################
-##' ## getting some data to work on 
-##' ########################################
-##' data(base1cumhaz)
-##' data(base4cumhaz)
-##' data(drcumhaz)
-##' dr <- drcumhaz
-##' base1 <- base1cumhaz
-##' base4 <- base4cumhaz
-##' rr <- simRecurrentII(1000,base1,cumhaz2=base4,death.cumhaz=dr)
-##' rr <- count.history(rr)
-##' rr$strata <- 1
-##' dtable(rr,~death+status)
-##' 
-##' covrp <- covarianceRecurrent(rr,1,2,status="status",death="death",
-##'                         start="entry",stop="time",id="id",names.count="Count")
-##' par(mfrow=c(1,3)) 
-##' plot(covrp)
-##' 
-##' ### with strata, each strata in matrix column, provides basis for fast Bootstrap
-##' covrpS <- covarianceRecurrentS(rr,1,2,status="status",death="death",
-##'         start="entry",stop="time",strata="strata",id="id",names.count="Count")
-##' 
-##' @aliases plot.covariace.recurrent  covarianceRecurrentS Bootcovariancerecurrence BootcovariancerecurrenceS 
-##' @export
-covarianceRecurrent <- function(data,type1,type2,status="status",death="death",
-                   	 start="start",stop="stop",id="id",names.count="Count")
-{# {{{
-
-formdr <- as.formula(paste("Surv(",start,",",stop,",",death,")~ cluster(",id,")",sep=""))
-form1 <- as.formula(paste("Surv(",start,",",stop,",",status,"==",type1,")~cluster(",id,")",sep=""))
-form2 <- as.formula(paste("Surv(",start,",",stop,",",status,"==",type2,")~cluster(",id,")",sep=""))
-form1C <- as.formula(paste("Surv(",start,",",stop,",",status,"==",type1,")~strata(",names.count,type2,")+cluster(",id,")",sep=""))
-form2C <- as.formula(paste("Surv(",start,",",stop,",",status,"==",type2,")~strata(",names.count,type1,")+cluster(",id,")",sep=""))
-
-dr <- phreg(formdr,data=data)
-base1   <- phreg(form1,data=data)
-base1.2 <- phreg(form1C,data=data)
-base2   <- phreg(form2,data=data)
-base2.1 <- phreg(form2C,data=data)
-
-marginal.mean1 <- recmarg(base1,dr)
-marginal.mean2 <- recmarg(base2,dr)
-
-cc <- base2$cox.prep
-risk <- c(revcumsumstrata(cc$sign,cc$strata,cc$nstrata))
-###### risk stratified after count 1
-cc <- base2.1$cox.prep
-risk1 <- c(revcumsumstrata(cc$sign,cc$strata,cc$nstrata))
-ssshed1 <- risk1/risk
-ssshed1[is.na(ssshed1)] <- 1
-sshed1   <- list(cumhaz=cbind(cc$time,ssshed1),
-	      strata=cc$strata,nstrata=cc$nstrata,
-	      jumps=1:length(cc$time),
-	      strata.name=paste("prob",type1,sep=""),
-	      strata.level=base2.1$strata.level)
-riskstrata <- .Call("riskstrataR",cc$sign,cc$strata,cc$nstrata)$risk
-nrisk <- apply(riskstrata,2,revcumsumstrata,rep(0,nrow(riskstrata)),1)
-ntot <- apply(nrisk,1,sum)
-vals1 <- sort(unique(data[,paste("Count",type1,sep="")]))
-mean1risk <- apply(t(nrisk)*vals1,2,sum)/ntot
-mean1risk[is.na(mean1risk)] <- 0
-
-
-cc <- base1$cox.prep
-S0 <- rep(0,length(cc$strata))
-risk <- c(revcumsumstrata(cc$sign,cc$strata,cc$nstrata))
-###
-cc <- base1.2$cox.prep
-S0 <- rep(0,length(cc$strata))
-risk2 <- c(revcumsumstrata(cc$sign,cc$strata,cc$nstrata))
-ssshed2 <- risk2/risk
-ssshed2[is.na(ssshed2)] <- 1
-###
-sshed2  <- list(cumhaz=cbind(cc$time,ssshed2),
-	      strata=cc$strata,nstrata=cc$nstrata,
-              jumps=1:length(cc$time),
-	      strata.name=paste("prob",type2,sep=""),
-	      strata.level=base1.2$strata.level)
-###
-riskstrata <- .Call("riskstrataR",cc$sign,cc$strata,cc$nstrata)$risk
-nrisk <- apply(riskstrata,2,revcumsumstrata,rep(0,nrow(riskstrata)),1)
-ntot <- apply(nrisk,1,sum)
-vals2 <- sort(unique(data[,paste("Count",type2,sep="")]))
-mean2risk <- apply(t(nrisk)*vals2,2,sum)/ntot
-mean2risk[is.na(mean2risk)] <- 0
-
-mu1 <- cpred(rbind(c(0,0),marginal.mean1$cumhaz),cc$time)[,2]
-mu2 <- cpred(rbind(c(0,0),marginal.mean2$cumhaz),cc$time)[,2]
-
-
-out <- list(based=dr,base1=base1,base2=base2,
-	    base1.2=base1.2,base2.1=base2.1,
-	    marginal.mean1=marginal.mean1,marginal.mean2=marginal.mean2,
-	    prob1=sshed1,prob2=sshed2,
-	    mean1risk=mean1risk,mean2risk=mean2risk)
-
-### marginal sum_k int_0^t G(s) k P(N1(t-)==k|D>t) \lambda_{2,N1=k}(s) ds 
-### strata og count skal passe sammen
-  # {{{
-  strat <- dr$strata[dr$jumps]
-  Gt <- exp(-dr$cumhaz[,2])
-  ###
-  x <- dr
-  xx <- x$cox.prep
-  S0i2 <- S0i <- rep(0,length(xx$strata))
-  S0i[xx$jumps+1] <-  1/x$S0
-  cumhazD <- cbind(xx$time,cumsumstrata(S0i,xx$strata,xx$nstrata))
-  St      <- exp(-cumhazD[,2])
-###
-  x <- base1.2
-  xx <- x$cox.prep
-  lss <- length(xx$strata)
-  S0i2 <- S0i <- rep(0,lss)
-  S0i[xx$jumps+1] <-  1/x$S0
-  xstrata <- xx$strata
-  cumhazDR <- cbind(xx$time,cumsumstrata(vals2[xstrata+1]*St*ssshed2*S0i,rep(0,lss),1))
-  x <- base1
-  xx <- x$cox.prep
-  lss <- length(xx$strata)
-  S0i2 <- S0i <- rep(0,lss)
-  S0i[xx$jumps+1] <-  1/x$S0
-  cumhazIDR <- cbind(xx$time,cumsumstrata(St*mean2risk*S0i,rep(0,lss),1))
-  mu1.i <- cumhazIDR[,2]
-  mu1.2 <- cumhazDR[,2]
-###
-  x <- base2.1
-  xx <- x$cox.prep
-  lss <- length(xx$strata)
-  S0i2 <- S0i <- rep(0,lss)
-  S0i[xx$jumps+1] <-  1/x$S0
-  cumhazDR <- cbind(xx$time,cumsumstrata(vals1[xx$strata+1]*St*ssshed1*S0i,rep(0,lss),1))
-###
-  x <- base2
-  xx <- x$cox.prep
-  lss <- length(xx$strata)
-  S0i2 <- S0i <- rep(0,lss)
-  S0i[xx$jumps+1] <-  1/x$S0
-  cumhazIDR <- cbind(xx$time,cumsumstrata(St*mean1risk*S0i,rep(0,lss),1))
-  mu2.i <- cumhazIDR[,2]
-  mu2.1 <- cumhazDR[,2]
-# }}}
-
-  out=c(out,list(EN1N2= mu1.2+mu2.1,mu2.1=mu2.1,mu1.2=mu1.2, 
-		 mu2.i=mu2.i,mu1.i=mu1.i,
-		 EIN1N2=mu2.i+mu1.i,EN1EN2=mu1*mu2,time=cc$time))
-
-  class(out) <- "covariance.recurrent"
-
-  return(out)
-}# }}}
-
-##' @export
-plot.covariance.recurrent <- function(x,main="Covariance",these=1:3,...) 
-{# {{{
-
-legend <- NULL # to avoid R-check 
-
-if ( 1 %in% these) {
-	nna <- (!is.na(x$mu1.2)) & (!is.na(x$mu1.i))
-	mu1.2n <- x$mu1.2[nna]
-	mu1.in <- x$mu1.i[nna]
-	time <-  x$time[nna]
-	plot(time,mu1.2n,type="l",ylim=range(c(mu1.2n,mu1.in)),...) 
-	lines(time,mu1.in,col=2) 
-	legend("topleft",c(expression(integral(N[2](s)*dN[1](s),0,t)),"independence"),lty=1,col=1:2) 
-	title(main=main)
-}
-###
-if (2 %in% these) {
-	nna <- (!is.na(x$mu2.1)) & (!is.na(x$mu2.i))
-	mu2.1n <- x$mu2.1[nna]
-	mu2.in <- x$mu1.i[nna]
-	time <- x$time[nna]
-	plot(time,mu2.1n,type="l",ylim=range(c(mu2.1n,mu2.in)),...) 
-	lines(time,mu2.in,col=2) 
-	legend("topleft",c(expression(integral(N[1](s)*dN[2](s),0,t)),"independence"),lty=1,col=1:2) 
-	title(main=main)
-}
-###
-if (3 %in% these) {
-	nna <- (!is.na(x$EN1N2)) & (!is.na(x$EIN1N2)) & (!is.na(x$EN1EN2))
-	EN1N2n <- x$EN1N2[nna]
-	EIN1N2n <- x$EIN1N2[nna]
-	EN1EN2n <- x$EN1EN2[nna]
-	time <- x$time[nna]
-	plot(time,EN1N2n,type="l",lwd=2,ylim=range(c(EN1N2n,EN1EN2n,EIN1N2n)),...) 
-	lines(time,EN1EN2n,col=2,lwd=2) 
-	lines(time,EIN1N2n,col=3,lwd=2) 
-	legend("topleft",c("E(N1N2)", "E(N1) E(N2) ", "E_I(N1 N2)-independence"),lty=1,col=1:3)
-	title(main=main)
-}
-
-} # }}}
-
-meanRisk <- function(base1,base1.2)
-{# {{{
-cc <- base1.2$cox.prep
-S0 <- rep(0,length(cc$strata))
-mid <- max(cc$id)+1
-risk2 <- revcumsumidstratasum(cc$sign,cc$id,mid,cc$strata,cc$nstrata)$sumidstrata
-
-means <- .Call("meanriskR",cc$sign,cc$id,mid,cc$strata,cc$nstrata)
-mean2risk <- means$meanrisk
-mean2risk[is.na(mean2risk)] <- 0
-risk <- means$risk
-ssshed2 <- risk2/risk
-ssshed2[is.na(ssshed2)] <- 0
-vals2 <- unique(cc$id)
-
-means2  <- list(cumhaz=cbind(cc$time,mean2risk),
-	      strata=cc$strata,nstrata=cc$nstrata,
-              jumps=1:length(cc$time),
-	      strata.name="meansrisk",
-	      strata.level=base1.2$strata.level)
-sshed2  <- list(cumhaz=cbind(cc$time,ssshed2),
-	      strata=cc$id,nstrata=mid,
-              jumps=1:length(cc$time),
-	      strata.name="prob",
-	      strata.level=paste(vals2),real.strata=cc$strata)
-
-return(list(meanrisk=means2,vals=vals2,probs=sshed2,jumps=cc$jumps+1))
-}# }}}
-
-intN2dN1 <- function(dr,base1,base1.2,pm)
-{# {{{
-  x <- dr
-  xx <- x$cox.prep
-  S0i2 <- S0i <- rep(0,length(xx$strata))
-  S0i[xx$jumps+1] <-  1/x$S0
-  cumhazD <- cbind(xx$time,cumsumstrata(S0i,xx$strata,xx$nstrata))
-  St      <- exp(-cumhazD[,2])
-###
-  x <- base1.2
-  xx <- x$cox.prep
-  xstrata <- xx$id
-  jumps <- xx$jumps+1
-  mid <- max(xx$id)+1
-  ## risk after both id~Count and strata 
-  risk2 <- revcumsumidstratasum(xx$sign,xx$id,mid,xx$strata,xx$nstrata)$sumidstrata
-  S0i <-  1/risk2[jumps]
-  vals <- xx$id[jumps]
-  St <- St[jumps]
-  probs <- pm$probs$cumhaz[jumps,2]
-  cumhazDR <- cbind(xx$time[jumps],cumsumstrata(St*vals*probs*S0i,xx$strata[jumps],xx$nstrata))
-  x <- base1
-  xx <- x$cox.prep
-  S0i <-  c(1/x$S0)
-  meanrisk <- pm$meanrisk$cumhaz[jumps,2]
-  cumhazIDR <- cbind(xx$time[jumps],cumsumstrata(St*meanrisk*S0i,xx$strata[jumps],xx$nstrata))
-  mu1.i <- cumhazIDR[,2]
-  mu1.2 <- cumhazDR[,2]
-  return(list(cumhaz=cumhazDR,cumhazI=cumhazIDR,mu1.i=mu1.i,mu1.2=mu1.2,
-	      time=cumhazDR[,1],
-	      strata=xx$strata[jumps],nstrata=xx$nstrata,jumps=1:length(mu1.i),
-	      strata.name="intN2dN1",strata.level=x$strata.level))
-}# }}}
-
-recmarg2 <- function(recurrent,death,...)
-{# {{{
-  xr <- recurrent
-  dr <- death 
-
-  ### marginal expected events  int_0^t G(s) \lambda_r(s) ds 
-  # {{{
-  x <- dr
-  xx <- x$cox.prep
-  S0i2 <- S0i <- rep(0,length(xx$strata))
-  S0i[xx$jumps+1] <- 1/x$S0
-  cumhazD <- cbind(xx$time,cumsumstrata(S0i,xx$strata,xx$nstrata))
-  St      <- exp(-cumhazD[,2])
-  ###
-  x <- xr
-  xx <- x$cox.prep
-###  S0i2 <- S0i <- rep(0,length(xx$strata))
-  S0i <-  1/x$S0
-  jumps <- xx$jumps+1
-  cumhazDR <- cbind(xx$time[jumps],cumsumstrata(St[jumps]*S0i,xx$strata[jumps],xx$nstrata))
-  mu <- cumhazDR[,2]
-# }}}
-
- varrs <- data.frame(mu=mu,time=cumhazDR[,1],strata=xr$strata[jumps],St=St[jumps])
- out <- list(mu=varrs$mu,times=varrs$time,St=varrs$St,cumhaz=cumhazDR,
-     strata=varrs$strata,nstrata=xr$nstrata,jumps=1:nrow(varrs),
-     strata.name=xr$strata.name)
- return(out)
-}# }}}
-
-##' @export
-covarianceRecurrentS <- function(data,type1,type2,times=NULL,status="status",death="death",
-                   	 start="start",stop="stop",id="id",names.count="Count",
-			 strata="NULL",plot=0,output="matrix")
-{# {{{
-
-
-if (is.null(times)) times <- seq(0,max(data[,stop]),length=100)
-
-### passing strata as id to be able to use for stratified calculations 
-if (is.null(strata)) stop("must give strata, for example one strata\n"); 
-## uses Counts1 as cluster to pass to risk set calculations 
-
-
-formdr <- as.formula(paste("Surv(",start,",",stop,",",death,")~strata(",strata,")",sep=""))
-form1 <- as.formula(paste("Surv(",start,",",stop,",",status,"==",type1,")~strata(",strata,")",sep=""))
-form2 <- as.formula(paste("Surv(",start,",",stop,",",status,"==",type2,")~strata(",strata,")",sep=""))
-###
-form1C <- as.formula(paste("Surv(",start,",",stop,",",status,"==",type1,")~cluster(",names.count,type2,")+strata(",strata,")",sep=""))
-form2C <- as.formula(paste("Surv(",start,",",stop,",",status,"==",type2,")~cluster(",names.count,type1,")+strata(",strata,")",sep=""))
-
-
-dr <- phreg(formdr,data=data)
-###basehazplot.phreg(dr)
-###
-base1   <- phreg(form1,data=data)
-base1.2 <- phreg(form1C,data=data)
-###
-base2   <- phreg(form2,data=data)
-base2.1 <- phreg(form2C,data=data)
-
-rm1 <- recmarg2(base1,dr)
-rm2 <- recmarg2(base2,dr)
-if (plot==1) {
-basehazplot.phreg(rm1)
-basehazplot.phreg(rm2)
-}
-
-
-pm1 <- meanRisk(base2,base2.1)
-pm2 <- meanRisk(base1,base1.2)
-if (plot==1) {
-basehazplot.phreg(pm1$meanrisk)
-basehazplot.phreg(pm2$meanrisk)
-}
-
-
-### marginal sum_k int_0^t G(s) k P(N1(t-)==k|D>t) \lambda_{2,N1=k}(s) ds 
-###          sum_k int_0^t G(s) E(N1(t-)==k|D>t)   \lambda_{2}(s) ds 
-iN2dN1 <-  intN2dN1(dr,base1,base1.2,pm2)
-iN1dN2 <-  intN2dN1(dr,base2,base2.1,pm1)
-
-###print("hej")
-if (plot==1) {
-par(mfrow=c(2,2))
-basehazplot.phreg(iN2dN1)
-plot(iN2dN1$time,iN2dN1$cumhazI[,2],type="l")
-basehazplot.phreg(iN1dN2)
-}
-
-#### writing output in matrix form for each strata for the times
-mu1g <- matrix(0,length(times),rm1$nstrata)
-mu2g <- matrix(0,length(times),rm1$nstrata)
-mu1.2 <- matrix(0,length(times),rm1$nstrata)
-mu2.1 <- matrix(0,length(times),rm1$nstrata)
-mu1.i <- matrix(0,length(times),rm1$nstrata)
-mu2.i <- matrix(0,length(times),rm1$nstrata)
-mu1 <- matrix(0,length(times),rm1$nstrata)
-mu2 <- matrix(0,length(times),rm1$nstrata)
-
-if (output=="matrix") {
-all <- c()
-i <- 1
-### going through strata 
-for (i in 1:rm1$nstrata) {
-	j <- i-1
-	mu1[,i]   <- cpred(rm1$cumhaz[rm1$strata==j,],times)[,2]
-	mu2[,i]   <- cpred(rm2$cumhaz[rm2$strata==j,],times)[,2]
-	mu1.2[,i] <- cpred( iN2dN1$cumhaz[rm1$strata==j,],times)[,2]
-	mu1.i[,i] <- cpred(iN2dN1$cumhazI[rm1$strata==j,],times)[,2]
-	mu2.1[,i] <- cpred( iN1dN2$cumhaz[rm2$strata==j,],times)[,2]
-	mu2.i[,i] <- cpred(iN1dN2$cumhazI[rm2$strata==j,],times)[,2]
-}
-mu1mu2 <- mu1*mu2
-
-out=c(list(EN1N2=mu1.2+mu2.1, EIN1N2=mu1.i+mu2.i, EN1EN2=mu1mu2,
-	   mu1.2=mu1.2, mu1.i=mu1.i, mu2.1=mu2.1, mu2.i=mu2.i,
-	   mu1=mu1,mu2=mu2, nstrata=rm1$nstrata, time=times))
-
-} else out <- list(iN2dN1=iN2dN1,iN1dN2=iN1dN2,rm1=rm1,rm2=rm2,pm1=pm1,pm2=pm2)
-
-
-  return(out)
-}# }}} 
-
-##' @export
-BootcovariancerecurrenceS <- function(data,type1,type2,status="status",death="death",
-	 start="start",stop="stop",id="id",names.count="Count",times=NULL,K=100)
-{# {{{
-
-
-  if (is.null(times)) times <- seq(0,max(data[,stop]),length=100)
-  mu1.2 <- matrix(0,length(times),K)
-  mu2.1 <- matrix(0,length(times),K)
-  mu1.i <- matrix(0,length(times),K)
-  mu2.i <- matrix(0,length(times),K)
-  mupi <- matrix(0,length(times),K)
-  mupg <- matrix(0,length(times),K)
-  mu1mu2 <- matrix(0,length(times),K)
-  n <- length(unique(data[,id]))
-
-  formid <- as.formula(paste("~",id))
-  rrb <- blocksample(data, size = n*K, formid)
-  rrb$strata <- floor((rrb[,id]-0.01)/n)
-  rrb$jump <- (rrb[,status] %in% c(type1,type2)) | (rrb[,death]==1)
-  rrb <- tie.breaker(rrb,status="jump",start=start,stop=stop,id=id)
-
-  mm <- covarianceRecurrentS(rrb,type1,type2,status=status,death=death,
- 	               start=start,stop=stop,id=id,names.count=names.count,
-		       strata="strata",times=times)
-
-  mm <- c(mm,list(se.mui=apply(mm$EIN1N2,1,sd),se.mug=apply(mm$EN1N2,1,sd)))
-  return(mm)
-
-}# }}}
-
-##' @export
-Bootcovariancerecurrence <- function(data,type1,type2,status="status",death="death",
-	 start="start",stop="stop",id="id",names.count="Count",times=NULL,K=100)
-{# {{{
-
-  strata <- NULL # to avoid R-check 
-
-  if (is.null(times)) times <- seq(0,max(data[,stop]),length=100)
-  mu1.2 <- matrix(0,length(times),K)
-  mu2.1 <- matrix(0,length(times),K)
-  mu1.i <- matrix(0,length(times),K)
-  mu2.i <- matrix(0,length(times),K)
-  mupi <- matrix(0,length(times),K)
-  mupg <- matrix(0,length(times),K)
-  mu1mu2 <- matrix(0,length(times),K)
-  n <- length(unique(data[,id]))
-
-  formid <- as.formula(paste("~",id))
-  rrb <- blocksample(data, size = n*K, formid)
-  rrb$strata <- floor((rrb[,id]-0.01)/n)
-## rrb$jump <- (rrb[,status]!=0) | (rrb[,death]==1)
-  rrb$jump <- (rrb[,status] %in% c(type1,type2)) | (rrb[,death]==1)
-  rrb <- tie.breaker(rrb,status="jump",start=start,stop=stop,id=id)
-
-  for (i in 1:K)
-  {
-     rrbs <- subset(rrb,strata==i-1)
-     errb <- covarianceRecurrent(rrbs,type1,type2,status=status,death=death,
- 	                          start=start,stop=stop,id=id,names.count=names.count)
-     all <- cpred(cbind(errb$time,errb$EIN1N2,errb$EN1N2,errb$EN1EN2,
-			errb$mu1.2,errb$mu2.1,errb$mu1.i,errb$mu2.i),times)
-     mupi[,i]   <- all[,2]
-     mupg[,i]   <- all[,3]
-     mu1mu2[,i] <- all[,4]
-     mu1.2[,i]  <- all[,5]; 
-     mu2.1[,i]  <- all[,6]; 
-     mu1.i[,i]  <- all[,7]; 
-     mu2.i[,i]  <- all[,8]
-  }
-
-return(list(mupi=mupi,mupg=mupg,mu1mu2=mu1mu2,time=times,
-	    EN1N2=mupg,EIN1N2=mupi,EN1EN=mu1mu2,
-	    mu1.2=mu1.2,mu1.i=mu1.i,mu2.1=mu2.1,mu2.i=mu1.i,
-	    mup=apply(mupi,1,mean),mug=apply(mupg,1,mean),
-	    dmupg=apply(mupg-mupi,1,mean),mmu1mu2=apply(mu1mu2,1,mean), 
-	    se.mui=apply(mupi,1,sd),se.mug=apply(mupg,1,sd)
-	    ))
-}# }}}
-
-iidCovarianceRecurrent <-  function (rec1,death,xrS,xr,means)
-{# {{{
-    ### makes iid decompition for covariance under independence between events
-    axr <- rec1
-    adr <- death
-    St <- exp(-adr$cum[, 2])
-    timesr <- axr$cum[, 1]
-    timesd <- adr$cum[, 1]
-    times <- c(timesr[-1], timesd[-1])
-    or <- order(times)
-    times <- times[or]
-    meano <- cbind(means$time,means$mean2risk)
-###    imeano <- sindex.prodlim(means$time, times, strict = FALSE)
-    imeano <- fast.approx(means$time, times, type="left")
-    meano <- meano[imeano,2]
-    keepr <- order(or)[1:length(timesr[-1])]
-###    rid <- sindex.prodlim(timesd, times, strict = FALSE)
-    rid <- fast.approx(timesd, times, type="left")
-###    rir <- sindex.prodlim(timesr, times, strict = FALSE)
-    rir <- fast.approx(timesr, times, type="left")
-    Stt <- St[rid]
-    ariid <- axr$cum[rir, 2]
-    mu <- cumsum(meano * Stt * diff(c(0, ariid)))
-    muS <- cumsum( Stt * diff(c(0, ariid)))
-    nc <- length(axr$B.iid)
-    muiid <- matrix(0, length(times), nc)
-
-   cc <- xrS$cox.prep
-   rrs <- .Call("riskstrataR",cc$sign*cc$strata,cc$id,max(cc$id)+1)$risk
-   rr <- .Call("riskstrataR",cc$sign,cc$id,max(cc$id)+1)$risk
-   ntot <- revcumsumstrata(cc$sign,rep(0,nrow(rr)),1)
-   rr  <- apply(rr,2,revcumsumstrata,rep(0,nrow(rr)),1)
-   rrs <- apply(rrs,2,revcumsumstrata,rep(0,nrow(rr)),1)
-
-###   xrid <- sindex.prodlim(cc$time, times, strict = FALSE)
-   xrid <- fast.approx(cc$time, times, type="left")
-   rr <- rr[xrid,]
-   rrs <- rrs[xrid,]
-   ntot <- ntot[xrid]
-   rrs <- apply(Stt* diff(c(0,ariid))*rrs,2,cumsum)
-   rrcum <- apply(Stt*meano*diff(c(0,ariid))*rr,2,cumsum)
-   miid <- (rrs-rrcum)/ntot
-
-    for (i in 1:nc) {
-        mriid <- axr$B.iid[[i]]
-        mdiid <- adr$B.iid[[i]]
-        mriid <- mriid[rir]
-        mdiid <- mdiid[rid]
-        dmridd <- diff(c(0, mriid))
-        dmdidd <- diff(c(0, mdiid))
-        muiid[, i] <- cumsum(Stt * meano* dmridd) - mu * cumsum(dmdidd) + cumsum(mu * dmdidd) +  miid[,i]
-    }
-    var1 <- apply(muiid^2, 1, sum)
-    se.mu <- var1[keepr]^0.5
-    mu = mu[keepr]
-    timeso <- times
-    times <- times[keepr]
-
-    out = list(iidtimes=timeso,muiid=muiid,times=times, 
-        mu = mu, var.mu = var1[keepr], se.mu = se.mu, St = St, Stt = Stt[keepr], 
-	cumhaz=cbind(times,mu),se.cumhaz=cbind(times,se.mu), 
-	nstrata=1,strata=rep(0,length(mu)),jumps=1:length(mu)) 
-
-}# }}} 
 

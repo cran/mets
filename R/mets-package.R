@@ -17,8 +17,8 @@
 ##'   eventTime Expand getoutcome gof intercept<- Inverse kill<- latent latent<-
 ##'   lava.options lvm Model multigroup parameter<- pars regression regression<-
 ##'   revdiag trim IC expit logit
-##' @importFrom survival Surv is.Surv concordance strata finegray 
-##' @importFrom timereg two.stage predict.two.stage sindex.prodlim 
+##' @importFrom survival Surv is.Surv concordance strata cluster finegray
+##' @importFrom timereg two.stage predict.two.stage
 ##' @importFrom utils head tail getS3method glob2rx capture.output
 ##' @importFrom graphics matplot lines plot polygon par points abline title
 ##'   matlines legend
@@ -35,6 +35,9 @@ NULL
 lava::IC
 
 ##' @export
+lava::iid
+
+##' @export
 lava::twostage
 
 ##' @export
@@ -42,6 +45,15 @@ lava::estimate
 
 ##' @export
 lava::gof
+
+##' @export
+survival::strata
+
+##' @export
+survival::Surv
+
+##' @export
+survival::cluster
 
 ##' np data set
 ##'
@@ -98,6 +110,17 @@ NULL
 ##' @docType data
 ##' @keywords data
 ##' @format Data from smart design
+##' id: id of subject
+##' status : 1-death, 2-response for second randomization, 0-censoring
+##' A0 : treament at first randomization
+##' A1 : treament at second randomization
+##' At.f : treament given at record (A0 or A1)
+##' TR : time of response 
+##' sex : 0-males, 1-females 
+##' consent: 1 if agrees to 2nd randomization, censored if not
+##' R: 1 if response 
+##' trt1: A0
+##' trt2: A1
 ##' @source  https://github.com/ycchao/code_Joint_model_SMART
 ##' @examples
 ##' data(calgb8923)
@@ -117,14 +140,18 @@ NULL
 
 ##' hfaction, subset of block randmized study HF-ACtion from WA package  
 ##'
-##' Data from HF-action trial slightly modified from WA package
-##' @name hfaction_cpx12
+##' Data from HF-action trial slightly modified from WA package,
+##' consisting of 741 nonischemic patients with baseline
+##' cardiopulmonary test duration less than or equal to 12 minutes.
+##' @name hfactioncpx12
 ##' @docType data
 ##' @keywords data
 ##' @format Randomized study 
+##' status : 1-event, 2-death, 0-censoring
+##' treatment : 1/0
 ##' @source  WA package, Connor et al. 2009
 ##' @examples
-##' data(hfaction_cpx12)
+##' data(hfactioncpx12)
 NULL
 
 

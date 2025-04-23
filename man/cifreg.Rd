@@ -8,18 +8,18 @@
 \alias{FGprediid}
 \alias{indexstratarightR}
 \alias{gofFG}
+\alias{cifregO}
+\alias{cifregFG}
+\alias{IIDbaseline.cifregO}
 \title{CIF regression}
 \usage{
 cifreg(
   formula,
-  data = data,
+  data,
+  propodds = 1,
   cause = 1,
   cens.code = 0,
-  cens.model = ~1,
-  weights = NULL,
-  offset = NULL,
-  Gc = NULL,
-  propodds = 1,
+  no.codes = NULL,
   ...
 )
 }
@@ -28,42 +28,35 @@ cifreg(
 
 \item{data}{data frame}
 
+\item{propodds}{to fit logit link model, and propodds=NULL to fit Fine-Gray model}
+
 \item{cause}{of interest}
 
 \item{cens.code}{code of censoring}
 
-\item{cens.model}{for stratified Cox model without covariates}
+\item{no.codes}{certain event codes to be ignored when finding competing causes}
 
-\item{weights}{weights for FG score equations}
-
-\item{offset}{offsets for FG  model}
-
-\item{Gc}{censoring weights for time argument, default is to calculate these with a Kaplan-Meier estimator, should then give G_c(T_i-)}
-
-\item{propodds}{1 is logistic model, NULL is fine-gray model}
-
-\item{...}{Additional arguments to lower level funtions}
+\item{...}{Additional arguments to recreg}
 }
 \description{
-CIF logistic for propodds=1 default
-CIF Fine-Gray (cloglog) regression for propodds=NULL
+CIF logistic-link for propodds=1 default and CIF Fine-Gray (cloglog) regression for propodds=NULL. The
+FG model can also be called using the cifregFG function that has propodds=NULL.
 }
 \details{
 For FG model:
 \deqn{
 \int (X - E ) Y_1(t) w(t) dM_1
 }
-is computed and summed over clusters  and returned multiplied with inverse
-of second derivative as iid.naive. Where \deqn{w(t) = G(t) (I(T_i \wedge t < C_i)/G_c(T_i \wedge t))} and
-\deqn{E(t) = S_1(t)/S_0(t)} and \deqn{S_j(t) = \sum X_i^j Y_{i1}(t) w_i(t) \exp(X_i^T \beta)}
-
+is computed and summed over clusters and returned multiplied with inverse
+of second derivative as iid.naive. Here \deqn{w(t) = G(t) (I(T_i \wedge t < C_i)/G_c(T_i \wedge t))} and
+\deqn{E(t) = S_1(t)/S_0(t)} and \deqn{S_j(t) = \sum X_i^j Y_{i1}(t) w_i(t) \exp(X_i^T \beta)}.
 
 The iid decomposition of the beta's, however, also have a censoring term that is also
-is computed and added to UUiid (still scaled with inverse second derivative)
+is computed and added (still scaled with inverse second derivative)
 \deqn{
 \int (X - E ) Y_1(t) w(t) dM_1 + \int q(s)/p(s) dM_c
 }
-and returned as iid
+and returned as the iid 
 
 For logistic link standard errors are slightly to small since uncertainty from recursive baseline is not considered, so for smaller
 data-sets it is recommended to use the prop.odds.subdist of timereg that is also more efficient due to use of different weights for
@@ -71,38 +64,41 @@ the estimating equations. Alternatively, one can also bootstrap the standard err
 }
 \examples{
 ## data with no ties
+library(mets)
 data(bmt,package="timereg")
 bmt$time <- bmt$time+runif(nrow(bmt))*0.01
 bmt$id <- 1:nrow(bmt)
 
 ## logistic link  OR interpretation
-ll=cifreg(Event(time,cause)~tcell+platelet+age,data=bmt,cause=1)
-summary(ll)
-plot(ll)
+or=cifreg(Event(time,cause)~tcell+platelet+age,data=bmt,cause=1)
+summary(or)
+par(mfrow=c(1,2))
+plot(or)
 nd <- data.frame(tcell=c(1,0),platelet=0,age=0)
-pll <- predict(ll,nd)
-plot(pll)
+por <- predict(or,nd)
+plot(por)
 
 ## Fine-Gray model
-fg=cifreg(Event(time,cause)~tcell+platelet+age,data=bmt,cause=1,propodds=NULL)
+fg=cifregFG(Event(time,cause)~tcell+platelet+age,data=bmt,cause=1)
 summary(fg)
 plot(fg)
 nd <- data.frame(tcell=c(1,0),platelet=0,age=0)
-pfg <- predict(fg,nd)
-plot(pfg)
+pfg <- predict(fg,nd,se=1)
+plot(pfg,se=1)
 
 ## not run to avoid timing issues
 ## gofFG(Event(time,cause)~tcell+platelet+age,data=bmt,cause=1)
 
-sfg <- cifreg(Event(time,cause)~strata(tcell)+platelet+age,data=bmt,cause=1,propodds=NULL)
+sfg <- cifregFG(Event(time,cause)~strata(tcell)+platelet+age,data=bmt,cause=1)
 summary(sfg)
 plot(sfg)
 
 ### predictions with CI based on iid decomposition of baseline and beta
-fg <- cifreg(Event(time,cause)~tcell+platelet+age,data=bmt,cause=1,propodds=NULL,cox.prep=TRUE)
+### these are used in the predict function above
+fg <- cifregFG(Event(time,cause)~tcell+platelet+age,data=bmt,cause=1)
 Biid <- IIDbaseline.cifreg(fg,time=20)
-FGprediid(Biid,bmt[1:5,])
-
+pfg1 <- FGprediid(Biid,nd)
+pfg1
 }
 \author{
 Thomas Scheike

@@ -40,6 +40,18 @@ set.seed(101)
      plot(rmc1,cause=2,se=1)
 
 ## -----------------------------------------------------------------------------
+estimate(out)
+
+measures <- function(p) {
+ ratio1 <- p[1]/p[2]; ratio2 <- p[2]/p[1]; dif1 <- p[4]-p[1]; dif2 <- p[3]-p[1]
+ m <- c(dif1,dif2,ratio1,ratio2)
+ return(m)
+}
+
+ labs <- c("dif4-1","dif3-1","ratio 1/2","ratio 2/1")
+ estimate(out,f=measures,labels=labs)
+
+## -----------------------------------------------------------------------------
  dfactor(bmt) <- tcell~tcell
  bmt$event <- (bmt$cause!=0)*1
  out <- resmeanATE(Event(time,event)~tcell+platelet,data=bmt,time=40,treat.model=tcell~platelet)

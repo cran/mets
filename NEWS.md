@@ -1,6 +1,14 @@
+# mets 1.3.6
+  - While-alive estimation : `WA_recurrent` 
+  - Marks for medical cost models : `recreg` `recregIPCW`
+  - New default augmentation for `binreg` `resmeanIPCW` type="II", type="I" simple outcome IPCW
+  - New version of `recreg` and `cifreg` `cifregFG` old versions `recregO` and `cifregO`
+     - plot, summary, predict for these functions
+  - New call for `recurentMarginal` based on formula, old version `recurentMarginalPhreg`
+
 # mets 1.3.5
   - `sim.phreg` and `sim.recurrent` for simulations 
-  - combining `binreg`, `binregATE` with `resmeanIPCW` and `resmeanATE`
+  - Combining `binreg`, `binregATE` with `resmeanIPCW` and `resmeanATE`
 
 # mets 1.3.4
   - Maintenance release
@@ -12,7 +20,7 @@
 
 # mets 1.3.2
   - Extension of `recreg` (Ghosh-Lin model) to deal with composite outcomes.
-  - recurrent events regression with IPCW adjustment for fixed time point: `recregIPCW`
+  - Recurrent events regression with IPCW adjustment for fixed time point: `recregIPCW`
   - Efficient Ghosh-Lin modelling using dynamic regression augmentation.
 
 # mets 1.3.1

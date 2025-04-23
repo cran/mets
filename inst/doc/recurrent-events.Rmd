@@ -53,13 +53,6 @@ bivariate recurrent events data, also with a possible terminating event:
    * frailty extenstions
  * The general illness death model with  cox models for all hazards. 
 
-For bivariate recurrent events we also compute summary measures that describe their
-dependence such as 
-
- * the covariance 
- * directional dependence 
- * the bivariate probability of exceeding $(k_1,k_2)$ events
-
 
 Simulation of recurrents events
 ==============================
@@ -185,7 +178,6 @@ We start by generating some data to illustrate the computation of the marginal m
 
 ```{r}
 library(mets)
-library(timereg)
 set.seed(1000) # to control output in simulatins for p-values below.
 ```
 
@@ -215,16 +207,16 @@ error computation in the recurrentMarginal function
 xr <- phreg(Surv(entry,time,status)~cluster(id),data=rr)
 dr <- phreg(Surv(entry,time,death)~cluster(id),data=rr)
 par(mfrow=c(1,3))
-bplot(dr,se=TRUE)
+plot(dr,se=TRUE)
 title(main="death")
-bplot(xr,se=TRUE)
+plot(xr,se=TRUE)
 # robust standard errors 
 rxr <-   robust.phreg(xr,fixbeta=1)
-bplot(rxr,se=TRUE,robust=TRUE,add=TRUE,col=4)
+plot(rxr,se=TRUE,robust=TRUE,add=TRUE,col=4)
 
 # marginal mean of expected number of recurrent events 
-out <- recurrentMarginal(xr,dr)
-bplot(out,se=TRUE,ylab="marginal mean",col=2)
+out <- recurrentMarginal(Event(entry,time,status)~cluster(id),data=rr,cause=1,death.code=2)
+plot(out,se=TRUE,ylab="marginal mean",col=2)
 ```
 
 We can also extract the estimate in different time-points 
@@ -239,14 +231,15 @@ The marginal mean can also be estimated in a stratified case:
 xr <- phreg(Surv(entry,time,status)~strata(strata)+cluster(id),data=rr)
 dr <- phreg(Surv(entry,time,death)~strata(strata)+cluster(id),data=rr)
 par(mfrow=c(1,3))
-bplot(dr,se=TRUE)
+plot(dr,se=TRUE)
 title(main="death")
-bplot(xr,se=TRUE)
+plot(xr,se=TRUE)
 rxr <-   robust.phreg(xr,fixbeta=1)
-bplot(rxr,se=TRUE,robust=TRUE,add=TRUE,col=1:2)
+plot(rxr,se=TRUE,robust=TRUE,add=TRUE,col=1:2)
 
-out <- recurrentMarginal(xr,dr)
-bplot(out,se=TRUE,ylab="marginal mean",col=1:2)
+out <- recurrentMarginal(Event(entry,time,status)~strata(strata)+cluster(id),
+			 data=rr,cause=1,death.code=2)
+plot(out,se=TRUE,ylab="marginal mean",col=1:2)
 ```
 
 Further, if we adjust for covariates for the two rates we can still do
@@ -260,18 +253,19 @@ solely for predictions without standard error computation).
 xr <- phreg(Surv(entry,time,status)~x+cluster(id),data=rr)
 dr <- phreg(Surv(entry,time,death)~x+cluster(id),data=rr)
 par(mfrow=c(1,3))
-bplot(dr,se=TRUE)
+plot(dr,se=TRUE)
 title(main="death")
-bplot(xr,se=TRUE)
+plot(xr,se=TRUE)
 rxr <- robust.phreg(xr)
-bplot(rxr,se=TRUE,robust=TRUE,add=TRUE,col=1:2)
+plot(rxr,se=TRUE,robust=TRUE,add=TRUE,col=1:2)
 
-out <- recurrentMarginal(xr,dr)
-bplot(out,se=TRUE,ylab="marginal mean",col=1:2)
+out <- recurrentMarginalPhreg(xr,dr)
+plot(out,se=TRUE,ylab="marginal mean",col=1:2)
 
-# predictions witout se's 
-outX <- recmarg(xr,dr,Xr=1,Xd=1)
-bplot(outX,add=TRUE,col=3)
+#### predictions witout se's 
+###outX <- recmarg(xr,dr,Xr=1,Xd=1)
+###plot(outX,add=TRUE,col=3)
+
 ```
 
 Here I simulate multiple types and two causes of death causes of death 
@@ -299,10 +293,10 @@ rr <- transform(rr,statusD=status)
 rr <- dtransform(rr,statusD=3,death==1)
 dtable(rr,~statusD+status+death,level=2,response=1)
 
-xr <- phreg(Surv(start,stop,status==1)~cluster(id),data=rr)
-dr <- phreg(Surv(start,stop,death)~cluster(id),data=rr)
+##xr <- phreg(Surv(start,stop,status==1)~cluster(id),data=rr)
+##dr <- phreg(Surv(start,stop,death)~cluster(id),data=rr)
 # marginal mean of expected number of recurrent events 
-out <- recurrentMarginal(xr,dr)
+out <- recurrentMarginal(Event(start,stop,statusD)~cluster(id),data=rr,cause=1,death.code=3)
 
 times <- 500*(1:10)
 recEFF1 <- recurrentMarginalAIPCW(Event(start,stop,statusD)~cluster(id),data=rr,times=times,cens.code=0,
@@ -318,7 +312,7 @@ recEFF14 <- recurrentMarginalAIPCW(Event(start,stop,statusD)~cluster(id),data=rr
 death.code=3,cause=1,augment.model=~Nt+I(Nt^2)+I(exp(-Nt))+ I( Nt*exp(-Nt)))
 with(recEFF14,cbind(times,muP,semuP,muPAt,semuPAt,semuPAt/semuP))
 
-bplot(out,se=TRUE,ylab="marginal mean",col=2)
+plot(out,se=TRUE,ylab="marginal mean",col=2)
 k <- 1
 for (t in times) {
 	ci1 <- c(recEFF1$muPAt[k]-1.96*recEFF1$semuPAt[k],
@@ -354,10 +348,8 @@ recEFF1x <- recurrentMarginalAIPCW(Event(start,stop,statusD)~cluster(id),data=rr
 				   cens.code=0,death.code=3,cause=1,augment.model=~X1+X2)
 with(recEFF1x, cbind(muP,muPA,muPAt,semuP,semuPA,semuPAt,semuPAt/semuP))
 
-xr <- phreg(Surv(start,stop,status==1)~cluster(id),data=rr)
-dr <- phreg(Surv(start,stop,death)~cluster(id),data=rr)
-out <- recurrentMarginal(xr,dr)
-mets::summaryTimeobject(out$times,out$mu,times=times,se.mu=out$se.mu)
+out <- recurrentMarginal(Event(start,stop,statusD)~cluster(id),data=rr,cause=1,death.code=3)
+summary(out,times=times)
 ```
 
 Regression models for the marginal mean 
@@ -392,8 +384,8 @@ rr <- cbind(rr,X[rr$id+1,])
 
  ## checking baseline
  par(mfrow=c(1,1))
- bplot(out)
- bplot(outs,add=TRUE,col=2)
+ plot(out)
+ plot(outs,add=TRUE,col=2)
  lines(scalecumhaz(base1,1),col=3,lwd=2)
 ```
 
@@ -442,9 +434,9 @@ and with weights  $w_1,w_2$ that follow the causes, here 1 and 3.
 		  death.code=c(3,4),cens.code=0,wcomp=c(1,2))
  summary(outCW)$coef
 
- bplot(out,ylab="Mean composite")
- bplot(outC,col=2,add=TRUE)
- bplot(outCW,col=3,add=TRUE)
+ plot(out,ylab="Mean composite")
+ plot(outC,col=2,add=TRUE)
+ plot(outCW,col=3,add=TRUE)
 ```
 
 Predictions and standard errors can be computed via the iid decompositions of the baseline and the regression coefficients. We illustrate this
@@ -474,18 +466,55 @@ previous number of events so it would suffice to augment only with the covariate
 Two-stage modelling 
 ====================
 
-Above we simulated data with a terminal event on Cox form and recurrent events
-satisfying the Ghosh-Lin model.
+We simulate data with a terminal event on Cox form and recurrent events
+satisfying the Ghosh-Lin model or having a rate on Cox form.
 
-Now we fit the two-stage model (the recreg must be called with cox.prep=TRUE)
+ - type=3 is Ghosh-Lin model for recurrent events and Cox for terminal event.
+ - type=2 is Cox model for recurrent events among survivors and Cox for terminal event.
+ - simulations based on time-grid to make linear approximations of cumulative hazards
+
+Now we fit the two-stage model (the recreg must be called with twostage=TRUE)
 
 ```{r}
- out  <- recreg(Event(start,stop,statusD)~X1+X2+cluster(id),data=rr,
-		cause=1,death.code=3,cens.code=0,cox.prep=TRUE)
- outs <- phreg(Event(start,stop,statusD==3)~X1+X2+cluster(id),data=rr)
-
- tsout <- twostageREC(outs,out,data=rr)
- summary(tsout)
+set.seed(100)
+n <- 200
+X <- matrix(rbinom(n*2,1,0.5),n,2)
+colnames(X) <- paste("X",1:2,sep="")
+###
+r1 <- exp( X %*% c(0.3,-0.3))
+rd <- exp( X %*% c(0.3,-0.3))
+rc <- exp( X %*% c(0,0))
+fz <- NULL
+## type=3 is cox-cox and type=2 is Ghosh-Lin/Cox model 
+rr <- mets:::simGLcox(n,base1,ddr,var.z=1,r1=r1,rd=rd,rc=rc,fz,cens=1/5000,type=3) 
+rr <- cbind(rr,X[rr$id+1,])
+###
+out  <- phreg(Event(start,stop,statusD==1)~X1+X2+cluster(id),data=rr)
+outs <- phreg(Event(start,stop,statusD==3)~X1+X2+cluster(id),data=rr)
+## cox/cox
+tsout <- twostageREC(outs,out,data=rr)
+summary(tsout)
+###
+rr <- mets:::simGLcox(n,base1,ddr,var.z=1,r1=r1,rd=rd,rc=rc,fz,cens=1/5000,type=3,share=0.5) 
+rr <- cbind(rr,X[rr$id+1,])
+###
+out  <- phreg(Event(start,stop,statusD==1)~X1+X2+cluster(id),data=rr)
+outs <- phreg(Event(start,stop,statusD==3)~X1+X2+cluster(id),data=rr)
+#
+tsout <- twostageREC(outs,out,data=rr,model="shared")
+summary(tsout)
+###
+rr <- mets:::simGLcox(n,base1,ddr,var.z=1,r1=r1,rd=rd,rc=rc,fz,cens=1/5000,type=2,share=0.5) 
+rr <- cbind(rr,X[rr$id+1,])
+outs  <- phreg(Event(start,stop,statusD==3)~X1+X2+cluster(id),data=rr)
+outgl  <- recreg(Event(start,stop,statusD)~X1+X2+cluster(id),data=rr,twostage=TRUE,death.code=3)
+##
+## ghosh-lin/cox
+glout <- twostageREC(outs,outgl,data=rr,theta=1)
+summary(glout)
+###
+glout <- twostageREC(outs,outgl,data=rr,model="shared",theta=1,nu=0.5)
+summary(glout)
 ```
 
 Standard errors are computed assuming that the parameters of out and outs are 
@@ -604,48 +633,25 @@ and estimated by
           	\frac{1}{Y_{1\bullet}^{k-1}(s)} d N_{1\bullet}^{k-1}(s).
 \end{align*}
 
-
-To compute these estimators we need to set up the data by computing the 
-number of previous events of type "1" by the  count.history function
-
+To compute these estimators we use the prob.exceed.recurrent function
 
 ```{r}
-###cor.mat <- corM <- rbind(c(1.0, 0.6, 0.9), c(0.6, 1.0, 0.5), c(0.9, 0.5, 1.0))
 rr <- simRecurrentII(200,base1,base4,death.cumhaz=ddr,cens=3/5000,dependence=4,var.z=1)
+rr <- transform(rr,statusD=status)
+rr <- dtransform(rr,statusD=3,death==1)
 rr <-  count.history(rr)
-dtable(rr,~death+status)
+dtable(rr,~statusD)
 
-oo <- prob.exceedRecurrent(rr,1)
-bplot(oo)
+oo <- prob.exceed.recurrent(Event(entry,time,statusD)~cluster(id),rr,cause=1,death.code=3)
+plot(oo,types=1:5)
 ```
 
 We can also look at the mean and variance based on the estimators just described 
 
 ```{r}
 par(mfrow=c(1,2))
-with(oo,plot(time,mu,col=2,type="l"))
-#
+with(oo,plot(time,meanN,col=2,type="l"))
 with(oo,plot(time,varN,type="l"))
-```
-
-We could also use the product-limit estimator to estimate the probability of 
-exceeding "k" events, and then standard errors are also returned: 
-
-```{r}
- oop <- prob.exceed.recurrent(rr,1)
- bplot(oo)
- matlines(oop$times,oop$prob,type="l")
- summaryTimeobject(oop$times,oop$prob,se.mu=oop$se.prob,times=1000)
-```
-
-We note from the plot that the estimates are quite similar. 
-
-Finally, we make a plot with 95\% confidence intervals
-
-```{r}
-matplot(oop$times,oop$prob,type="l")
-for (i in seq(ncol(oop$prob))) 
-	plotConfRegion(oop$times,cbind(oop$se.lower[,i],oop$se.upper[,i]),col=i)
 ```
 
 
@@ -666,185 +672,10 @@ the probability that $(N_1(t) \geq k_1, N_2(t) \geq k_2)$
 
 ```{r}
 # Bivariate probability of exceeding 
-oo <- prob.exceedBiRecurrent(rr,1,2,exceed1=c(1,5),exceed2=c(1,2))
-with(oo, matplot(time,pe1e2,type="s"))
-nc <- ncol(oo$pe1e2)
-legend("topleft",legend=colnames(oo$pe1e2),lty=1:nc,col=1:nc)
-```
-
-Dependence between events: Covariance 
---------------------------------------
-
-The dependence can also be summarised in other ways. For example by computing the
-covariance and comparing it to the covariance under the assumption of 
-independence among survivors. 
-
-Covariance among two types of events 
-\begin{align}
-\rho(t) &  = \frac{ E(N_1^*(t) N_2^*(t) )  - \mu_1(t) \mu_2(t) }{ \mbox{sd}(N_1^*(t)) \mbox{sd}(N_2^*(t)) }
-\end{align}
-where  $E(N_1^*(t) N_2^*(t))$  can be computed as 
-\begin{align*}
-  E(N_1^*(t) N_2^*(t)) &   = E( \int_0^t N_1^*(s-) dN_2^*(s) ) + E( \int_0^t N_2^*(s-) dN_1^*(s) ) 
-\end{align*}
-
-Recall that we might have a terminal event present such that we only see 
-$N_1^*(t \wedge D)$  and $N_2^*(t \wedge D)$. 
-
-To compute the covariance we thus compute 
-\begin{align*}
-E(\int_0^t N_1^*(s-) dN_2^*(s) ) & = \sum_k E( \int_0^t k I(N_1^*(s-)=k) I(D \geq s)  dN_2^*(s) ) 
-\end{align*}
-\begin{align*}
-= \sum_k \int_0^t S(s) k P(N_1^*(s-)= k  | D  \geq s) E( dN_2^*(s)  | N_1^*(s-)=k, D \geq s) 
-\end{align*}
-estimated by 
-\begin{align*}
-  & \sum_k \int_0^t \hat S(s) k \frac{Y_1^k(s)}{Y_\bullet (s)} \frac{1}{Y_1^k(s)} d \tilde N_{2,k}(s),
-\end{align*}
- * $Y_j^k(t) = \sum Y_i(t) I( N_{ji}^*(s-)=k)$ for $j=1,2$, 
- * $\tilde N_{j,k}(t) = \sum_i \int_0^t I(N_{ij^o}(s-)=k) dN_{ij}(s)$ 
- * $j^o$ gives the other type so that $1^o=2$ and $2^o=1$.
-
-We thus estimate  $ E(N_1^*(t) N_2^*(t))$  by 
-\begin{align*}
-  \sum_k \int_0^t \hat S(s) k \frac{Y_1^k(s)}{Y_\bullet (s)} \frac{1}{Y_1^k(s)} d \tilde N_{2,k}(s) +
-   \sum_k \int_0^t \hat S(s) k \frac{Y_2^k(s)}{Y_\bullet (s)} \frac{1}{Y_2^k(s)} d \tilde N_{1,k}(s).
-\end{align*}
-
-
- * Without terminating event covariance is a useful nonparametric measure.
- * With terminating event dependence can be generated  terminating event.
- * In reality what is of interest would be independence among survivors 
-   that is if 
-   * $N_1$ is not predicitive for $N_2$
-   \begin{align}
-      E( dN_2^*(t)  | N_1^*(t-)=k, D \geq t) =  E( dN_2^*(t)  | D \geq t) 
-   \end{align}
-   * $N_2$ is  not predicitive for $N_1$
-   \begin{align}
-      E( dN_1^*(t)  | N_2^*(t-)=k, D \geq t) =  E( dN_1^*(t)  | D \geq t) 
-   \end{align}
-
-
-If the two processes are independent among survivors then 
-\begin{align}
- E( dN_2^*(t)  | N_1^*(t-)=k, D \geq t) =  E( dN_2^*(t)  | D \geq t) 
-\end{align}
-so 
-\begin{align*}
-  E( \int_0^t N_1^*(s-) dN_2^*(s) )  & =  \int_0^t S(s) E(N_1^*(s-) | D  \geq s) E( dN_2^*(s)  | D \geq s) 
-\end{align*}
-and 
-\begin{align*}
-  \int_0^t \hat S(s) \{  \sum_k k \frac{Y_1^k(s)}{Y_\bullet (s)} \} \frac{1}{Y_\bullet (s)} dN_{2\bullet}(s),
-\end{align*}
-where $N_{j\bullet}(t) = \sum_i \int_0^t dN_{j,i}(s)$.
-
-Under the independence $E(N_1^*(t) N_2^*(t))$  is estimated 
-\begin{align*}
-  \int_0^t \hat S(s) \{  \sum_k k \frac{Y_1^k(s)}{Y_\bullet (s)} \} \frac{1}{Y_\bullet (s)} dN_{2\bullet}(s) 
-    + \int_0^t \hat S(s) \{  \sum_k k \frac{Y_2^k(s)}{Y_\bullet (s)} \} \frac{1}{Y_\bullet (s)} dN_{1\bullet}(s).
-\end{align*}
-
-
-Both estimators, $\hat E(N_1^*(t) N_2^*(t))$ and $\hat E_I(N_1^*(t) N_2^*(t))$,  as well as 
-$\hat E(N_1^*(t))$ and $\hat E(N_2^*(t))$, have asymptotic expansions that can be 
-written as a sum of iid processes, similarly to the arguments 
-of Ghosh & Lin 2000, $\sum_i \Psi_i(t)$.  
-We here, however, use a simple block bootstrap to get standard errors. 
-
-We can thus estimate the standard errors and of the estimators and their 
-difference  $\hat E(N_1^*(t) N_2^*(t))- \hat E_I(N_1^*(t) N_2^*(t))$. 
-
-Note that we have terms for  whether 
- * $N_1$ is predicitive for $N_2$
-   * N1 -> N2 : $E( \int_0^t N_1^*(s-) dN_2^*(s) )$
-   * this is equivalent to a weighted log-rank test 
- * $N_2$ is  predicitive for $N_1$
-   * N2 -> N1 : $E( \int_0^t N_2^*(s-) dN_1^*(s) )$
-   * this is equivalent to a weighted log-rank test 
-
-
-```{r}
-rr$strata <- 1
-dtable(rr,~death+status)
-
-covrp <- covarianceRecurrent(rr,1,2,status="status",death="death",
-                        start="entry",stop="time",id="id",names.count="Count")
-par(mfrow=c(1,3)) 
-plot(covrp)
-
-# with strata, each strata in matrix column, provides basis for fast Bootstrap
-covrpS <- covarianceRecurrentS(rr,1,2,status="status",death="death",
-        start="entry",stop="time",strata="strata",id="id",names.count="Count")
-```
-
-Bootstrap standard errors for terms
-------------------------------------
-
-First fitting the model again to get our estimates of interst, and then 
-computing them for some specific time-points  
-
-```{r, eval=FALSE}
-times <- seq(500,5000,500)
-
-coo1 <- covarianceRecurrent(rr,1,2,status="status",start="entry",stop="time")
-#
-mug <- Cpred(cbind(coo1$time,coo1$EN1N2),times)[,2]
-mui <- Cpred(cbind(coo1$time,coo1$EIN1N2),times)[,2]
-mu2.1 <- Cpred(cbind(coo1$time,coo1$mu2.1),times)[,2]
-mu2.i <- Cpred(cbind(coo1$time,coo1$mu2.i),times)[,2]
-mu1.2 <- Cpred(cbind(coo1$time,coo1$mu1.2),times)[,2]
-mu1.i <- Cpred(cbind(coo1$time,coo1$mu1.i),times)[,2]
-cbind(times,mu2.1,mu2.i)
-cbind(times,mu1.2,mu1.i)
-```
-
-To get the bootstrap standard errors there is a quick memory demanding function 
-(with S for speed and strata)  BootcovariancerecurrenceS
-and slower function that goes through the loops in R Bootcovariancerecurrence. 
-
-```{r, eval=FALSE}
-bt1 <- BootcovariancerecurrenceS(rr,1,2,status="status",start="entry",stop="time",K=100,times=times)
-#bt1 <- Bootcovariancerecurrence(rr,1,2,status="status",start="entry",stop="time",K=K,times=times)
-
-BCoutput <- list(bt1=bt1,mug=mug,mui=mui,
-        bse.mug=bt1$se.mug,bse.mui=bt1$se.mui,
-        dmugi=mug-mui,
-	bse.dmugi=apply(bt1$EN1N2-bt1$EIN1N2,1,sd),
-	mu2.1 = mu2.1 , mu2.i = mu2.i , dmu2.i=mu2.1-mu2.i,
-	mu1.2 = mu1.2 , mu1.i = mu1.i , dmu1.i=mu1.2-mu1.i,
-	bse.mu2.1=apply(bt1$mu2.i,1,sd), bse.mu2.1=apply(bt1$mu2.1,1,sd),
-	bse.dmu2.i=apply(bt1$mu2.1-bt1$mu2.i,1,sd),
-	bse.mu1.2=apply(bt1$mu1.2,1,sd), bse.mu1.i=apply(bt1$mu1.i,1,sd),
-	bse.dmu1.i=apply(bt1$mu1.2-bt1$mu1.i,1,sd)
-	)
-```
-
-We then look at the test for overall dependence  in the different time-points. 
-We here have no suggestion of dependence.
-
-```{r, eval=FALSE}
-tt  <- BCoutput$dmugi/BCoutput$bse.dmugi
-cbind(times,2*(1-pnorm(abs(tt))))
-```
-
-We can also take out the specific components for whether $N_1$ is predictive for 
-$N_2$ and vice versa.  We here have no suggestion of dependence.
-
-```{r, eval=FALSE}
-t21  <- BCoutput$dmu1.i/BCoutput$bse.dmu1.i 
-t12  <- BCoutput$dmu2.i/BCoutput$bse.dmu2.i 
-cbind(times,2*(1-pnorm(abs(t21))),2*(1-pnorm(abs(t12))))
-```
-
-We finally plot the boostrap samples 
-
-```{r, eval=FALSE}
-par(mfrow=c(1,2))
-matplot(BCoutput$bt1$time,BCoutput$bt1$EN1N2,type="l",lwd=0.3)
-matplot(BCoutput$bt1$time,BCoutput$bt1$EIN1N2,type="l",lwd=0.3)
+## oo <- prob.exceedBiRecurrent(rr,1,2,exceed1=c(1,5),exceed2=c(1,2))
+## with(oo, matplot(time,pe1e2,type="s"))
+## nc <- ncol(oo$pe1e2)
+## legend("topleft",legend=colnames(oo$pe1e2),lty=1:nc,col=1:nc)
 ```
 
 Looking at other simulations with dependence 
@@ -872,9 +703,9 @@ in a vector $\rho=(\rho_{12},\rho_{13},\rho_{23})$.
   cor.mat <- corM <- rbind(c(1.0, 0.0, 0.0), c(0.0, 1.0, 0.0), c(0.0, 0.0, 1.0))
   rr <- simRecurrentII(200,base1,base4,death.cumhaz=dr,var.z=var.z,cor.mat=cor.mat,dependence=2)
   rr <- count.history(rr,types=1:2)
-  cor(attr(rr,"z"))
-  coo <- covarianceRecurrent(rr,1,2,status="status",start="entry",stop="time")
-  plot(coo,main ="Scenario I")
+###  cor(attr(rr,"z"))
+###  coo <- covarianceRecurrent(rr,1,2,status="status",start="entry",stop="time")
+###  plot(coo,main ="Scenario I")
 ```
  * Scenario II $\rho=(0,0.5,0.5)$ Independence among survivors but dependence on terminal event 
 
@@ -884,9 +715,9 @@ in a vector $\rho=(\rho_{12},\rho_{13},\rho_{23})$.
   cor.mat <- corM <- rbind(c(1.0, 0.0, 0.5), c(0.0, 1.0, 0.5), c(0.5, 0.5, 1.0))
   rr <- simRecurrentII(200,base1,base4,death.cumhaz=dr,var.z=var.z,cor.mat=cor.mat,dependence=2)
   rr <- count.history(rr,types=1:2)
-  coo <- covarianceRecurrent(rr,1,2,status="status",start="entry",stop="time")
-  par(mfrow=c(1,3))
-  plot(coo,main ="Scenario II")
+###  coo <- covarianceRecurrent(rr,1,2,status="status",start="entry",stop="time")
+###  par(mfrow=c(1,3))
+###  plot(coo,main ="Scenario II")
 ```
 
  * Scenario III $\rho=(0.5,0.5,0.5)$ Positive dependence among survivors and dependence on terminal event 
@@ -897,9 +728,9 @@ in a vector $\rho=(\rho_{12},\rho_{13},\rho_{23})$.
   cor.mat <- corM <- rbind(c(1.0, 0.5, 0.5), c(0.5, 1.0, 0.5), c(0.5, 0.5, 1.0))
   rr <- simRecurrentII(200,base1,base4,death.cumhaz=dr,var.z=var.z,cor.mat=cor.mat,dependence=2)
   rr <- count.history(rr,types=1:2)
-  coo <- covarianceRecurrent(rr,1,2,status="status",start="entry",stop="time")
-  par(mfrow=c(1,3))
-  plot(coo,main="Scenario III")
+###  coo <- covarianceRecurrent(rr,1,2,status="status",start="entry",stop="time")
+###  par(mfrow=c(1,3))
+###  plot(coo,main="Scenario III")
 ```
 
  * Scenario IV $\rho=(-0.4,0.5,0.5)$ Negative dependence among survivors and positive dependence on terminal event 
@@ -910,9 +741,9 @@ in a vector $\rho=(\rho_{12},\rho_{13},\rho_{23})$.
   cor.mat <- corM <- rbind(c(1.0, -0.4, 0.5), c(-0.4, 1.0, 0.5), c(0.5, 0.5, 1.0))
   rr <- simRecurrentII(200,base1,base4,death.cumhaz=dr,var.z=var.z,cor.mat=cor.mat,dependence=2)
   rr <- count.history(rr,types=1:2)
-  coo <- covarianceRecurrent(rr,1,2,status="status",start="entry",stop="time")
-  par(mfrow=c(1,3))
-  plot(coo,main="Scenario IV")
+###  coo <- covarianceRecurrent(rr,1,2,status="status",start="entry",stop="time")
+###  par(mfrow=c(1,3))
+###  plot(coo,main="Scenario IV")
 ```
 
 

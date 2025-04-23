@@ -49,6 +49,58 @@ out <- phreg_rct(Surv(days,cens)~arms.f,data=data,augmentR0=~strat.f)
 summary(out)
 
 ## -----------------------------------------------------------------------------
+data(calgb8923)
+calgt <- calgb8923
+
+tm=At.f~factor(Count2)+age+sex+wbc
+tm=At.f~factor(Count2)
+tm=At.f~factor(Count2)*A0.f
+
+head(calgt)
+ll0 <- phreg_IPTW(Event(start,time,status==1)~strata(A0,A10)+cluster(id),calgt,treat.model=tm)
+pll0 <- predict(ll0,expand.grid(A0=0:1,A10=0,id=1))
+ll1 <- phreg_IPTW(Event(start,time,status==1)~strata(A0,A11)+cluster(id),calgt,treat.model=tm)
+pll1 <- predict(ll1,expand.grid(A0=0:1,A11=1,id=1))
+plot(pll0,se=1,lwd=2,col=1:2,lty=1,xlab="time (months)",xlim=c(0,30))
+plot(pll1,add=TRUE,col=3:4,se=1,lwd=2,lty=1,xlim=c(0,30))
+abline(h=0.25)
+legend("topright",c("A1B1","A2B1","A1B2","A2B2"),col=c(1,2,3,4),lty=1)
+
+summary(pll1,times=1:10)
+summary(pll0,times=1:10)
+
+## -----------------------------------------------------------------------------
+library(mets)
+data(calgb8923)
+calgt <- calgb8923
+calgt$treatvar <- 1
+
+## making time-dependent indicators of going to B1/B2
+calgt$A10t <- calgt$A11t <- 0
+calgt <- dtransform(calgt,A10t=1,A1==0 & Count2==1)
+calgt <- dtransform(calgt,A11t=1,A1==1 & Count2==1)
+calgt0 <- subset(calgt,A0==0)
+
+ss0 <- phreg_rct(Event(start,time,status)~A10t+A11t+cluster(id),data=subset(calgt,A0==0),
+	 typesR=c("non","R1"),typesC=c("non","dynC"),
+	 treat.var="treatvar",treat.model=At.f~factor(Count2),
+	 augmentR1=~age+wbc+sex+TR,augmentC=~age+wbc+sex+TR+Count2)
+summary(ss0)
+
+ss1 <- phreg_rct(Event(start,time,status)~A10t+A11t+cluster(id),data=subset(calgt,A0==1),
+	 typesR=c("non","R1"),typesC=c("non","dynC"),
+	 treat.var="treatvar",treat.model=At.f~factor(Count2),
+	 augmentR1=~age+wbc+sex+TR,augmentC=~age+wbc+sex+TR+Count2)
+summary(ss1)
+
+## -----------------------------------------------------------------------------
+ssf <- phreg_rct(Event(start,time,status)~A0.f+A10t+A11t+cluster(id),
+	 data=calgt,
+	 typesR=c("non","R0","R1","R01"),typesC=c("non","C","dynC"),
+	 treat.var="treatvar",treat.model=At.f~factor(Count2),
+	 augmentR0=~age+wbc+sex,augmentR1=~age+wbc+sex+TR,augmentC=~age+wbc+sex+TR+Count2)
+
+## -----------------------------------------------------------------------------
 n <- 1000
 beta <- 0.15; 
 data(base1cumhaz)
@@ -134,16 +186,17 @@ summary(sse)
 
 ## -----------------------------------------------------------------------------
 fit2 <- phreg_rct(Event(start,stop,statusD)~Z.f+cluster(id),data=data,
-	 treat.var="treattime",typesR=c("non","R0"),typesC=c("non","C","dynC"),
-	 RCT=FALSE,treat.model=Z.f~z1,augmentR0=~z1,augmentC=~z1+Count1)
+	 typesR=c("non","R0"),typesC=c("non","C","dynC"),
+         RCT=FALSE,treat.model=Z.f~z1,augmentR0=~z1,augmentC=~z1+Count1,
+	 treat.var="treattime")
 summary(fit2)
 
 ## -----------------------------------------------------------------------------
 sse <- phreg_rct(Event(start,time,statusD)~A0.f+A1t+cluster(id),data=rr,
 	 typesR=c("non","R0","R1","R01"),typesC=c("non","C","dynC"),
-	 treat.var="treattime",
-	 RCT=FALSE, treat.model=At.f~z1*factor(Count2),
-	 augmentR0=~z1,augmentR1=~z1,augmentC=~z1+Count1+A1t)
+         treat.var="treattime",
+	 RCT=FALSE,treat.model=At.f~z1*factor(Count2),
+         augmentR0=~z1,augmentR1=~z1,augmentC=~z1+Count1+A1t)
 summary(sse)
 
 ## -----------------------------------------------------------------------------

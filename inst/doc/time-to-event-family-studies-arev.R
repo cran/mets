@@ -120,7 +120,7 @@ library(mets)
 # 
 #  ### de model
 #  desde <- twin.polygen.design(prt,type="de")
-#  fitde <- survival.twostage(margph,data=prt,theta=1,                            clusters=prt$id,var.link=0,model="clayton.oakes",
+#  fitde <- survival.twostage(margph,data=prt,theta=1,clusters=prt$id,var.link=0,model="clayton.oakes",
 # numDeriv=1,random.design=desde$des.rv,theta.des=desde$pardes)
 # 
 

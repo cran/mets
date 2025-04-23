@@ -81,7 +81,7 @@ mm <- dreg(dat, "*.length"~"*.width"|species+status,z.arg="group")
 \donttest{ ## Reduce Ex.Timings
 y <- "S*"~"*.width"
 xs <- dreg(dat, y, fun.=phreg)
-xs <- dreg(dat, y, fun.=survdiff)
+## xs <- dreg(dat, y, fun.=survdiff)
 
 y <- "S*"~"*.width"
 xs <- dreg(dat, y, x.oneatatime=FALSE, fun.=phreg)
@@ -129,7 +129,7 @@ xs <- dreg(dat, y, z.arg="base", fun.=phreg)
 
 y <- S1~"*.width"|cluster(id)+factor(species)
 xs <- dreg(dat, y, z.arg="base", fun.=phreg)
-xs <- dreg(dat, y, z.arg="base", fun.=coxph)
+xs <- dreg(dat, y, z.arg="base", fun.=survival::coxph)
 
 ## under condition with groups
 y <- S1~"*.width"|I(sepal.length>4)

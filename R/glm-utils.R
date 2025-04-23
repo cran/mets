@@ -58,7 +58,7 @@ if (nlev==2) {
    treat.modelid <- update.formula(treat.model,.~.+cluster(id__))
    treat <- mlogit(treat.modelid,data)
    iidalpha <- lava::iid(treat)
-   pal <- predictmlogit(treat,data,se=0,response=FALSE)
+   pal <- predict(treat,data,se=0,response=FALSE)
    ppp <- (pal/pal[,1])
    spp <- 1/pal[,1]
 }
@@ -103,7 +103,6 @@ glmw <- suppressWarnings(glm(formula,data,weights=ww,family=family,...))
 glm.iid <- lava::iid(glmw,id=id)
 ihess <- attr(glm.iid,"bread")
 
-###browser()
 check.derivative <- 0
 ### for checking derivative 
 if (check.derivative==1) {

@@ -15,7 +15,7 @@ knitr::opts_chunk$set(
  set.seed(10) # to control output in simulations
 
 ## -----------------------------------------------------------------------------
- nsim <- 100
+ nsim <- 200
  chaz <-  c(0,1,1.5,2,2.1)
  breaks <- c(0,10,   20,  30,   40)
  cumhaz <- cbind(breaks,chaz)
@@ -59,9 +59,9 @@ knitr::opts_chunk$set(
  plot(coxs,col=1); plot(cc,add=TRUE,col=2)
 
 ## -----------------------------------------------------------------------------
- cox <-  coxph(Surv(time,status==9)~vf+chf+wmi,data=sTRACE)
+ cox <-  survival::coxph(Surv(time,status==9)~vf+chf+wmi,data=sTRACE)
  sim1 <- sim.cox(cox,nsim,data=sTRACE)
- cc <- coxph(Surv(time,status)~vf+chf+wmi,data=sim1)
+ cc <- survival::coxph(Surv(time,status)~vf+chf+wmi,data=sim1)
  cbind(cox$coef,cc$coef)
  cor(sim1[,c("vf","chf","wmi")])
  cor(sTRACE[,c("vf","chf","wmi")])
@@ -81,12 +81,12 @@ knitr::opts_chunk$set(
 ## -----------------------------------------------------------------------------
  data(bmt)
  # coxph          
- cox1 <- coxph(Surv(time,cause==1)~tcell+platelet,data=bmt)
- cox2 <- coxph(Surv(time,cause==2)~tcell+platelet,data=bmt)
+ cox1 <- survival::coxph(Surv(time,cause==1)~tcell+platelet,data=bmt)
+ cox2 <- survival::coxph(Surv(time,cause==2)~tcell+platelet,data=bmt)
  coxs <- list(cox1,cox2)
  dd <- sim.cause.cox(coxs,nsim,data=bmt)
- scox1 <- coxph(Surv(time,status==1)~tcell+platelet,data=dd)
- scox2 <- coxph(Surv(time,status==2)~tcell+platelet,data=dd)
+ scox1 <- survival::coxph(Surv(time,status==1)~tcell+platelet,data=dd)
+ scox2 <- survival::coxph(Surv(time,status==2)~tcell+platelet,data=dd)
  cbind(cox1$coef,scox1$coef)
  cbind(cox2$coef,scox2$coef)
 
@@ -163,16 +163,16 @@ knitr::opts_chunk$set(
  c2 <- phreg(Surv(start,stop,status==2)~+1,subset(iddata,from==1))
  ###
  par(mfrow=c(2,2))
- bplot(c0)
+ plot(c0)
  lines(cens,col=2) 
- bplot(c3,main="rates 1-> 3 , 2->3")
+ plot(c3,main="rates 1-> 3 , 2->3")
  lines(dr,col=1,lwd=2)
  lines(dr2,col=2,lwd=2)
  ###
- bplot(c1,main="rate 1->2")
+ plot(c1,main="rate 1->2")
  lines(base1,lwd=2)
  ###
- bplot(c2,main="rate 2->1")
+ plot(c2,main="rate 2->1")
  lines(base1,lwd=2)
  
 

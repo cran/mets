@@ -4,41 +4,32 @@
 \alias{km}
 \title{Kaplan-Meier with robust standard errors}
 \usage{
-km(
-  formula,
-  data = data,
-  conf.type = "log",
-  conf.int = 0.95,
-  robust = TRUE,
-  ...
-)
+km(formula, data = data, ...)
 }
 \arguments{
-\item{formula}{formula with 'Surv' outcome (see \code{coxph})}
+\item{formula}{formula with 'Surv' 'Event' outcome}
 
 \item{data}{data frame}
 
-\item{conf.type}{transformation}
-
-\item{conf.int}{level of confidence intervals}
-
-\item{robust}{for robust standard errors based on martingales}
-
-\item{...}{Additional arguments to lower level funtions}
+\item{...}{Additional arguments to phreg}
 }
 \description{
 Kaplan-Meier with robust standard errors 
-Robust variance is default variance with the summary.
+Robust variance is default variance and obtained from the predict call
 }
 \examples{
-data(TRACE)
-TRACE$cluster <- sample(1:100,1878,replace=TRUE)
-out1 <- km(Surv(time,status==9)~strata(vf,chf),data=TRACE)
-out2 <- km(Surv(time,status==9)~strata(vf,chf)+cluster(cluster),data=TRACE)
+library(mets)
+data(sTRACE)
+sTRACE$cluster <- sample(1:100,500,replace=TRUE)
+out1 <- km(Surv(time,status==9)~strata(vf,chf),data=sTRACE)
+out2 <- km(Surv(time,status==9)~strata(vf,chf)+cluster(cluster),data=sTRACE)
+
+summary(out1,times=1:3)
+summary(out2,times=1:3)
 
 par(mfrow=c(1,2))
-bplot(out1,se=TRUE)
-bplot(out2,se=TRUE)
+plot(out1,se=TRUE)
+plot(out2,se=TRUE)
 }
 \author{
 Thomas Scheike

@@ -34,7 +34,7 @@ library(mets)
    # same as 
 
 ## -----------------------------------------------------------------------------
-  bplot(rob,se=TRUE,robust=TRUE,col=3)
+  plot(rob,se=TRUE,robust=TRUE,col=3)
 
 ## -----------------------------------------------------------------------------
   pp <-  predict(out,data[1:20,],se=TRUE,robust=TRUE)
