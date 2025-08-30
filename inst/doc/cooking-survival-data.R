@@ -132,7 +132,7 @@ knitr::opts_chunk$set(
  cox3 <- phreg(Surv(time,cause==0)~strata(platelet)+bmi,data=bmt)
  coxs <- list(cox1,cox2,cox3)
 
- dd <- sim.phregs(coxs,1000,data=bmt,extend=0.002)
+ dd <- sim.phregs(coxs,n,data=bmt,extend=0.002)
  scox1 <- phreg(Surv(time,status==1)~strata(tcell)+platelet,data=dd)
  scox2 <- phreg(Surv(time,status==2)~strata(gage)+tcell+platelet,data=dd)
  scox3 <- phreg(Surv(time,status==3)~strata(platelet)+bmi,data=dd)
@@ -142,15 +142,27 @@ knitr::opts_chunk$set(
  plot(scox2,col=2); plot(cox2,add=TRUE,col=1)
  plot(scox3,col=2); plot(cox3,add=TRUE,col=1)
 
+ coxs1 <- phreg(Surv(time,cause==1)~strata(tcell),data=bmt)
+ dd <- sim.phreg(coxs1,n,data=bmt)
+ scoxs1 <-  phreg(Surv(time,status==1)~strata(tcell),data=dd)
+ ###
+ plot(coxs1)
+ plot(scoxs1,add=TRUE)
+
+ coxs1 <- phreg(Surv(time,cause==1)~strata(tcell)+platelet,data=bmt)
+ dd <- sim.phreg(coxs1,n,data=bmt)
+ scoxs1 <-  phreg(Surv(time,status==1)~strata(tcell)+platelet,data=dd)
+ ###
+ plot(coxs1)
+ plot(scoxs1,add=TRUE)
+
+
 ## -----------------------------------------------------------------------------
- data(base1cumhaz)
- data(base4cumhaz)
- data(drcumhaz)
- dr <- drcumhaz
- dr2 <- drcumhaz
- dr2[,2] <- 1.5*drcumhaz[,2]
- base1 <- base1cumhaz
- base4 <- base4cumhaz
+ data(CPH_HPN_CRBSI)
+ dr <- CPH_HPN_CRBSI$terminal
+ base1 <- CPH_HPN_CRBSI$crbsi 
+ base4 <- CPH_HPN_CRBSI$mechanical
+ dr2 <- scalecumhaz(dr,1.5)
  cens <- rbind(c(0,0),c(2000,0.5),c(5110,3))
 
  iddata <- simMultistate(nsim,base1,base1,dr,dr2,cens=cens)
@@ -265,12 +277,10 @@ matlines(cifm2[,1],cifm2[,-1],col=1,lwd=2)
  summary(fg)
 
 ## -----------------------------------------------------------------------------
- data(base1cumhaz)
- data(base4cumhaz)
- data(drcumhaz)
- dr <- drcumhaz
- base1 <- base1cumhaz
- base4 <- base4cumhaz
+ data(CPH_HPN_CRBSI)
+ dr <- CPH_HPN_CRBSI$terminal
+ base1 <- CPH_HPN_CRBSI$crbsi 
+ base4 <- CPH_HPN_CRBSI$mechanical
 
  n <- 100
  rr <- simRecurrent(n,base1,death.cumhaz=dr)
@@ -285,9 +295,25 @@ matlines(cifm2[,1],cifm2[,-1],col=1,lwd=2)
 
  cumhaz <- list(base1,base1,base4)
  drl <- list(dr,base4)
- rr <- simRecurrentIII(n,cumhaz,death.cumhaz=drl)
+ rr <- simRecurrentList(n,cumhaz,death.cumhaz=drl)
  dtable(rr,~death+status)
- showfitsimIII(rr,cumhaz,drl) 
+ showfitsimList(rr,cumhaz,drl) 
+
+## -----------------------------------------------------------------------------
+
+ data(hfactioncpx12)
+ hf <- hfactioncpx12
+ hf$x <- as.numeric(hf$treatment) 
+ n <- 100
+
+ ##  to fit non-parametric models with just a baseline 
+ xr <- phreg(Surv(entry,time,status==1)~cluster(id),data=hf)
+ dr <- phreg(Surv(entry,time,status==2)~cluster(id),data=hf)
+
+ simcoxcox <- sim.recurrent(xr,dr,n=n,data=hf)
+
+ recGL <- recreg(Event(entry,time,status)~+cluster(id),hf,death.code=2)
+ simglcox <- sim.recurrent(recGL,dr,n=n,data=hf)
 
 ## -----------------------------------------------------------------------------
 sessionInfo()

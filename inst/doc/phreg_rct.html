@@ -12,7 +12,7 @@
 
 <meta name="author" content="Klaus Holst &amp; Thomas Scheike" />
 
-<meta name="date" content="2025-04-23" />
+<meta name="date" content="2025-08-30" />
 
 <title>Two-Stage Randomization for Cox Type rate models</title>
 
@@ -342,7 +342,7 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 <h1 class="title toc-ignore">Two-Stage Randomization for Cox Type rate
 models</h1>
 <h4 class="author">Klaus Holst &amp; Thomas Scheike</h4>
-<h4 class="date">2025-04-23</h4>
+<h4 class="date">2025-08-30</h4>
 
 
 
@@ -740,48 +740,47 @@ very reasonable based on the above,</p>
 <p>Recurrents events simulation with death and censoring.</p>
 <div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a>n <span class="ot">&lt;-</span> <span class="dv">1000</span></span>
 <span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a>beta <span class="ot">&lt;-</span> <span class="fl">0.15</span>; </span>
-<span id="cb8-3"><a href="#cb8-3" tabindex="-1"></a><span class="fu">data</span>(base1cumhaz)</span>
-<span id="cb8-4"><a href="#cb8-4" tabindex="-1"></a><span class="fu">data</span>(base4cumhaz)</span>
-<span id="cb8-5"><a href="#cb8-5" tabindex="-1"></a><span class="fu">data</span>(drcumhaz)</span>
-<span id="cb8-6"><a href="#cb8-6" tabindex="-1"></a>dr <span class="ot">&lt;-</span> <span class="fu">scalecumhaz</span>(drcumhaz,<span class="dv">1</span>)</span>
-<span id="cb8-7"><a href="#cb8-7" tabindex="-1"></a>base1 <span class="ot">&lt;-</span> <span class="fu">scalecumhaz</span>(base1cumhaz,<span class="dv">1</span>)</span>
-<span id="cb8-8"><a href="#cb8-8" tabindex="-1"></a>base4 <span class="ot">&lt;-</span> <span class="fu">scalecumhaz</span>(base4cumhaz,<span class="fl">0.5</span>)</span>
-<span id="cb8-9"><a href="#cb8-9" tabindex="-1"></a>cens <span class="ot">&lt;-</span> <span class="fu">rbind</span>(<span class="fu">c</span>(<span class="dv">0</span>,<span class="dv">0</span>),<span class="fu">c</span>(<span class="dv">2000</span>,<span class="fl">0.5</span>),<span class="fu">c</span>(<span class="dv">5110</span>,<span class="dv">3</span>))</span>
-<span id="cb8-10"><a href="#cb8-10" tabindex="-1"></a>ce <span class="ot">&lt;-</span> <span class="dv">3</span>; betao1 <span class="ot">&lt;-</span> <span class="dv">0</span></span>
-<span id="cb8-11"><a href="#cb8-11" tabindex="-1"></a></span>
-<span id="cb8-12"><a href="#cb8-12" tabindex="-1"></a>varz <span class="ot">&lt;-</span> <span class="dv">1</span>; dep<span class="ot">=</span><span class="dv">4</span>; X <span class="ot">&lt;-</span> z <span class="ot">&lt;-</span> <span class="fu">rgamma</span>(n,<span class="dv">1</span><span class="sc">/</span>varz)<span class="sc">*</span>varz</span>
-<span id="cb8-13"><a href="#cb8-13" tabindex="-1"></a>Z0 <span class="ot">&lt;-</span> <span class="cn">NULL</span></span>
-<span id="cb8-14"><a href="#cb8-14" tabindex="-1"></a>px <span class="ot">&lt;-</span> <span class="fl">0.5</span></span>
-<span id="cb8-15"><a href="#cb8-15" tabindex="-1"></a><span class="cf">if</span> (betao1<span class="sc">!=</span><span class="dv">0</span>) px <span class="ot">&lt;-</span> lava<span class="sc">::</span><span class="fu">expit</span>(betao1<span class="sc">*</span>X)      </span>
-<span id="cb8-16"><a href="#cb8-16" tabindex="-1"></a>A0 <span class="ot">&lt;-</span> <span class="fu">rbinom</span>(n,<span class="dv">1</span>,px)</span>
-<span id="cb8-17"><a href="#cb8-17" tabindex="-1"></a>r1 <span class="ot">&lt;-</span> <span class="fu">exp</span>(A0<span class="sc">*</span>beta[<span class="dv">1</span>])</span>
-<span id="cb8-18"><a href="#cb8-18" tabindex="-1"></a>rd <span class="ot">&lt;-</span> <span class="fu">exp</span>( A0 <span class="sc">*</span> <span class="fl">0.15</span>)</span>
-<span id="cb8-19"><a href="#cb8-19" tabindex="-1"></a>rc <span class="ot">&lt;-</span> <span class="fu">exp</span>( A0 <span class="sc">*</span> <span class="dv">0</span> )</span>
-<span id="cb8-20"><a href="#cb8-20" tabindex="-1"></a><span class="do">###</span></span>
-<span id="cb8-21"><a href="#cb8-21" tabindex="-1"></a>rr <span class="ot">&lt;-</span>    mets<span class="sc">:::</span><span class="fu">simLUCox</span>(n,base1,<span class="at">death.cumhaz=</span>dr,<span class="at">r1=</span>r1,<span class="at">Z0=</span>X,<span class="at">dependence=</span>dep,<span class="at">var.z=</span>varz,<span class="at">cens=</span>ce<span class="sc">/</span><span class="dv">5000</span>)</span>
-<span id="cb8-22"><a href="#cb8-22" tabindex="-1"></a>rr<span class="sc">$</span>A0 <span class="ot">&lt;-</span> A0[rr<span class="sc">$</span>id]</span>
-<span id="cb8-23"><a href="#cb8-23" tabindex="-1"></a>rr<span class="sc">$</span>z1 <span class="ot">&lt;-</span> <span class="fu">attr</span>(rr,<span class="st">&quot;z&quot;</span>)[rr<span class="sc">$</span>id]</span>
-<span id="cb8-24"><a href="#cb8-24" tabindex="-1"></a>rr<span class="sc">$</span>lz1 <span class="ot">&lt;-</span> <span class="fu">log</span>(rr<span class="sc">$</span>z1)</span>
-<span id="cb8-25"><a href="#cb8-25" tabindex="-1"></a>rr<span class="sc">$</span>X <span class="ot">&lt;-</span> rr<span class="sc">$</span>lz1 </span>
-<span id="cb8-26"><a href="#cb8-26" tabindex="-1"></a>rr<span class="sc">$</span>lX <span class="ot">&lt;-</span> rr<span class="sc">$</span>z1</span>
-<span id="cb8-27"><a href="#cb8-27" tabindex="-1"></a>rr<span class="sc">$</span>statusD <span class="ot">&lt;-</span> rr<span class="sc">$</span>status</span>
-<span id="cb8-28"><a href="#cb8-28" tabindex="-1"></a>rr <span class="ot">&lt;-</span> <span class="fu">dtransform</span>(rr,<span class="at">statusD=</span><span class="dv">2</span>,death<span class="sc">==</span><span class="dv">1</span>)</span>
-<span id="cb8-29"><a href="#cb8-29" tabindex="-1"></a>rr <span class="ot">&lt;-</span> <span class="fu">count.history</span>(rr)</span>
-<span id="cb8-30"><a href="#cb8-30" tabindex="-1"></a>rr<span class="sc">$</span>Z <span class="ot">&lt;-</span> rr<span class="sc">$</span>A0</span>
-<span id="cb8-31"><a href="#cb8-31" tabindex="-1"></a>data <span class="ot">&lt;-</span> rr</span>
-<span id="cb8-32"><a href="#cb8-32" tabindex="-1"></a>data<span class="sc">$</span>Z.f <span class="ot">&lt;-</span> <span class="fu">as.factor</span>(data<span class="sc">$</span>Z)</span>
-<span id="cb8-33"><a href="#cb8-33" tabindex="-1"></a>data<span class="sc">$</span>treattime <span class="ot">&lt;-</span> <span class="dv">0</span></span>
-<span id="cb8-34"><a href="#cb8-34" tabindex="-1"></a>data <span class="ot">&lt;-</span> <span class="fu">dtransform</span>(data,<span class="at">treattime=</span><span class="dv">1</span>,lbnr__id<span class="sc">==</span><span class="dv">1</span>)</span>
-<span id="cb8-35"><a href="#cb8-35" tabindex="-1"></a><span class="fu">dlist</span>(data,start<span class="sc">+</span>stop<span class="sc">+</span>statusD<span class="sc">+</span>A0<span class="sc">+</span>z1<span class="sc">+</span>treattime<span class="sc">+</span>Count1<span class="sc">~</span>id<span class="sc">|</span>id <span class="sc">%in%</span> <span class="fu">c</span>(<span class="dv">4</span>,<span class="dv">5</span>))</span>
-<span id="cb8-36"><a href="#cb8-36" tabindex="-1"></a><span class="co">#&gt; id: 4</span></span>
-<span id="cb8-37"><a href="#cb8-37" tabindex="-1"></a><span class="co">#&gt;      start   stop    statusD A0 z1    treattime Count1</span></span>
-<span id="cb8-38"><a href="#cb8-38" tabindex="-1"></a><span class="co">#&gt; 4      0.000   9.565 1       0  0.471 1         0     </span></span>
-<span id="cb8-39"><a href="#cb8-39" tabindex="-1"></a><span class="co">#&gt; 1003   9.565 372.057 1       0  0.471 0         1     </span></span>
-<span id="cb8-40"><a href="#cb8-40" tabindex="-1"></a><span class="co">#&gt; 1468 372.057 389.831 0       0  0.471 0         2     </span></span>
-<span id="cb8-41"><a href="#cb8-41" tabindex="-1"></a><span class="co">#&gt; ------------------------------------------------------------ </span></span>
-<span id="cb8-42"><a href="#cb8-42" tabindex="-1"></a><span class="co">#&gt; id: 5</span></span>
-<span id="cb8-43"><a href="#cb8-43" tabindex="-1"></a><span class="co">#&gt;   start stop  statusD A0 z1    treattime Count1</span></span>
-<span id="cb8-44"><a href="#cb8-44" tabindex="-1"></a><span class="co">#&gt; 5 0     213.9 2       1  2.338 1         0</span></span></code></pre></div>
+<span id="cb8-3"><a href="#cb8-3" tabindex="-1"></a> <span class="fu">data</span>(CPH_HPN_CRBSI)</span>
+<span id="cb8-4"><a href="#cb8-4" tabindex="-1"></a> dr <span class="ot">&lt;-</span> CPH_HPN_CRBSI<span class="sc">$</span>terminal</span>
+<span id="cb8-5"><a href="#cb8-5" tabindex="-1"></a> base1 <span class="ot">&lt;-</span> CPH_HPN_CRBSI<span class="sc">$</span>crbsi </span>
+<span id="cb8-6"><a href="#cb8-6" tabindex="-1"></a> base4 <span class="ot">&lt;-</span> <span class="fu">scalecumhaz</span>(CPH_HPN_CRBSI<span class="sc">$</span>mechanical,<span class="fl">0.5</span>)</span>
+<span id="cb8-7"><a href="#cb8-7" tabindex="-1"></a></span>
+<span id="cb8-8"><a href="#cb8-8" tabindex="-1"></a>cens <span class="ot">&lt;-</span> <span class="fu">rbind</span>(<span class="fu">c</span>(<span class="dv">0</span>,<span class="dv">0</span>),<span class="fu">c</span>(<span class="dv">2000</span>,<span class="fl">0.5</span>),<span class="fu">c</span>(<span class="dv">5110</span>,<span class="dv">3</span>))</span>
+<span id="cb8-9"><a href="#cb8-9" tabindex="-1"></a>ce <span class="ot">&lt;-</span> <span class="dv">3</span>; betao1 <span class="ot">&lt;-</span> <span class="dv">0</span></span>
+<span id="cb8-10"><a href="#cb8-10" tabindex="-1"></a></span>
+<span id="cb8-11"><a href="#cb8-11" tabindex="-1"></a>varz <span class="ot">&lt;-</span> <span class="dv">1</span>; dep<span class="ot">=</span><span class="dv">4</span>; X <span class="ot">&lt;-</span> z <span class="ot">&lt;-</span> <span class="fu">rgamma</span>(n,<span class="dv">1</span><span class="sc">/</span>varz)<span class="sc">*</span>varz</span>
+<span id="cb8-12"><a href="#cb8-12" tabindex="-1"></a>Z0 <span class="ot">&lt;-</span> <span class="cn">NULL</span></span>
+<span id="cb8-13"><a href="#cb8-13" tabindex="-1"></a>px <span class="ot">&lt;-</span> <span class="fl">0.5</span></span>
+<span id="cb8-14"><a href="#cb8-14" tabindex="-1"></a><span class="cf">if</span> (betao1<span class="sc">!=</span><span class="dv">0</span>) px <span class="ot">&lt;-</span> lava<span class="sc">::</span><span class="fu">expit</span>(betao1<span class="sc">*</span>X)      </span>
+<span id="cb8-15"><a href="#cb8-15" tabindex="-1"></a>A0 <span class="ot">&lt;-</span> <span class="fu">rbinom</span>(n,<span class="dv">1</span>,px)</span>
+<span id="cb8-16"><a href="#cb8-16" tabindex="-1"></a>r1 <span class="ot">&lt;-</span> <span class="fu">exp</span>(A0<span class="sc">*</span>beta[<span class="dv">1</span>])</span>
+<span id="cb8-17"><a href="#cb8-17" tabindex="-1"></a>rd <span class="ot">&lt;-</span> <span class="fu">exp</span>( A0 <span class="sc">*</span> <span class="fl">0.15</span>)</span>
+<span id="cb8-18"><a href="#cb8-18" tabindex="-1"></a>rc <span class="ot">&lt;-</span> <span class="fu">exp</span>( A0 <span class="sc">*</span> <span class="dv">0</span> )</span>
+<span id="cb8-19"><a href="#cb8-19" tabindex="-1"></a><span class="do">###</span></span>
+<span id="cb8-20"><a href="#cb8-20" tabindex="-1"></a>rr <span class="ot">&lt;-</span>    mets<span class="sc">:::</span><span class="fu">simLUCox</span>(n,base1,<span class="at">death.cumhaz=</span>dr,<span class="at">r1=</span>r1,<span class="at">Z0=</span>X,<span class="at">dependence=</span>dep,<span class="at">var.z=</span>varz,<span class="at">cens=</span>ce<span class="sc">/</span><span class="dv">5000</span>)</span>
+<span id="cb8-21"><a href="#cb8-21" tabindex="-1"></a>rr<span class="sc">$</span>A0 <span class="ot">&lt;-</span> A0[rr<span class="sc">$</span>id]</span>
+<span id="cb8-22"><a href="#cb8-22" tabindex="-1"></a>rr<span class="sc">$</span>z1 <span class="ot">&lt;-</span> <span class="fu">attr</span>(rr,<span class="st">&quot;z&quot;</span>)[rr<span class="sc">$</span>id]</span>
+<span id="cb8-23"><a href="#cb8-23" tabindex="-1"></a>rr<span class="sc">$</span>lz1 <span class="ot">&lt;-</span> <span class="fu">log</span>(rr<span class="sc">$</span>z1)</span>
+<span id="cb8-24"><a href="#cb8-24" tabindex="-1"></a>rr<span class="sc">$</span>X <span class="ot">&lt;-</span> rr<span class="sc">$</span>lz1 </span>
+<span id="cb8-25"><a href="#cb8-25" tabindex="-1"></a>rr<span class="sc">$</span>lX <span class="ot">&lt;-</span> rr<span class="sc">$</span>z1</span>
+<span id="cb8-26"><a href="#cb8-26" tabindex="-1"></a>rr<span class="sc">$</span>statusD <span class="ot">&lt;-</span> rr<span class="sc">$</span>status</span>
+<span id="cb8-27"><a href="#cb8-27" tabindex="-1"></a>rr <span class="ot">&lt;-</span> <span class="fu">dtransform</span>(rr,<span class="at">statusD=</span><span class="dv">2</span>,death<span class="sc">==</span><span class="dv">1</span>)</span>
+<span id="cb8-28"><a href="#cb8-28" tabindex="-1"></a>rr <span class="ot">&lt;-</span> <span class="fu">count.history</span>(rr)</span>
+<span id="cb8-29"><a href="#cb8-29" tabindex="-1"></a>rr<span class="sc">$</span>Z <span class="ot">&lt;-</span> rr<span class="sc">$</span>A0</span>
+<span id="cb8-30"><a href="#cb8-30" tabindex="-1"></a>data <span class="ot">&lt;-</span> rr</span>
+<span id="cb8-31"><a href="#cb8-31" tabindex="-1"></a>data<span class="sc">$</span>Z.f <span class="ot">&lt;-</span> <span class="fu">as.factor</span>(data<span class="sc">$</span>Z)</span>
+<span id="cb8-32"><a href="#cb8-32" tabindex="-1"></a>data<span class="sc">$</span>treattime <span class="ot">&lt;-</span> <span class="dv">0</span></span>
+<span id="cb8-33"><a href="#cb8-33" tabindex="-1"></a>data <span class="ot">&lt;-</span> <span class="fu">dtransform</span>(data,<span class="at">treattime=</span><span class="dv">1</span>,lbnr__id<span class="sc">==</span><span class="dv">1</span>)</span>
+<span id="cb8-34"><a href="#cb8-34" tabindex="-1"></a><span class="fu">dlist</span>(data,start<span class="sc">+</span>stop<span class="sc">+</span>statusD<span class="sc">+</span>A0<span class="sc">+</span>z1<span class="sc">+</span>treattime<span class="sc">+</span>Count1<span class="sc">~</span>id<span class="sc">|</span>id <span class="sc">%in%</span> <span class="fu">c</span>(<span class="dv">4</span>,<span class="dv">5</span>))</span>
+<span id="cb8-35"><a href="#cb8-35" tabindex="-1"></a><span class="co">#&gt; id: 4</span></span>
+<span id="cb8-36"><a href="#cb8-36" tabindex="-1"></a><span class="co">#&gt;      start   stop    statusD A0 z1    treattime Count1</span></span>
+<span id="cb8-37"><a href="#cb8-37" tabindex="-1"></a><span class="co">#&gt; 4      0.000   9.565 1       0  0.471 1         0     </span></span>
+<span id="cb8-38"><a href="#cb8-38" tabindex="-1"></a><span class="co">#&gt; 1003   9.565 372.057 1       0  0.471 0         1     </span></span>
+<span id="cb8-39"><a href="#cb8-39" tabindex="-1"></a><span class="co">#&gt; 1468 372.057 389.831 0       0  0.471 0         2     </span></span>
+<span id="cb8-40"><a href="#cb8-40" tabindex="-1"></a><span class="co">#&gt; ------------------------------------------------------------ </span></span>
+<span id="cb8-41"><a href="#cb8-41" tabindex="-1"></a><span class="co">#&gt; id: 5</span></span>
+<span id="cb8-42"><a href="#cb8-42" tabindex="-1"></a><span class="co">#&gt;   start stop  statusD A0 z1    treattime Count1</span></span>
+<span id="cb8-43"><a href="#cb8-43" tabindex="-1"></a><span class="co">#&gt; 5 0     213.9 2       1  2.338 1         0</span></span></code></pre></div>
 <p>Now we fit the model</p>
 <div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" tabindex="-1"></a>fit2 <span class="ot">&lt;-</span> <span class="fu">phreg_rct</span>(<span class="fu">Event</span>(start,stop,statusD)<span class="sc">~</span>Z.f<span class="sc">+</span><span class="fu">cluster</span>(id),<span class="at">data=</span>data,</span>
 <span id="cb9-2"><a href="#cb9-2" tabindex="-1"></a>     <span class="at">treat.var=</span><span class="st">&quot;treattime&quot;</span>,<span class="at">typesR=</span><span class="fu">c</span>(<span class="st">&quot;non&quot;</span>,<span class="st">&quot;R0&quot;</span>),<span class="at">typesC=</span><span class="fu">c</span>(<span class="st">&quot;non&quot;</span>,<span class="st">&quot;C&quot;</span>,<span class="st">&quot;dynC&quot;</span>),</span>
@@ -821,7 +820,7 @@ very reasonable based on the above,</p>
 <span id="cb10-16"><a href="#cb10-16" tabindex="-1"></a>rr<span class="sc">$</span>A1 <span class="ot">&lt;-</span> A1[rr<span class="sc">$</span>id]</span>
 <span id="cb10-17"><a href="#cb10-17" tabindex="-1"></a>rr<span class="sc">$</span>A0 <span class="ot">&lt;-</span> A0[rr<span class="sc">$</span>id]</span>
 <span id="cb10-18"><a href="#cb10-18" tabindex="-1"></a>rr<span class="sc">$</span>lz1 <span class="ot">&lt;-</span> <span class="fu">log</span>(rr<span class="sc">$</span>z1)</span>
-<span id="cb10-19"><a href="#cb10-19" tabindex="-1"></a>rr <span class="ot">&lt;-</span> <span class="fu">count.history</span>(rr)</span>
+<span id="cb10-19"><a href="#cb10-19" tabindex="-1"></a>rr <span class="ot">&lt;-</span> <span class="fu">count.history</span>(rr,<span class="at">types=</span><span class="dv">1</span><span class="sc">:</span><span class="dv">2</span>)</span>
 <span id="cb10-20"><a href="#cb10-20" tabindex="-1"></a>rr<span class="sc">$</span>A1t <span class="ot">&lt;-</span> <span class="dv">0</span></span>
 <span id="cb10-21"><a href="#cb10-21" tabindex="-1"></a>rr <span class="ot">&lt;-</span> <span class="fu">dtransform</span>(rr,<span class="at">A1t=</span>A1,Count2<span class="sc">==</span><span class="dv">1</span>) </span>
 <span id="cb10-22"><a href="#cb10-22" tabindex="-1"></a>rr<span class="sc">$</span>At.f <span class="ot">&lt;-</span> rr<span class="sc">$</span>A0</span>
@@ -979,13 +978,13 @@ adaptive nature from fitting the propensity score models.</li>
 <div id="sessioninfo" class="section level1">
 <h1>SessionInfo</h1>
 <div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" tabindex="-1"></a><span class="fu">sessionInfo</span>()</span>
-<span id="cb14-2"><a href="#cb14-2" tabindex="-1"></a><span class="co">#&gt; R version 4.4.3 (2025-02-28)</span></span>
-<span id="cb14-3"><a href="#cb14-3" tabindex="-1"></a><span class="co">#&gt; Platform: aarch64-apple-darwin24.3.0</span></span>
-<span id="cb14-4"><a href="#cb14-4" tabindex="-1"></a><span class="co">#&gt; Running under: macOS Sequoia 15.4.1</span></span>
+<span id="cb14-2"><a href="#cb14-2" tabindex="-1"></a><span class="co">#&gt; R version 4.5.1 (2025-06-13)</span></span>
+<span id="cb14-3"><a href="#cb14-3" tabindex="-1"></a><span class="co">#&gt; Platform: aarch64-apple-darwin24.5.0</span></span>
+<span id="cb14-4"><a href="#cb14-4" tabindex="-1"></a><span class="co">#&gt; Running under: macOS Sequoia 15.6.1</span></span>
 <span id="cb14-5"><a href="#cb14-5" tabindex="-1"></a><span class="co">#&gt; </span></span>
 <span id="cb14-6"><a href="#cb14-6" tabindex="-1"></a><span class="co">#&gt; Matrix products: default</span></span>
-<span id="cb14-7"><a href="#cb14-7" tabindex="-1"></a><span class="co">#&gt; BLAS:   /Users/kkzh/.asdf/installs/R/4.4.3/lib/R/lib/libRblas.dylib </span></span>
-<span id="cb14-8"><a href="#cb14-8" tabindex="-1"></a><span class="co">#&gt; LAPACK: /Users/kkzh/.asdf/installs/R/4.4.3/lib/R/lib/libRlapack.dylib;  LAPACK version 3.12.0</span></span>
+<span id="cb14-7"><a href="#cb14-7" tabindex="-1"></a><span class="co">#&gt; BLAS:   /Users/kkzh/.asdf/installs/R/4.5.1/lib/R/lib/libRblas.dylib </span></span>
+<span id="cb14-8"><a href="#cb14-8" tabindex="-1"></a><span class="co">#&gt; LAPACK: /Users/kkzh/.asdf/installs/R/4.5.1/lib/R/lib/libRlapack.dylib;  LAPACK version 3.12.1</span></span>
 <span id="cb14-9"><a href="#cb14-9" tabindex="-1"></a><span class="co">#&gt; </span></span>
 <span id="cb14-10"><a href="#cb14-10" tabindex="-1"></a><span class="co">#&gt; locale:</span></span>
 <span id="cb14-11"><a href="#cb14-11" tabindex="-1"></a><span class="co">#&gt; [1] en_US.UTF-8/en_US.UTF-8/en_US.UTF-8/C/en_US.UTF-8/en_US.UTF-8</span></span>
@@ -997,21 +996,21 @@ adaptive nature from fitting the propensity score models.</li>
 <span id="cb14-17"><a href="#cb14-17" tabindex="-1"></a><span class="co">#&gt; [1] stats     graphics  grDevices utils     datasets  methods   base     </span></span>
 <span id="cb14-18"><a href="#cb14-18" tabindex="-1"></a><span class="co">#&gt; </span></span>
 <span id="cb14-19"><a href="#cb14-19" tabindex="-1"></a><span class="co">#&gt; other attached packages:</span></span>
-<span id="cb14-20"><a href="#cb14-20" tabindex="-1"></a><span class="co">#&gt; [1] timereg_2.0.6  survival_3.8-3 mets_1.3.6    </span></span>
+<span id="cb14-20"><a href="#cb14-20" tabindex="-1"></a><span class="co">#&gt; [1] timereg_2.0.7  survival_3.8-3 mets_1.3.7    </span></span>
 <span id="cb14-21"><a href="#cb14-21" tabindex="-1"></a><span class="co">#&gt; </span></span>
 <span id="cb14-22"><a href="#cb14-22" tabindex="-1"></a><span class="co">#&gt; loaded via a namespace (and not attached):</span></span>
-<span id="cb14-23"><a href="#cb14-23" tabindex="-1"></a><span class="co">#&gt;  [1] cli_3.6.4           knitr_1.49          rlang_1.1.5        </span></span>
-<span id="cb14-24"><a href="#cb14-24" tabindex="-1"></a><span class="co">#&gt;  [4] xfun_0.51           jsonlite_1.9.1      future.apply_1.11.3</span></span>
+<span id="cb14-23"><a href="#cb14-23" tabindex="-1"></a><span class="co">#&gt;  [1] cli_3.6.5           knitr_1.50          rlang_1.1.6        </span></span>
+<span id="cb14-24"><a href="#cb14-24" tabindex="-1"></a><span class="co">#&gt;  [4] xfun_0.53           jsonlite_2.0.0      future.apply_1.20.0</span></span>
 <span id="cb14-25"><a href="#cb14-25" tabindex="-1"></a><span class="co">#&gt;  [7] listenv_0.9.1       lava_1.8.1          htmltools_0.5.8.1  </span></span>
-<span id="cb14-26"><a href="#cb14-26" tabindex="-1"></a><span class="co">#&gt; [10] sass_0.4.9          rmarkdown_2.29      grid_4.4.3         </span></span>
-<span id="cb14-27"><a href="#cb14-27" tabindex="-1"></a><span class="co">#&gt; [13] evaluate_1.0.3      jquerylib_0.1.4     fastmap_1.2.0      </span></span>
+<span id="cb14-26"><a href="#cb14-26" tabindex="-1"></a><span class="co">#&gt; [10] sass_0.4.10         rmarkdown_2.29      grid_4.5.1         </span></span>
+<span id="cb14-27"><a href="#cb14-27" tabindex="-1"></a><span class="co">#&gt; [13] evaluate_1.0.5      jquerylib_0.1.4     fastmap_1.2.0      </span></span>
 <span id="cb14-28"><a href="#cb14-28" tabindex="-1"></a><span class="co">#&gt; [16] numDeriv_2016.8-1.1 yaml_2.3.10         mvtnorm_1.3-3      </span></span>
-<span id="cb14-29"><a href="#cb14-29" tabindex="-1"></a><span class="co">#&gt; [19] lifecycle_1.0.4     compiler_4.4.3      codetools_0.2-20   </span></span>
-<span id="cb14-30"><a href="#cb14-30" tabindex="-1"></a><span class="co">#&gt; [22] ucminf_1.2.2        Rcpp_1.0.14         future_1.40.0      </span></span>
-<span id="cb14-31"><a href="#cb14-31" tabindex="-1"></a><span class="co">#&gt; [25] lattice_0.22-6      digest_0.6.37       R6_2.6.1           </span></span>
-<span id="cb14-32"><a href="#cb14-32" tabindex="-1"></a><span class="co">#&gt; [28] parallelly_1.43.0   parallel_4.4.3      splines_4.4.3      </span></span>
-<span id="cb14-33"><a href="#cb14-33" tabindex="-1"></a><span class="co">#&gt; [31] Matrix_1.7-2        bslib_0.9.0         tools_4.4.3        </span></span>
-<span id="cb14-34"><a href="#cb14-34" tabindex="-1"></a><span class="co">#&gt; [34] globals_0.17.0      cachem_1.1.0</span></span></code></pre></div>
+<span id="cb14-29"><a href="#cb14-29" tabindex="-1"></a><span class="co">#&gt; [19] lifecycle_1.0.4     compiler_4.5.1      codetools_0.2-20   </span></span>
+<span id="cb14-30"><a href="#cb14-30" tabindex="-1"></a><span class="co">#&gt; [22] ucminf_1.2.2        Rcpp_1.1.0          future_1.67.0      </span></span>
+<span id="cb14-31"><a href="#cb14-31" tabindex="-1"></a><span class="co">#&gt; [25] lattice_0.22-7      digest_0.6.37       R6_2.6.1           </span></span>
+<span id="cb14-32"><a href="#cb14-32" tabindex="-1"></a><span class="co">#&gt; [28] parallelly_1.45.1   parallel_4.5.1      splines_4.5.1      </span></span>
+<span id="cb14-33"><a href="#cb14-33" tabindex="-1"></a><span class="co">#&gt; [31] Matrix_1.7-4        bslib_0.9.0         tools_4.5.1        </span></span>
+<span id="cb14-34"><a href="#cb14-34" tabindex="-1"></a><span class="co">#&gt; [34] globals_0.18.0      cachem_1.1.0</span></span></code></pre></div>
 </div>
 
 

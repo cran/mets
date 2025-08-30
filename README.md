@@ -16,8 +16,8 @@
     Modern methods for survival analysis, including regression modelling (Cox, Fine-Gray, 
     Ghosh-Lin, Binomial regression) with fast computation of influence functions. 
     Restricted mean survival time regression and years lost for competing risks. 
-    Average treatment effects and G-computation. 
-
+    Average treatment effects and G-computation.  All functions can be used with
+    clusters and will work for large data. 
 
 ## Installation
 
@@ -189,8 +189,10 @@ First estimating the standardized survival
  plot(sst,type=c("survival","risk","survival.ratio")[1])
 ```
 
-Based on the phreg, that can be used to get the the Kaplan-Meier, we can also compute 
-restricted mean survival times and years lost 
+Based on the phreg we can also compute  the 
+restricted mean survival time and years lost (via Kaplan-Meier estimates). The function does it 
+for all times at once and can be plotted as restricted mean survival or years lost at the different
+time horizons 
 
 
 ```{r}
@@ -203,20 +205,23 @@ restricted mean survival times and years lost
  plot(rm1,years.lost=TRUE,se=1)
 ```
 
-and for competing risks the years lost can be decomposed into different causes 
+For competing risks the years lost can be decomposed into different causes and is 
+based on the integrated Aalen-Johansen estimators for the different strata
 
 ```{r}
  ## years.lost decomposed into causes
  drm1 <- cif.yearslost(Event(time,cause)~strata(tcell,platelet),data=bmt,times=10*(1:6))
- par(mfrow=c(1,2)); plot(drm1,cause=1,se=1); plot(drm1,cause=2,se=1);
+ par(mfrow=c(1,2)); plot(drm1,cause=1,se=1); title(main="Cause 1"); plot(drm1,cause=2,se=1); title(main="Cause 2")
  summary(drm1)
 ```
+
+Computations are again done for all time horizons at once as illustrated in the plot. 
 
 ## Examples: Cox model IPTW 
 
 We can fit the Cox model with inverse probabilty of treatment weights based on 
 logistic regression. The treatment weights can be time-dependent and then mutiplicative
-weights are applied. 
+weights are applied (see details and vignette). 
 
 ```{r}
 library(mets)
@@ -224,10 +229,10 @@ library(mets)
  bmt$event <- (bmt$cause!=0)*1
  dfactor(bmt) <- tcell.f~tcell
 
- ss <- phreg_IPTW(Surv(time,event)~tcell.f,data=bmt,treat.model=tcell.f~platelet+age) 
+ ss <- phreg_IPTW(Surv(time,event)~tcell.f+cluster(id),data=bmt,treat.model=tcell.f~platelet+age) 
  summary(ss)
+ head(iid(ss))
 ```
-
 
 ## Examples: Competing risks regression, Binomial Regression
 
@@ -238,6 +243,7 @@ We can fit the logistic regression model at a specific time-point with IPCW adju
  # logistic regresion with IPCW binomial regression 
  out <- binreg(Event(time,cause)~tcell+platelet,bmt,time=50)
  summary(out)
+ head(iid(out))
 
  predict(out,data.frame(tcell=c(0,1),platelet=c(1,1)),se=TRUE)
 ```
@@ -282,10 +288,10 @@ Similarly, the Fine-Gray model can be estimated using IPCW adjustment
 ```
 
 and we can get standard errors for predictions based on the influence functions of 
-the baseline and the regression coefiicients
+the baseline and the regression coefiicients (these are used in the predict function)
 
 ```{r}
-baseid <- IIDbaseline.cifreg(fg,time=40)
+baseid <- iidBaseline(fg,time=40)
 FGprediid(baseid,nd)
 ```
 
@@ -336,18 +342,18 @@ and the regression coefiicients
  plot(pfg,se=1)
 ```
 
-and we can get the influence functions of the baseline and regression coefficients at 
-a specific time-point 
+The influence functions of the baseline and regression coefficients at 
+a specific time-point can be obtained 
 
 ```{r}
-baseid <- IIDbaseline.recreg(gl1,time=2)
+baseid <- iidBaseline(gl1,time=2)
 dd <- data.frame(treatment=levels(hfactioncpx12$treatment),id=1)
 GLprediid(baseid,dd)
 ```
 
 ## Examples: Fixed time modelling for recurrent events 
 
-We can fit a log-link regression model at 2 yeas for the expected number of events observed
+We can fit a log-link regression model at 2 years for the expected number of events observed
 before dying (using IPCW adjustment)
 
 ```{r}
@@ -355,6 +361,7 @@ data(hfactioncpx12)
 
 e2 <- recregIPCW(Event(entry,time,status)~treatment+cluster(id),hfactioncpx12,cause=1,death.code=2,time=2)
 summary(e2)
+head(iid(e2))
 ```
 
 ## Examples: Regression for RMST/Restricted mean survival for survival and competing risks  using IPCW  
@@ -369,6 +376,7 @@ estimates via IPCW adjustment and then we can do regression
  out <- resmeanIPCW(Event(time,cause!=0)~-1+int,bmt,time=30,
                          cens.model=~strata(platelet,tcell),model="lin")
  estimate(out)
+ head(iid(out))
  ## same as 
  out1 <- phreg(Surv(time,cause!=0)~strata(tcell,platelet),data=bmt)
  rm1 <- resmean.phreg(out1,times=30)
@@ -393,16 +401,40 @@ probabilty of dying
  brs <- binregATE(Event(time,cause)~tcell+platelet+age,bmt,time=50,cause=1,
 	  treat.model=tcell~platelet+age)
  summary(brs)
+ head(brs$riskDR.iid)
+ head(brs$riskG.iid)
 ```
 
-or the the restricted mean survival (years-lost to different causes)
+or the the restricted mean survival or years-lost to cause 1 
 
 ```{r}
  out <- resmeanATE(Event(time,event)~tcell+platelet,data=bmt,time=40,treat.model=tcell~platelet)
  summary(out)
- 
+ head(out$riskDR.iid)
+ head(out$riskG.iid)
+
  out1 <- resmeanATE(Event(time,cause)~tcell+platelet,data=bmt,cause=1,time=40,
                     treat.model=tcell~platelet)
  summary(out1)
 ```
+
+Here event is 0/1 thus leading to restricted mean and cause taking the values 0,1,2  produces 
+regression for the years lost due to cause 1. 
+
+## Examples: While Alive estimands for recurrent events 
+
+We consider an RCT and aim to describe the treatment effect via while alive estimands
+
+```{r}
+data(hfactioncpx12)
+
+dtable(hfactioncpx12,~status)
+dd <- WA_recurrent(Event(entry,time,status)~treatment+cluster(id),hfactioncpx12,time=2,death.code=2)
+summary(dd)
+
+dd <- WA_recurrent(Event(entry,time,status)~treatment+cluster(id),hfactioncpx12,time=2,
+		   death.code=2,trans=.333)
+summary(dd,type="log")
+```
+
 

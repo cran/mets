@@ -27,8 +27,8 @@ binregATE(
   no.opt = FALSE,
   method = "nr",
   augmentation = NULL,
-  outcome = c("cif", "rmst"),
-  model = "exp",
+  outcome = c("cif", "rmst", "rmtl"),
+  model = c("default", "logit", "exp", "lin"),
   Ydirect = NULL,
   ...
 )

@@ -32,6 +32,7 @@ estimate(coef=bb$riskG$riskG01[,1],vcov=crossprod(bb$riskG.iid$riskG01),f=functi
 
 
 ## -----------------------------------------------------------------------------
+
 ## 2 levels for each response , fixed weights 
 datat$response.f <- as.factor(datat$response)
 bb <- binregTSR(Event(entry,time,status)~+1+cluster(id),datat,time=2,cause=c(1),response.code=2,

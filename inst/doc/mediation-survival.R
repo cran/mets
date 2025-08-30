@@ -83,6 +83,7 @@ summary(ll)
 if (runb>0) { bll <- BootmediatorSurv(aaMss,fit,data=dat,k.boot=k.boot); summary(bll)}
 
 ## ----label=multinom, cache=TRUE, eval=fullVignette----------------------------
+# library(mets)
 # data(tTRACE)
 # dcut(tTRACE) <- ~.
 # 
@@ -93,6 +94,7 @@ if (runb>0) { bll <- BootmediatorSurv(aaMss,fit,data=dat,k.boot=k.boot); summary
 # 		time=7,weights=wdata$weights,cause=9)
 # summary(aaMss)
 # MultMed <- mediatorSurv(aaMss,fit,data=tTRACE,wdata=wdata)
+# summary(MultMed)
 
 ## ----results="hide", echo=FALSE-----------------------------------------------
 ## To save time building the vignettes on CRAN, we cache time consuming computations

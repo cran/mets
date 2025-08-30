@@ -8,10 +8,10 @@ library(mets)
 ## -----------------------------------------------------------------------------
  library(mets)
  options(warn=-1)
- set.seed(1000) # to control output in simulatins for p-values below.
-
+ set.seed(1000) # to control output in random noise just below.
  data(bmt)
  bmt$time <- bmt$time+runif(nrow(bmt))*0.01
+
  # logistic regresion with IPCW binomial regression 
  out <- binreg(Event(time,cause)~tcell+platelet,bmt,time=50)
  summary(out)

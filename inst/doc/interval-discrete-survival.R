@@ -13,6 +13,10 @@ dtable(ttpd,~entry+time2)
 out <- interval.logitsurv.discrete(Interval(entry,time2)~X1+X2+X3+X4,ttpd)
 summary(out)
 
+dfactor(ttpd) <- entry.f~entry
+out <- cumoddsreg(entry.f~X1+X2+X3+X4,ttpd)
+summary(out)
+
 ## -----------------------------------------------------------------------------
 set.seed(1000) # to control output in simulatins for p-values below.
 n <- 200
@@ -95,14 +99,14 @@ summary(fit)
 
 data(ttpd) 
 dtable(ttpd,~entry+time2)
-out <- interval.logitsurv.discrete(Interval(entry,time2)~X1+X2+X3+X4,ttpd)
+ttpd <- dfactor(ttpd,fentry~entry)
+out <- cumoddsreg(fentry~X1+X2+X3+X4,ttpd)
 summary(out)
 
 out$ploglik
 
 if (test==1) {
 ### library(ordinal)
-### ttpd <- dfactor(ttpd,fentry~entry)
 ### out1 <- clm(fentry~X1+X2+X3+X4,data=ttpd)
 ### summary(out1)
 

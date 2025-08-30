@@ -12,7 +12,7 @@
 
 <meta name="author" content="Klaus Holst &amp; Thomas Scheike" />
 
-<meta name="date" content="2025-04-23" />
+<meta name="date" content="2025-08-30" />
 
 <title>Binomial Regression for Survival and Competing Risks Data</title>
 
@@ -342,12 +342,30 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 <h1 class="title toc-ignore">Binomial Regression for Survival and
 Competing Risks Data</h1>
 <h4 class="author">Klaus Holst &amp; Thomas Scheike</h4>
-<h4 class="date">2025-04-23</h4>
+<h4 class="date">2025-08-30</h4>
 
 
 
 <div id="binomial-regression-for-censored-data" class="section level1">
 <h1>Binomial Regression for censored data</h1>
+<p>The binreg function can fit a logistic link model with IPCW
+adjustment for a specific time-point, and can thus be used for
+describing survival or competing risks data. The function can be used
+for large data and is completely scalable, that is, linear in the data.
+A nice feature is that influcence functions are computed and are
+available, and can thus be used for all other settings based on these
+parameters.</p>
+<p>In addition and to summarize</p>
+<ul>
+<li>the censoring weights can be strata dependent</li>
+<li>predictions can be computed with standard errors</li>
+<li>computation time linear in data
+<ul>
+<li>including standard errors</li>
+</ul></li>
+<li>clusters can be given and then cluster corrected standard errors are
+computed</li>
+</ul>
 </div>
 <div id="details" class="section level1">
 <h1>Details</h1>
@@ -356,37 +374,40 @@ time-point, <span class="math inline">\(t\)</span>, fitting the model
 <span class="math display">\[\begin{align*}
 P(T \leq t, \epsilon=1 | X )  &amp; = \mbox{expit}( X^T \beta)  =
 F_1(t,X,\beta)
-\end{align*}\]</span> the estimation is based on IPCW weighted EE with
+\end{align*}\]</span> to an IPCW adjusted estmating equation (EE) with
 response <span class="math inline">\(Y(t)=I(T \leq t, \epsilon=1
 )\)</span> <span class="math display">\[\begin{align*}
-U(\beta) = &amp;  X ( Y(t) \frac{ \Delta(t) }{G_c(T_i \wedge t)} -
-\mbox{expit}( X^T \beta)) = 0
-\end{align*}\]</span> for IPCW adjusted responses and with <span class="math inline">\(\Delta\)</span> indicator of death and <span class="math inline">\(G_c\)</span> censoring survival distribution. With
-<span class="math inline">\(\Delta(t) = I( C_i &gt; T_i \wedge
-t)\)</span>. The default type=“II” is to augment with the censoring
-term, that is solve <span class="math display">\[\begin{align*}
-  &amp;  U(\beta) + \int_0^t X \frac{E(Y(t) | T&gt;u)}{G_c(u)} d\hat
-M_c(u) =0
+U(\beta,\hat G_c) = &amp;  X ( Y(t) \frac{ \Delta(t) }{\hat G_c(T_i
+\wedge t)} - \mbox{expit}( X^T \beta)) = 0,
+\end{align*}\]</span> with <span class="math inline">\(G_c(t)=P(C&gt;t)\)</span>, the censoring survival
+distribution, and with <span class="math inline">\(\Delta(t) = I( C_i
+&gt; T_i \wedge t)\)</span> the indicator of being uncensored at time
+<span class="math inline">\(t\)</span> (type=“I”). The default type=“II”
+is to augment with a censoring term, that is solve <span class="math display">\[\begin{align*}
+  &amp;  U(\beta,\hat G_c) + \int_0^t X \frac{\hat E(Y(t)| T&gt;u)}{\hat
+G_c(u)} d\hat M_c(u) =0
 \end{align*}\]</span> where <span class="math inline">\(M_c(u)\)</span>
 is the censoring martingale, this typically improves the performance.
 This is equivlent to the pseudo-value approach (see Overgaard
-(2024)).</p>
-<p>The influence function of type=“II” is <span class="math display">\[\begin{align*}
-    U(\beta) - \int_0^t X \frac{E(Y| T&gt;u)}{G_c(u)} d M_c(u)  
-    + \int_0^t  \frac{E(X| T&gt;u) E(Y| T&gt;u)}{G_c(u)} d M_c(u) +
+(2025)).</p>
+<p>The influence function for the type=“II” estimator is <span class="math display">\[\begin{align*}
+    U(\beta,G_c) + \int_0^t X \frac{E(Y| T&gt;u)}{G_c(u)} d M_c(u)  
+    - \int_0^t  \frac{E(X| T&gt;u) E(Y| T&gt;u)}{G_c(u)} d M_c(u) -
 \int_0^t \frac{E( X Y| T&gt;u)}{G_c(u)} d M_c(u)  
 \end{align*}\]</span> and for type=“I” <span class="math display">\[\begin{align*}
   &amp;  U(\beta) + \int_0^t \frac{E( X Y| T&gt;u)}{G_c(u)} d M_c(u).
-\end{align*}\]</span> The means such as <span class="math inline">\(E(X
-Y| T&gt;u)\)</span> are estimated by IPCW estimators among
-survivors.</p>
+\end{align*}\]</span> The means <span class="math inline">\(E(X Y(t) |
+T&gt;u)\)</span> and <span class="math inline">\(E(Y(t)|
+T&gt;u)\)</span> are estimated by IPCW estimators among survivors to get
+estimates of the influence functions.</p>
 <p>The function logitIPCW instead considers <span class="math display">\[\begin{align*}
-U^{glm}(\beta) = &amp; \frac{ \Delta(t) }{G_c(T_i \wedge t)}  X  ( Y(t)
-- \mbox{expit}( X^T \beta)) = 0.
-\end{align*}\]</span> The two score equations are quite similar, and
-exactly the same when the censoring model is fully-nonparametric.</p>
+U^{glm}(\beta,\hat G_c) = &amp; \frac{ \Delta(t) }{\hat G_c(T_i \wedge
+t)}  X  ( Y(t) - \mbox{expit}( X^T \beta)) = 0.
+\end{align*}\]</span> This score equation is quite similar to those of
+the binreg, and exactly the same when the censoring model is
+fully-nonparametric.</p>
 <p>The logitIPCW has influence function <span class="math display">\[\begin{align*}
-  &amp;  U^{glm}(\beta) + \int_0^t \frac{E( X ( Y - F_1(t,\beta)) |
+  &amp;  U^{glm}(\beta,G_c) + \int_0^t \frac{E( X ( Y - F_1(t,\beta)) |
 T&gt;u)}{G_c(u)} d M_c(u)  
 \end{align*}\]</span></p>
 <p>Which estimator performs the best depends on the censoring
@@ -396,39 +417,39 @@ For the full estimated censoring model all estimators have the same
 influence function (see Blanche et al (2023)).</p>
 <p>Additional functions logitATE, and binregATE computes the average
 treatment effect. We demonstrate this in another vignette.</p>
-<p>The function logitATE can be used there is no censoring and we thus
-have simple binary outcome.</p>
-<p>Variance is based on sandwich formula with IPCW adjustment (using the
-influence functions), and naive.var is variance under known censoring
-model. The influence functions are stored in the output.</p>
+<p>The functions logitATE/binregATE can be used there is no censoring
+and we thus have simple binary outcome.</p>
+<p>The variance is based on sandwich formula with IPCW adjustment (using
+the influence functions), and naive.var is the variance under known
+censoring model. The influence functions are stored in the output.
+Clusters can be specified to get cluster corrected standard errors.</p>
 </div>
 <div id="examples" class="section level1">
 <h1>Examples</h1>
 <div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a> <span class="fu">library</span>(mets)</span>
 <span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a> <span class="fu">options</span>(<span class="at">warn=</span><span class="sc">-</span><span class="dv">1</span>)</span>
-<span id="cb1-3"><a href="#cb1-3" tabindex="-1"></a> <span class="fu">set.seed</span>(<span class="dv">1000</span>) <span class="co"># to control output in simulatins for p-values below.</span></span>
-<span id="cb1-4"><a href="#cb1-4" tabindex="-1"></a></span>
-<span id="cb1-5"><a href="#cb1-5" tabindex="-1"></a> <span class="fu">data</span>(bmt)</span>
-<span id="cb1-6"><a href="#cb1-6" tabindex="-1"></a> bmt<span class="sc">$</span>time <span class="ot">&lt;-</span> bmt<span class="sc">$</span>time<span class="sc">+</span><span class="fu">runif</span>(<span class="fu">nrow</span>(bmt))<span class="sc">*</span><span class="fl">0.01</span></span>
+<span id="cb1-3"><a href="#cb1-3" tabindex="-1"></a> <span class="fu">set.seed</span>(<span class="dv">1000</span>) <span class="co"># to control output in random noise just below.</span></span>
+<span id="cb1-4"><a href="#cb1-4" tabindex="-1"></a> <span class="fu">data</span>(bmt)</span>
+<span id="cb1-5"><a href="#cb1-5" tabindex="-1"></a> bmt<span class="sc">$</span>time <span class="ot">&lt;-</span> bmt<span class="sc">$</span>time<span class="sc">+</span><span class="fu">runif</span>(<span class="fu">nrow</span>(bmt))<span class="sc">*</span><span class="fl">0.01</span></span>
+<span id="cb1-6"><a href="#cb1-6" tabindex="-1"></a></span>
 <span id="cb1-7"><a href="#cb1-7" tabindex="-1"></a> <span class="co"># logistic regresion with IPCW binomial regression </span></span>
 <span id="cb1-8"><a href="#cb1-8" tabindex="-1"></a> out <span class="ot">&lt;-</span> <span class="fu">binreg</span>(<span class="fu">Event</span>(time,cause)<span class="sc">~</span>tcell<span class="sc">+</span>platelet,bmt,<span class="at">time=</span><span class="dv">50</span>)</span>
 <span id="cb1-9"><a href="#cb1-9" tabindex="-1"></a> <span class="fu">summary</span>(out)</span>
-<span id="cb1-10"><a href="#cb1-10" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb1-11"><a href="#cb1-11" tabindex="-1"></a><span class="co">#&gt;    n events</span></span>
-<span id="cb1-12"><a href="#cb1-12" tabindex="-1"></a><span class="co">#&gt;  408    160</span></span>
-<span id="cb1-13"><a href="#cb1-13" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb1-14"><a href="#cb1-14" tabindex="-1"></a><span class="co">#&gt;  408 clusters</span></span>
-<span id="cb1-15"><a href="#cb1-15" tabindex="-1"></a><span class="co">#&gt; coeffients:</span></span>
-<span id="cb1-16"><a href="#cb1-16" tabindex="-1"></a><span class="co">#&gt;              Estimate   Std.Err      2.5%     97.5% P-value</span></span>
-<span id="cb1-17"><a href="#cb1-17" tabindex="-1"></a><span class="co">#&gt; (Intercept) -0.180338  0.126748 -0.428760  0.068084  0.1548</span></span>
-<span id="cb1-18"><a href="#cb1-18" tabindex="-1"></a><span class="co">#&gt; tcell       -0.418545  0.345480 -1.095675  0.258584  0.2257</span></span>
-<span id="cb1-19"><a href="#cb1-19" tabindex="-1"></a><span class="co">#&gt; platelet    -0.437644  0.240978 -0.909952  0.034665  0.0694</span></span>
-<span id="cb1-20"><a href="#cb1-20" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb1-21"><a href="#cb1-21" tabindex="-1"></a><span class="co">#&gt; exp(coeffients):</span></span>
-<span id="cb1-22"><a href="#cb1-22" tabindex="-1"></a><span class="co">#&gt;             Estimate    2.5%  97.5%</span></span>
-<span id="cb1-23"><a href="#cb1-23" tabindex="-1"></a><span class="co">#&gt; (Intercept)  0.83499 0.65132 1.0705</span></span>
-<span id="cb1-24"><a href="#cb1-24" tabindex="-1"></a><span class="co">#&gt; tcell        0.65800 0.33431 1.2951</span></span>
-<span id="cb1-25"><a href="#cb1-25" tabindex="-1"></a><span class="co">#&gt; platelet     0.64556 0.40254 1.0353</span></span></code></pre></div>
+<span id="cb1-10"><a href="#cb1-10" tabindex="-1"></a><span class="co">#&gt;    n events</span></span>
+<span id="cb1-11"><a href="#cb1-11" tabindex="-1"></a><span class="co">#&gt;  408    160</span></span>
+<span id="cb1-12"><a href="#cb1-12" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb1-13"><a href="#cb1-13" tabindex="-1"></a><span class="co">#&gt;  408 clusters</span></span>
+<span id="cb1-14"><a href="#cb1-14" tabindex="-1"></a><span class="co">#&gt; coeffients:</span></span>
+<span id="cb1-15"><a href="#cb1-15" tabindex="-1"></a><span class="co">#&gt;              Estimate   Std.Err      2.5%     97.5% P-value</span></span>
+<span id="cb1-16"><a href="#cb1-16" tabindex="-1"></a><span class="co">#&gt; (Intercept) -0.180338  0.126748 -0.428760  0.068084  0.1548</span></span>
+<span id="cb1-17"><a href="#cb1-17" tabindex="-1"></a><span class="co">#&gt; tcell       -0.418545  0.345480 -1.095675  0.258584  0.2257</span></span>
+<span id="cb1-18"><a href="#cb1-18" tabindex="-1"></a><span class="co">#&gt; platelet    -0.437644  0.240978 -0.909952  0.034665  0.0694</span></span>
+<span id="cb1-19"><a href="#cb1-19" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb1-20"><a href="#cb1-20" tabindex="-1"></a><span class="co">#&gt; exp(coeffients):</span></span>
+<span id="cb1-21"><a href="#cb1-21" tabindex="-1"></a><span class="co">#&gt;             Estimate    2.5%  97.5%</span></span>
+<span id="cb1-22"><a href="#cb1-22" tabindex="-1"></a><span class="co">#&gt; (Intercept)  0.83499 0.65132 1.0705</span></span>
+<span id="cb1-23"><a href="#cb1-23" tabindex="-1"></a><span class="co">#&gt; tcell        0.65800 0.33431 1.2951</span></span>
+<span id="cb1-24"><a href="#cb1-24" tabindex="-1"></a><span class="co">#&gt; platelet     0.64556 0.40254 1.0353</span></span></code></pre></div>
 <p>We can also compute predictions using the estimates</p>
 <div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a> <span class="fu">predict</span>(out,<span class="fu">data.frame</span>(<span class="at">tcell=</span><span class="fu">c</span>(<span class="dv">0</span>,<span class="dv">1</span>),<span class="at">platelet=</span><span class="fu">c</span>(<span class="dv">1</span>,<span class="dv">1</span>)),<span class="at">se=</span><span class="cn">TRUE</span>)</span>
 <span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a><span class="co">#&gt;        pred         se     lower     upper</span></span>
@@ -437,22 +458,21 @@ model. The influence functions are stored in the output.</p>
 <p>Further the censoring model can depend on strata</p>
 <div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a> outs <span class="ot">&lt;-</span> <span class="fu">binreg</span>(<span class="fu">Event</span>(time,cause)<span class="sc">~</span>tcell<span class="sc">+</span>platelet,bmt,<span class="at">time=</span><span class="dv">50</span>,<span class="at">cens.model=</span><span class="sc">~</span><span class="fu">strata</span>(tcell,platelet))</span>
 <span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a> <span class="fu">summary</span>(outs)</span>
-<span id="cb3-3"><a href="#cb3-3" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb3-4"><a href="#cb3-4" tabindex="-1"></a><span class="co">#&gt;    n events</span></span>
-<span id="cb3-5"><a href="#cb3-5" tabindex="-1"></a><span class="co">#&gt;  408    160</span></span>
-<span id="cb3-6"><a href="#cb3-6" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb3-7"><a href="#cb3-7" tabindex="-1"></a><span class="co">#&gt;  408 clusters</span></span>
-<span id="cb3-8"><a href="#cb3-8" tabindex="-1"></a><span class="co">#&gt; coeffients:</span></span>
-<span id="cb3-9"><a href="#cb3-9" tabindex="-1"></a><span class="co">#&gt;              Estimate   Std.Err      2.5%     97.5% P-value</span></span>
-<span id="cb3-10"><a href="#cb3-10" tabindex="-1"></a><span class="co">#&gt; (Intercept) -0.180697  0.127414 -0.430424  0.069030  0.1561</span></span>
-<span id="cb3-11"><a href="#cb3-11" tabindex="-1"></a><span class="co">#&gt; tcell       -0.365928  0.350632 -1.053154  0.321299  0.2967</span></span>
-<span id="cb3-12"><a href="#cb3-12" tabindex="-1"></a><span class="co">#&gt; platelet    -0.433494  0.240270 -0.904415  0.037428  0.0712</span></span>
-<span id="cb3-13"><a href="#cb3-13" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb3-14"><a href="#cb3-14" tabindex="-1"></a><span class="co">#&gt; exp(coeffients):</span></span>
-<span id="cb3-15"><a href="#cb3-15" tabindex="-1"></a><span class="co">#&gt;             Estimate    2.5%  97.5%</span></span>
-<span id="cb3-16"><a href="#cb3-16" tabindex="-1"></a><span class="co">#&gt; (Intercept)  0.83469 0.65023 1.0715</span></span>
-<span id="cb3-17"><a href="#cb3-17" tabindex="-1"></a><span class="co">#&gt; tcell        0.69355 0.34884 1.3789</span></span>
-<span id="cb3-18"><a href="#cb3-18" tabindex="-1"></a><span class="co">#&gt; platelet     0.64824 0.40478 1.0381</span></span></code></pre></div>
+<span id="cb3-3"><a href="#cb3-3" tabindex="-1"></a><span class="co">#&gt;    n events</span></span>
+<span id="cb3-4"><a href="#cb3-4" tabindex="-1"></a><span class="co">#&gt;  408    160</span></span>
+<span id="cb3-5"><a href="#cb3-5" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb3-6"><a href="#cb3-6" tabindex="-1"></a><span class="co">#&gt;  408 clusters</span></span>
+<span id="cb3-7"><a href="#cb3-7" tabindex="-1"></a><span class="co">#&gt; coeffients:</span></span>
+<span id="cb3-8"><a href="#cb3-8" tabindex="-1"></a><span class="co">#&gt;              Estimate   Std.Err      2.5%     97.5% P-value</span></span>
+<span id="cb3-9"><a href="#cb3-9" tabindex="-1"></a><span class="co">#&gt; (Intercept) -0.180697  0.127414 -0.430424  0.069030  0.1561</span></span>
+<span id="cb3-10"><a href="#cb3-10" tabindex="-1"></a><span class="co">#&gt; tcell       -0.365928  0.350632 -1.053154  0.321299  0.2967</span></span>
+<span id="cb3-11"><a href="#cb3-11" tabindex="-1"></a><span class="co">#&gt; platelet    -0.433494  0.240270 -0.904415  0.037428  0.0712</span></span>
+<span id="cb3-12"><a href="#cb3-12" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb3-13"><a href="#cb3-13" tabindex="-1"></a><span class="co">#&gt; exp(coeffients):</span></span>
+<span id="cb3-14"><a href="#cb3-14" tabindex="-1"></a><span class="co">#&gt;             Estimate    2.5%  97.5%</span></span>
+<span id="cb3-15"><a href="#cb3-15" tabindex="-1"></a><span class="co">#&gt; (Intercept)  0.83469 0.65023 1.0715</span></span>
+<span id="cb3-16"><a href="#cb3-16" tabindex="-1"></a><span class="co">#&gt; tcell        0.69355 0.34884 1.3789</span></span>
+<span id="cb3-17"><a href="#cb3-17" tabindex="-1"></a><span class="co">#&gt; platelet     0.64824 0.40478 1.0381</span></span></code></pre></div>
 </div>
 <div id="absolute-risk-differences-and-ratio" class="section level1">
 <h1>Absolute risk differences and ratio</h1>
@@ -460,20 +480,19 @@ model. The influence functions are stored in the output.</p>
 depending on tcell</p>
 <div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a> outs <span class="ot">&lt;-</span> <span class="fu">binreg</span>(<span class="fu">Event</span>(time,cause)<span class="sc">~</span>tcell,bmt,<span class="at">time=</span><span class="dv">50</span>,<span class="at">cens.model=</span><span class="sc">~</span><span class="fu">strata</span>(tcell))</span>
 <span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a> <span class="fu">summary</span>(outs)</span>
-<span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb4-4"><a href="#cb4-4" tabindex="-1"></a><span class="co">#&gt;    n events</span></span>
-<span id="cb4-5"><a href="#cb4-5" tabindex="-1"></a><span class="co">#&gt;  408    160</span></span>
-<span id="cb4-6"><a href="#cb4-6" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb4-7"><a href="#cb4-7" tabindex="-1"></a><span class="co">#&gt;  408 clusters</span></span>
-<span id="cb4-8"><a href="#cb4-8" tabindex="-1"></a><span class="co">#&gt; coeffients:</span></span>
-<span id="cb4-9"><a href="#cb4-9" tabindex="-1"></a><span class="co">#&gt;             Estimate  Std.Err     2.5%    97.5% P-value</span></span>
-<span id="cb4-10"><a href="#cb4-10" tabindex="-1"></a><span class="co">#&gt; (Intercept) -0.30054  0.11153 -0.51914 -0.08194  0.0070</span></span>
-<span id="cb4-11"><a href="#cb4-11" tabindex="-1"></a><span class="co">#&gt; tcell       -0.51741  0.33981 -1.18342  0.14860  0.1278</span></span>
-<span id="cb4-12"><a href="#cb4-12" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb4-13"><a href="#cb4-13" tabindex="-1"></a><span class="co">#&gt; exp(coeffients):</span></span>
-<span id="cb4-14"><a href="#cb4-14" tabindex="-1"></a><span class="co">#&gt;             Estimate    2.5%  97.5%</span></span>
-<span id="cb4-15"><a href="#cb4-15" tabindex="-1"></a><span class="co">#&gt; (Intercept)  0.74042 0.59503 0.9213</span></span>
-<span id="cb4-16"><a href="#cb4-16" tabindex="-1"></a><span class="co">#&gt; tcell        0.59606 0.30623 1.1602</span></span></code></pre></div>
+<span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a><span class="co">#&gt;    n events</span></span>
+<span id="cb4-4"><a href="#cb4-4" tabindex="-1"></a><span class="co">#&gt;  408    160</span></span>
+<span id="cb4-5"><a href="#cb4-5" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb4-6"><a href="#cb4-6" tabindex="-1"></a><span class="co">#&gt;  408 clusters</span></span>
+<span id="cb4-7"><a href="#cb4-7" tabindex="-1"></a><span class="co">#&gt; coeffients:</span></span>
+<span id="cb4-8"><a href="#cb4-8" tabindex="-1"></a><span class="co">#&gt;             Estimate  Std.Err     2.5%    97.5% P-value</span></span>
+<span id="cb4-9"><a href="#cb4-9" tabindex="-1"></a><span class="co">#&gt; (Intercept) -0.30054  0.11153 -0.51914 -0.08194  0.0070</span></span>
+<span id="cb4-10"><a href="#cb4-10" tabindex="-1"></a><span class="co">#&gt; tcell       -0.51741  0.33981 -1.18342  0.14860  0.1278</span></span>
+<span id="cb4-11"><a href="#cb4-11" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb4-12"><a href="#cb4-12" tabindex="-1"></a><span class="co">#&gt; exp(coeffients):</span></span>
+<span id="cb4-13"><a href="#cb4-13" tabindex="-1"></a><span class="co">#&gt;             Estimate    2.5%  97.5%</span></span>
+<span id="cb4-14"><a href="#cb4-14" tabindex="-1"></a><span class="co">#&gt; (Intercept)  0.74042 0.59503 0.9213</span></span>
+<span id="cb4-15"><a href="#cb4-15" tabindex="-1"></a><span class="co">#&gt; tcell        0.59606 0.30623 1.1602</span></span></code></pre></div>
 <p>the risk difference is</p>
 <div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a>ps <span class="ot">&lt;-</span>  <span class="fu">predict</span>(outs,<span class="fu">data.frame</span>(<span class="at">tcell=</span><span class="fu">c</span>(<span class="dv">0</span>,<span class="dv">1</span>)),<span class="at">se=</span><span class="cn">TRUE</span>)</span>
 <span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a>ps</span>
@@ -541,53 +560,51 @@ F_2^*(t,s)\)</span>.</p>
 <span id="cb8-3"><a href="#cb8-3" tabindex="-1"></a> out1<span class="ot">&lt;-</span><span class="fu">BinAugmentCifstrata</span>(<span class="fu">Event</span>(time,cause)<span class="sc">~</span>platelet<span class="sc">+</span>agecat<span class="fl">.2</span><span class="sc">+</span></span>
 <span id="cb8-4"><a href="#cb8-4" tabindex="-1"></a>              <span class="fu">strata</span>(platelet,agecat<span class="fl">.2</span>),<span class="at">data=</span>bmt,<span class="at">cause=</span><span class="dv">1</span>,<span class="at">time=</span><span class="dv">40</span>)</span>
 <span id="cb8-5"><a href="#cb8-5" tabindex="-1"></a> <span class="fu">summary</span>(out1)</span>
-<span id="cb8-6"><a href="#cb8-6" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb8-7"><a href="#cb8-7" tabindex="-1"></a><span class="co">#&gt;    n events</span></span>
-<span id="cb8-8"><a href="#cb8-8" tabindex="-1"></a><span class="co">#&gt;  408    157</span></span>
-<span id="cb8-9"><a href="#cb8-9" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb8-10"><a href="#cb8-10" tabindex="-1"></a><span class="co">#&gt;  408 clusters</span></span>
-<span id="cb8-11"><a href="#cb8-11" tabindex="-1"></a><span class="co">#&gt; coeffients:</span></span>
-<span id="cb8-12"><a href="#cb8-12" tabindex="-1"></a><span class="co">#&gt;                      Estimate  Std.Err     2.5%    97.5% P-value</span></span>
-<span id="cb8-13"><a href="#cb8-13" tabindex="-1"></a><span class="co">#&gt; (Intercept)          -0.51295  0.17090 -0.84791 -0.17799  0.0027</span></span>
-<span id="cb8-14"><a href="#cb8-14" tabindex="-1"></a><span class="co">#&gt; platelet             -0.63011  0.23585 -1.09237 -0.16785  0.0075</span></span>
-<span id="cb8-15"><a href="#cb8-15" tabindex="-1"></a><span class="co">#&gt; agecat.2(0.203,1.94]  0.55926  0.21211  0.14353  0.97500  0.0084</span></span>
-<span id="cb8-16"><a href="#cb8-16" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb8-17"><a href="#cb8-17" tabindex="-1"></a><span class="co">#&gt; exp(coeffients):</span></span>
-<span id="cb8-18"><a href="#cb8-18" tabindex="-1"></a><span class="co">#&gt;                      Estimate    2.5%  97.5%</span></span>
-<span id="cb8-19"><a href="#cb8-19" tabindex="-1"></a><span class="co">#&gt; (Intercept)           0.59873 0.42831 0.8370</span></span>
-<span id="cb8-20"><a href="#cb8-20" tabindex="-1"></a><span class="co">#&gt; platelet              0.53253 0.33542 0.8455</span></span>
-<span id="cb8-21"><a href="#cb8-21" tabindex="-1"></a><span class="co">#&gt; agecat.2(0.203,1.94]  1.74938 1.15434 2.6512</span></span>
-<span id="cb8-22"><a href="#cb8-22" tabindex="-1"></a></span>
-<span id="cb8-23"><a href="#cb8-23" tabindex="-1"></a> out2<span class="ot">&lt;-</span><span class="fu">BinAugmentCifstrata</span>(<span class="fu">Event</span>(time,cause)<span class="sc">~</span>platelet<span class="sc">+</span>agecat<span class="fl">.2</span><span class="sc">+</span></span>
-<span id="cb8-24"><a href="#cb8-24" tabindex="-1"></a>     <span class="fu">strata</span>(platelet,agecat<span class="fl">.2</span>)<span class="sc">+</span><span class="fu">strataC</span>(platelet),<span class="at">data=</span>bmt,<span class="at">cause=</span><span class="dv">1</span>,<span class="at">time=</span><span class="dv">40</span>)</span>
-<span id="cb8-25"><a href="#cb8-25" tabindex="-1"></a> <span class="fu">summary</span>(out2)</span>
-<span id="cb8-26"><a href="#cb8-26" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb8-27"><a href="#cb8-27" tabindex="-1"></a><span class="co">#&gt;    n events</span></span>
-<span id="cb8-28"><a href="#cb8-28" tabindex="-1"></a><span class="co">#&gt;  408    157</span></span>
-<span id="cb8-29"><a href="#cb8-29" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb8-30"><a href="#cb8-30" tabindex="-1"></a><span class="co">#&gt;  408 clusters</span></span>
-<span id="cb8-31"><a href="#cb8-31" tabindex="-1"></a><span class="co">#&gt; coeffients:</span></span>
-<span id="cb8-32"><a href="#cb8-32" tabindex="-1"></a><span class="co">#&gt;                      Estimate  Std.Err     2.5%    97.5% P-value</span></span>
-<span id="cb8-33"><a href="#cb8-33" tabindex="-1"></a><span class="co">#&gt; (Intercept)          -0.51346  0.17109 -0.84879 -0.17814  0.0027</span></span>
-<span id="cb8-34"><a href="#cb8-34" tabindex="-1"></a><span class="co">#&gt; platelet             -0.63636  0.23653 -1.09996 -0.17276  0.0071</span></span>
-<span id="cb8-35"><a href="#cb8-35" tabindex="-1"></a><span class="co">#&gt; agecat.2(0.203,1.94]  0.56280  0.21229  0.14672  0.97889  0.0080</span></span>
-<span id="cb8-36"><a href="#cb8-36" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb8-37"><a href="#cb8-37" tabindex="-1"></a><span class="co">#&gt; exp(coeffients):</span></span>
-<span id="cb8-38"><a href="#cb8-38" tabindex="-1"></a><span class="co">#&gt;                      Estimate    2.5%  97.5%</span></span>
-<span id="cb8-39"><a href="#cb8-39" tabindex="-1"></a><span class="co">#&gt; (Intercept)           0.59842 0.42793 0.8368</span></span>
-<span id="cb8-40"><a href="#cb8-40" tabindex="-1"></a><span class="co">#&gt; platelet              0.52922 0.33288 0.8413</span></span>
-<span id="cb8-41"><a href="#cb8-41" tabindex="-1"></a><span class="co">#&gt; agecat.2(0.203,1.94]  1.75559 1.15803 2.6615</span></span></code></pre></div>
+<span id="cb8-6"><a href="#cb8-6" tabindex="-1"></a><span class="co">#&gt;    n events</span></span>
+<span id="cb8-7"><a href="#cb8-7" tabindex="-1"></a><span class="co">#&gt;  408    157</span></span>
+<span id="cb8-8"><a href="#cb8-8" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb8-9"><a href="#cb8-9" tabindex="-1"></a><span class="co">#&gt;  408 clusters</span></span>
+<span id="cb8-10"><a href="#cb8-10" tabindex="-1"></a><span class="co">#&gt; coeffients:</span></span>
+<span id="cb8-11"><a href="#cb8-11" tabindex="-1"></a><span class="co">#&gt;                      Estimate  Std.Err     2.5%    97.5% P-value</span></span>
+<span id="cb8-12"><a href="#cb8-12" tabindex="-1"></a><span class="co">#&gt; (Intercept)          -0.51295  0.17090 -0.84791 -0.17799  0.0027</span></span>
+<span id="cb8-13"><a href="#cb8-13" tabindex="-1"></a><span class="co">#&gt; platelet             -0.63011  0.23585 -1.09237 -0.16785  0.0075</span></span>
+<span id="cb8-14"><a href="#cb8-14" tabindex="-1"></a><span class="co">#&gt; agecat.2(0.203,1.94]  0.55926  0.21211  0.14353  0.97500  0.0084</span></span>
+<span id="cb8-15"><a href="#cb8-15" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb8-16"><a href="#cb8-16" tabindex="-1"></a><span class="co">#&gt; exp(coeffients):</span></span>
+<span id="cb8-17"><a href="#cb8-17" tabindex="-1"></a><span class="co">#&gt;                      Estimate    2.5%  97.5%</span></span>
+<span id="cb8-18"><a href="#cb8-18" tabindex="-1"></a><span class="co">#&gt; (Intercept)           0.59873 0.42831 0.8370</span></span>
+<span id="cb8-19"><a href="#cb8-19" tabindex="-1"></a><span class="co">#&gt; platelet              0.53253 0.33542 0.8455</span></span>
+<span id="cb8-20"><a href="#cb8-20" tabindex="-1"></a><span class="co">#&gt; agecat.2(0.203,1.94]  1.74938 1.15434 2.6512</span></span>
+<span id="cb8-21"><a href="#cb8-21" tabindex="-1"></a></span>
+<span id="cb8-22"><a href="#cb8-22" tabindex="-1"></a> out2<span class="ot">&lt;-</span><span class="fu">BinAugmentCifstrata</span>(<span class="fu">Event</span>(time,cause)<span class="sc">~</span>platelet<span class="sc">+</span>agecat<span class="fl">.2</span><span class="sc">+</span></span>
+<span id="cb8-23"><a href="#cb8-23" tabindex="-1"></a>     <span class="fu">strata</span>(platelet,agecat<span class="fl">.2</span>)<span class="sc">+</span><span class="fu">strataC</span>(platelet),<span class="at">data=</span>bmt,<span class="at">cause=</span><span class="dv">1</span>,<span class="at">time=</span><span class="dv">40</span>)</span>
+<span id="cb8-24"><a href="#cb8-24" tabindex="-1"></a> <span class="fu">summary</span>(out2)</span>
+<span id="cb8-25"><a href="#cb8-25" tabindex="-1"></a><span class="co">#&gt;    n events</span></span>
+<span id="cb8-26"><a href="#cb8-26" tabindex="-1"></a><span class="co">#&gt;  408    157</span></span>
+<span id="cb8-27"><a href="#cb8-27" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb8-28"><a href="#cb8-28" tabindex="-1"></a><span class="co">#&gt;  408 clusters</span></span>
+<span id="cb8-29"><a href="#cb8-29" tabindex="-1"></a><span class="co">#&gt; coeffients:</span></span>
+<span id="cb8-30"><a href="#cb8-30" tabindex="-1"></a><span class="co">#&gt;                      Estimate  Std.Err     2.5%    97.5% P-value</span></span>
+<span id="cb8-31"><a href="#cb8-31" tabindex="-1"></a><span class="co">#&gt; (Intercept)          -0.51346  0.17109 -0.84879 -0.17814  0.0027</span></span>
+<span id="cb8-32"><a href="#cb8-32" tabindex="-1"></a><span class="co">#&gt; platelet             -0.63636  0.23653 -1.09996 -0.17276  0.0071</span></span>
+<span id="cb8-33"><a href="#cb8-33" tabindex="-1"></a><span class="co">#&gt; agecat.2(0.203,1.94]  0.56280  0.21229  0.14672  0.97889  0.0080</span></span>
+<span id="cb8-34"><a href="#cb8-34" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb8-35"><a href="#cb8-35" tabindex="-1"></a><span class="co">#&gt; exp(coeffients):</span></span>
+<span id="cb8-36"><a href="#cb8-36" tabindex="-1"></a><span class="co">#&gt;                      Estimate    2.5%  97.5%</span></span>
+<span id="cb8-37"><a href="#cb8-37" tabindex="-1"></a><span class="co">#&gt; (Intercept)           0.59842 0.42793 0.8368</span></span>
+<span id="cb8-38"><a href="#cb8-38" tabindex="-1"></a><span class="co">#&gt; platelet              0.52922 0.33288 0.8413</span></span>
+<span id="cb8-39"><a href="#cb8-39" tabindex="-1"></a><span class="co">#&gt; agecat.2(0.203,1.94]  1.75559 1.15803 2.6615</span></span></code></pre></div>
 </div>
 <div id="sessioninfo" class="section level1">
 <h1>SessionInfo</h1>
 <div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" tabindex="-1"></a><span class="fu">sessionInfo</span>()</span>
-<span id="cb9-2"><a href="#cb9-2" tabindex="-1"></a><span class="co">#&gt; R version 4.4.3 (2025-02-28)</span></span>
-<span id="cb9-3"><a href="#cb9-3" tabindex="-1"></a><span class="co">#&gt; Platform: aarch64-apple-darwin24.3.0</span></span>
-<span id="cb9-4"><a href="#cb9-4" tabindex="-1"></a><span class="co">#&gt; Running under: macOS Sequoia 15.4.1</span></span>
+<span id="cb9-2"><a href="#cb9-2" tabindex="-1"></a><span class="co">#&gt; R version 4.5.1 (2025-06-13)</span></span>
+<span id="cb9-3"><a href="#cb9-3" tabindex="-1"></a><span class="co">#&gt; Platform: aarch64-apple-darwin24.5.0</span></span>
+<span id="cb9-4"><a href="#cb9-4" tabindex="-1"></a><span class="co">#&gt; Running under: macOS Sequoia 15.6.1</span></span>
 <span id="cb9-5"><a href="#cb9-5" tabindex="-1"></a><span class="co">#&gt; </span></span>
 <span id="cb9-6"><a href="#cb9-6" tabindex="-1"></a><span class="co">#&gt; Matrix products: default</span></span>
-<span id="cb9-7"><a href="#cb9-7" tabindex="-1"></a><span class="co">#&gt; BLAS:   /Users/kkzh/.asdf/installs/R/4.4.3/lib/R/lib/libRblas.dylib </span></span>
-<span id="cb9-8"><a href="#cb9-8" tabindex="-1"></a><span class="co">#&gt; LAPACK: /Users/kkzh/.asdf/installs/R/4.4.3/lib/R/lib/libRlapack.dylib;  LAPACK version 3.12.0</span></span>
+<span id="cb9-7"><a href="#cb9-7" tabindex="-1"></a><span class="co">#&gt; BLAS:   /Users/kkzh/.asdf/installs/R/4.5.1/lib/R/lib/libRblas.dylib </span></span>
+<span id="cb9-8"><a href="#cb9-8" tabindex="-1"></a><span class="co">#&gt; LAPACK: /Users/kkzh/.asdf/installs/R/4.5.1/lib/R/lib/libRlapack.dylib;  LAPACK version 3.12.1</span></span>
 <span id="cb9-9"><a href="#cb9-9" tabindex="-1"></a><span class="co">#&gt; </span></span>
 <span id="cb9-10"><a href="#cb9-10" tabindex="-1"></a><span class="co">#&gt; locale:</span></span>
 <span id="cb9-11"><a href="#cb9-11" tabindex="-1"></a><span class="co">#&gt; [1] en_US.UTF-8/en_US.UTF-8/en_US.UTF-8/C/en_US.UTF-8/en_US.UTF-8</span></span>
@@ -599,21 +616,21 @@ F_2^*(t,s)\)</span>.</p>
 <span id="cb9-17"><a href="#cb9-17" tabindex="-1"></a><span class="co">#&gt; [1] stats     graphics  grDevices utils     datasets  methods   base     </span></span>
 <span id="cb9-18"><a href="#cb9-18" tabindex="-1"></a><span class="co">#&gt; </span></span>
 <span id="cb9-19"><a href="#cb9-19" tabindex="-1"></a><span class="co">#&gt; other attached packages:</span></span>
-<span id="cb9-20"><a href="#cb9-20" tabindex="-1"></a><span class="co">#&gt; [1] timereg_2.0.6  survival_3.8-3 mets_1.3.6    </span></span>
+<span id="cb9-20"><a href="#cb9-20" tabindex="-1"></a><span class="co">#&gt; [1] timereg_2.0.7  survival_3.8-3 mets_1.3.7    </span></span>
 <span id="cb9-21"><a href="#cb9-21" tabindex="-1"></a><span class="co">#&gt; </span></span>
 <span id="cb9-22"><a href="#cb9-22" tabindex="-1"></a><span class="co">#&gt; loaded via a namespace (and not attached):</span></span>
-<span id="cb9-23"><a href="#cb9-23" tabindex="-1"></a><span class="co">#&gt;  [1] cli_3.6.4           knitr_1.49          rlang_1.1.5        </span></span>
-<span id="cb9-24"><a href="#cb9-24" tabindex="-1"></a><span class="co">#&gt;  [4] xfun_0.51           jsonlite_1.9.1      future.apply_1.11.3</span></span>
+<span id="cb9-23"><a href="#cb9-23" tabindex="-1"></a><span class="co">#&gt;  [1] cli_3.6.5           knitr_1.50          rlang_1.1.6        </span></span>
+<span id="cb9-24"><a href="#cb9-24" tabindex="-1"></a><span class="co">#&gt;  [4] xfun_0.53           jsonlite_2.0.0      future.apply_1.20.0</span></span>
 <span id="cb9-25"><a href="#cb9-25" tabindex="-1"></a><span class="co">#&gt;  [7] listenv_0.9.1       lava_1.8.1          htmltools_0.5.8.1  </span></span>
-<span id="cb9-26"><a href="#cb9-26" tabindex="-1"></a><span class="co">#&gt; [10] sass_0.4.9          rmarkdown_2.29      grid_4.4.3         </span></span>
-<span id="cb9-27"><a href="#cb9-27" tabindex="-1"></a><span class="co">#&gt; [13] evaluate_1.0.3      jquerylib_0.1.4     fastmap_1.2.0      </span></span>
+<span id="cb9-26"><a href="#cb9-26" tabindex="-1"></a><span class="co">#&gt; [10] sass_0.4.10         rmarkdown_2.29      grid_4.5.1         </span></span>
+<span id="cb9-27"><a href="#cb9-27" tabindex="-1"></a><span class="co">#&gt; [13] evaluate_1.0.5      jquerylib_0.1.4     fastmap_1.2.0      </span></span>
 <span id="cb9-28"><a href="#cb9-28" tabindex="-1"></a><span class="co">#&gt; [16] numDeriv_2016.8-1.1 yaml_2.3.10         mvtnorm_1.3-3      </span></span>
-<span id="cb9-29"><a href="#cb9-29" tabindex="-1"></a><span class="co">#&gt; [19] lifecycle_1.0.4     compiler_4.4.3      codetools_0.2-20   </span></span>
-<span id="cb9-30"><a href="#cb9-30" tabindex="-1"></a><span class="co">#&gt; [22] ucminf_1.2.2        Rcpp_1.0.14         future_1.40.0      </span></span>
-<span id="cb9-31"><a href="#cb9-31" tabindex="-1"></a><span class="co">#&gt; [25] lattice_0.22-6      digest_0.6.37       R6_2.6.1           </span></span>
-<span id="cb9-32"><a href="#cb9-32" tabindex="-1"></a><span class="co">#&gt; [28] parallelly_1.43.0   parallel_4.4.3      splines_4.4.3      </span></span>
-<span id="cb9-33"><a href="#cb9-33" tabindex="-1"></a><span class="co">#&gt; [31] Matrix_1.7-2        bslib_0.9.0         tools_4.4.3        </span></span>
-<span id="cb9-34"><a href="#cb9-34" tabindex="-1"></a><span class="co">#&gt; [34] globals_0.17.0      cachem_1.1.0</span></span></code></pre></div>
+<span id="cb9-29"><a href="#cb9-29" tabindex="-1"></a><span class="co">#&gt; [19] lifecycle_1.0.4     compiler_4.5.1      codetools_0.2-20   </span></span>
+<span id="cb9-30"><a href="#cb9-30" tabindex="-1"></a><span class="co">#&gt; [22] ucminf_1.2.2        Rcpp_1.1.0          future_1.67.0      </span></span>
+<span id="cb9-31"><a href="#cb9-31" tabindex="-1"></a><span class="co">#&gt; [25] lattice_0.22-7      digest_0.6.37       R6_2.6.1           </span></span>
+<span id="cb9-32"><a href="#cb9-32" tabindex="-1"></a><span class="co">#&gt; [28] parallelly_1.45.1   parallel_4.5.1      splines_4.5.1      </span></span>
+<span id="cb9-33"><a href="#cb9-33" tabindex="-1"></a><span class="co">#&gt; [31] Matrix_1.7-4        bslib_0.9.0         tools_4.5.1        </span></span>
+<span id="cb9-34"><a href="#cb9-34" tabindex="-1"></a><span class="co">#&gt; [34] globals_0.18.0      cachem_1.1.0</span></span></code></pre></div>
 </div>
 
 

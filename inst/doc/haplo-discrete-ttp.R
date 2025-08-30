@@ -9,7 +9,8 @@ library(mets)
 types <- c("DCGCGCTCACG","DTCCGCTGACG","ITCAGTTGACG","ITCCGCTGAGG")
 
 ## some haplotypes frequencies for simulations 
-data(hapfreqs)
+data(haplo)
+hapfreqs <- haplo$hapfreqs 
 print(hapfreqs)
 
 ## -----------------------------------------------------------------------------
@@ -20,11 +21,11 @@ baseline=hapfreqs$haplotype[9]
 baseline
 
 ## -----------------------------------------------------------------------------
-data(haploX)
+haploX  <- haplo$haploX
 dlist(haploX,.~id|id %in% c(1,4,7))
 
 ## -----------------------------------------------------------------------------
-data(hHaplos) ## loads ghaplos 
+ghaplos <- haplo$ghaplos
 head(ghaplos)
 
 ## -----------------------------------------------------------------------------

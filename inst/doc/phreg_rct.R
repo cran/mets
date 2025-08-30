@@ -103,12 +103,11 @@ ssf <- phreg_rct(Event(start,time,status)~A0.f+A10t+A11t+cluster(id),
 ## -----------------------------------------------------------------------------
 n <- 1000
 beta <- 0.15; 
-data(base1cumhaz)
-data(base4cumhaz)
-data(drcumhaz)
-dr <- scalecumhaz(drcumhaz,1)
-base1 <- scalecumhaz(base1cumhaz,1)
-base4 <- scalecumhaz(base4cumhaz,0.5)
+ data(CPH_HPN_CRBSI)
+ dr <- CPH_HPN_CRBSI$terminal
+ base1 <- CPH_HPN_CRBSI$crbsi 
+ base4 <- scalecumhaz(CPH_HPN_CRBSI$mechanical,0.5)
+
 cens <- rbind(c(0,0),c(2000,0.5),c(5110,3))
 ce <- 3; betao1 <- 0
 
@@ -162,7 +161,7 @@ rr$z1 <- attr(rr,"z")[rr$id]
 rr$A1 <- A1[rr$id]
 rr$A0 <- A0[rr$id]
 rr$lz1 <- log(rr$z1)
-rr <- count.history(rr)
+rr <- count.history(rr,types=1:2)
 rr$A1t <- 0
 rr <- dtransform(rr,A1t=A1,Count2==1) 
 rr$At.f <- rr$A0

@@ -16,13 +16,12 @@ library(mets)
 set.seed(1000) # to control output in simulatins for p-values below.
 
 ## -----------------------------------------------------------------------------
-data(base1cumhaz)
-data(base4cumhaz)
-data(drcumhaz)
-ddr <- drcumhaz
-base1 <- base1cumhaz
-base4 <- base4cumhaz
-rr <- simRecurrent(200,base1,death.cumhaz=ddr)
+ data(CPH_HPN_CRBSI)
+ dr <- CPH_HPN_CRBSI$terminal
+ base1 <- CPH_HPN_CRBSI$crbsi 
+ base4 <- CPH_HPN_CRBSI$mechanical
+
+rr <- simRecurrent(200,base1,death.cumhaz=dr)
 rr$x <- rnorm(nrow(rr)) 
 rr$strata <- floor((rr$id-0.01)/100)
 dlist(rr,.~id| id %in% c(1,7,9))
@@ -30,9 +29,9 @@ dlist(rr,.~id| id %in% c(1,7,9))
 ## -----------------------------------------------------------------------------
 #  to fit non-parametric models with just a baseline 
 xr <- phreg(Surv(entry,time,status)~cluster(id),data=rr)
-dr <- phreg(Surv(entry,time,death)~cluster(id),data=rr)
+xdr <- phreg(Surv(entry,time,death)~cluster(id),data=rr)
 par(mfrow=c(1,3))
-plot(dr,se=TRUE)
+plot(xdr,se=TRUE)
 title(main="death")
 plot(xr,se=TRUE)
 # robust standard errors 
@@ -48,9 +47,9 @@ summary(out,times=c(1000,2000))
 
 ## -----------------------------------------------------------------------------
 xr <- phreg(Surv(entry,time,status)~strata(strata)+cluster(id),data=rr)
-dr <- phreg(Surv(entry,time,death)~strata(strata)+cluster(id),data=rr)
+xdr <- phreg(Surv(entry,time,death)~strata(strata)+cluster(id),data=rr)
 par(mfrow=c(1,3))
-plot(dr,se=TRUE)
+plot(xdr,se=TRUE)
 title(main="death")
 plot(xr,se=TRUE)
 rxr <-   robust.phreg(xr,fixbeta=1)
@@ -63,15 +62,15 @@ plot(out,se=TRUE,ylab="marginal mean",col=1:2)
 ## -----------------------------------------------------------------------------
 # cox case
 xr <- phreg(Surv(entry,time,status)~x+cluster(id),data=rr)
-dr <- phreg(Surv(entry,time,death)~x+cluster(id),data=rr)
+xdr <- phreg(Surv(entry,time,death)~x+cluster(id),data=rr)
 par(mfrow=c(1,3))
-plot(dr,se=TRUE)
+plot(xdr,se=TRUE)
 title(main="death")
 plot(xr,se=TRUE)
 rxr <- robust.phreg(xr)
 plot(rxr,se=TRUE,robust=TRUE,add=TRUE,col=1:2)
 
-out <- recurrentMarginalPhreg(xr,dr)
+out <- recurrentMarginalPhreg(xr,xdr)
 plot(out,se=TRUE,ylab="marginal mean",col=1:2)
 
 #### predictions witout se's 
@@ -80,12 +79,12 @@ plot(out,se=TRUE,ylab="marginal mean",col=1:2)
 
 
 ## -----------------------------------------------------------------------------
-rr <- simRecurrentIII(100,list(base1,base1,base4),death.cumhaz=list(ddr,base4),cens=3/5000,dependence=0)
+rr <- simRecurrentList(100,list(base1,base1,base4),death.cumhaz=list(dr,base4),cens=3/5000,dependence=0)
 dtable(rr,~status+death,level=2)
-mets:::showfitsimIII(rr,list(base1,base1,base4),list(ddr,base4))
+mets:::showfitsimList(rr,list(base1,base1,base4),list(dr,base4))
 
 ## -----------------------------------------------------------------------------
-rr <- simRecurrentII(200,base1,base4,death.cumhaz=ddr,cens=3/5000,dependence=4,var.z=1)
+rr <- simRecurrentII(200,base1,base4,death.cumhaz=dr,cens=3/5000,dependence=4,var.z=1)
 rr <-  count.history(rr)
 
 rr <- transform(rr,statusD=status)
@@ -133,7 +132,7 @@ r1 <- exp( X %*% c(0.3,-0.3))
 rd <- exp( X %*% c(0.3,-0.3))
 rc <- exp( X %*% c(0,0))
 fz <- NULL
-rr <- mets:::simGLcox(n,base1,ddr,var.z=0,r1=r1,rd=rd,rc=rc,fz,model="twostage",cens=3/5000) 
+rr <- mets:::simGLcox(n,base1,dr,var.z=0,r1=r1,rd=rd,rc=rc,fz,model="twostage",cens=3/5000) 
 rr <- cbind(rr,X[rr$id+1,])
 
 dtable(rr,~statusD+status+death,level=2,response=1)
@@ -155,7 +154,7 @@ r1 <- exp( X %*% c(0.3,-0.3))
 rd <- exp( X %*% c(0.3,-0.3))
 rc <- exp( X %*% c(0,0))
 fz <- NULL
-rr <- mets:::simGLcox(n,base1,ddr,var.z=1,r1=r1,rd=rd,rc=rc,fz,cens=1/5000,type=2) 
+rr <- mets:::simGLcox(n,base1,dr,var.z=1,r1=r1,rd=rd,rc=rc,fz,cens=1/5000,type=2) 
 rr <- cbind(rr,X[rr$id+1,])
 
  out  <- recreg(Event(start,stop,statusD)~X1+X2+cluster(id),data=rr,cause=1,death.code=3,cens.code=0)
@@ -206,7 +205,7 @@ rr <- cbind(rr,X[rr$id+1,])
 out  <- recreg(Event(start,stop,statusD)~X1+X2+cluster(id),data=rr,cause=1,death.code=3,cens.code=0,
 	       cox.prep=TRUE)
 summary(out)
-baseiid <- IIDbaseline.cifreg(out,time=3000)
+baseiid <- iidBaseline(out,time=3000)
 GLprediid(baseiid,rr[1:5,])
 
 ## -----------------------------------------------------------------------------
@@ -225,7 +224,7 @@ rd <- exp( X %*% c(0.3,-0.3))
 rc <- exp( X %*% c(0,0))
 fz <- NULL
 ## type=3 is cox-cox and type=2 is Ghosh-Lin/Cox model 
-rr <- mets:::simGLcox(n,base1,ddr,var.z=1,r1=r1,rd=rd,rc=rc,fz,cens=1/5000,type=3) 
+rr <- mets:::simGLcox(n,base1,dr,var.z=1,r1=r1,rd=rd,rc=rc,fz,cens=1/5000,type=3) 
 rr <- cbind(rr,X[rr$id+1,])
 ###
 out  <- phreg(Event(start,stop,statusD==1)~X1+X2+cluster(id),data=rr)
@@ -234,7 +233,7 @@ outs <- phreg(Event(start,stop,statusD==3)~X1+X2+cluster(id),data=rr)
 tsout <- twostageREC(outs,out,data=rr)
 summary(tsout)
 ###
-rr <- mets:::simGLcox(n,base1,ddr,var.z=1,r1=r1,rd=rd,rc=rc,fz,cens=1/5000,type=3,share=0.5) 
+rr <- mets:::simGLcox(n,base1,dr,var.z=1,r1=r1,rd=rd,rc=rc,fz,cens=1/5000,type=3,share=0.5) 
 rr <- cbind(rr,X[rr$id+1,])
 ###
 out  <- phreg(Event(start,stop,statusD==1)~X1+X2+cluster(id),data=rr)
@@ -243,7 +242,7 @@ outs <- phreg(Event(start,stop,statusD==3)~X1+X2+cluster(id),data=rr)
 tsout <- twostageREC(outs,out,data=rr,model="shared")
 summary(tsout)
 ###
-rr <- mets:::simGLcox(n,base1,ddr,var.z=1,r1=r1,rd=rd,rc=rc,fz,cens=1/5000,type=2,share=0.5) 
+rr <- mets:::simGLcox(n,base1,dr,var.z=1,r1=r1,rd=rd,rc=rc,fz,cens=1/5000,type=2) 
 rr <- cbind(rr,X[rr$id+1,])
 outs  <- phreg(Event(start,stop,statusD==3)~X1+X2+cluster(id),data=rr)
 outgl  <- recreg(Event(start,stop,statusD)~X1+X2+cluster(id),data=rr,twostage=TRUE,death.code=3)
@@ -252,8 +251,9 @@ outgl  <- recreg(Event(start,stop,statusD)~X1+X2+cluster(id),data=rr,twostage=TR
 glout <- twostageREC(outs,outgl,data=rr,theta=1)
 summary(glout)
 ###
-glout <- twostageREC(outs,outgl,data=rr,model="shared",theta=1,nu=0.5)
+glout <- twostageREC(outs,outgl,data=rr,model="shared",theta=1,nu=0.9)
 summary(glout)
+glout$gradient
 
 ## -----------------------------------------------------------------------------
 n <- 100
@@ -263,18 +263,18 @@ colnames(X) <- paste("X",1:2,sep="")
 r1 <- exp( X %*% c(0.3,-0.3))
 rd <- exp( X %*% c(0.3,-0.3))
 rc <- exp( X %*% c(0,0))
-rr <- mets:::simGLcox(n,base1,ddr,var.z=0,r1=r1,rd=rd,rc=rc,model="twostage",cens=3/5000) 
+rr <- mets:::simGLcox(n,base1,dr,var.z=0,r1=r1,rd=rd,rc=rc,model="twostage",cens=3/5000) 
 rr <- cbind(rr,X[rr$id+1,])
 
 ## -----------------------------------------------------------------------------
-rr <- mets:::simGLcox(100,base1,ddr,var.z=1,r1=r1,rd=rd,rc=rc,type=3,cens=3/5000) 
+rr <- mets:::simGLcox(100,base1,dr,var.z=1,r1=r1,rd=rd,rc=rc,type=3,cens=3/5000) 
 rr <- cbind(rr,X[rr$id+1,])
 margsurv <- phreg(Surv(start,stop,statusD==3)~X1+X2+cluster(id),rr)
 recurrent <- phreg(Surv(start,stop,statusD==1)~X1+X2+cluster(id),rr)
 estimate(margsurv)
 estimate(recurrent)
 par(mfrow=c(1,2)); 
-plot(margsurv); lines(ddr,col=3); 
+plot(margsurv); lines(dr,col=3); 
 plot(recurrent); lines(base1,col=3)
 
 ## -----------------------------------------------------------------------------
@@ -284,7 +284,7 @@ recurrentGL <- recreg(Event(start,stop,statusD)~X1+X2+cluster(id),rr,death.code=
 simglcox <- sim.recurrent(recurrentGL,margsurv,n=10,data=rr)
 
 ## -----------------------------------------------------------------------------
-rr <- simRecurrentII(200,base1,base4,death.cumhaz=ddr,cens=3/5000,dependence=4,var.z=1)
+rr <- simRecurrentII(200,base1,base4,death.cumhaz=dr,cens=3/5000,dependence=4,var.z=1)
 rr <- transform(rr,statusD=status)
 rr <- dtransform(rr,statusD=3,death==1)
 rr <-  count.history(rr)
@@ -299,7 +299,7 @@ with(oo,plot(time,meanN,col=2,type="l"))
 with(oo,plot(time,varN,type="l"))
 
 ## -----------------------------------------------------------------------------
-rr <- simRecurrentII(200,base1,cumhaz2=base4,death.cumhaz=ddr)
+rr <- simRecurrentII(200,base1,cumhaz2=base4,death.cumhaz=dr)
 rr <-  count.history(rr)
 dtable(rr,~death+status)
 
@@ -311,12 +311,10 @@ dtable(rr,~death+status)
 ## legend("topleft",legend=colnames(oo$pe1e2),lty=1:nc,col=1:nc)
 
 ## ----eval=FALSE---------------------------------------------------------------
-#   data(base1cumhaz)
-#   data(base4cumhaz)
-#   data(drcumhaz)
-#   dr <- drcumhaz
-#   base1 <- base1cumhaz
-#   base4 <- base4cumhaz
+#  data(CPH_HPN_CRBSI)
+#  dr <- CPH_HPN_CRBSI$terminal
+#  base1 <- CPH_HPN_CRBSI$crbsi
+#  base4 <- CPH_HPN_CRBSI$mechanical
 # 
 #   par(mfrow=c(1,3))
 #   var.z <- c(0.5,0.5,0.5)

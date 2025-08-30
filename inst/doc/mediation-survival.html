@@ -12,7 +12,7 @@
 
 <meta name="author" content="Klaus Holst &amp; Thomas Scheike" />
 
-<meta name="date" content="2025-04-23" />
+<meta name="date" content="2025-08-30" />
 
 <title>Mediation Analysis for survival data</title>
 
@@ -341,7 +341,7 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 
 <h1 class="title toc-ignore">Mediation Analysis for survival data</h1>
 <h4 class="author">Klaus Holst &amp; Thomas Scheike</h4>
-<h4 class="date">2025-04-23</h4>
+<h4 class="date">2025-08-30</h4>
 
 
 
@@ -439,26 +439,25 @@ counfounders.</p>
 months with both exposure and mediator (given the other covariates)</p>
 <div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a>aaMss2 <span class="ot">&lt;-</span> <span class="fu">binreg</span>(<span class="fu">Event</span>(time,status)<span class="sc">~</span>gp<span class="sc">+</span>dnr<span class="sc">+</span>preauto<span class="sc">+</span>ttt24<span class="sc">+</span><span class="fu">cluster</span>(id),<span class="at">data=</span>dat,<span class="at">time=</span><span class="dv">50</span>,<span class="at">cause=</span><span class="dv">2</span>)</span>
 <span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a><span class="fu">summary</span>(aaMss2)</span>
-<span id="cb3-3"><a href="#cb3-3" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb3-4"><a href="#cb3-4" tabindex="-1"></a><span class="co">#&gt;    n events</span></span>
-<span id="cb3-5"><a href="#cb3-5" tabindex="-1"></a><span class="co">#&gt;  200     97</span></span>
-<span id="cb3-6"><a href="#cb3-6" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb3-7"><a href="#cb3-7" tabindex="-1"></a><span class="co">#&gt;  200 clusters</span></span>
-<span id="cb3-8"><a href="#cb3-8" tabindex="-1"></a><span class="co">#&gt; coeffients:</span></span>
-<span id="cb3-9"><a href="#cb3-9" tabindex="-1"></a><span class="co">#&gt;             Estimate  Std.Err     2.5%    97.5% P-value</span></span>
-<span id="cb3-10"><a href="#cb3-10" tabindex="-1"></a><span class="co">#&gt; (Intercept) -1.01508  0.31869 -1.63971 -0.39046  0.0014</span></span>
-<span id="cb3-11"><a href="#cb3-11" tabindex="-1"></a><span class="co">#&gt; gp           1.08533  0.34216  0.41471  1.75594  0.0015</span></span>
-<span id="cb3-12"><a href="#cb3-12" tabindex="-1"></a><span class="co">#&gt; dnr          0.51969  0.35757 -0.18113  1.22051  0.1461</span></span>
-<span id="cb3-13"><a href="#cb3-13" tabindex="-1"></a><span class="co">#&gt; preauto      0.39417  0.35936 -0.31017  1.09851  0.2727</span></span>
-<span id="cb3-14"><a href="#cb3-14" tabindex="-1"></a><span class="co">#&gt; ttt24        0.50469  0.38681 -0.25344  1.26283  0.1920</span></span>
-<span id="cb3-15"><a href="#cb3-15" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb3-16"><a href="#cb3-16" tabindex="-1"></a><span class="co">#&gt; exp(coeffients):</span></span>
-<span id="cb3-17"><a href="#cb3-17" tabindex="-1"></a><span class="co">#&gt;             Estimate    2.5%  97.5%</span></span>
-<span id="cb3-18"><a href="#cb3-18" tabindex="-1"></a><span class="co">#&gt; (Intercept)  0.36237 0.19404 0.6767</span></span>
-<span id="cb3-19"><a href="#cb3-19" tabindex="-1"></a><span class="co">#&gt; gp           2.96041 1.51394 5.7889</span></span>
-<span id="cb3-20"><a href="#cb3-20" tabindex="-1"></a><span class="co">#&gt; dnr          1.68151 0.83433 3.3889</span></span>
-<span id="cb3-21"><a href="#cb3-21" tabindex="-1"></a><span class="co">#&gt; preauto      1.48316 0.73332 2.9997</span></span>
-<span id="cb3-22"><a href="#cb3-22" tabindex="-1"></a><span class="co">#&gt; ttt24        1.65648 0.77612 3.5354</span></span></code></pre></div>
+<span id="cb3-3"><a href="#cb3-3" tabindex="-1"></a><span class="co">#&gt;    n events</span></span>
+<span id="cb3-4"><a href="#cb3-4" tabindex="-1"></a><span class="co">#&gt;  200     97</span></span>
+<span id="cb3-5"><a href="#cb3-5" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb3-6"><a href="#cb3-6" tabindex="-1"></a><span class="co">#&gt;  200 clusters</span></span>
+<span id="cb3-7"><a href="#cb3-7" tabindex="-1"></a><span class="co">#&gt; coeffients:</span></span>
+<span id="cb3-8"><a href="#cb3-8" tabindex="-1"></a><span class="co">#&gt;             Estimate  Std.Err     2.5%    97.5% P-value</span></span>
+<span id="cb3-9"><a href="#cb3-9" tabindex="-1"></a><span class="co">#&gt; (Intercept) -1.01508  0.31869 -1.63971 -0.39046  0.0014</span></span>
+<span id="cb3-10"><a href="#cb3-10" tabindex="-1"></a><span class="co">#&gt; gp           1.08533  0.34216  0.41471  1.75594  0.0015</span></span>
+<span id="cb3-11"><a href="#cb3-11" tabindex="-1"></a><span class="co">#&gt; dnr          0.51969  0.35757 -0.18113  1.22051  0.1461</span></span>
+<span id="cb3-12"><a href="#cb3-12" tabindex="-1"></a><span class="co">#&gt; preauto      0.39417  0.35936 -0.31017  1.09851  0.2727</span></span>
+<span id="cb3-13"><a href="#cb3-13" tabindex="-1"></a><span class="co">#&gt; ttt24        0.50469  0.38681 -0.25344  1.26283  0.1920</span></span>
+<span id="cb3-14"><a href="#cb3-14" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb3-15"><a href="#cb3-15" tabindex="-1"></a><span class="co">#&gt; exp(coeffients):</span></span>
+<span id="cb3-16"><a href="#cb3-16" tabindex="-1"></a><span class="co">#&gt;             Estimate    2.5%  97.5%</span></span>
+<span id="cb3-17"><a href="#cb3-17" tabindex="-1"></a><span class="co">#&gt; (Intercept)  0.36237 0.19404 0.6767</span></span>
+<span id="cb3-18"><a href="#cb3-18" tabindex="-1"></a><span class="co">#&gt; gp           2.96041 1.51394 5.7889</span></span>
+<span id="cb3-19"><a href="#cb3-19" tabindex="-1"></a><span class="co">#&gt; dnr          1.68151 0.83433 3.3889</span></span>
+<span id="cb3-20"><a href="#cb3-20" tabindex="-1"></a><span class="co">#&gt; preauto      1.48316 0.73332 2.9997</span></span>
+<span id="cb3-21"><a href="#cb3-21" tabindex="-1"></a><span class="co">#&gt; ttt24        1.65648 0.77612 3.5354</span></span></code></pre></div>
 </div>
 <div id="binomial-regression-ipcw-mediation-analysis" class="section level1">
 <h1>Binomial regression IPCW Mediation Analysis</h1>
@@ -467,50 +466,48 @@ months with both exposure and mediator (given the other covariates)</p>
 <span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a>aaMss <span class="ot">&lt;-</span> <span class="fu">binreg</span>(<span class="fu">Event</span>(time,status)<span class="sc">~</span>dnr.f0<span class="sc">+</span>dnr.f1<span class="sc">+</span>preauto<span class="sc">+</span>ttt24<span class="sc">+</span><span class="fu">cluster</span>(id),<span class="at">data=</span>wdata,</span>
 <span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a>        <span class="at">time=</span><span class="dv">50</span>,<span class="at">weights=</span>wdata<span class="sc">$</span>weights,<span class="at">cause=</span><span class="dv">2</span>)</span>
 <span id="cb4-4"><a href="#cb4-4" tabindex="-1"></a><span class="fu">summary</span>(aaMss)</span>
-<span id="cb4-5"><a href="#cb4-5" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb4-6"><a href="#cb4-6" tabindex="-1"></a><span class="co">#&gt;    n events</span></span>
-<span id="cb4-7"><a href="#cb4-7" tabindex="-1"></a><span class="co">#&gt;  400    194</span></span>
-<span id="cb4-8"><a href="#cb4-8" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb4-9"><a href="#cb4-9" tabindex="-1"></a><span class="co">#&gt;  200 clusters</span></span>
-<span id="cb4-10"><a href="#cb4-10" tabindex="-1"></a><span class="co">#&gt; coeffients:</span></span>
-<span id="cb4-11"><a href="#cb4-11" tabindex="-1"></a><span class="co">#&gt;              Estimate   Std.Err      2.5%     97.5% P-value</span></span>
-<span id="cb4-12"><a href="#cb4-12" tabindex="-1"></a><span class="co">#&gt; (Intercept) -0.535534  0.256218 -1.037712 -0.033356  0.0366</span></span>
-<span id="cb4-13"><a href="#cb4-13" tabindex="-1"></a><span class="co">#&gt; dnr.f01      0.375817  0.348618 -0.307462  1.059095  0.2810</span></span>
-<span id="cb4-14"><a href="#cb4-14" tabindex="-1"></a><span class="co">#&gt; dnr.f11      0.275383  0.071199  0.135836  0.414931  0.0001</span></span>
-<span id="cb4-15"><a href="#cb4-15" tabindex="-1"></a><span class="co">#&gt; preauto      0.588221  0.350437 -0.098624  1.275066  0.0932</span></span>
-<span id="cb4-16"><a href="#cb4-16" tabindex="-1"></a><span class="co">#&gt; ttt24        0.266179  0.363603 -0.446469  0.978827  0.4641</span></span>
-<span id="cb4-17"><a href="#cb4-17" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb4-18"><a href="#cb4-18" tabindex="-1"></a><span class="co">#&gt; exp(coeffients):</span></span>
-<span id="cb4-19"><a href="#cb4-19" tabindex="-1"></a><span class="co">#&gt;             Estimate    2.5%  97.5%</span></span>
-<span id="cb4-20"><a href="#cb4-20" tabindex="-1"></a><span class="co">#&gt; (Intercept)  0.58536 0.35426 0.9672</span></span>
-<span id="cb4-21"><a href="#cb4-21" tabindex="-1"></a><span class="co">#&gt; dnr.f01      1.45618 0.73531 2.8838</span></span>
-<span id="cb4-22"><a href="#cb4-22" tabindex="-1"></a><span class="co">#&gt; dnr.f11      1.31704 1.14549 1.5143</span></span>
-<span id="cb4-23"><a href="#cb4-23" tabindex="-1"></a><span class="co">#&gt; preauto      1.80078 0.90608 3.5789</span></span>
-<span id="cb4-24"><a href="#cb4-24" tabindex="-1"></a><span class="co">#&gt; ttt24        1.30497 0.63988 2.6613</span></span>
-<span id="cb4-25"><a href="#cb4-25" tabindex="-1"></a></span>
-<span id="cb4-26"><a href="#cb4-26" tabindex="-1"></a>ll <span class="ot">&lt;-</span> <span class="fu">mediatorSurv</span>(aaMss,fit,<span class="at">data=</span>dat,<span class="at">wdata=</span>wdata)</span>
-<span id="cb4-27"><a href="#cb4-27" tabindex="-1"></a><span class="fu">summary</span>(ll)</span>
-<span id="cb4-28"><a href="#cb4-28" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb4-29"><a href="#cb4-29" tabindex="-1"></a><span class="co">#&gt;    n events</span></span>
-<span id="cb4-30"><a href="#cb4-30" tabindex="-1"></a><span class="co">#&gt;  400    194</span></span>
-<span id="cb4-31"><a href="#cb4-31" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb4-32"><a href="#cb4-32" tabindex="-1"></a><span class="co">#&gt;  200 clusters</span></span>
-<span id="cb4-33"><a href="#cb4-33" tabindex="-1"></a><span class="co">#&gt; coeffients:</span></span>
-<span id="cb4-34"><a href="#cb4-34" tabindex="-1"></a><span class="co">#&gt;              Estimate   Std.Err      2.5%     97.5% P-value</span></span>
-<span id="cb4-35"><a href="#cb4-35" tabindex="-1"></a><span class="co">#&gt; (Intercept) -0.535534  0.254832 -1.034995 -0.036073  0.0356</span></span>
-<span id="cb4-36"><a href="#cb4-36" tabindex="-1"></a><span class="co">#&gt; dnr.f01      0.375817  0.317732 -0.246927  0.998560  0.2369</span></span>
-<span id="cb4-37"><a href="#cb4-37" tabindex="-1"></a><span class="co">#&gt; dnr.f11      0.275383  0.117175  0.045726  0.505041  0.0188</span></span>
-<span id="cb4-38"><a href="#cb4-38" tabindex="-1"></a><span class="co">#&gt; preauto      0.588221  0.346523 -0.090951  1.267394  0.0896</span></span>
-<span id="cb4-39"><a href="#cb4-39" tabindex="-1"></a><span class="co">#&gt; ttt24        0.266179  0.366361 -0.451875  0.984233  0.4675</span></span>
-<span id="cb4-40"><a href="#cb4-40" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb4-41"><a href="#cb4-41" tabindex="-1"></a><span class="co">#&gt; exp(coeffients):</span></span>
-<span id="cb4-42"><a href="#cb4-42" tabindex="-1"></a><span class="co">#&gt;             Estimate    2.5%  97.5%</span></span>
-<span id="cb4-43"><a href="#cb4-43" tabindex="-1"></a><span class="co">#&gt; (Intercept)  0.58536 0.35523 0.9646</span></span>
-<span id="cb4-44"><a href="#cb4-44" tabindex="-1"></a><span class="co">#&gt; dnr.f01      1.45618 0.78120 2.7144</span></span>
-<span id="cb4-45"><a href="#cb4-45" tabindex="-1"></a><span class="co">#&gt; dnr.f11      1.31704 1.04679 1.6571</span></span>
-<span id="cb4-46"><a href="#cb4-46" tabindex="-1"></a><span class="co">#&gt; preauto      1.80078 0.91306 3.5516</span></span>
-<span id="cb4-47"><a href="#cb4-47" tabindex="-1"></a><span class="co">#&gt; ttt24        1.30497 0.63643 2.6758</span></span>
-<span id="cb4-48"><a href="#cb4-48" tabindex="-1"></a><span class="cf">if</span> (runb<span class="sc">&gt;</span><span class="dv">0</span>) { bll <span class="ot">&lt;-</span> <span class="fu">BootmediatorSurv</span>(aaMss,fit,<span class="at">data=</span>dat,<span class="at">k.boot=</span>k.boot); <span class="fu">summary</span>(bll)}</span></code></pre></div>
+<span id="cb4-5"><a href="#cb4-5" tabindex="-1"></a><span class="co">#&gt;    n events</span></span>
+<span id="cb4-6"><a href="#cb4-6" tabindex="-1"></a><span class="co">#&gt;  400    194</span></span>
+<span id="cb4-7"><a href="#cb4-7" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb4-8"><a href="#cb4-8" tabindex="-1"></a><span class="co">#&gt;  200 clusters</span></span>
+<span id="cb4-9"><a href="#cb4-9" tabindex="-1"></a><span class="co">#&gt; coeffients:</span></span>
+<span id="cb4-10"><a href="#cb4-10" tabindex="-1"></a><span class="co">#&gt;              Estimate   Std.Err      2.5%     97.5% P-value</span></span>
+<span id="cb4-11"><a href="#cb4-11" tabindex="-1"></a><span class="co">#&gt; (Intercept) -0.535534  0.256218 -1.037712 -0.033356  0.0366</span></span>
+<span id="cb4-12"><a href="#cb4-12" tabindex="-1"></a><span class="co">#&gt; dnr.f01      0.375817  0.348618 -0.307462  1.059095  0.2810</span></span>
+<span id="cb4-13"><a href="#cb4-13" tabindex="-1"></a><span class="co">#&gt; dnr.f11      0.275383  0.071199  0.135836  0.414931  0.0001</span></span>
+<span id="cb4-14"><a href="#cb4-14" tabindex="-1"></a><span class="co">#&gt; preauto      0.588221  0.350437 -0.098624  1.275066  0.0932</span></span>
+<span id="cb4-15"><a href="#cb4-15" tabindex="-1"></a><span class="co">#&gt; ttt24        0.266179  0.363603 -0.446469  0.978827  0.4641</span></span>
+<span id="cb4-16"><a href="#cb4-16" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb4-17"><a href="#cb4-17" tabindex="-1"></a><span class="co">#&gt; exp(coeffients):</span></span>
+<span id="cb4-18"><a href="#cb4-18" tabindex="-1"></a><span class="co">#&gt;             Estimate    2.5%  97.5%</span></span>
+<span id="cb4-19"><a href="#cb4-19" tabindex="-1"></a><span class="co">#&gt; (Intercept)  0.58536 0.35426 0.9672</span></span>
+<span id="cb4-20"><a href="#cb4-20" tabindex="-1"></a><span class="co">#&gt; dnr.f01      1.45618 0.73531 2.8838</span></span>
+<span id="cb4-21"><a href="#cb4-21" tabindex="-1"></a><span class="co">#&gt; dnr.f11      1.31704 1.14549 1.5143</span></span>
+<span id="cb4-22"><a href="#cb4-22" tabindex="-1"></a><span class="co">#&gt; preauto      1.80078 0.90608 3.5789</span></span>
+<span id="cb4-23"><a href="#cb4-23" tabindex="-1"></a><span class="co">#&gt; ttt24        1.30497 0.63988 2.6613</span></span>
+<span id="cb4-24"><a href="#cb4-24" tabindex="-1"></a></span>
+<span id="cb4-25"><a href="#cb4-25" tabindex="-1"></a>ll <span class="ot">&lt;-</span> <span class="fu">mediatorSurv</span>(aaMss,fit,<span class="at">data=</span>dat,<span class="at">wdata=</span>wdata)</span>
+<span id="cb4-26"><a href="#cb4-26" tabindex="-1"></a><span class="fu">summary</span>(ll)</span>
+<span id="cb4-27"><a href="#cb4-27" tabindex="-1"></a><span class="co">#&gt;    n events</span></span>
+<span id="cb4-28"><a href="#cb4-28" tabindex="-1"></a><span class="co">#&gt;  400    194</span></span>
+<span id="cb4-29"><a href="#cb4-29" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb4-30"><a href="#cb4-30" tabindex="-1"></a><span class="co">#&gt;  200 clusters</span></span>
+<span id="cb4-31"><a href="#cb4-31" tabindex="-1"></a><span class="co">#&gt; coeffients:</span></span>
+<span id="cb4-32"><a href="#cb4-32" tabindex="-1"></a><span class="co">#&gt;              Estimate   Std.Err      2.5%     97.5% P-value</span></span>
+<span id="cb4-33"><a href="#cb4-33" tabindex="-1"></a><span class="co">#&gt; (Intercept) -0.535534  0.254832 -1.034995 -0.036073  0.0356</span></span>
+<span id="cb4-34"><a href="#cb4-34" tabindex="-1"></a><span class="co">#&gt; dnr.f01      0.375817  0.317732 -0.246927  0.998560  0.2369</span></span>
+<span id="cb4-35"><a href="#cb4-35" tabindex="-1"></a><span class="co">#&gt; dnr.f11      0.275383  0.117175  0.045726  0.505041  0.0188</span></span>
+<span id="cb4-36"><a href="#cb4-36" tabindex="-1"></a><span class="co">#&gt; preauto      0.588221  0.346523 -0.090951  1.267394  0.0896</span></span>
+<span id="cb4-37"><a href="#cb4-37" tabindex="-1"></a><span class="co">#&gt; ttt24        0.266179  0.366361 -0.451875  0.984233  0.4675</span></span>
+<span id="cb4-38"><a href="#cb4-38" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb4-39"><a href="#cb4-39" tabindex="-1"></a><span class="co">#&gt; exp(coeffients):</span></span>
+<span id="cb4-40"><a href="#cb4-40" tabindex="-1"></a><span class="co">#&gt;             Estimate    2.5%  97.5%</span></span>
+<span id="cb4-41"><a href="#cb4-41" tabindex="-1"></a><span class="co">#&gt; (Intercept)  0.58536 0.35523 0.9646</span></span>
+<span id="cb4-42"><a href="#cb4-42" tabindex="-1"></a><span class="co">#&gt; dnr.f01      1.45618 0.78120 2.7144</span></span>
+<span id="cb4-43"><a href="#cb4-43" tabindex="-1"></a><span class="co">#&gt; dnr.f11      1.31704 1.04679 1.6571</span></span>
+<span id="cb4-44"><a href="#cb4-44" tabindex="-1"></a><span class="co">#&gt; preauto      1.80078 0.91306 3.5516</span></span>
+<span id="cb4-45"><a href="#cb4-45" tabindex="-1"></a><span class="co">#&gt; ttt24        1.30497 0.63643 2.6758</span></span>
+<span id="cb4-46"><a href="#cb4-46" tabindex="-1"></a><span class="cf">if</span> (runb<span class="sc">&gt;</span><span class="dv">0</span>) { bll <span class="ot">&lt;-</span> <span class="fu">BootmediatorSurv</span>(aaMss,fit,<span class="at">data=</span>dat,<span class="at">k.boot=</span>k.boot); <span class="fu">summary</span>(bll)}</span></code></pre></div>
 <p>So the NDE is <span class="math inline">\(1.40 (0.72,2.76)\)</span>
 and the NIE is <span class="math inline">\(1.32
 (1.05,1.66)\)</span>.</p>
@@ -524,199 +521,186 @@ above.</p>
 <span id="cb5-3"><a href="#cb5-3" tabindex="-1"></a>           <span class="at">weights=</span>wdata<span class="sc">$</span>weights)</span>
 <span id="cb5-4"><a href="#cb5-4" tabindex="-1"></a>ll <span class="ot">&lt;-</span> <span class="fu">mediatorSurv</span>(aaMss,fit,<span class="at">data=</span>dat,<span class="at">wdata=</span>wdata)</span>
 <span id="cb5-5"><a href="#cb5-5" tabindex="-1"></a><span class="fu">summary</span>(ll)</span>
-<span id="cb5-6"><a href="#cb5-6" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb5-7"><a href="#cb5-7" tabindex="-1"></a><span class="co">#&gt;    n events</span></span>
-<span id="cb5-8"><a href="#cb5-8" tabindex="-1"></a><span class="co">#&gt;  400    196</span></span>
-<span id="cb5-9"><a href="#cb5-9" tabindex="-1"></a><span class="co">#&gt; coeffients:</span></span>
-<span id="cb5-10"><a href="#cb5-10" tabindex="-1"></a><span class="co">#&gt;          Estimate   Std.Err      2.5%     97.5% P-value</span></span>
-<span id="cb5-11"><a href="#cb5-11" tabindex="-1"></a><span class="co">#&gt; dnr.f01  1.169592  0.739323 -0.279454  2.618637  0.1137</span></span>
-<span id="cb5-12"><a href="#cb5-12" tabindex="-1"></a><span class="co">#&gt; dnr.f11  0.206757  0.131289 -0.050565  0.464078  0.1153</span></span>
-<span id="cb5-13"><a href="#cb5-13" tabindex="-1"></a><span class="co">#&gt; preauto  0.617537  0.504302 -0.370877  1.605950  0.2207</span></span>
-<span id="cb5-14"><a href="#cb5-14" tabindex="-1"></a><span class="co">#&gt; ttt24    0.457736  0.517822 -0.557175  1.472648  0.3767</span></span>
-<span id="cb5-15"><a href="#cb5-15" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb5-16"><a href="#cb5-16" tabindex="-1"></a><span class="co">#&gt; exp(coeffients):</span></span>
-<span id="cb5-17"><a href="#cb5-17" tabindex="-1"></a><span class="co">#&gt;         Estimate    2.5%   97.5%</span></span>
-<span id="cb5-18"><a href="#cb5-18" tabindex="-1"></a><span class="co">#&gt; dnr.f01  3.22068 0.75620 13.7170</span></span>
-<span id="cb5-19"><a href="#cb5-19" tabindex="-1"></a><span class="co">#&gt; dnr.f11  1.22968 0.95069  1.5905</span></span>
-<span id="cb5-20"><a href="#cb5-20" tabindex="-1"></a><span class="co">#&gt; preauto  1.85435 0.69013  4.9826</span></span>
-<span id="cb5-21"><a href="#cb5-21" tabindex="-1"></a><span class="co">#&gt; ttt24    1.58049 0.57282  4.3608</span></span>
-<span id="cb5-22"><a href="#cb5-22" tabindex="-1"></a><span class="cf">if</span> (runb<span class="sc">&gt;</span><span class="dv">0</span>) { bll <span class="ot">&lt;-</span> <span class="fu">BootmediatorSurv</span>(aaMss,fit,<span class="at">data=</span>dat,<span class="at">k.boot=</span>k.boot); <span class="fu">summary</span>(bll)}</span>
-<span id="cb5-23"><a href="#cb5-23" tabindex="-1"></a></span>
-<span id="cb5-24"><a href="#cb5-24" tabindex="-1"></a><span class="do">### cox model ###############################################################################</span></span>
-<span id="cb5-25"><a href="#cb5-25" tabindex="-1"></a>aaMss <span class="ot">&lt;-</span> <span class="fu">phreg</span>(<span class="fu">Surv</span>(time,status<span class="sc">==</span><span class="dv">2</span>)<span class="sc">~</span>dnr.f0<span class="sc">+</span>dnr.f1<span class="sc">+</span>preauto<span class="sc">+</span>ttt24<span class="sc">+</span><span class="fu">cluster</span>(id),<span class="at">data=</span>wdata,</span>
-<span id="cb5-26"><a href="#cb5-26" tabindex="-1"></a>           <span class="at">weights=</span>wdata<span class="sc">$</span>weights)</span>
-<span id="cb5-27"><a href="#cb5-27" tabindex="-1"></a><span class="fu">summary</span>(aaMss)</span>
-<span id="cb5-28"><a href="#cb5-28" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb5-29"><a href="#cb5-29" tabindex="-1"></a><span class="co">#&gt;    n events</span></span>
-<span id="cb5-30"><a href="#cb5-30" tabindex="-1"></a><span class="co">#&gt;  400    196</span></span>
-<span id="cb5-31"><a href="#cb5-31" tabindex="-1"></a><span class="co">#&gt; coeffients:</span></span>
-<span id="cb5-32"><a href="#cb5-32" tabindex="-1"></a><span class="co">#&gt;         Estimate     S.E.  dU^-1/2 P-value</span></span>
-<span id="cb5-33"><a href="#cb5-33" tabindex="-1"></a><span class="co">#&gt; dnr.f01 0.414565 0.213724 0.157231  0.0524</span></span>
-<span id="cb5-34"><a href="#cb5-34" tabindex="-1"></a><span class="co">#&gt; dnr.f11 0.100656 0.039308 0.144971  0.0104</span></span>
-<span id="cb5-35"><a href="#cb5-35" tabindex="-1"></a><span class="co">#&gt; preauto 0.284460 0.232166 0.162375  0.2205</span></span>
-<span id="cb5-36"><a href="#cb5-36" tabindex="-1"></a><span class="co">#&gt; ttt24   0.185561 0.226044 0.160886  0.4117</span></span>
-<span id="cb5-37"><a href="#cb5-37" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb5-38"><a href="#cb5-38" tabindex="-1"></a><span class="co">#&gt; exp(coeffients):</span></span>
-<span id="cb5-39"><a href="#cb5-39" tabindex="-1"></a><span class="co">#&gt;         Estimate    2.5%  97.5%</span></span>
-<span id="cb5-40"><a href="#cb5-40" tabindex="-1"></a><span class="co">#&gt; dnr.f01  1.51371 0.99568 2.3013</span></span>
-<span id="cb5-41"><a href="#cb5-41" tabindex="-1"></a><span class="co">#&gt; dnr.f11  1.10590 1.02389 1.1945</span></span>
-<span id="cb5-42"><a href="#cb5-42" tabindex="-1"></a><span class="co">#&gt; preauto  1.32904 0.84318 2.0949</span></span>
-<span id="cb5-43"><a href="#cb5-43" tabindex="-1"></a><span class="co">#&gt; ttt24    1.20389 0.77300 1.8750</span></span>
-<span id="cb5-44"><a href="#cb5-44" tabindex="-1"></a>ll <span class="ot">&lt;-</span> <span class="fu">mediatorSurv</span>(aaMss,fit,<span class="at">data=</span>dat,<span class="at">wdata=</span>wdata)</span>
-<span id="cb5-45"><a href="#cb5-45" tabindex="-1"></a><span class="fu">summary</span>(ll)</span>
+<span id="cb5-6"><a href="#cb5-6" tabindex="-1"></a><span class="co">#&gt;    n events</span></span>
+<span id="cb5-7"><a href="#cb5-7" tabindex="-1"></a><span class="co">#&gt;  400    196</span></span>
+<span id="cb5-8"><a href="#cb5-8" tabindex="-1"></a><span class="co">#&gt; coeffients:</span></span>
+<span id="cb5-9"><a href="#cb5-9" tabindex="-1"></a><span class="co">#&gt;          Estimate   Std.Err      2.5%     97.5% P-value</span></span>
+<span id="cb5-10"><a href="#cb5-10" tabindex="-1"></a><span class="co">#&gt; dnr.f01  1.169592  0.739323 -0.279454  2.618637  0.1137</span></span>
+<span id="cb5-11"><a href="#cb5-11" tabindex="-1"></a><span class="co">#&gt; dnr.f11  0.206757  0.131289 -0.050565  0.464078  0.1153</span></span>
+<span id="cb5-12"><a href="#cb5-12" tabindex="-1"></a><span class="co">#&gt; preauto  0.617537  0.504302 -0.370877  1.605950  0.2207</span></span>
+<span id="cb5-13"><a href="#cb5-13" tabindex="-1"></a><span class="co">#&gt; ttt24    0.457736  0.517822 -0.557175  1.472648  0.3767</span></span>
+<span id="cb5-14"><a href="#cb5-14" tabindex="-1"></a><span class="cf">if</span> (runb<span class="sc">&gt;</span><span class="dv">0</span>) { bll <span class="ot">&lt;-</span> <span class="fu">BootmediatorSurv</span>(aaMss,fit,<span class="at">data=</span>dat,<span class="at">k.boot=</span>k.boot); <span class="fu">summary</span>(bll)}</span>
+<span id="cb5-15"><a href="#cb5-15" tabindex="-1"></a></span>
+<span id="cb5-16"><a href="#cb5-16" tabindex="-1"></a><span class="do">### cox model ###############################################################################</span></span>
+<span id="cb5-17"><a href="#cb5-17" tabindex="-1"></a>aaMss <span class="ot">&lt;-</span> <span class="fu">phreg</span>(<span class="fu">Surv</span>(time,status<span class="sc">==</span><span class="dv">2</span>)<span class="sc">~</span>dnr.f0<span class="sc">+</span>dnr.f1<span class="sc">+</span>preauto<span class="sc">+</span>ttt24<span class="sc">+</span><span class="fu">cluster</span>(id),<span class="at">data=</span>wdata,</span>
+<span id="cb5-18"><a href="#cb5-18" tabindex="-1"></a>           <span class="at">weights=</span>wdata<span class="sc">$</span>weights)</span>
+<span id="cb5-19"><a href="#cb5-19" tabindex="-1"></a><span class="fu">summary</span>(aaMss)</span>
+<span id="cb5-20"><a href="#cb5-20" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb5-21"><a href="#cb5-21" tabindex="-1"></a><span class="co">#&gt;    n events</span></span>
+<span id="cb5-22"><a href="#cb5-22" tabindex="-1"></a><span class="co">#&gt;  400    196</span></span>
+<span id="cb5-23"><a href="#cb5-23" tabindex="-1"></a><span class="co">#&gt; coeffients:</span></span>
+<span id="cb5-24"><a href="#cb5-24" tabindex="-1"></a><span class="co">#&gt;         Estimate     S.E.  dU^-1/2 P-value</span></span>
+<span id="cb5-25"><a href="#cb5-25" tabindex="-1"></a><span class="co">#&gt; dnr.f01 0.414565 0.213724 0.157231  0.0524</span></span>
+<span id="cb5-26"><a href="#cb5-26" tabindex="-1"></a><span class="co">#&gt; dnr.f11 0.100656 0.039308 0.144971  0.0104</span></span>
+<span id="cb5-27"><a href="#cb5-27" tabindex="-1"></a><span class="co">#&gt; preauto 0.284460 0.232166 0.162375  0.2205</span></span>
+<span id="cb5-28"><a href="#cb5-28" tabindex="-1"></a><span class="co">#&gt; ttt24   0.185561 0.226044 0.160886  0.4117</span></span>
+<span id="cb5-29"><a href="#cb5-29" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb5-30"><a href="#cb5-30" tabindex="-1"></a><span class="co">#&gt; exp(coeffients):</span></span>
+<span id="cb5-31"><a href="#cb5-31" tabindex="-1"></a><span class="co">#&gt;         Estimate    2.5%  97.5%</span></span>
+<span id="cb5-32"><a href="#cb5-32" tabindex="-1"></a><span class="co">#&gt; dnr.f01  1.51371 0.99568 2.3013</span></span>
+<span id="cb5-33"><a href="#cb5-33" tabindex="-1"></a><span class="co">#&gt; dnr.f11  1.10590 1.02389 1.1945</span></span>
+<span id="cb5-34"><a href="#cb5-34" tabindex="-1"></a><span class="co">#&gt; preauto  1.32904 0.84318 2.0949</span></span>
+<span id="cb5-35"><a href="#cb5-35" tabindex="-1"></a><span class="co">#&gt; ttt24    1.20389 0.77300 1.8750</span></span>
+<span id="cb5-36"><a href="#cb5-36" tabindex="-1"></a>ll <span class="ot">&lt;-</span> <span class="fu">mediatorSurv</span>(aaMss,fit,<span class="at">data=</span>dat,<span class="at">wdata=</span>wdata)</span>
+<span id="cb5-37"><a href="#cb5-37" tabindex="-1"></a><span class="fu">summary</span>(ll)</span>
+<span id="cb5-38"><a href="#cb5-38" tabindex="-1"></a><span class="co">#&gt;    n events</span></span>
+<span id="cb5-39"><a href="#cb5-39" tabindex="-1"></a><span class="co">#&gt;  400    196</span></span>
+<span id="cb5-40"><a href="#cb5-40" tabindex="-1"></a><span class="co">#&gt; coeffients:</span></span>
+<span id="cb5-41"><a href="#cb5-41" tabindex="-1"></a><span class="co">#&gt;            Estimate     Std.Err        2.5%       97.5% P-value</span></span>
+<span id="cb5-42"><a href="#cb5-42" tabindex="-1"></a><span class="co">#&gt; dnr.f01  0.41456472  0.20869639  0.00552731  0.82360212  0.0470</span></span>
+<span id="cb5-43"><a href="#cb5-43" tabindex="-1"></a><span class="co">#&gt; dnr.f11  0.10065575  0.05121458  0.00027702  0.20103448  0.0494</span></span>
+<span id="cb5-44"><a href="#cb5-44" tabindex="-1"></a><span class="co">#&gt; preauto  0.28445952  0.23037280 -0.16706288  0.73598192  0.2169</span></span>
+<span id="cb5-45"><a href="#cb5-45" tabindex="-1"></a><span class="co">#&gt; ttt24    0.18556110  0.22549763 -0.25640614  0.62752835  0.4106</span></span>
 <span id="cb5-46"><a href="#cb5-46" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb5-47"><a href="#cb5-47" tabindex="-1"></a><span class="co">#&gt;    n events</span></span>
-<span id="cb5-48"><a href="#cb5-48" tabindex="-1"></a><span class="co">#&gt;  400    196</span></span>
-<span id="cb5-49"><a href="#cb5-49" tabindex="-1"></a><span class="co">#&gt; coeffients:</span></span>
-<span id="cb5-50"><a href="#cb5-50" tabindex="-1"></a><span class="co">#&gt;            Estimate     Std.Err        2.5%       97.5% P-value</span></span>
-<span id="cb5-51"><a href="#cb5-51" tabindex="-1"></a><span class="co">#&gt; dnr.f01  0.41456472  0.20869639  0.00552731  0.82360212  0.0470</span></span>
-<span id="cb5-52"><a href="#cb5-52" tabindex="-1"></a><span class="co">#&gt; dnr.f11  0.10065575  0.05121458  0.00027702  0.20103448  0.0494</span></span>
-<span id="cb5-53"><a href="#cb5-53" tabindex="-1"></a><span class="co">#&gt; preauto  0.28445952  0.23037280 -0.16706288  0.73598192  0.2169</span></span>
-<span id="cb5-54"><a href="#cb5-54" tabindex="-1"></a><span class="co">#&gt; ttt24    0.18556110  0.22549763 -0.25640614  0.62752835  0.4106</span></span>
-<span id="cb5-55"><a href="#cb5-55" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb5-56"><a href="#cb5-56" tabindex="-1"></a><span class="co">#&gt; exp(coeffients):</span></span>
-<span id="cb5-57"><a href="#cb5-57" tabindex="-1"></a><span class="co">#&gt;         Estimate    2.5%  97.5%</span></span>
-<span id="cb5-58"><a href="#cb5-58" tabindex="-1"></a><span class="co">#&gt; dnr.f01  1.51371 1.00554 2.2787</span></span>
-<span id="cb5-59"><a href="#cb5-59" tabindex="-1"></a><span class="co">#&gt; dnr.f11  1.10590 1.00028 1.2227</span></span>
-<span id="cb5-60"><a href="#cb5-60" tabindex="-1"></a><span class="co">#&gt; preauto  1.32904 0.84615 2.0875</span></span>
-<span id="cb5-61"><a href="#cb5-61" tabindex="-1"></a><span class="co">#&gt; ttt24    1.20389 0.77383 1.8730</span></span>
-<span id="cb5-62"><a href="#cb5-62" tabindex="-1"></a><span class="cf">if</span> (runb<span class="sc">&gt;</span><span class="dv">0</span>) { bll <span class="ot">&lt;-</span> <span class="fu">BootmediatorSurv</span>(aaMss,fit,<span class="at">data=</span>dat,<span class="at">k.boot=</span>k.boot); <span class="fu">summary</span>(bll)}</span>
-<span id="cb5-63"><a href="#cb5-63" tabindex="-1"></a></span>
-<span id="cb5-64"><a href="#cb5-64" tabindex="-1"></a><span class="do">### Fine-Gray #############################################################3</span></span>
-<span id="cb5-65"><a href="#cb5-65" tabindex="-1"></a>aaMss <span class="ot">&lt;-</span> <span class="fu">cifreg</span>(<span class="fu">Event</span>(time,status)<span class="sc">~</span>dnr.f0<span class="sc">+</span>dnr.f1<span class="sc">+</span>preauto<span class="sc">+</span>ttt24<span class="sc">+</span><span class="fu">cluster</span>(id),<span class="at">data=</span>wdata,</span>
-<span id="cb5-66"><a href="#cb5-66" tabindex="-1"></a>        <span class="at">weights=</span>wdata<span class="sc">$</span>weights,<span class="at">propodds=</span><span class="cn">NULL</span>,<span class="at">cause=</span><span class="dv">2</span>)</span>
-<span id="cb5-67"><a href="#cb5-67" tabindex="-1"></a><span class="fu">summary</span>(aaMss)</span>
-<span id="cb5-68"><a href="#cb5-68" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb5-69"><a href="#cb5-69" tabindex="-1"></a><span class="co">#&gt;    n events</span></span>
-<span id="cb5-70"><a href="#cb5-70" tabindex="-1"></a><span class="co">#&gt;  400    196</span></span>
-<span id="cb5-71"><a href="#cb5-71" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb5-72"><a href="#cb5-72" tabindex="-1"></a><span class="co">#&gt;  200 clusters</span></span>
-<span id="cb5-73"><a href="#cb5-73" tabindex="-1"></a><span class="co">#&gt; coeffients:</span></span>
-<span id="cb5-74"><a href="#cb5-74" tabindex="-1"></a><span class="co">#&gt;         Estimate     S.E.  dU^-1/2 P-value</span></span>
-<span id="cb5-75"><a href="#cb5-75" tabindex="-1"></a><span class="co">#&gt; dnr.f01 0.188938 0.219853 0.158548  0.3901</span></span>
-<span id="cb5-76"><a href="#cb5-76" tabindex="-1"></a><span class="co">#&gt; dnr.f11 0.187985 0.040794 0.145020  0.0000</span></span>
-<span id="cb5-77"><a href="#cb5-77" tabindex="-1"></a><span class="co">#&gt; preauto 0.414609 0.227875 0.160987  0.0688</span></span>
-<span id="cb5-78"><a href="#cb5-78" tabindex="-1"></a><span class="co">#&gt; ttt24   0.173024 0.228959 0.163082  0.4498</span></span>
-<span id="cb5-79"><a href="#cb5-79" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb5-80"><a href="#cb5-80" tabindex="-1"></a><span class="co">#&gt; exp(coeffients):</span></span>
-<span id="cb5-81"><a href="#cb5-81" tabindex="-1"></a><span class="co">#&gt;         Estimate    2.5%  97.5%</span></span>
-<span id="cb5-82"><a href="#cb5-82" tabindex="-1"></a><span class="co">#&gt; dnr.f01  1.20797 0.78508 1.8586</span></span>
-<span id="cb5-83"><a href="#cb5-83" tabindex="-1"></a><span class="co">#&gt; dnr.f11  1.20682 1.11408 1.3073</span></span>
-<span id="cb5-84"><a href="#cb5-84" tabindex="-1"></a><span class="co">#&gt; preauto  1.51378 0.96849 2.3661</span></span>
-<span id="cb5-85"><a href="#cb5-85" tabindex="-1"></a><span class="co">#&gt; ttt24    1.18889 0.75902 1.8622</span></span>
-<span id="cb5-86"><a href="#cb5-86" tabindex="-1"></a>ll <span class="ot">&lt;-</span> <span class="fu">mediatorSurv</span>(aaMss,fit,<span class="at">data=</span>dat,<span class="at">wdata=</span>wdata)</span>
-<span id="cb5-87"><a href="#cb5-87" tabindex="-1"></a><span class="fu">summary</span>(ll)</span>
-<span id="cb5-88"><a href="#cb5-88" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb5-89"><a href="#cb5-89" tabindex="-1"></a><span class="co">#&gt;    n events</span></span>
-<span id="cb5-90"><a href="#cb5-90" tabindex="-1"></a><span class="co">#&gt;  400    196</span></span>
-<span id="cb5-91"><a href="#cb5-91" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb5-92"><a href="#cb5-92" tabindex="-1"></a><span class="co">#&gt;  200 clusters</span></span>
-<span id="cb5-93"><a href="#cb5-93" tabindex="-1"></a><span class="co">#&gt; coeffients:</span></span>
-<span id="cb5-94"><a href="#cb5-94" tabindex="-1"></a><span class="co">#&gt;          Estimate   Std.Err      2.5%     97.5% P-value</span></span>
-<span id="cb5-95"><a href="#cb5-95" tabindex="-1"></a><span class="co">#&gt; dnr.f01  0.188938  0.233969 -0.269634  0.647509  0.4194</span></span>
-<span id="cb5-96"><a href="#cb5-96" tabindex="-1"></a><span class="co">#&gt; dnr.f11  0.187985  0.047900  0.094103  0.281868  0.0001</span></span>
-<span id="cb5-97"><a href="#cb5-97" tabindex="-1"></a><span class="co">#&gt; preauto  0.414609  0.230736 -0.037625  0.866843  0.0724</span></span>
-<span id="cb5-98"><a href="#cb5-98" tabindex="-1"></a><span class="co">#&gt; ttt24    0.173024  0.230856 -0.279445  0.625494  0.4536</span></span>
-<span id="cb5-99"><a href="#cb5-99" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb5-100"><a href="#cb5-100" tabindex="-1"></a><span class="co">#&gt; exp(coeffients):</span></span>
-<span id="cb5-101"><a href="#cb5-101" tabindex="-1"></a><span class="co">#&gt;         Estimate    2.5%  97.5%</span></span>
-<span id="cb5-102"><a href="#cb5-102" tabindex="-1"></a><span class="co">#&gt; dnr.f01  1.20797 0.76366 1.9108</span></span>
-<span id="cb5-103"><a href="#cb5-103" tabindex="-1"></a><span class="co">#&gt; dnr.f11  1.20682 1.09867 1.3256</span></span>
-<span id="cb5-104"><a href="#cb5-104" tabindex="-1"></a><span class="co">#&gt; preauto  1.51378 0.96307 2.3794</span></span>
-<span id="cb5-105"><a href="#cb5-105" tabindex="-1"></a><span class="co">#&gt; ttt24    1.18889 0.75620 1.8692</span></span>
-<span id="cb5-106"><a href="#cb5-106" tabindex="-1"></a><span class="cf">if</span> (runb<span class="sc">&gt;</span><span class="dv">0</span>) { bll <span class="ot">&lt;-</span> <span class="fu">BootmediatorSurv</span>(aaMss,fit,<span class="at">data=</span>dat,<span class="at">k.boot=</span>k.boot); <span class="fu">summary</span>(bll)}</span>
-<span id="cb5-107"><a href="#cb5-107" tabindex="-1"></a></span>
-<span id="cb5-108"><a href="#cb5-108" tabindex="-1"></a><span class="do">### logit model  #############################################################3</span></span>
-<span id="cb5-109"><a href="#cb5-109" tabindex="-1"></a>aaMss <span class="ot">&lt;-</span> <span class="fu">cifreg</span>(<span class="fu">Event</span>(time,status)<span class="sc">~</span>dnr.f0<span class="sc">+</span>dnr.f1<span class="sc">+</span>preauto<span class="sc">+</span>ttt24<span class="sc">+</span><span class="fu">cluster</span>(id),<span class="at">data=</span>wdata,</span>
-<span id="cb5-110"><a href="#cb5-110" tabindex="-1"></a>        <span class="at">weights=</span>wdata<span class="sc">$</span>weights,<span class="at">cause=</span><span class="dv">2</span>)</span>
-<span id="cb5-111"><a href="#cb5-111" tabindex="-1"></a><span class="fu">summary</span>(aaMss)</span>
-<span id="cb5-112"><a href="#cb5-112" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb5-113"><a href="#cb5-113" tabindex="-1"></a><span class="co">#&gt;    n events</span></span>
-<span id="cb5-114"><a href="#cb5-114" tabindex="-1"></a><span class="co">#&gt;  400    196</span></span>
-<span id="cb5-115"><a href="#cb5-115" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb5-116"><a href="#cb5-116" tabindex="-1"></a><span class="co">#&gt;  200 clusters</span></span>
-<span id="cb5-117"><a href="#cb5-117" tabindex="-1"></a><span class="co">#&gt; coeffients:</span></span>
-<span id="cb5-118"><a href="#cb5-118" tabindex="-1"></a><span class="co">#&gt;         Estimate     S.E.  dU^-1/2 P-value</span></span>
-<span id="cb5-119"><a href="#cb5-119" tabindex="-1"></a><span class="co">#&gt; dnr.f01 0.357151 0.339806 0.158935  0.2932</span></span>
-<span id="cb5-120"><a href="#cb5-120" tabindex="-1"></a><span class="co">#&gt; dnr.f11 0.272316 0.064415 0.145074  0.0000</span></span>
-<span id="cb5-121"><a href="#cb5-121" tabindex="-1"></a><span class="co">#&gt; preauto 0.657030 0.326117 0.160362  0.0439</span></span>
-<span id="cb5-122"><a href="#cb5-122" tabindex="-1"></a><span class="co">#&gt; ttt24   0.191341 0.353641 0.167443  0.5885</span></span>
-<span id="cb5-123"><a href="#cb5-123" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb5-124"><a href="#cb5-124" tabindex="-1"></a><span class="co">#&gt; exp(coeffients):</span></span>
-<span id="cb5-125"><a href="#cb5-125" tabindex="-1"></a><span class="co">#&gt;         Estimate    2.5%  97.5%</span></span>
-<span id="cb5-126"><a href="#cb5-126" tabindex="-1"></a><span class="co">#&gt; dnr.f01  1.42925 0.73429 2.7820</span></span>
-<span id="cb5-127"><a href="#cb5-127" tabindex="-1"></a><span class="co">#&gt; dnr.f11  1.31300 1.15727 1.4897</span></span>
-<span id="cb5-128"><a href="#cb5-128" tabindex="-1"></a><span class="co">#&gt; preauto  1.92905 1.01801 3.6554</span></span>
-<span id="cb5-129"><a href="#cb5-129" tabindex="-1"></a><span class="co">#&gt; ttt24    1.21087 0.60545 2.4217</span></span>
-<span id="cb5-130"><a href="#cb5-130" tabindex="-1"></a>ll <span class="ot">&lt;-</span> <span class="fu">mediatorSurv</span>(aaMss,fit,<span class="at">data=</span>dat,<span class="at">wdata=</span>wdata)</span>
-<span id="cb5-131"><a href="#cb5-131" tabindex="-1"></a><span class="fu">summary</span>(ll)</span>
+<span id="cb5-47"><a href="#cb5-47" tabindex="-1"></a><span class="co">#&gt; exp(coeffients):</span></span>
+<span id="cb5-48"><a href="#cb5-48" tabindex="-1"></a><span class="co">#&gt;         Estimate    2.5%  97.5%</span></span>
+<span id="cb5-49"><a href="#cb5-49" tabindex="-1"></a><span class="co">#&gt; dnr.f01  1.51371 1.00554 2.2787</span></span>
+<span id="cb5-50"><a href="#cb5-50" tabindex="-1"></a><span class="co">#&gt; dnr.f11  1.10590 1.00028 1.2227</span></span>
+<span id="cb5-51"><a href="#cb5-51" tabindex="-1"></a><span class="co">#&gt; preauto  1.32904 0.84615 2.0875</span></span>
+<span id="cb5-52"><a href="#cb5-52" tabindex="-1"></a><span class="co">#&gt; ttt24    1.20389 0.77383 1.8730</span></span>
+<span id="cb5-53"><a href="#cb5-53" tabindex="-1"></a><span class="cf">if</span> (runb<span class="sc">&gt;</span><span class="dv">0</span>) { bll <span class="ot">&lt;-</span> <span class="fu">BootmediatorSurv</span>(aaMss,fit,<span class="at">data=</span>dat,<span class="at">k.boot=</span>k.boot); <span class="fu">summary</span>(bll)}</span>
+<span id="cb5-54"><a href="#cb5-54" tabindex="-1"></a></span>
+<span id="cb5-55"><a href="#cb5-55" tabindex="-1"></a><span class="do">### Fine-Gray #############################################################3</span></span>
+<span id="cb5-56"><a href="#cb5-56" tabindex="-1"></a>aaMss <span class="ot">&lt;-</span> <span class="fu">cifreg</span>(<span class="fu">Event</span>(time,status)<span class="sc">~</span>dnr.f0<span class="sc">+</span>dnr.f1<span class="sc">+</span>preauto<span class="sc">+</span>ttt24<span class="sc">+</span><span class="fu">cluster</span>(id),<span class="at">data=</span>wdata,</span>
+<span id="cb5-57"><a href="#cb5-57" tabindex="-1"></a>        <span class="at">weights=</span>wdata<span class="sc">$</span>weights,<span class="at">propodds=</span><span class="cn">NULL</span>,<span class="at">cause=</span><span class="dv">2</span>)</span>
+<span id="cb5-58"><a href="#cb5-58" tabindex="-1"></a><span class="fu">summary</span>(aaMss)</span>
+<span id="cb5-59"><a href="#cb5-59" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb5-60"><a href="#cb5-60" tabindex="-1"></a><span class="co">#&gt;    n events</span></span>
+<span id="cb5-61"><a href="#cb5-61" tabindex="-1"></a><span class="co">#&gt;  400    196</span></span>
+<span id="cb5-62"><a href="#cb5-62" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb5-63"><a href="#cb5-63" tabindex="-1"></a><span class="co">#&gt;  200 clusters</span></span>
+<span id="cb5-64"><a href="#cb5-64" tabindex="-1"></a><span class="co">#&gt; coeffients:</span></span>
+<span id="cb5-65"><a href="#cb5-65" tabindex="-1"></a><span class="co">#&gt;         Estimate    S.E. dU^-1/2 P-value</span></span>
+<span id="cb5-66"><a href="#cb5-66" tabindex="-1"></a><span class="co">#&gt; dnr.f01  0.18943 0.21986 0.15855  0.3889</span></span>
+<span id="cb5-67"><a href="#cb5-67" tabindex="-1"></a><span class="co">#&gt; dnr.f11  0.18730 0.04083 0.14503  0.0000</span></span>
+<span id="cb5-68"><a href="#cb5-68" tabindex="-1"></a><span class="co">#&gt; preauto  0.41452 0.22783 0.16098  0.0688</span></span>
+<span id="cb5-69"><a href="#cb5-69" tabindex="-1"></a><span class="co">#&gt; ttt24    0.17304 0.22892 0.16308  0.4497</span></span>
+<span id="cb5-70"><a href="#cb5-70" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb5-71"><a href="#cb5-71" tabindex="-1"></a><span class="co">#&gt; exp(coeffients):</span></span>
+<span id="cb5-72"><a href="#cb5-72" tabindex="-1"></a><span class="co">#&gt;         Estimate    2.5%  97.5%</span></span>
+<span id="cb5-73"><a href="#cb5-73" tabindex="-1"></a><span class="co">#&gt; dnr.f01  1.20856 0.78545 1.8596</span></span>
+<span id="cb5-74"><a href="#cb5-74" tabindex="-1"></a><span class="co">#&gt; dnr.f11  1.20599 1.11324 1.3065</span></span>
+<span id="cb5-75"><a href="#cb5-75" tabindex="-1"></a><span class="co">#&gt; preauto  1.51364 0.96849 2.3656</span></span>
+<span id="cb5-76"><a href="#cb5-76" tabindex="-1"></a><span class="co">#&gt; ttt24    1.18892 0.75910 1.8621</span></span>
+<span id="cb5-77"><a href="#cb5-77" tabindex="-1"></a>ll <span class="ot">&lt;-</span> <span class="fu">mediatorSurv</span>(aaMss,fit,<span class="at">data=</span>dat,<span class="at">wdata=</span>wdata)</span>
+<span id="cb5-78"><a href="#cb5-78" tabindex="-1"></a><span class="fu">summary</span>(ll)</span>
+<span id="cb5-79"><a href="#cb5-79" tabindex="-1"></a><span class="co">#&gt;    n events</span></span>
+<span id="cb5-80"><a href="#cb5-80" tabindex="-1"></a><span class="co">#&gt;  400    196</span></span>
+<span id="cb5-81"><a href="#cb5-81" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb5-82"><a href="#cb5-82" tabindex="-1"></a><span class="co">#&gt;  200 clusters</span></span>
+<span id="cb5-83"><a href="#cb5-83" tabindex="-1"></a><span class="co">#&gt; coeffients:</span></span>
+<span id="cb5-84"><a href="#cb5-84" tabindex="-1"></a><span class="co">#&gt;          Estimate   Std.Err      2.5%     97.5% P-value</span></span>
+<span id="cb5-85"><a href="#cb5-85" tabindex="-1"></a><span class="co">#&gt; dnr.f01  0.189426  0.233939 -0.269087  0.647939  0.4181</span></span>
+<span id="cb5-86"><a href="#cb5-86" tabindex="-1"></a><span class="co">#&gt; dnr.f11  0.187298  0.047733  0.093744  0.280853  0.0001</span></span>
+<span id="cb5-87"><a href="#cb5-87" tabindex="-1"></a><span class="co">#&gt; preauto  0.414517  0.230676 -0.037600  0.866634  0.0723</span></span>
+<span id="cb5-88"><a href="#cb5-88" tabindex="-1"></a><span class="co">#&gt; ttt24    0.173042  0.230810 -0.279338  0.625422  0.4534</span></span>
+<span id="cb5-89"><a href="#cb5-89" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb5-90"><a href="#cb5-90" tabindex="-1"></a><span class="co">#&gt; exp(coeffients):</span></span>
+<span id="cb5-91"><a href="#cb5-91" tabindex="-1"></a><span class="co">#&gt;         Estimate    2.5%  97.5%</span></span>
+<span id="cb5-92"><a href="#cb5-92" tabindex="-1"></a><span class="co">#&gt; dnr.f01  1.20856 0.76408 1.9116</span></span>
+<span id="cb5-93"><a href="#cb5-93" tabindex="-1"></a><span class="co">#&gt; dnr.f11  1.20599 1.09828 1.3243</span></span>
+<span id="cb5-94"><a href="#cb5-94" tabindex="-1"></a><span class="co">#&gt; preauto  1.51364 0.96310 2.3789</span></span>
+<span id="cb5-95"><a href="#cb5-95" tabindex="-1"></a><span class="co">#&gt; ttt24    1.18892 0.75628 1.8690</span></span>
+<span id="cb5-96"><a href="#cb5-96" tabindex="-1"></a><span class="cf">if</span> (runb<span class="sc">&gt;</span><span class="dv">0</span>) { bll <span class="ot">&lt;-</span> <span class="fu">BootmediatorSurv</span>(aaMss,fit,<span class="at">data=</span>dat,<span class="at">k.boot=</span>k.boot); <span class="fu">summary</span>(bll)}</span>
+<span id="cb5-97"><a href="#cb5-97" tabindex="-1"></a></span>
+<span id="cb5-98"><a href="#cb5-98" tabindex="-1"></a><span class="do">### logit model  #############################################################3</span></span>
+<span id="cb5-99"><a href="#cb5-99" tabindex="-1"></a>aaMss <span class="ot">&lt;-</span> <span class="fu">cifreg</span>(<span class="fu">Event</span>(time,status)<span class="sc">~</span>dnr.f0<span class="sc">+</span>dnr.f1<span class="sc">+</span>preauto<span class="sc">+</span>ttt24<span class="sc">+</span><span class="fu">cluster</span>(id),<span class="at">data=</span>wdata,</span>
+<span id="cb5-100"><a href="#cb5-100" tabindex="-1"></a>        <span class="at">weights=</span>wdata<span class="sc">$</span>weights,<span class="at">cause=</span><span class="dv">2</span>)</span>
+<span id="cb5-101"><a href="#cb5-101" tabindex="-1"></a><span class="fu">summary</span>(aaMss)</span>
+<span id="cb5-102"><a href="#cb5-102" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb5-103"><a href="#cb5-103" tabindex="-1"></a><span class="co">#&gt;    n events</span></span>
+<span id="cb5-104"><a href="#cb5-104" tabindex="-1"></a><span class="co">#&gt;  400    196</span></span>
+<span id="cb5-105"><a href="#cb5-105" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb5-106"><a href="#cb5-106" tabindex="-1"></a><span class="co">#&gt;  200 clusters</span></span>
+<span id="cb5-107"><a href="#cb5-107" tabindex="-1"></a><span class="co">#&gt; coeffients:</span></span>
+<span id="cb5-108"><a href="#cb5-108" tabindex="-1"></a><span class="co">#&gt;         Estimate     S.E.  dU^-1/2 P-value</span></span>
+<span id="cb5-109"><a href="#cb5-109" tabindex="-1"></a><span class="co">#&gt; dnr.f01 0.357168 0.339848 0.158937  0.2933</span></span>
+<span id="cb5-110"><a href="#cb5-110" tabindex="-1"></a><span class="co">#&gt; dnr.f11 0.272392 0.064166 0.145076  0.0000</span></span>
+<span id="cb5-111"><a href="#cb5-111" tabindex="-1"></a><span class="co">#&gt; preauto 0.657010 0.326082 0.160361  0.0439</span></span>
+<span id="cb5-112"><a href="#cb5-112" tabindex="-1"></a><span class="co">#&gt; ttt24   0.191333 0.353606 0.167443  0.5884</span></span>
+<span id="cb5-113"><a href="#cb5-113" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb5-114"><a href="#cb5-114" tabindex="-1"></a><span class="co">#&gt; exp(coeffients):</span></span>
+<span id="cb5-115"><a href="#cb5-115" tabindex="-1"></a><span class="co">#&gt;         Estimate    2.5%  97.5%</span></span>
+<span id="cb5-116"><a href="#cb5-116" tabindex="-1"></a><span class="co">#&gt; dnr.f01  1.42928 0.73424 2.7822</span></span>
+<span id="cb5-117"><a href="#cb5-117" tabindex="-1"></a><span class="co">#&gt; dnr.f11  1.31310 1.15792 1.4891</span></span>
+<span id="cb5-118"><a href="#cb5-118" tabindex="-1"></a><span class="co">#&gt; preauto  1.92902 1.01806 3.6551</span></span>
+<span id="cb5-119"><a href="#cb5-119" tabindex="-1"></a><span class="co">#&gt; ttt24    1.21086 0.60549 2.4215</span></span>
+<span id="cb5-120"><a href="#cb5-120" tabindex="-1"></a>ll <span class="ot">&lt;-</span> <span class="fu">mediatorSurv</span>(aaMss,fit,<span class="at">data=</span>dat,<span class="at">wdata=</span>wdata)</span>
+<span id="cb5-121"><a href="#cb5-121" tabindex="-1"></a><span class="fu">summary</span>(ll)</span>
+<span id="cb5-122"><a href="#cb5-122" tabindex="-1"></a><span class="co">#&gt;    n events</span></span>
+<span id="cb5-123"><a href="#cb5-123" tabindex="-1"></a><span class="co">#&gt;  400    196</span></span>
+<span id="cb5-124"><a href="#cb5-124" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb5-125"><a href="#cb5-125" tabindex="-1"></a><span class="co">#&gt;  200 clusters</span></span>
+<span id="cb5-126"><a href="#cb5-126" tabindex="-1"></a><span class="co">#&gt; coeffients:</span></span>
+<span id="cb5-127"><a href="#cb5-127" tabindex="-1"></a><span class="co">#&gt;          Estimate   Std.Err      2.5%     97.5% P-value</span></span>
+<span id="cb5-128"><a href="#cb5-128" tabindex="-1"></a><span class="co">#&gt; dnr.f01  0.357168  0.351089 -0.330953  1.045289  0.3090</span></span>
+<span id="cb5-129"><a href="#cb5-129" tabindex="-1"></a><span class="co">#&gt; dnr.f11  0.272392  0.068131  0.138857  0.405927  0.0001</span></span>
+<span id="cb5-130"><a href="#cb5-130" tabindex="-1"></a><span class="co">#&gt; preauto  0.657010  0.328207  0.013736  1.300284  0.0453</span></span>
+<span id="cb5-131"><a href="#cb5-131" tabindex="-1"></a><span class="co">#&gt; ttt24    0.191333  0.356086 -0.506583  0.889250  0.5910</span></span>
 <span id="cb5-132"><a href="#cb5-132" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb5-133"><a href="#cb5-133" tabindex="-1"></a><span class="co">#&gt;    n events</span></span>
-<span id="cb5-134"><a href="#cb5-134" tabindex="-1"></a><span class="co">#&gt;  400    196</span></span>
-<span id="cb5-135"><a href="#cb5-135" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb5-136"><a href="#cb5-136" tabindex="-1"></a><span class="co">#&gt;  200 clusters</span></span>
-<span id="cb5-137"><a href="#cb5-137" tabindex="-1"></a><span class="co">#&gt; coeffients:</span></span>
-<span id="cb5-138"><a href="#cb5-138" tabindex="-1"></a><span class="co">#&gt;          Estimate   Std.Err      2.5%     97.5% P-value</span></span>
-<span id="cb5-139"><a href="#cb5-139" tabindex="-1"></a><span class="co">#&gt; dnr.f01  0.357151  0.351047 -0.330890  1.045191  0.3090</span></span>
-<span id="cb5-140"><a href="#cb5-140" tabindex="-1"></a><span class="co">#&gt; dnr.f11  0.272316  0.068421  0.138213  0.406419  0.0001</span></span>
-<span id="cb5-141"><a href="#cb5-141" tabindex="-1"></a><span class="co">#&gt; preauto  0.657030  0.328243  0.013685  1.300375  0.0453</span></span>
-<span id="cb5-142"><a href="#cb5-142" tabindex="-1"></a><span class="co">#&gt; ttt24    0.191341  0.356120 -0.506641  0.889323  0.5911</span></span>
-<span id="cb5-143"><a href="#cb5-143" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb5-144"><a href="#cb5-144" tabindex="-1"></a><span class="co">#&gt; exp(coeffients):</span></span>
-<span id="cb5-145"><a href="#cb5-145" tabindex="-1"></a><span class="co">#&gt;         Estimate    2.5%  97.5%</span></span>
-<span id="cb5-146"><a href="#cb5-146" tabindex="-1"></a><span class="co">#&gt; dnr.f01  1.42925 0.71828 2.8439</span></span>
-<span id="cb5-147"><a href="#cb5-147" tabindex="-1"></a><span class="co">#&gt; dnr.f11  1.31300 1.14822 1.5014</span></span>
-<span id="cb5-148"><a href="#cb5-148" tabindex="-1"></a><span class="co">#&gt; preauto  1.92905 1.01378 3.6707</span></span>
-<span id="cb5-149"><a href="#cb5-149" tabindex="-1"></a><span class="co">#&gt; ttt24    1.21087 0.60252 2.4335</span></span>
-<span id="cb5-150"><a href="#cb5-150" tabindex="-1"></a><span class="cf">if</span> (runb<span class="sc">&gt;</span><span class="dv">0</span>) { bll <span class="ot">&lt;-</span> <span class="fu">BootmediatorSurv</span>(aaMss,fit,<span class="at">data=</span>dat,<span class="at">k.boot=</span>k.boot); <span class="fu">summary</span>(bll)}</span>
-<span id="cb5-151"><a href="#cb5-151" tabindex="-1"></a></span>
-<span id="cb5-152"><a href="#cb5-152" tabindex="-1"></a><span class="do">### binomial outcome  ############################</span></span>
-<span id="cb5-153"><a href="#cb5-153" tabindex="-1"></a>aaMss <span class="ot">&lt;-</span> <span class="fu">binreg</span>(<span class="fu">Event</span>(ftime,status)<span class="sc">~</span>dnr.f0<span class="sc">+</span>dnr.f1<span class="sc">+</span>preauto<span class="sc">+</span>ttt24<span class="sc">+</span><span class="fu">cluster</span>(id),<span class="at">data=</span>wdata,</span>
-<span id="cb5-154"><a href="#cb5-154" tabindex="-1"></a>        <span class="at">time=</span><span class="dv">50</span>,<span class="at">weights=</span>wdata<span class="sc">$</span>weights,<span class="at">cens.weights=</span><span class="dv">1</span>,<span class="at">cause=</span><span class="dv">2</span>)</span>
-<span id="cb5-155"><a href="#cb5-155" tabindex="-1"></a><span class="fu">summary</span>(aaMss)</span>
+<span id="cb5-133"><a href="#cb5-133" tabindex="-1"></a><span class="co">#&gt; exp(coeffients):</span></span>
+<span id="cb5-134"><a href="#cb5-134" tabindex="-1"></a><span class="co">#&gt;         Estimate    2.5%  97.5%</span></span>
+<span id="cb5-135"><a href="#cb5-135" tabindex="-1"></a><span class="co">#&gt; dnr.f01  1.42928 0.71824 2.8442</span></span>
+<span id="cb5-136"><a href="#cb5-136" tabindex="-1"></a><span class="co">#&gt; dnr.f11  1.31310 1.14896 1.5007</span></span>
+<span id="cb5-137"><a href="#cb5-137" tabindex="-1"></a><span class="co">#&gt; preauto  1.92902 1.01383 3.6703</span></span>
+<span id="cb5-138"><a href="#cb5-138" tabindex="-1"></a><span class="co">#&gt; ttt24    1.21086 0.60255 2.4333</span></span>
+<span id="cb5-139"><a href="#cb5-139" tabindex="-1"></a><span class="cf">if</span> (runb<span class="sc">&gt;</span><span class="dv">0</span>) { bll <span class="ot">&lt;-</span> <span class="fu">BootmediatorSurv</span>(aaMss,fit,<span class="at">data=</span>dat,<span class="at">k.boot=</span>k.boot); <span class="fu">summary</span>(bll)}</span>
+<span id="cb5-140"><a href="#cb5-140" tabindex="-1"></a></span>
+<span id="cb5-141"><a href="#cb5-141" tabindex="-1"></a><span class="do">### binomial outcome  ############################</span></span>
+<span id="cb5-142"><a href="#cb5-142" tabindex="-1"></a>aaMss <span class="ot">&lt;-</span> <span class="fu">binreg</span>(<span class="fu">Event</span>(ftime,status)<span class="sc">~</span>dnr.f0<span class="sc">+</span>dnr.f1<span class="sc">+</span>preauto<span class="sc">+</span>ttt24<span class="sc">+</span><span class="fu">cluster</span>(id),<span class="at">data=</span>wdata,</span>
+<span id="cb5-143"><a href="#cb5-143" tabindex="-1"></a>        <span class="at">time=</span><span class="dv">50</span>,<span class="at">weights=</span>wdata<span class="sc">$</span>weights,<span class="at">cens.weights=</span><span class="dv">1</span>,<span class="at">cause=</span><span class="dv">2</span>)</span>
+<span id="cb5-144"><a href="#cb5-144" tabindex="-1"></a><span class="fu">summary</span>(aaMss)</span>
+<span id="cb5-145"><a href="#cb5-145" tabindex="-1"></a><span class="co">#&gt;    n events</span></span>
+<span id="cb5-146"><a href="#cb5-146" tabindex="-1"></a><span class="co">#&gt;  400    196</span></span>
+<span id="cb5-147"><a href="#cb5-147" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb5-148"><a href="#cb5-148" tabindex="-1"></a><span class="co">#&gt;  200 clusters</span></span>
+<span id="cb5-149"><a href="#cb5-149" tabindex="-1"></a><span class="co">#&gt; coeffients:</span></span>
+<span id="cb5-150"><a href="#cb5-150" tabindex="-1"></a><span class="co">#&gt;              Estimate   Std.Err      2.5%     97.5% P-value</span></span>
+<span id="cb5-151"><a href="#cb5-151" tabindex="-1"></a><span class="co">#&gt; (Intercept) -0.674433  0.235285 -1.135583 -0.213284  0.0042</span></span>
+<span id="cb5-152"><a href="#cb5-152" tabindex="-1"></a><span class="co">#&gt; dnr.f01      0.221834  0.318264 -0.401952  0.845620  0.4858</span></span>
+<span id="cb5-153"><a href="#cb5-153" tabindex="-1"></a><span class="co">#&gt; dnr.f11      0.262722  0.060281  0.144572  0.380871  0.0000</span></span>
+<span id="cb5-154"><a href="#cb5-154" tabindex="-1"></a><span class="co">#&gt; preauto      0.578077  0.319091 -0.047331  1.203484  0.0700</span></span>
+<span id="cb5-155"><a href="#cb5-155" tabindex="-1"></a><span class="co">#&gt; ttt24        0.214442  0.328183 -0.428784  0.857669  0.5135</span></span>
 <span id="cb5-156"><a href="#cb5-156" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb5-157"><a href="#cb5-157" tabindex="-1"></a><span class="co">#&gt;    n events</span></span>
-<span id="cb5-158"><a href="#cb5-158" tabindex="-1"></a><span class="co">#&gt;  400    196</span></span>
-<span id="cb5-159"><a href="#cb5-159" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb5-160"><a href="#cb5-160" tabindex="-1"></a><span class="co">#&gt;  200 clusters</span></span>
-<span id="cb5-161"><a href="#cb5-161" tabindex="-1"></a><span class="co">#&gt; coeffients:</span></span>
-<span id="cb5-162"><a href="#cb5-162" tabindex="-1"></a><span class="co">#&gt;              Estimate   Std.Err      2.5%     97.5% P-value</span></span>
-<span id="cb5-163"><a href="#cb5-163" tabindex="-1"></a><span class="co">#&gt; (Intercept) -0.674433  0.235285 -1.135583 -0.213284  0.0042</span></span>
-<span id="cb5-164"><a href="#cb5-164" tabindex="-1"></a><span class="co">#&gt; dnr.f01      0.221834  0.318264 -0.401952  0.845620  0.4858</span></span>
-<span id="cb5-165"><a href="#cb5-165" tabindex="-1"></a><span class="co">#&gt; dnr.f11      0.262722  0.060281  0.144572  0.380871  0.0000</span></span>
-<span id="cb5-166"><a href="#cb5-166" tabindex="-1"></a><span class="co">#&gt; preauto      0.578077  0.319091 -0.047331  1.203484  0.0700</span></span>
-<span id="cb5-167"><a href="#cb5-167" tabindex="-1"></a><span class="co">#&gt; ttt24        0.214442  0.328183 -0.428784  0.857669  0.5135</span></span>
+<span id="cb5-157"><a href="#cb5-157" tabindex="-1"></a><span class="co">#&gt; exp(coeffients):</span></span>
+<span id="cb5-158"><a href="#cb5-158" tabindex="-1"></a><span class="co">#&gt;             Estimate    2.5%  97.5%</span></span>
+<span id="cb5-159"><a href="#cb5-159" tabindex="-1"></a><span class="co">#&gt; (Intercept)  0.50944 0.32123 0.8079</span></span>
+<span id="cb5-160"><a href="#cb5-160" tabindex="-1"></a><span class="co">#&gt; dnr.f01      1.24836 0.66901 2.3294</span></span>
+<span id="cb5-161"><a href="#cb5-161" tabindex="-1"></a><span class="co">#&gt; dnr.f11      1.30046 1.15555 1.4636</span></span>
+<span id="cb5-162"><a href="#cb5-162" tabindex="-1"></a><span class="co">#&gt; preauto      1.78261 0.95377 3.3317</span></span>
+<span id="cb5-163"><a href="#cb5-163" tabindex="-1"></a><span class="co">#&gt; ttt24        1.23917 0.65130 2.3577</span></span>
+<span id="cb5-164"><a href="#cb5-164" tabindex="-1"></a>ll <span class="ot">&lt;-</span> <span class="fu">mediatorSurv</span>(aaMss,fit,<span class="at">data=</span>dat,<span class="at">wdata=</span>wdata)</span>
+<span id="cb5-165"><a href="#cb5-165" tabindex="-1"></a><span class="fu">summary</span>(ll)</span>
+<span id="cb5-166"><a href="#cb5-166" tabindex="-1"></a><span class="co">#&gt;    n events</span></span>
+<span id="cb5-167"><a href="#cb5-167" tabindex="-1"></a><span class="co">#&gt;  400    196</span></span>
 <span id="cb5-168"><a href="#cb5-168" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb5-169"><a href="#cb5-169" tabindex="-1"></a><span class="co">#&gt; exp(coeffients):</span></span>
-<span id="cb5-170"><a href="#cb5-170" tabindex="-1"></a><span class="co">#&gt;             Estimate    2.5%  97.5%</span></span>
-<span id="cb5-171"><a href="#cb5-171" tabindex="-1"></a><span class="co">#&gt; (Intercept)  0.50944 0.32123 0.8079</span></span>
-<span id="cb5-172"><a href="#cb5-172" tabindex="-1"></a><span class="co">#&gt; dnr.f01      1.24836 0.66901 2.3294</span></span>
-<span id="cb5-173"><a href="#cb5-173" tabindex="-1"></a><span class="co">#&gt; dnr.f11      1.30046 1.15555 1.4636</span></span>
-<span id="cb5-174"><a href="#cb5-174" tabindex="-1"></a><span class="co">#&gt; preauto      1.78261 0.95377 3.3317</span></span>
-<span id="cb5-175"><a href="#cb5-175" tabindex="-1"></a><span class="co">#&gt; ttt24        1.23917 0.65130 2.3577</span></span>
-<span id="cb5-176"><a href="#cb5-176" tabindex="-1"></a>ll <span class="ot">&lt;-</span> <span class="fu">mediatorSurv</span>(aaMss,fit,<span class="at">data=</span>dat,<span class="at">wdata=</span>wdata)</span>
-<span id="cb5-177"><a href="#cb5-177" tabindex="-1"></a><span class="fu">summary</span>(ll)</span>
-<span id="cb5-178"><a href="#cb5-178" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb5-179"><a href="#cb5-179" tabindex="-1"></a><span class="co">#&gt;    n events</span></span>
-<span id="cb5-180"><a href="#cb5-180" tabindex="-1"></a><span class="co">#&gt;  400    196</span></span>
-<span id="cb5-181"><a href="#cb5-181" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb5-182"><a href="#cb5-182" tabindex="-1"></a><span class="co">#&gt;  200 clusters</span></span>
-<span id="cb5-183"><a href="#cb5-183" tabindex="-1"></a><span class="co">#&gt; coeffients:</span></span>
-<span id="cb5-184"><a href="#cb5-184" tabindex="-1"></a><span class="co">#&gt;              Estimate   Std.Err      2.5%     97.5% P-value</span></span>
-<span id="cb5-185"><a href="#cb5-185" tabindex="-1"></a><span class="co">#&gt; (Intercept) -0.674433  0.235022 -1.135069 -0.213798  0.0041</span></span>
-<span id="cb5-186"><a href="#cb5-186" tabindex="-1"></a><span class="co">#&gt; dnr.f01      0.221834  0.286717 -0.340122  0.783789  0.4391</span></span>
-<span id="cb5-187"><a href="#cb5-187" tabindex="-1"></a><span class="co">#&gt; dnr.f11      0.262722  0.107508  0.052011  0.473432  0.0145</span></span>
-<span id="cb5-188"><a href="#cb5-188" tabindex="-1"></a><span class="co">#&gt; preauto      0.578077  0.315260 -0.039822  1.195975  0.0667</span></span>
-<span id="cb5-189"><a href="#cb5-189" tabindex="-1"></a><span class="co">#&gt; ttt24        0.214442  0.329107 -0.430596  0.859480  0.5147</span></span>
-<span id="cb5-190"><a href="#cb5-190" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb5-191"><a href="#cb5-191" tabindex="-1"></a><span class="co">#&gt; exp(coeffients):</span></span>
-<span id="cb5-192"><a href="#cb5-192" tabindex="-1"></a><span class="co">#&gt;             Estimate    2.5%  97.5%</span></span>
-<span id="cb5-193"><a href="#cb5-193" tabindex="-1"></a><span class="co">#&gt; (Intercept)  0.50944 0.32140 0.8075</span></span>
-<span id="cb5-194"><a href="#cb5-194" tabindex="-1"></a><span class="co">#&gt; dnr.f01      1.24836 0.71168 2.1898</span></span>
-<span id="cb5-195"><a href="#cb5-195" tabindex="-1"></a><span class="co">#&gt; dnr.f11      1.30046 1.05339 1.6055</span></span>
-<span id="cb5-196"><a href="#cb5-196" tabindex="-1"></a><span class="co">#&gt; preauto      1.78261 0.96096 3.3068</span></span>
-<span id="cb5-197"><a href="#cb5-197" tabindex="-1"></a><span class="co">#&gt; ttt24        1.23917 0.65012 2.3619</span></span>
-<span id="cb5-198"><a href="#cb5-198" tabindex="-1"></a><span class="cf">if</span> (runb<span class="sc">&gt;</span><span class="dv">0</span>) { bll <span class="ot">&lt;-</span> <span class="fu">BootmediatorSurv</span>(aaMss,fit,<span class="at">data=</span>dat,<span class="at">k.boot=</span>k.boot); <span class="fu">summary</span>(bll)}</span></code></pre></div>
+<span id="cb5-169"><a href="#cb5-169" tabindex="-1"></a><span class="co">#&gt;  200 clusters</span></span>
+<span id="cb5-170"><a href="#cb5-170" tabindex="-1"></a><span class="co">#&gt; coeffients:</span></span>
+<span id="cb5-171"><a href="#cb5-171" tabindex="-1"></a><span class="co">#&gt;              Estimate   Std.Err      2.5%     97.5% P-value</span></span>
+<span id="cb5-172"><a href="#cb5-172" tabindex="-1"></a><span class="co">#&gt; (Intercept) -0.674433  0.235022 -1.135069 -0.213798  0.0041</span></span>
+<span id="cb5-173"><a href="#cb5-173" tabindex="-1"></a><span class="co">#&gt; dnr.f01      0.221834  0.286717 -0.340122  0.783789  0.4391</span></span>
+<span id="cb5-174"><a href="#cb5-174" tabindex="-1"></a><span class="co">#&gt; dnr.f11      0.262722  0.107508  0.052011  0.473432  0.0145</span></span>
+<span id="cb5-175"><a href="#cb5-175" tabindex="-1"></a><span class="co">#&gt; preauto      0.578077  0.315260 -0.039822  1.195975  0.0667</span></span>
+<span id="cb5-176"><a href="#cb5-176" tabindex="-1"></a><span class="co">#&gt; ttt24        0.214442  0.329107 -0.430596  0.859480  0.5147</span></span>
+<span id="cb5-177"><a href="#cb5-177" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb5-178"><a href="#cb5-178" tabindex="-1"></a><span class="co">#&gt; exp(coeffients):</span></span>
+<span id="cb5-179"><a href="#cb5-179" tabindex="-1"></a><span class="co">#&gt;             Estimate    2.5%  97.5%</span></span>
+<span id="cb5-180"><a href="#cb5-180" tabindex="-1"></a><span class="co">#&gt; (Intercept)  0.50944 0.32140 0.8075</span></span>
+<span id="cb5-181"><a href="#cb5-181" tabindex="-1"></a><span class="co">#&gt; dnr.f01      1.24836 0.71168 2.1898</span></span>
+<span id="cb5-182"><a href="#cb5-182" tabindex="-1"></a><span class="co">#&gt; dnr.f11      1.30046 1.05339 1.6055</span></span>
+<span id="cb5-183"><a href="#cb5-183" tabindex="-1"></a><span class="co">#&gt; preauto      1.78261 0.96096 3.3068</span></span>
+<span id="cb5-184"><a href="#cb5-184" tabindex="-1"></a><span class="co">#&gt; ttt24        1.23917 0.65012 2.3619</span></span>
+<span id="cb5-185"><a href="#cb5-185" tabindex="-1"></a><span class="cf">if</span> (runb<span class="sc">&gt;</span><span class="dv">0</span>) { bll <span class="ot">&lt;-</span> <span class="fu">BootmediatorSurv</span>(aaMss,fit,<span class="at">data=</span>dat,<span class="at">k.boot=</span>k.boot); <span class="fu">summary</span>(bll)}</span></code></pre></div>
 </div>
 <div id="multinomial-regression" class="section level1">
 <h1>Multinomial regression</h1>
@@ -725,56 +709,57 @@ above.</p>
 <li>meditor: wmi in 4 categories</li>
 <li>exposure: age in 4 categories</li>
 </ul>
-<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a><span class="fu">data</span>(tTRACE)</span>
-<span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a><span class="fu">dcut</span>(tTRACE) <span class="ot">&lt;-</span> <span class="er">~</span>. </span>
-<span id="cb6-3"><a href="#cb6-3" tabindex="-1"></a></span>
-<span id="cb6-4"><a href="#cb6-4" tabindex="-1"></a>weightmodel <span class="ot">&lt;-</span> fit <span class="ot">&lt;-</span> <span class="fu">mlogit</span>(wmicat<span class="fl">.4</span> <span class="sc">~</span>agecat<span class="fl">.4</span><span class="sc">+</span>vf<span class="sc">+</span>chf,<span class="at">data=</span>tTRACE,<span class="at">family=</span>binomial)</span>
-<span id="cb6-5"><a href="#cb6-5" tabindex="-1"></a>wdata <span class="ot">&lt;-</span> <span class="fu">medweight</span>(fit,<span class="at">data=</span>tTRACE)</span>
-<span id="cb6-6"><a href="#cb6-6" tabindex="-1"></a></span>
-<span id="cb6-7"><a href="#cb6-7" tabindex="-1"></a>aaMss <span class="ot">&lt;-</span> <span class="fu">binreg</span>(<span class="fu">Event</span>(time,status)<span class="sc">~</span>agecat<span class="fl">.40</span><span class="sc">+</span> agecat<span class="fl">.41</span><span class="sc">+</span> vf<span class="sc">+</span>chf<span class="sc">+</span><span class="fu">cluster</span>(id),<span class="at">data=</span>wdata,</span>
-<span id="cb6-8"><a href="#cb6-8" tabindex="-1"></a>        <span class="at">time=</span><span class="dv">7</span>,<span class="at">weights=</span>wdata<span class="sc">$</span>weights,<span class="at">cause=</span><span class="dv">9</span>)</span>
-<span id="cb6-9"><a href="#cb6-9" tabindex="-1"></a><span class="fu">summary</span>(aaMss)</span>
-<span id="cb6-10"><a href="#cb6-10" tabindex="-1"></a>MultMed <span class="ot">&lt;-</span> <span class="fu">mediatorSurv</span>(aaMss,fit,<span class="at">data=</span>tTRACE,<span class="at">wdata=</span>wdata)</span></code></pre></div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a><span class="fu">library</span>(mets)</span>
+<span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a><span class="fu">data</span>(tTRACE)</span>
+<span id="cb6-3"><a href="#cb6-3" tabindex="-1"></a><span class="fu">dcut</span>(tTRACE) <span class="ot">&lt;-</span> <span class="er">~</span>. </span>
+<span id="cb6-4"><a href="#cb6-4" tabindex="-1"></a></span>
+<span id="cb6-5"><a href="#cb6-5" tabindex="-1"></a>weightmodel <span class="ot">&lt;-</span> fit <span class="ot">&lt;-</span> <span class="fu">mlogit</span>(wmicat<span class="fl">.4</span> <span class="sc">~</span>agecat<span class="fl">.4</span><span class="sc">+</span>vf<span class="sc">+</span>chf,<span class="at">data=</span>tTRACE,<span class="at">family=</span>binomial)</span>
+<span id="cb6-6"><a href="#cb6-6" tabindex="-1"></a>wdata <span class="ot">&lt;-</span> <span class="fu">medweight</span>(fit,<span class="at">data=</span>tTRACE)</span>
+<span id="cb6-7"><a href="#cb6-7" tabindex="-1"></a></span>
+<span id="cb6-8"><a href="#cb6-8" tabindex="-1"></a>aaMss <span class="ot">&lt;-</span> <span class="fu">binreg</span>(<span class="fu">Event</span>(time,status)<span class="sc">~</span>agecat<span class="fl">.40</span><span class="sc">+</span> agecat<span class="fl">.41</span><span class="sc">+</span> vf<span class="sc">+</span>chf<span class="sc">+</span><span class="fu">cluster</span>(id),<span class="at">data=</span>wdata,</span>
+<span id="cb6-9"><a href="#cb6-9" tabindex="-1"></a>        <span class="at">time=</span><span class="dv">7</span>,<span class="at">weights=</span>wdata<span class="sc">$</span>weights,<span class="at">cause=</span><span class="dv">9</span>)</span>
+<span id="cb6-10"><a href="#cb6-10" tabindex="-1"></a><span class="fu">summary</span>(aaMss)</span>
+<span id="cb6-11"><a href="#cb6-11" tabindex="-1"></a>MultMed <span class="ot">&lt;-</span> <span class="fu">mediatorSurv</span>(aaMss,fit,<span class="at">data=</span>tTRACE,<span class="at">wdata=</span>wdata)</span>
+<span id="cb6-12"><a href="#cb6-12" tabindex="-1"></a><span class="fu">summary</span>(MultMed)</span></code></pre></div>
 <div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a><span class="fu">summary</span>(MultMed)</span>
-<span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a><span class="co">#&gt;     n events</span></span>
-<span id="cb7-4"><a href="#cb7-4" tabindex="-1"></a><span class="co">#&gt;  4000   2016</span></span>
-<span id="cb7-5"><a href="#cb7-5" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb7-6"><a href="#cb7-6" tabindex="-1"></a><span class="co">#&gt;  1000 clusters</span></span>
-<span id="cb7-7"><a href="#cb7-7" tabindex="-1"></a><span class="co">#&gt; coeffients:</span></span>
-<span id="cb7-8"><a href="#cb7-8" tabindex="-1"></a><span class="co">#&gt;                       Estimate   Std.Err      2.5%     97.5% P-value</span></span>
-<span id="cb7-9"><a href="#cb7-9" tabindex="-1"></a><span class="co">#&gt; (Intercept)          -1.837886  0.174671 -2.180236 -1.495537  0.0000</span></span>
-<span id="cb7-10"><a href="#cb7-10" tabindex="-1"></a><span class="co">#&gt; agecat.40(60.1,68.6]  0.911956  0.223683  0.473545  1.350366  0.0000</span></span>
-<span id="cb7-11"><a href="#cb7-11" tabindex="-1"></a><span class="co">#&gt; agecat.40(68.6,75.6]  1.367813  0.222395  0.931926  1.803699  0.0000</span></span>
-<span id="cb7-12"><a href="#cb7-12" tabindex="-1"></a><span class="co">#&gt; agecat.40(75.6,96.3]  2.284648  0.250033  1.794592  2.774704  0.0000</span></span>
-<span id="cb7-13"><a href="#cb7-13" tabindex="-1"></a><span class="co">#&gt; agecat.41(60.1,68.6]  0.121138  0.053348  0.016578  0.225698  0.0232</span></span>
-<span id="cb7-14"><a href="#cb7-14" tabindex="-1"></a><span class="co">#&gt; agecat.41(68.6,75.6]  0.119408  0.053222  0.015095  0.223722  0.0249</span></span>
-<span id="cb7-15"><a href="#cb7-15" tabindex="-1"></a><span class="co">#&gt; agecat.41(75.6,96.3]  0.095385  0.053904 -0.010265  0.201035  0.0768</span></span>
-<span id="cb7-16"><a href="#cb7-16" tabindex="-1"></a><span class="co">#&gt; vf                    0.704175  0.295938  0.124147  1.284202  0.0173</span></span>
-<span id="cb7-17"><a href="#cb7-17" tabindex="-1"></a><span class="co">#&gt; chf                   1.162855  0.154843  0.859368  1.466342  0.0000</span></span>
-<span id="cb7-18"><a href="#cb7-18" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb7-19"><a href="#cb7-19" tabindex="-1"></a><span class="co">#&gt; exp(coeffients):</span></span>
-<span id="cb7-20"><a href="#cb7-20" tabindex="-1"></a><span class="co">#&gt;                      Estimate    2.5%   97.5%</span></span>
-<span id="cb7-21"><a href="#cb7-21" tabindex="-1"></a><span class="co">#&gt; (Intercept)           0.15915 0.11301  0.2241</span></span>
-<span id="cb7-22"><a href="#cb7-22" tabindex="-1"></a><span class="co">#&gt; agecat.40(60.1,68.6]  2.48919 1.60568  3.8588</span></span>
-<span id="cb7-23"><a href="#cb7-23" tabindex="-1"></a><span class="co">#&gt; agecat.40(68.6,75.6]  3.92675 2.53940  6.0721</span></span>
-<span id="cb7-24"><a href="#cb7-24" tabindex="-1"></a><span class="co">#&gt; agecat.40(75.6,96.3]  9.82223 6.01702 16.0339</span></span>
-<span id="cb7-25"><a href="#cb7-25" tabindex="-1"></a><span class="co">#&gt; agecat.41(60.1,68.6]  1.12878 1.01672  1.2532</span></span>
-<span id="cb7-26"><a href="#cb7-26" tabindex="-1"></a><span class="co">#&gt; agecat.41(68.6,75.6]  1.12683 1.01521  1.2507</span></span>
-<span id="cb7-27"><a href="#cb7-27" tabindex="-1"></a><span class="co">#&gt; agecat.41(75.6,96.3]  1.10008 0.98979  1.2227</span></span>
-<span id="cb7-28"><a href="#cb7-28" tabindex="-1"></a><span class="co">#&gt; vf                    2.02218 1.13218  3.6118</span></span>
-<span id="cb7-29"><a href="#cb7-29" tabindex="-1"></a><span class="co">#&gt; chf                   3.19905 2.36167  4.3334</span></span></code></pre></div>
+<span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a><span class="co">#&gt;     n events</span></span>
+<span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a><span class="co">#&gt;  4000   2016</span></span>
+<span id="cb7-4"><a href="#cb7-4" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb7-5"><a href="#cb7-5" tabindex="-1"></a><span class="co">#&gt;  1000 clusters</span></span>
+<span id="cb7-6"><a href="#cb7-6" tabindex="-1"></a><span class="co">#&gt; coeffients:</span></span>
+<span id="cb7-7"><a href="#cb7-7" tabindex="-1"></a><span class="co">#&gt;                       Estimate   Std.Err      2.5%     97.5% P-value</span></span>
+<span id="cb7-8"><a href="#cb7-8" tabindex="-1"></a><span class="co">#&gt; (Intercept)          -1.839306  0.174541 -2.181401 -1.497211  0.0000</span></span>
+<span id="cb7-9"><a href="#cb7-9" tabindex="-1"></a><span class="co">#&gt; agecat.40(60.1,68.6]  0.916646  0.223488  0.478618  1.354674  0.0000</span></span>
+<span id="cb7-10"><a href="#cb7-10" tabindex="-1"></a><span class="co">#&gt; agecat.40(68.6,75.6]  1.363830  0.222418  0.927898  1.799762  0.0000</span></span>
+<span id="cb7-11"><a href="#cb7-11" tabindex="-1"></a><span class="co">#&gt; agecat.40(75.6,96.3]  2.277415  0.249815  1.787786  2.767044  0.0000</span></span>
+<span id="cb7-12"><a href="#cb7-12" tabindex="-1"></a><span class="co">#&gt; agecat.41(60.1,68.6]  0.121100  0.053334  0.016567  0.225633  0.0232</span></span>
+<span id="cb7-13"><a href="#cb7-13" tabindex="-1"></a><span class="co">#&gt; agecat.41(68.6,75.6]  0.119374  0.053193  0.015118  0.223631  0.0248</span></span>
+<span id="cb7-14"><a href="#cb7-14" tabindex="-1"></a><span class="co">#&gt; agecat.41(75.6,96.3]  0.095356  0.053874 -0.010234  0.200947  0.0767</span></span>
+<span id="cb7-15"><a href="#cb7-15" tabindex="-1"></a><span class="co">#&gt; vf                    0.712461  0.293627  0.136962  1.287960  0.0152</span></span>
+<span id="cb7-16"><a href="#cb7-16" tabindex="-1"></a><span class="co">#&gt; chf                   1.166578  0.154721  0.863331  1.469825  0.0000</span></span>
+<span id="cb7-17"><a href="#cb7-17" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb7-18"><a href="#cb7-18" tabindex="-1"></a><span class="co">#&gt; exp(coeffients):</span></span>
+<span id="cb7-19"><a href="#cb7-19" tabindex="-1"></a><span class="co">#&gt;                      Estimate    2.5%   97.5%</span></span>
+<span id="cb7-20"><a href="#cb7-20" tabindex="-1"></a><span class="co">#&gt; (Intercept)           0.15893 0.11288  0.2238</span></span>
+<span id="cb7-21"><a href="#cb7-21" tabindex="-1"></a><span class="co">#&gt; agecat.40(60.1,68.6]  2.50089 1.61384  3.8755</span></span>
+<span id="cb7-22"><a href="#cb7-22" tabindex="-1"></a><span class="co">#&gt; agecat.40(68.6,75.6]  3.91114 2.52919  6.0482</span></span>
+<span id="cb7-23"><a href="#cb7-23" tabindex="-1"></a><span class="co">#&gt; agecat.40(75.6,96.3]  9.75144 5.97621 15.9115</span></span>
+<span id="cb7-24"><a href="#cb7-24" tabindex="-1"></a><span class="co">#&gt; agecat.41(60.1,68.6]  1.12874 1.01671  1.2531</span></span>
+<span id="cb7-25"><a href="#cb7-25" tabindex="-1"></a><span class="co">#&gt; agecat.41(68.6,75.6]  1.12679 1.01523  1.2506</span></span>
+<span id="cb7-26"><a href="#cb7-26" tabindex="-1"></a><span class="co">#&gt; agecat.41(75.6,96.3]  1.10005 0.98982  1.2226</span></span>
+<span id="cb7-27"><a href="#cb7-27" tabindex="-1"></a><span class="co">#&gt; vf                    2.03900 1.14678  3.6254</span></span>
+<span id="cb7-28"><a href="#cb7-28" tabindex="-1"></a><span class="co">#&gt; chf                   3.21099 2.37105  4.3485</span></span></code></pre></div>
 </div>
 <div id="sessioninfo" class="section level1">
 <h1>SessionInfo</h1>
 <div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a><span class="fu">sessionInfo</span>()</span>
-<span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a><span class="co">#&gt; R version 4.4.3 (2025-02-28)</span></span>
-<span id="cb8-3"><a href="#cb8-3" tabindex="-1"></a><span class="co">#&gt; Platform: aarch64-apple-darwin24.3.0</span></span>
-<span id="cb8-4"><a href="#cb8-4" tabindex="-1"></a><span class="co">#&gt; Running under: macOS Sequoia 15.4.1</span></span>
+<span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a><span class="co">#&gt; R version 4.5.1 (2025-06-13)</span></span>
+<span id="cb8-3"><a href="#cb8-3" tabindex="-1"></a><span class="co">#&gt; Platform: aarch64-apple-darwin24.5.0</span></span>
+<span id="cb8-4"><a href="#cb8-4" tabindex="-1"></a><span class="co">#&gt; Running under: macOS Sequoia 15.6.1</span></span>
 <span id="cb8-5"><a href="#cb8-5" tabindex="-1"></a><span class="co">#&gt; </span></span>
 <span id="cb8-6"><a href="#cb8-6" tabindex="-1"></a><span class="co">#&gt; Matrix products: default</span></span>
-<span id="cb8-7"><a href="#cb8-7" tabindex="-1"></a><span class="co">#&gt; BLAS:   /Users/kkzh/.asdf/installs/R/4.4.3/lib/R/lib/libRblas.dylib </span></span>
-<span id="cb8-8"><a href="#cb8-8" tabindex="-1"></a><span class="co">#&gt; LAPACK: /Users/kkzh/.asdf/installs/R/4.4.3/lib/R/lib/libRlapack.dylib;  LAPACK version 3.12.0</span></span>
+<span id="cb8-7"><a href="#cb8-7" tabindex="-1"></a><span class="co">#&gt; BLAS:   /Users/kkzh/.asdf/installs/R/4.5.1/lib/R/lib/libRblas.dylib </span></span>
+<span id="cb8-8"><a href="#cb8-8" tabindex="-1"></a><span class="co">#&gt; LAPACK: /Users/kkzh/.asdf/installs/R/4.5.1/lib/R/lib/libRlapack.dylib;  LAPACK version 3.12.1</span></span>
 <span id="cb8-9"><a href="#cb8-9" tabindex="-1"></a><span class="co">#&gt; </span></span>
 <span id="cb8-10"><a href="#cb8-10" tabindex="-1"></a><span class="co">#&gt; locale:</span></span>
 <span id="cb8-11"><a href="#cb8-11" tabindex="-1"></a><span class="co">#&gt; [1] en_US.UTF-8/en_US.UTF-8/en_US.UTF-8/C/en_US.UTF-8/en_US.UTF-8</span></span>
@@ -786,21 +771,21 @@ above.</p>
 <span id="cb8-17"><a href="#cb8-17" tabindex="-1"></a><span class="co">#&gt; [1] stats     graphics  grDevices utils     datasets  methods   base     </span></span>
 <span id="cb8-18"><a href="#cb8-18" tabindex="-1"></a><span class="co">#&gt; </span></span>
 <span id="cb8-19"><a href="#cb8-19" tabindex="-1"></a><span class="co">#&gt; other attached packages:</span></span>
-<span id="cb8-20"><a href="#cb8-20" tabindex="-1"></a><span class="co">#&gt; [1] timereg_2.0.6  survival_3.8-3 mets_1.3.6    </span></span>
+<span id="cb8-20"><a href="#cb8-20" tabindex="-1"></a><span class="co">#&gt; [1] timereg_2.0.7  survival_3.8-3 mets_1.3.7    </span></span>
 <span id="cb8-21"><a href="#cb8-21" tabindex="-1"></a><span class="co">#&gt; </span></span>
 <span id="cb8-22"><a href="#cb8-22" tabindex="-1"></a><span class="co">#&gt; loaded via a namespace (and not attached):</span></span>
-<span id="cb8-23"><a href="#cb8-23" tabindex="-1"></a><span class="co">#&gt;  [1] cli_3.6.4           knitr_1.49          rlang_1.1.5        </span></span>
-<span id="cb8-24"><a href="#cb8-24" tabindex="-1"></a><span class="co">#&gt;  [4] xfun_0.51           jsonlite_1.9.1      future.apply_1.11.3</span></span>
+<span id="cb8-23"><a href="#cb8-23" tabindex="-1"></a><span class="co">#&gt;  [1] cli_3.6.5           knitr_1.50          rlang_1.1.6        </span></span>
+<span id="cb8-24"><a href="#cb8-24" tabindex="-1"></a><span class="co">#&gt;  [4] xfun_0.53           jsonlite_2.0.0      future.apply_1.20.0</span></span>
 <span id="cb8-25"><a href="#cb8-25" tabindex="-1"></a><span class="co">#&gt;  [7] listenv_0.9.1       lava_1.8.1          htmltools_0.5.8.1  </span></span>
-<span id="cb8-26"><a href="#cb8-26" tabindex="-1"></a><span class="co">#&gt; [10] sass_0.4.9          rmarkdown_2.29      grid_4.4.3         </span></span>
-<span id="cb8-27"><a href="#cb8-27" tabindex="-1"></a><span class="co">#&gt; [13] evaluate_1.0.3      jquerylib_0.1.4     fastmap_1.2.0      </span></span>
+<span id="cb8-26"><a href="#cb8-26" tabindex="-1"></a><span class="co">#&gt; [10] sass_0.4.10         rmarkdown_2.29      grid_4.5.1         </span></span>
+<span id="cb8-27"><a href="#cb8-27" tabindex="-1"></a><span class="co">#&gt; [13] evaluate_1.0.5      jquerylib_0.1.4     fastmap_1.2.0      </span></span>
 <span id="cb8-28"><a href="#cb8-28" tabindex="-1"></a><span class="co">#&gt; [16] numDeriv_2016.8-1.1 yaml_2.3.10         mvtnorm_1.3-3      </span></span>
-<span id="cb8-29"><a href="#cb8-29" tabindex="-1"></a><span class="co">#&gt; [19] lifecycle_1.0.4     compiler_4.4.3      codetools_0.2-20   </span></span>
-<span id="cb8-30"><a href="#cb8-30" tabindex="-1"></a><span class="co">#&gt; [22] ucminf_1.2.2        Rcpp_1.0.14         future_1.40.0      </span></span>
-<span id="cb8-31"><a href="#cb8-31" tabindex="-1"></a><span class="co">#&gt; [25] lattice_0.22-6      digest_0.6.37       R6_2.6.1           </span></span>
-<span id="cb8-32"><a href="#cb8-32" tabindex="-1"></a><span class="co">#&gt; [28] parallelly_1.43.0   parallel_4.4.3      splines_4.4.3      </span></span>
-<span id="cb8-33"><a href="#cb8-33" tabindex="-1"></a><span class="co">#&gt; [31] Matrix_1.7-2        bslib_0.9.0         tools_4.4.3        </span></span>
-<span id="cb8-34"><a href="#cb8-34" tabindex="-1"></a><span class="co">#&gt; [34] globals_0.17.0      cachem_1.1.0</span></span></code></pre></div>
+<span id="cb8-29"><a href="#cb8-29" tabindex="-1"></a><span class="co">#&gt; [19] lifecycle_1.0.4     compiler_4.5.1      codetools_0.2-20   </span></span>
+<span id="cb8-30"><a href="#cb8-30" tabindex="-1"></a><span class="co">#&gt; [22] ucminf_1.2.2        Rcpp_1.1.0          future_1.67.0      </span></span>
+<span id="cb8-31"><a href="#cb8-31" tabindex="-1"></a><span class="co">#&gt; [25] lattice_0.22-7      digest_0.6.37       R6_2.6.1           </span></span>
+<span id="cb8-32"><a href="#cb8-32" tabindex="-1"></a><span class="co">#&gt; [28] parallelly_1.45.1   parallel_4.5.1      splines_4.5.1      </span></span>
+<span id="cb8-33"><a href="#cb8-33" tabindex="-1"></a><span class="co">#&gt; [31] Matrix_1.7-4        bslib_0.9.0         tools_4.5.1        </span></span>
+<span id="cb8-34"><a href="#cb8-34" tabindex="-1"></a><span class="co">#&gt; [34] globals_0.18.0      cachem_1.1.0</span></span></code></pre></div>
 </div>
 
 

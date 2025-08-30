@@ -26,41 +26,13 @@ head(twinbmi)
 twinwide <- fast.reshape(twinbmi, id="tvparnr",varying=c("bmi"))
 head(twinwide)
 
-## ----scatterdens, echo=FALSE,message=FALSE,warning=FALSE----------------------
-library("cowplot")
-
-scatterdens <- function(x) {
-    require(ggplot2)
-    sp <- ggplot(x,
-                aes_string(colnames(x)[1], colnames(x)[2])) +
-        theme_minimal() +
-        geom_point(alpha=0.3) + geom_density_2d()
-    xdens <- ggplot(x, aes_string(colnames(x)[1],fill=1)) +
-        theme_minimal() +
-        geom_density(alpha=.5)+
-        theme(axis.text.x = element_blank(),
-	      legend.position = "none") + labs(x=NULL)
-    ydens <- ggplot(x, aes_string(colnames(x)[2],fill=1)) +
-        theme_minimal() +
-        geom_density(alpha=.5) +
-        theme(axis.text.y = element_blank(),
-	      axis.text.x = element_text(angle=90, vjust=0),
-	      legend.position = "none") +
-        labs(x=NULL) +
-        coord_flip()
-    g <- plot_grid(xdens,NULL,sp,ydens,
-                  ncol=2,nrow=2,
-                  rel_widths=c(4,1.4),rel_heights=c(1.4,4))
-    return(g)
-}
-
 ## ----scatter1, warning=FALSE,message=FALSE,fig.cap="Scatter plot of logarithmic BMI measurements in MZ twins"----
 mz <- log(subset(twinwide, zyg=="MZ")[,c("bmi1","bmi2")])
-scatterdens(mz)
+plot_twin(mz)
 
 ## ----scatter2, warning=FALSE,message=FALSE,fig.cap="Scatter plot of logarithmic BMI measurements in DZ twins"----
 dz <- log(subset(twinwide, zyg=="DZ")[,c("bmi1","bmi2")])
-scatterdens(dz)
+plot_twin(dz)
 
 ## -----------------------------------------------------------------------------
 cor.test(mz[,1],mz[,2], method="spearman")
