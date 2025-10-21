@@ -12,7 +12,7 @@
 
 <meta name="author" content="Klaus Holst &amp; Thomas Scheike" />
 
-<meta name="date" content="2025-08-30" />
+<meta name="date" content="2025-10-21" />
 
 <title>Average treatment effect (ATE) for Competing risks and binary outcomes</title>
 
@@ -342,7 +342,7 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 <h1 class="title toc-ignore">Average treatment effect (ATE) for
 Competing risks and binary outcomes</h1>
 <h4 class="author">Klaus Holst &amp; Thomas Scheike</h4>
-<h4 class="date">2025-08-30</h4>
+<h4 class="date">2025-10-21</h4>
 
 
 
@@ -493,115 +493,113 @@ function. The simulation does not deal with possible violations of the
 bound that <span class="math inline">\(F_1+F_2 &lt; 1\)</span>. But as
 we increase the sample size we still see that we recover the parameters
 of cause 2.</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="do">###install.packages(&quot;mets&quot;)</span></span>
-<span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a></span>
-<span id="cb1-3"><a href="#cb1-3" tabindex="-1"></a><span class="fu">library</span>(mets) </span>
-<span id="cb1-4"><a href="#cb1-4" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">100</span>)</span>
-<span id="cb1-5"><a href="#cb1-5" tabindex="-1"></a><span class="do">###</span></span>
-<span id="cb1-6"><a href="#cb1-6" tabindex="-1"></a>n <span class="ot">&lt;-</span> <span class="dv">400</span></span>
-<span id="cb1-7"><a href="#cb1-7" tabindex="-1"></a>kumar <span class="ot">&lt;-</span> <span class="fu">kumarsim</span>(n,<span class="at">depcens=</span><span class="dv">1</span>)</span>
-<span id="cb1-8"><a href="#cb1-8" tabindex="-1"></a>kumar<span class="sc">$</span>cause <span class="ot">&lt;-</span> kumar<span class="sc">$</span>status</span>
-<span id="cb1-9"><a href="#cb1-9" tabindex="-1"></a>kumar<span class="sc">$</span>ttt24 <span class="ot">&lt;-</span> kumar[,<span class="dv">6</span>]</span>
-<span id="cb1-10"><a href="#cb1-10" tabindex="-1"></a><span class="fu">dtable</span>(kumar,<span class="sc">~</span>cause)</span>
-<span id="cb1-11"><a href="#cb1-11" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb1-12"><a href="#cb1-12" tabindex="-1"></a><span class="co">#&gt; cause</span></span>
-<span id="cb1-13"><a href="#cb1-13" tabindex="-1"></a><span class="co">#&gt;   0   1   2 </span></span>
-<span id="cb1-14"><a href="#cb1-14" tabindex="-1"></a><span class="co">#&gt; 122 126 152</span></span>
-<span id="cb1-15"><a href="#cb1-15" tabindex="-1"></a><span class="fu">dfactor</span>(kumar) <span class="ot">&lt;-</span> gp.f<span class="sc">~</span>gp</span>
-<span id="cb1-16"><a href="#cb1-16" tabindex="-1"></a>kumar<span class="sc">$</span>id <span class="ot">&lt;-</span> <span class="dv">1</span><span class="sc">:</span><span class="dv">400</span></span>
-<span id="cb1-17"><a href="#cb1-17" tabindex="-1"></a>kumar<span class="sc">$</span>idc <span class="ot">&lt;-</span> <span class="fu">sample</span>(<span class="dv">100</span>,<span class="dv">400</span>,<span class="cn">TRUE</span>)</span>
-<span id="cb1-18"><a href="#cb1-18" tabindex="-1"></a>kumar<span class="sc">$</span>ids <span class="ot">&lt;-</span> <span class="fu">sample</span>(<span class="dv">400</span>,<span class="dv">400</span>)</span>
-<span id="cb1-19"><a href="#cb1-19" tabindex="-1"></a>kumar<span class="sc">$</span>id2 <span class="ot">&lt;-</span> <span class="fu">sample</span>(<span class="dv">400</span>,<span class="dv">400</span>)</span>
-<span id="cb1-20"><a href="#cb1-20" tabindex="-1"></a>kumar2 <span class="ot">&lt;-</span> kumar[<span class="fu">order</span>(kumar<span class="sc">$</span>id2),]</span>
-<span id="cb1-21"><a href="#cb1-21" tabindex="-1"></a>kumar<span class="sc">$</span>int <span class="ot">&lt;-</span> <span class="fu">interaction</span>(kumar<span class="sc">$</span>gp,kumar<span class="sc">$</span>dnr)</span>
-<span id="cb1-22"><a href="#cb1-22" tabindex="-1"></a>kumar2<span class="sc">$</span>int <span class="ot">&lt;-</span> <span class="fu">interaction</span>(kumar2<span class="sc">$</span>gp,kumar2<span class="sc">$</span>dnr)</span>
-<span id="cb1-23"><a href="#cb1-23" tabindex="-1"></a>clust <span class="ot">&lt;-</span> <span class="dv">0</span></span>
-<span id="cb1-24"><a href="#cb1-24" tabindex="-1"></a></span>
-<span id="cb1-25"><a href="#cb1-25" tabindex="-1"></a>b2 <span class="ot">&lt;-</span> <span class="fu">binregATE</span>(<span class="fu">Event</span>(time,cause)<span class="sc">~</span>gp.f<span class="sc">+</span>dnr<span class="sc">+</span>preauto<span class="sc">+</span>ttt24,kumar2,<span class="at">cause=</span><span class="dv">2</span>,</span>
-<span id="cb1-26"><a href="#cb1-26" tabindex="-1"></a>    <span class="at">treat.model=</span>gp.f<span class="sc">~</span>dnr<span class="sc">+</span>preauto<span class="sc">+</span>ttt24,<span class="at">time=</span><span class="dv">40</span>,<span class="at">cens.model=</span><span class="sc">~</span><span class="fu">strata</span>(gp,dnr))</span>
-<span id="cb1-27"><a href="#cb1-27" tabindex="-1"></a><span class="fu">summary</span>(b2)</span>
-<span id="cb1-28"><a href="#cb1-28" tabindex="-1"></a><span class="co">#&gt;    n events</span></span>
-<span id="cb1-29"><a href="#cb1-29" tabindex="-1"></a><span class="co">#&gt;  400    144</span></span>
-<span id="cb1-30"><a href="#cb1-30" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb1-31"><a href="#cb1-31" tabindex="-1"></a><span class="co">#&gt;  400 clusters</span></span>
-<span id="cb1-32"><a href="#cb1-32" tabindex="-1"></a><span class="co">#&gt; coeffients:</span></span>
-<span id="cb1-33"><a href="#cb1-33" tabindex="-1"></a><span class="co">#&gt;              Estimate   Std.Err      2.5%     97.5% P-value</span></span>
-<span id="cb1-34"><a href="#cb1-34" tabindex="-1"></a><span class="co">#&gt; (Intercept) -1.074326  0.214347 -1.494439 -0.654214  0.0000</span></span>
-<span id="cb1-35"><a href="#cb1-35" tabindex="-1"></a><span class="co">#&gt; gp.f1        0.669400  0.259837  0.160129  1.178670  0.0100</span></span>
-<span id="cb1-36"><a href="#cb1-36" tabindex="-1"></a><span class="co">#&gt; dnr          0.238437  0.263384 -0.277787  0.754661  0.3653</span></span>
-<span id="cb1-37"><a href="#cb1-37" tabindex="-1"></a><span class="co">#&gt; preauto      0.587886  0.275985  0.046965  1.128806  0.0332</span></span>
-<span id="cb1-38"><a href="#cb1-38" tabindex="-1"></a><span class="co">#&gt; ttt24        0.085280  0.275382 -0.454458  0.625018  0.7568</span></span>
-<span id="cb1-39"><a href="#cb1-39" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb1-40"><a href="#cb1-40" tabindex="-1"></a><span class="co">#&gt; exp(coeffients):</span></span>
-<span id="cb1-41"><a href="#cb1-41" tabindex="-1"></a><span class="co">#&gt;             Estimate    2.5%  97.5%</span></span>
-<span id="cb1-42"><a href="#cb1-42" tabindex="-1"></a><span class="co">#&gt; (Intercept)  0.34153 0.22437 0.5199</span></span>
-<span id="cb1-43"><a href="#cb1-43" tabindex="-1"></a><span class="co">#&gt; gp.f1        1.95306 1.17366 3.2500</span></span>
-<span id="cb1-44"><a href="#cb1-44" tabindex="-1"></a><span class="co">#&gt; dnr          1.26926 0.75746 2.1269</span></span>
-<span id="cb1-45"><a href="#cb1-45" tabindex="-1"></a><span class="co">#&gt; preauto      1.80018 1.04809 3.0920</span></span>
-<span id="cb1-46"><a href="#cb1-46" tabindex="-1"></a><span class="co">#&gt; ttt24        1.08902 0.63479 1.8683</span></span>
-<span id="cb1-47"><a href="#cb1-47" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb1-48"><a href="#cb1-48" tabindex="-1"></a><span class="co">#&gt; Average Treatment effects (G-formula) :</span></span>
-<span id="cb1-49"><a href="#cb1-49" tabindex="-1"></a><span class="co">#&gt;            Estimate   Std.Err      2.5%     97.5% P-value</span></span>
-<span id="cb1-50"><a href="#cb1-50" tabindex="-1"></a><span class="co">#&gt; treat0    -0.684331  0.183487 -1.043959 -0.324702  0.0002</span></span>
-<span id="cb1-51"><a href="#cb1-51" tabindex="-1"></a><span class="co">#&gt; treat1    -0.014931  0.171518 -0.351101  0.321239  0.9306</span></span>
-<span id="cb1-52"><a href="#cb1-52" tabindex="-1"></a><span class="co">#&gt; treat:1-0  0.669400  0.259837  0.160129  1.178670  0.0100</span></span>
-<span id="cb1-53"><a href="#cb1-53" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb1-54"><a href="#cb1-54" tabindex="-1"></a><span class="co">#&gt; Average Treatment effects (double robust) :</span></span>
-<span id="cb1-55"><a href="#cb1-55" tabindex="-1"></a><span class="co">#&gt;           Estimate  Std.Err     2.5%    97.5% P-value</span></span>
-<span id="cb1-56"><a href="#cb1-56" tabindex="-1"></a><span class="co">#&gt; treat0    0.317773 0.040256 0.238872 0.396673  0.0000</span></span>
-<span id="cb1-57"><a href="#cb1-57" tabindex="-1"></a><span class="co">#&gt; treat1    0.496173 0.043239 0.411427 0.580920  0.0000</span></span>
-<span id="cb1-58"><a href="#cb1-58" tabindex="-1"></a><span class="co">#&gt; treat:1-0 0.178401 0.058844 0.063068 0.293734  0.0024</span></span>
-<span id="cb1-59"><a href="#cb1-59" tabindex="-1"></a></span>
-<span id="cb1-60"><a href="#cb1-60" tabindex="-1"></a>b5 <span class="ot">&lt;-</span> <span class="fu">binregATE</span>(<span class="fu">Event</span>(time,cause)<span class="sc">~</span>int<span class="sc">+</span>preauto<span class="sc">+</span>ttt24,kumar,<span class="at">cause=</span><span class="dv">2</span>,</span>
-<span id="cb1-61"><a href="#cb1-61" tabindex="-1"></a>        <span class="at">treat.model=</span>int<span class="sc">~</span>preauto<span class="sc">+</span>ttt24,<span class="at">cens.code=</span><span class="dv">0</span>,<span class="at">time=</span><span class="dv">60</span>)</span>
-<span id="cb1-62"><a href="#cb1-62" tabindex="-1"></a><span class="fu">summary</span>(b5)</span>
-<span id="cb1-63"><a href="#cb1-63" tabindex="-1"></a><span class="co">#&gt;    n events</span></span>
-<span id="cb1-64"><a href="#cb1-64" tabindex="-1"></a><span class="co">#&gt;  400    150</span></span>
-<span id="cb1-65"><a href="#cb1-65" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb1-66"><a href="#cb1-66" tabindex="-1"></a><span class="co">#&gt;  400 clusters</span></span>
-<span id="cb1-67"><a href="#cb1-67" tabindex="-1"></a><span class="co">#&gt; coeffients:</span></span>
-<span id="cb1-68"><a href="#cb1-68" tabindex="-1"></a><span class="co">#&gt;              Estimate   Std.Err      2.5%     97.5% P-value</span></span>
-<span id="cb1-69"><a href="#cb1-69" tabindex="-1"></a><span class="co">#&gt; (Intercept) -1.067627  0.285570 -1.627333 -0.507921  0.0002</span></span>
-<span id="cb1-70"><a href="#cb1-70" tabindex="-1"></a><span class="co">#&gt; int1.0       0.846566  0.320929  0.217557  1.475575  0.0083</span></span>
-<span id="cb1-71"><a href="#cb1-71" tabindex="-1"></a><span class="co">#&gt; int0.1       0.619052  0.494731 -0.350604  1.588707  0.2108</span></span>
-<span id="cb1-72"><a href="#cb1-72" tabindex="-1"></a><span class="co">#&gt; int1.1       0.896555  0.410239  0.092501  1.700609  0.0289</span></span>
-<span id="cb1-73"><a href="#cb1-73" tabindex="-1"></a><span class="co">#&gt; preauto      0.373155  0.273876 -0.163631  0.909942  0.1730</span></span>
-<span id="cb1-74"><a href="#cb1-74" tabindex="-1"></a><span class="co">#&gt; ttt24        0.468170  0.300260 -0.120328  1.056668  0.1189</span></span>
-<span id="cb1-75"><a href="#cb1-75" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb1-76"><a href="#cb1-76" tabindex="-1"></a><span class="co">#&gt; exp(coeffients):</span></span>
-<span id="cb1-77"><a href="#cb1-77" tabindex="-1"></a><span class="co">#&gt;             Estimate    2.5%  97.5%</span></span>
-<span id="cb1-78"><a href="#cb1-78" tabindex="-1"></a><span class="co">#&gt; (Intercept)  0.34382 0.19645 0.6017</span></span>
-<span id="cb1-79"><a href="#cb1-79" tabindex="-1"></a><span class="co">#&gt; int1.0       2.33163 1.24304 4.3735</span></span>
-<span id="cb1-80"><a href="#cb1-80" tabindex="-1"></a><span class="co">#&gt; int0.1       1.85717 0.70426 4.8974</span></span>
-<span id="cb1-81"><a href="#cb1-81" tabindex="-1"></a><span class="co">#&gt; int1.1       2.45115 1.09691 5.4773</span></span>
-<span id="cb1-82"><a href="#cb1-82" tabindex="-1"></a><span class="co">#&gt; preauto      1.45231 0.84906 2.4842</span></span>
-<span id="cb1-83"><a href="#cb1-83" tabindex="-1"></a><span class="co">#&gt; ttt24        1.59707 0.88663 2.8768</span></span>
-<span id="cb1-84"><a href="#cb1-84" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb1-85"><a href="#cb1-85" tabindex="-1"></a><span class="co">#&gt; Average Treatment effects (G-formula) :</span></span>
-<span id="cb1-86"><a href="#cb1-86" tabindex="-1"></a><span class="co">#&gt;                Estimate   Std.Err      2.5%     97.5% P-value</span></span>
-<span id="cb1-87"><a href="#cb1-87" tabindex="-1"></a><span class="co">#&gt; treat0.0      -0.724432  0.269297 -1.252245 -0.196620  0.0071</span></span>
-<span id="cb1-88"><a href="#cb1-88" tabindex="-1"></a><span class="co">#&gt; treat1.0       0.122134  0.173553 -0.218023  0.462290  0.4816</span></span>
-<span id="cb1-89"><a href="#cb1-89" tabindex="-1"></a><span class="co">#&gt; treat0.1      -0.105381  0.420091 -0.928745  0.717983  0.8019</span></span>
-<span id="cb1-90"><a href="#cb1-90" tabindex="-1"></a><span class="co">#&gt; treat1.1       0.172123  0.292009 -0.400204  0.744450  0.5556</span></span>
-<span id="cb1-91"><a href="#cb1-91" tabindex="-1"></a><span class="co">#&gt; treat:1.0-0.0  0.846566  0.320929  0.217557  1.475575  0.0083</span></span>
-<span id="cb1-92"><a href="#cb1-92" tabindex="-1"></a><span class="co">#&gt; treat:0.1-0.0  0.619052  0.494731 -0.350604  1.588707  0.2108</span></span>
-<span id="cb1-93"><a href="#cb1-93" tabindex="-1"></a><span class="co">#&gt; treat:1.1-0.0  0.896555  0.410239  0.092501  1.700609  0.0289</span></span>
-<span id="cb1-94"><a href="#cb1-94" tabindex="-1"></a><span class="co">#&gt; treat:0.1-1.0 -0.227514  0.462117 -1.133247  0.678219  0.6225</span></span>
-<span id="cb1-95"><a href="#cb1-95" tabindex="-1"></a><span class="co">#&gt; treat:1.1-1.0  0.049989  0.342303 -0.620913  0.720891  0.8839</span></span>
-<span id="cb1-96"><a href="#cb1-96" tabindex="-1"></a><span class="co">#&gt; treat:1.1-0.1  0.277504  0.515530 -0.732917  1.287924  0.5904</span></span>
-<span id="cb1-97"><a href="#cb1-97" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb1-98"><a href="#cb1-98" tabindex="-1"></a><span class="co">#&gt; Average Treatment effects (double robust) :</span></span>
-<span id="cb1-99"><a href="#cb1-99" tabindex="-1"></a><span class="co">#&gt;                Estimate   Std.Err      2.5%     97.5% P-value</span></span>
-<span id="cb1-100"><a href="#cb1-100" tabindex="-1"></a><span class="co">#&gt; treat0.0       0.354351  0.057164  0.242312  0.466391  0.0000</span></span>
-<span id="cb1-101"><a href="#cb1-101" tabindex="-1"></a><span class="co">#&gt; treat1.0       0.464900  0.079669  0.308752  0.621048  0.0000</span></span>
-<span id="cb1-102"><a href="#cb1-102" tabindex="-1"></a><span class="co">#&gt; treat0.1       0.597978  0.616708 -0.610748  1.806704  0.3322</span></span>
-<span id="cb1-103"><a href="#cb1-103" tabindex="-1"></a><span class="co">#&gt; treat1.1       0.545436  0.637030 -0.703121  1.793992  0.3919</span></span>
-<span id="cb1-104"><a href="#cb1-104" tabindex="-1"></a><span class="co">#&gt; treat:1.0-0.0  0.110549  0.097618 -0.080779  0.301876  0.2574</span></span>
-<span id="cb1-105"><a href="#cb1-105" tabindex="-1"></a><span class="co">#&gt; treat:0.1-0.0  0.243627  0.624019 -0.979428  1.466681  0.6962</span></span>
-<span id="cb1-106"><a href="#cb1-106" tabindex="-1"></a><span class="co">#&gt; treat:1.1-0.0  0.191084  0.642422 -1.068039  1.450207  0.7661</span></span>
-<span id="cb1-107"><a href="#cb1-107" tabindex="-1"></a><span class="co">#&gt; treat:0.1-1.0  0.133078  0.629442 -1.100606  1.366762  0.8326</span></span>
-<span id="cb1-108"><a href="#cb1-108" tabindex="-1"></a><span class="co">#&gt; treat:1.1-1.0  0.080536  0.625281 -1.144992  1.306064  0.8975</span></span>
-<span id="cb1-109"><a href="#cb1-109" tabindex="-1"></a><span class="co">#&gt; treat:1.1-0.1 -0.052542  0.596654 -1.221962  1.116877  0.9298</span></span></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="fu">library</span>(mets) </span>
+<span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">100</span>)</span>
+<span id="cb1-3"><a href="#cb1-3" tabindex="-1"></a><span class="do">###</span></span>
+<span id="cb1-4"><a href="#cb1-4" tabindex="-1"></a>n <span class="ot">&lt;-</span> <span class="dv">400</span></span>
+<span id="cb1-5"><a href="#cb1-5" tabindex="-1"></a>kumar <span class="ot">&lt;-</span> <span class="fu">kumarsim</span>(n,<span class="at">depcens=</span><span class="dv">1</span>)</span>
+<span id="cb1-6"><a href="#cb1-6" tabindex="-1"></a>kumar<span class="sc">$</span>cause <span class="ot">&lt;-</span> kumar<span class="sc">$</span>status</span>
+<span id="cb1-7"><a href="#cb1-7" tabindex="-1"></a>kumar<span class="sc">$</span>ttt24 <span class="ot">&lt;-</span> kumar[,<span class="dv">6</span>]</span>
+<span id="cb1-8"><a href="#cb1-8" tabindex="-1"></a><span class="fu">dtable</span>(kumar,<span class="sc">~</span>cause)</span>
+<span id="cb1-9"><a href="#cb1-9" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb1-10"><a href="#cb1-10" tabindex="-1"></a><span class="co">#&gt; cause</span></span>
+<span id="cb1-11"><a href="#cb1-11" tabindex="-1"></a><span class="co">#&gt;   0   1   2 </span></span>
+<span id="cb1-12"><a href="#cb1-12" tabindex="-1"></a><span class="co">#&gt; 122 126 152</span></span>
+<span id="cb1-13"><a href="#cb1-13" tabindex="-1"></a><span class="fu">dfactor</span>(kumar) <span class="ot">&lt;-</span> gp.f<span class="sc">~</span>gp</span>
+<span id="cb1-14"><a href="#cb1-14" tabindex="-1"></a>kumar<span class="sc">$</span>id <span class="ot">&lt;-</span> <span class="dv">1</span><span class="sc">:</span>n</span>
+<span id="cb1-15"><a href="#cb1-15" tabindex="-1"></a>kumar<span class="sc">$</span>idc <span class="ot">&lt;-</span> <span class="fu">sample</span>(<span class="dv">100</span>,n,<span class="cn">TRUE</span>)</span>
+<span id="cb1-16"><a href="#cb1-16" tabindex="-1"></a>kumar<span class="sc">$</span>ids <span class="ot">&lt;-</span> <span class="fu">sample</span>(n,n)</span>
+<span id="cb1-17"><a href="#cb1-17" tabindex="-1"></a>kumar<span class="sc">$</span>id2 <span class="ot">&lt;-</span> <span class="fu">sample</span>(n,n)</span>
+<span id="cb1-18"><a href="#cb1-18" tabindex="-1"></a>kumar2 <span class="ot">&lt;-</span> kumar[<span class="fu">order</span>(kumar<span class="sc">$</span>id2),]</span>
+<span id="cb1-19"><a href="#cb1-19" tabindex="-1"></a>kumar<span class="sc">$</span>int <span class="ot">&lt;-</span> <span class="fu">interaction</span>(kumar<span class="sc">$</span>gp,kumar<span class="sc">$</span>dnr)</span>
+<span id="cb1-20"><a href="#cb1-20" tabindex="-1"></a>kumar2<span class="sc">$</span>int <span class="ot">&lt;-</span> <span class="fu">interaction</span>(kumar2<span class="sc">$</span>gp,kumar2<span class="sc">$</span>dnr)</span>
+<span id="cb1-21"><a href="#cb1-21" tabindex="-1"></a>clust <span class="ot">&lt;-</span> <span class="dv">0</span></span>
+<span id="cb1-22"><a href="#cb1-22" tabindex="-1"></a></span>
+<span id="cb1-23"><a href="#cb1-23" tabindex="-1"></a>b2 <span class="ot">&lt;-</span> <span class="fu">binregATE</span>(<span class="fu">Event</span>(time,cause)<span class="sc">~</span>gp.f<span class="sc">+</span>dnr<span class="sc">+</span>preauto<span class="sc">+</span>ttt24,kumar,<span class="at">cause=</span><span class="dv">2</span>,</span>
+<span id="cb1-24"><a href="#cb1-24" tabindex="-1"></a>    <span class="at">treat.model=</span>gp.f<span class="sc">~</span>dnr<span class="sc">+</span>preauto<span class="sc">+</span>ttt24,<span class="at">time=</span><span class="dv">40</span>,<span class="at">cens.model=</span><span class="sc">~</span><span class="fu">strata</span>(gp,dnr))</span>
+<span id="cb1-25"><a href="#cb1-25" tabindex="-1"></a><span class="fu">summary</span>(b2)</span>
+<span id="cb1-26"><a href="#cb1-26" tabindex="-1"></a><span class="co">#&gt;    n events</span></span>
+<span id="cb1-27"><a href="#cb1-27" tabindex="-1"></a><span class="co">#&gt;  400    144</span></span>
+<span id="cb1-28"><a href="#cb1-28" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb1-29"><a href="#cb1-29" tabindex="-1"></a><span class="co">#&gt;  400 clusters</span></span>
+<span id="cb1-30"><a href="#cb1-30" tabindex="-1"></a><span class="co">#&gt; coeffients:</span></span>
+<span id="cb1-31"><a href="#cb1-31" tabindex="-1"></a><span class="co">#&gt;              Estimate   Std.Err      2.5%     97.5% P-value</span></span>
+<span id="cb1-32"><a href="#cb1-32" tabindex="-1"></a><span class="co">#&gt; (Intercept) -1.074326  0.214347 -1.494439 -0.654214  0.0000</span></span>
+<span id="cb1-33"><a href="#cb1-33" tabindex="-1"></a><span class="co">#&gt; gp.f1        0.669400  0.259837  0.160129  1.178670  0.0100</span></span>
+<span id="cb1-34"><a href="#cb1-34" tabindex="-1"></a><span class="co">#&gt; dnr          0.238437  0.263384 -0.277787  0.754661  0.3653</span></span>
+<span id="cb1-35"><a href="#cb1-35" tabindex="-1"></a><span class="co">#&gt; preauto      0.587886  0.275985  0.046965  1.128806  0.0332</span></span>
+<span id="cb1-36"><a href="#cb1-36" tabindex="-1"></a><span class="co">#&gt; ttt24        0.085280  0.275382 -0.454458  0.625018  0.7568</span></span>
+<span id="cb1-37"><a href="#cb1-37" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb1-38"><a href="#cb1-38" tabindex="-1"></a><span class="co">#&gt; exp(coeffients):</span></span>
+<span id="cb1-39"><a href="#cb1-39" tabindex="-1"></a><span class="co">#&gt;             Estimate    2.5%  97.5%</span></span>
+<span id="cb1-40"><a href="#cb1-40" tabindex="-1"></a><span class="co">#&gt; (Intercept)  0.34153 0.22437 0.5199</span></span>
+<span id="cb1-41"><a href="#cb1-41" tabindex="-1"></a><span class="co">#&gt; gp.f1        1.95306 1.17366 3.2500</span></span>
+<span id="cb1-42"><a href="#cb1-42" tabindex="-1"></a><span class="co">#&gt; dnr          1.26926 0.75746 2.1269</span></span>
+<span id="cb1-43"><a href="#cb1-43" tabindex="-1"></a><span class="co">#&gt; preauto      1.80018 1.04809 3.0920</span></span>
+<span id="cb1-44"><a href="#cb1-44" tabindex="-1"></a><span class="co">#&gt; ttt24        1.08902 0.63479 1.8683</span></span>
+<span id="cb1-45"><a href="#cb1-45" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb1-46"><a href="#cb1-46" tabindex="-1"></a><span class="co">#&gt; Average Treatment effects (G-formula) :</span></span>
+<span id="cb1-47"><a href="#cb1-47" tabindex="-1"></a><span class="co">#&gt;           Estimate  Std.Err     2.5%    97.5% P-value</span></span>
+<span id="cb1-48"><a href="#cb1-48" tabindex="-1"></a><span class="co">#&gt; treat0    0.339665 0.040722 0.259851 0.419479  0.0000</span></span>
+<span id="cb1-49"><a href="#cb1-49" tabindex="-1"></a><span class="co">#&gt; treat1    0.496244 0.041593 0.414724 0.577764  0.0000</span></span>
+<span id="cb1-50"><a href="#cb1-50" tabindex="-1"></a><span class="co">#&gt; treat:1-0 0.156579 0.060890 0.037238 0.275921  0.0101</span></span>
+<span id="cb1-51"><a href="#cb1-51" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb1-52"><a href="#cb1-52" tabindex="-1"></a><span class="co">#&gt; Average Treatment effects (double robust) :</span></span>
+<span id="cb1-53"><a href="#cb1-53" tabindex="-1"></a><span class="co">#&gt;           Estimate  Std.Err     2.5%    97.5% P-value</span></span>
+<span id="cb1-54"><a href="#cb1-54" tabindex="-1"></a><span class="co">#&gt; treat0    0.311513 0.041198 0.230767 0.392260  0.0000</span></span>
+<span id="cb1-55"><a href="#cb1-55" tabindex="-1"></a><span class="co">#&gt; treat1    0.483995 0.043077 0.399566 0.568423  0.0000</span></span>
+<span id="cb1-56"><a href="#cb1-56" tabindex="-1"></a><span class="co">#&gt; treat:1-0 0.172481 0.059766 0.055343 0.289620  0.0039</span></span>
+<span id="cb1-57"><a href="#cb1-57" tabindex="-1"></a></span>
+<span id="cb1-58"><a href="#cb1-58" tabindex="-1"></a>b5 <span class="ot">&lt;-</span> <span class="fu">binregATE</span>(<span class="fu">Event</span>(time,cause)<span class="sc">~</span>int<span class="sc">+</span>preauto<span class="sc">+</span>ttt24,kumar,<span class="at">cause=</span><span class="dv">2</span>,</span>
+<span id="cb1-59"><a href="#cb1-59" tabindex="-1"></a>        <span class="at">treat.model=</span>int<span class="sc">~</span>preauto<span class="sc">+</span>ttt24,<span class="at">cens.code=</span><span class="dv">0</span>,<span class="at">time=</span><span class="dv">60</span>)</span>
+<span id="cb1-60"><a href="#cb1-60" tabindex="-1"></a><span class="fu">summary</span>(b5)</span>
+<span id="cb1-61"><a href="#cb1-61" tabindex="-1"></a><span class="co">#&gt;    n events</span></span>
+<span id="cb1-62"><a href="#cb1-62" tabindex="-1"></a><span class="co">#&gt;  400    150</span></span>
+<span id="cb1-63"><a href="#cb1-63" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb1-64"><a href="#cb1-64" tabindex="-1"></a><span class="co">#&gt;  400 clusters</span></span>
+<span id="cb1-65"><a href="#cb1-65" tabindex="-1"></a><span class="co">#&gt; coeffients:</span></span>
+<span id="cb1-66"><a href="#cb1-66" tabindex="-1"></a><span class="co">#&gt;              Estimate   Std.Err      2.5%     97.5% P-value</span></span>
+<span id="cb1-67"><a href="#cb1-67" tabindex="-1"></a><span class="co">#&gt; (Intercept) -1.067627  0.285570 -1.627333 -0.507921  0.0002</span></span>
+<span id="cb1-68"><a href="#cb1-68" tabindex="-1"></a><span class="co">#&gt; int1.0       0.846566  0.320929  0.217557  1.475575  0.0083</span></span>
+<span id="cb1-69"><a href="#cb1-69" tabindex="-1"></a><span class="co">#&gt; int0.1       0.619052  0.494731 -0.350604  1.588707  0.2108</span></span>
+<span id="cb1-70"><a href="#cb1-70" tabindex="-1"></a><span class="co">#&gt; int1.1       0.896555  0.410239  0.092501  1.700609  0.0289</span></span>
+<span id="cb1-71"><a href="#cb1-71" tabindex="-1"></a><span class="co">#&gt; preauto      0.373155  0.273876 -0.163631  0.909942  0.1730</span></span>
+<span id="cb1-72"><a href="#cb1-72" tabindex="-1"></a><span class="co">#&gt; ttt24        0.468170  0.300260 -0.120328  1.056668  0.1189</span></span>
+<span id="cb1-73"><a href="#cb1-73" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb1-74"><a href="#cb1-74" tabindex="-1"></a><span class="co">#&gt; exp(coeffients):</span></span>
+<span id="cb1-75"><a href="#cb1-75" tabindex="-1"></a><span class="co">#&gt;             Estimate    2.5%  97.5%</span></span>
+<span id="cb1-76"><a href="#cb1-76" tabindex="-1"></a><span class="co">#&gt; (Intercept)  0.34382 0.19645 0.6017</span></span>
+<span id="cb1-77"><a href="#cb1-77" tabindex="-1"></a><span class="co">#&gt; int1.0       2.33163 1.24304 4.3735</span></span>
+<span id="cb1-78"><a href="#cb1-78" tabindex="-1"></a><span class="co">#&gt; int0.1       1.85717 0.70426 4.8974</span></span>
+<span id="cb1-79"><a href="#cb1-79" tabindex="-1"></a><span class="co">#&gt; int1.1       2.45115 1.09691 5.4773</span></span>
+<span id="cb1-80"><a href="#cb1-80" tabindex="-1"></a><span class="co">#&gt; preauto      1.45231 0.84906 2.4842</span></span>
+<span id="cb1-81"><a href="#cb1-81" tabindex="-1"></a><span class="co">#&gt; ttt24        1.59707 0.88663 2.8768</span></span>
+<span id="cb1-82"><a href="#cb1-82" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb1-83"><a href="#cb1-83" tabindex="-1"></a><span class="co">#&gt; Average Treatment effects (G-formula) :</span></span>
+<span id="cb1-84"><a href="#cb1-84" tabindex="-1"></a><span class="co">#&gt;                Estimate   Std.Err      2.5%     97.5% P-value</span></span>
+<span id="cb1-85"><a href="#cb1-85" tabindex="-1"></a><span class="co">#&gt; treat0.0       0.330393  0.058669  0.215404  0.445382  0.0000</span></span>
+<span id="cb1-86"><a href="#cb1-86" tabindex="-1"></a><span class="co">#&gt; treat1.0       0.529404  0.041929  0.447225  0.611584  0.0000</span></span>
+<span id="cb1-87"><a href="#cb1-87" tabindex="-1"></a><span class="co">#&gt; treat0.1       0.474113  0.101946  0.274303  0.673923  0.0000</span></span>
+<span id="cb1-88"><a href="#cb1-88" tabindex="-1"></a><span class="co">#&gt; treat1.1       0.541508  0.071126  0.402103  0.680913  0.0000</span></span>
+<span id="cb1-89"><a href="#cb1-89" tabindex="-1"></a><span class="co">#&gt; treat:1.0-0.0  0.199011  0.072251  0.057402  0.340621  0.0059</span></span>
+<span id="cb1-90"><a href="#cb1-90" tabindex="-1"></a><span class="co">#&gt; treat:0.1-0.0  0.143720  0.116578 -0.084770  0.372209  0.2176</span></span>
+<span id="cb1-91"><a href="#cb1-91" tabindex="-1"></a><span class="co">#&gt; treat:1.1-0.0  0.211115  0.096285  0.022399  0.399831  0.0283</span></span>
+<span id="cb1-92"><a href="#cb1-92" tabindex="-1"></a><span class="co">#&gt; treat:0.1-1.0 -0.055292  0.112083 -0.274970  0.164387  0.6218</span></span>
+<span id="cb1-93"><a href="#cb1-93" tabindex="-1"></a><span class="co">#&gt; treat:1.1-1.0  0.012104  0.082916 -0.150409  0.174617  0.8839</span></span>
+<span id="cb1-94"><a href="#cb1-94" tabindex="-1"></a><span class="co">#&gt; treat:1.1-0.1  0.067395  0.125308 -0.178205  0.312995  0.5907</span></span>
+<span id="cb1-95"><a href="#cb1-95" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb1-96"><a href="#cb1-96" tabindex="-1"></a><span class="co">#&gt; Average Treatment effects (double robust) :</span></span>
+<span id="cb1-97"><a href="#cb1-97" tabindex="-1"></a><span class="co">#&gt;                Estimate   Std.Err      2.5%     97.5% P-value</span></span>
+<span id="cb1-98"><a href="#cb1-98" tabindex="-1"></a><span class="co">#&gt; treat0.0       0.269296  0.059958  0.151781  0.386811  0.0000</span></span>
+<span id="cb1-99"><a href="#cb1-99" tabindex="-1"></a><span class="co">#&gt; treat1.0       0.548493  0.054747  0.441191  0.655795  0.0000</span></span>
+<span id="cb1-100"><a href="#cb1-100" tabindex="-1"></a><span class="co">#&gt; treat0.1       0.505759  0.276892 -0.036940  1.048458  0.0678</span></span>
+<span id="cb1-101"><a href="#cb1-101" tabindex="-1"></a><span class="co">#&gt; treat1.1       0.533535  0.178811  0.183071  0.883998  0.0028</span></span>
+<span id="cb1-102"><a href="#cb1-102" tabindex="-1"></a><span class="co">#&gt; treat:1.0-0.0  0.279198  0.079076  0.124211  0.434184  0.0004</span></span>
+<span id="cb1-103"><a href="#cb1-103" tabindex="-1"></a><span class="co">#&gt; treat:0.1-0.0  0.236463  0.286973 -0.325992  0.798919  0.4099</span></span>
+<span id="cb1-104"><a href="#cb1-104" tabindex="-1"></a><span class="co">#&gt; treat:1.1-0.0  0.264239  0.188996 -0.106186  0.634664  0.1621</span></span>
+<span id="cb1-105"><a href="#cb1-105" tabindex="-1"></a><span class="co">#&gt; treat:0.1-1.0 -0.042734  0.301903 -0.634453  0.548985  0.8874</span></span>
+<span id="cb1-106"><a href="#cb1-106" tabindex="-1"></a><span class="co">#&gt; treat:1.1-1.0 -0.014959  0.192427 -0.392108  0.362190  0.9380</span></span>
+<span id="cb1-107"><a href="#cb1-107" tabindex="-1"></a><span class="co">#&gt; treat:1.1-0.1  0.027775  0.291101 -0.542772  0.598323  0.9240</span></span></code></pre></div>
 <p>We note that the estimates found using the large censoring model are
 very different from those using the simple Kaplan-Meier weights that are
 severely biased for these data. This is due to a stong censoring
@@ -612,6 +610,105 @@ standard causal assumptions. The 1/0 treatment variable used for the
 causal computation is found as the right hand side (rhs) of the
 treat.model or as the first argument on the rhs of the response
 model.</p>
+<p>The binregATE default uses binreg with its default to fit the working
+model and is recommended, but the logitIPCW and logitIPCWATE can also be
+used and are GLM-type IPCW weighted models (see binreg help
+page/vignette).</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a>ib2 <span class="ot">&lt;-</span> <span class="fu">logitIPCWATE</span>(<span class="fu">Event</span>(time,cause)<span class="sc">~</span>gp.f<span class="sc">+</span>dnr<span class="sc">+</span>preauto<span class="sc">+</span>ttt24,kumar,<span class="at">cause=</span><span class="dv">2</span>,</span>
+<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a>    <span class="at">treat.model=</span>gp.f<span class="sc">~</span>dnr<span class="sc">+</span>preauto<span class="sc">+</span>ttt24,<span class="at">time=</span><span class="dv">40</span>,<span class="at">cens.model=</span><span class="sc">~</span><span class="fu">strata</span>(gp,dnr))</span>
+<span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a><span class="fu">summary</span>(ib2)</span>
+<span id="cb2-4"><a href="#cb2-4" tabindex="-1"></a><span class="co">#&gt;    n events</span></span>
+<span id="cb2-5"><a href="#cb2-5" tabindex="-1"></a><span class="co">#&gt;  400    144</span></span>
+<span id="cb2-6"><a href="#cb2-6" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb2-7"><a href="#cb2-7" tabindex="-1"></a><span class="co">#&gt;  400 clusters</span></span>
+<span id="cb2-8"><a href="#cb2-8" tabindex="-1"></a><span class="co">#&gt; coeffients:</span></span>
+<span id="cb2-9"><a href="#cb2-9" tabindex="-1"></a><span class="co">#&gt;              Estimate   Std.Err      2.5%     97.5% P-value</span></span>
+<span id="cb2-10"><a href="#cb2-10" tabindex="-1"></a><span class="co">#&gt; (Intercept) -1.086262  0.218545 -1.514603 -0.657921  0.0000</span></span>
+<span id="cb2-11"><a href="#cb2-11" tabindex="-1"></a><span class="co">#&gt; gp.f1        0.627397  0.256308  0.125042  1.129753  0.0144</span></span>
+<span id="cb2-12"><a href="#cb2-12" tabindex="-1"></a><span class="co">#&gt; dnr          0.216831  0.267804 -0.308055  0.741717  0.4181</span></span>
+<span id="cb2-13"><a href="#cb2-13" tabindex="-1"></a><span class="co">#&gt; preauto      0.833926  0.298578  0.248723  1.419128  0.0052</span></span>
+<span id="cb2-14"><a href="#cb2-14" tabindex="-1"></a><span class="co">#&gt; ttt24       -0.050684  0.302852 -0.644263  0.542895  0.8671</span></span>
+<span id="cb2-15"><a href="#cb2-15" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb2-16"><a href="#cb2-16" tabindex="-1"></a><span class="co">#&gt; exp(coeffients):</span></span>
+<span id="cb2-17"><a href="#cb2-17" tabindex="-1"></a><span class="co">#&gt;             Estimate    2.5%  97.5%</span></span>
+<span id="cb2-18"><a href="#cb2-18" tabindex="-1"></a><span class="co">#&gt; (Intercept)  0.33748 0.21990 0.5179</span></span>
+<span id="cb2-19"><a href="#cb2-19" tabindex="-1"></a><span class="co">#&gt; gp.f1        1.87273 1.13320 3.0949</span></span>
+<span id="cb2-20"><a href="#cb2-20" tabindex="-1"></a><span class="co">#&gt; dnr          1.24213 0.73488 2.0995</span></span>
+<span id="cb2-21"><a href="#cb2-21" tabindex="-1"></a><span class="co">#&gt; preauto      2.30234 1.28239 4.1335</span></span>
+<span id="cb2-22"><a href="#cb2-22" tabindex="-1"></a><span class="co">#&gt; ttt24        0.95058 0.52505 1.7210</span></span>
+<span id="cb2-23"><a href="#cb2-23" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb2-24"><a href="#cb2-24" tabindex="-1"></a><span class="co">#&gt; Average Treatment effects (G-formula) :</span></span>
+<span id="cb2-25"><a href="#cb2-25" tabindex="-1"></a><span class="co">#&gt;         Estimate  Std.Err     2.5%    97.5% P-value</span></span>
+<span id="cb2-26"><a href="#cb2-26" tabindex="-1"></a><span class="co">#&gt; treat-1 0.499553 0.039520 0.422095 0.577011  0.0000</span></span>
+<span id="cb2-27"><a href="#cb2-27" tabindex="-1"></a><span class="co">#&gt; treat-0 0.354175 0.042699 0.270486 0.437864  0.0000</span></span>
+<span id="cb2-28"><a href="#cb2-28" tabindex="-1"></a><span class="co">#&gt; p1      0.145378 0.059607 0.028551 0.262205  0.0147</span></span>
+<span id="cb2-29"><a href="#cb2-29" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb2-30"><a href="#cb2-30" tabindex="-1"></a><span class="co">#&gt; Average Treatment effects (double robust) :</span></span>
+<span id="cb2-31"><a href="#cb2-31" tabindex="-1"></a><span class="co">#&gt;         Estimate  Std.Err     2.5%    97.5% P-value</span></span>
+<span id="cb2-32"><a href="#cb2-32" tabindex="-1"></a><span class="co">#&gt; treat-1 0.496378 0.043208 0.411693 0.581063  0.0000</span></span>
+<span id="cb2-33"><a href="#cb2-33" tabindex="-1"></a><span class="co">#&gt; treat-0 0.312278 0.041300 0.231331 0.393225  0.0000</span></span>
+<span id="cb2-34"><a href="#cb2-34" tabindex="-1"></a><span class="co">#&gt; p1      0.184100 0.059946 0.066608 0.301593  0.0021</span></span>
+<span id="cb2-35"><a href="#cb2-35" tabindex="-1"></a></span>
+<span id="cb2-36"><a href="#cb2-36" tabindex="-1"></a>ib5 <span class="ot">&lt;-</span> <span class="fu">logitIPCW</span>(<span class="fu">Event</span>(time,cause)<span class="sc">~</span>gp.f<span class="sc">+</span>dnr<span class="sc">+</span>preauto<span class="sc">+</span>ttt24,kumar,<span class="at">cause=</span><span class="dv">2</span>,<span class="at">cens.code=</span><span class="dv">0</span>,</span>
+<span id="cb2-37"><a href="#cb2-37" tabindex="-1"></a>     <span class="at">time=</span><span class="dv">60</span>,<span class="at">cens.model=</span><span class="sc">~</span><span class="fu">strata</span>(gp,dnr))</span>
+<span id="cb2-38"><a href="#cb2-38" tabindex="-1"></a><span class="fu">summary</span>(ib5)</span>
+<span id="cb2-39"><a href="#cb2-39" tabindex="-1"></a><span class="co">#&gt;    n events</span></span>
+<span id="cb2-40"><a href="#cb2-40" tabindex="-1"></a><span class="co">#&gt;  400    150</span></span>
+<span id="cb2-41"><a href="#cb2-41" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb2-42"><a href="#cb2-42" tabindex="-1"></a><span class="co">#&gt;  400 clusters</span></span>
+<span id="cb2-43"><a href="#cb2-43" tabindex="-1"></a><span class="co">#&gt; coeffients:</span></span>
+<span id="cb2-44"><a href="#cb2-44" tabindex="-1"></a><span class="co">#&gt;               Estimate    Std.Err       2.5%      97.5% P-value</span></span>
+<span id="cb2-45"><a href="#cb2-45" tabindex="-1"></a><span class="co">#&gt; (Intercept) -1.0134105  0.2136059 -1.4320705 -0.5947505  0.0000</span></span>
+<span id="cb2-46"><a href="#cb2-46" tabindex="-1"></a><span class="co">#&gt; gp.f1        0.6820524  0.2685519  0.1557004  1.2084044  0.0111</span></span>
+<span id="cb2-47"><a href="#cb2-47" tabindex="-1"></a><span class="co">#&gt; dnr          0.1294593  0.2763652 -0.4122064  0.6711251  0.6395</span></span>
+<span id="cb2-48"><a href="#cb2-48" tabindex="-1"></a><span class="co">#&gt; preauto      0.4963073  0.3529323 -0.1954273  1.1880419  0.1597</span></span>
+<span id="cb2-49"><a href="#cb2-49" tabindex="-1"></a><span class="co">#&gt; ttt24        0.5577291  0.2879451 -0.0066329  1.1220912  0.0528</span></span>
+<span id="cb2-50"><a href="#cb2-50" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb2-51"><a href="#cb2-51" tabindex="-1"></a><span class="co">#&gt; exp(coeffients):</span></span>
+<span id="cb2-52"><a href="#cb2-52" tabindex="-1"></a><span class="co">#&gt;             Estimate    2.5%  97.5%</span></span>
+<span id="cb2-53"><a href="#cb2-53" tabindex="-1"></a><span class="co">#&gt; (Intercept)  0.36298 0.23881 0.5517</span></span>
+<span id="cb2-54"><a href="#cb2-54" tabindex="-1"></a><span class="co">#&gt; gp.f1        1.97793 1.16848 3.3481</span></span>
+<span id="cb2-55"><a href="#cb2-55" tabindex="-1"></a><span class="co">#&gt; dnr          1.13821 0.66219 1.9564</span></span>
+<span id="cb2-56"><a href="#cb2-56" tabindex="-1"></a><span class="co">#&gt; preauto      1.64264 0.82248 3.2807</span></span>
+<span id="cb2-57"><a href="#cb2-57" tabindex="-1"></a><span class="co">#&gt; ttt24        1.74670 0.99339 3.0713</span></span>
+<span id="cb2-58"><a href="#cb2-58" tabindex="-1"></a></span>
+<span id="cb2-59"><a href="#cb2-59" tabindex="-1"></a>ibs <span class="ot">&lt;-</span> <span class="fu">logitIPCW</span>(<span class="fu">Event</span>(time,cause)<span class="sc">~</span>gp.f<span class="sc">+</span>dnr<span class="sc">+</span>preauto<span class="sc">+</span>ttt24,kumar,<span class="at">cause=</span><span class="dv">2</span>,<span class="at">cens.code=</span><span class="dv">0</span>,<span class="at">time=</span><span class="dv">60</span>)</span>
+<span id="cb2-60"><a href="#cb2-60" tabindex="-1"></a><span class="fu">summary</span>(ibs)</span>
+<span id="cb2-61"><a href="#cb2-61" tabindex="-1"></a><span class="co">#&gt;    n events</span></span>
+<span id="cb2-62"><a href="#cb2-62" tabindex="-1"></a><span class="co">#&gt;  400    150</span></span>
+<span id="cb2-63"><a href="#cb2-63" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb2-64"><a href="#cb2-64" tabindex="-1"></a><span class="co">#&gt;  400 clusters</span></span>
+<span id="cb2-65"><a href="#cb2-65" tabindex="-1"></a><span class="co">#&gt; coeffients:</span></span>
+<span id="cb2-66"><a href="#cb2-66" tabindex="-1"></a><span class="co">#&gt;             Estimate  Std.Err     2.5%    97.5% P-value</span></span>
+<span id="cb2-67"><a href="#cb2-67" tabindex="-1"></a><span class="co">#&gt; (Intercept) -0.95461  0.21119 -1.36854 -0.54069  0.0000</span></span>
+<span id="cb2-68"><a href="#cb2-68" tabindex="-1"></a><span class="co">#&gt; gp.f1        0.92146  0.26818  0.39584  1.44707  0.0006</span></span>
+<span id="cb2-69"><a href="#cb2-69" tabindex="-1"></a><span class="co">#&gt; dnr          0.15315  0.28159 -0.39876  0.70507  0.5865</span></span>
+<span id="cb2-70"><a href="#cb2-70" tabindex="-1"></a><span class="co">#&gt; preauto      0.42757  0.29321 -0.14711  1.00224  0.1448</span></span>
+<span id="cb2-71"><a href="#cb2-71" tabindex="-1"></a><span class="co">#&gt; ttt24        0.39881  0.29279 -0.17505  0.97266  0.1732</span></span>
+<span id="cb2-72"><a href="#cb2-72" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb2-73"><a href="#cb2-73" tabindex="-1"></a><span class="co">#&gt; exp(coeffients):</span></span>
+<span id="cb2-74"><a href="#cb2-74" tabindex="-1"></a><span class="co">#&gt;             Estimate    2.5%  97.5%</span></span>
+<span id="cb2-75"><a href="#cb2-75" tabindex="-1"></a><span class="co">#&gt; (Intercept)  0.38496 0.25448 0.5823</span></span>
+<span id="cb2-76"><a href="#cb2-76" tabindex="-1"></a><span class="co">#&gt; gp.f1        2.51296 1.48564 4.2507</span></span>
+<span id="cb2-77"><a href="#cb2-77" tabindex="-1"></a><span class="co">#&gt; dnr          1.16551 0.67115 2.0240</span></span>
+<span id="cb2-78"><a href="#cb2-78" tabindex="-1"></a><span class="co">#&gt; preauto      1.53352 0.86320 2.7244</span></span>
+<span id="cb2-79"><a href="#cb2-79" tabindex="-1"></a><span class="co">#&gt; ttt24        1.49005 0.83941 2.6450</span></span>
+<span id="cb2-80"><a href="#cb2-80" tabindex="-1"></a></span>
+<span id="cb2-81"><a href="#cb2-81" tabindex="-1"></a>check <span class="ot">&lt;-</span> <span class="dv">0</span></span>
+<span id="cb2-82"><a href="#cb2-82" tabindex="-1"></a><span class="cf">if</span> (check<span class="sc">==</span><span class="dv">1</span>) {</span>
+<span id="cb2-83"><a href="#cb2-83" tabindex="-1"></a><span class="fu">require</span>(riskRegression)</span>
+<span id="cb2-84"><a href="#cb2-84" tabindex="-1"></a>e.wglm <span class="ot">&lt;-</span> <span class="fu">wglm</span>( <span class="at">regressor.event=</span><span class="sc">~</span>gp.f<span class="sc">+</span>dnr<span class="sc">+</span>preauto<span class="sc">+</span>ttt24, <span class="at">formula.censor =</span> <span class="fu">Surv</span>(time,cause<span class="sc">==</span><span class="dv">0</span>)<span class="sc">~+</span><span class="dv">1</span>, <span class="at">times =</span> <span class="dv">60</span>, <span class="at">data =</span> kumar, <span class="at">product.limit=</span><span class="cn">TRUE</span>,<span class="at">cause=</span><span class="dv">2</span>)</span>
+<span id="cb2-85"><a href="#cb2-85" tabindex="-1"></a><span class="fu">summary</span>(e.wglm)<span class="sc">$</span>coef</span>
+<span id="cb2-86"><a href="#cb2-86" tabindex="-1"></a><span class="fu">estimate</span>(ibs)</span>
+<span id="cb2-87"><a href="#cb2-87" tabindex="-1"></a></span>
+<span id="cb2-88"><a href="#cb2-88" tabindex="-1"></a>es.wglm <span class="ot">&lt;-</span> <span class="fu">wglm</span>( <span class="at">regressor.event=</span><span class="sc">~</span>gp.f<span class="sc">+</span>dnr<span class="sc">+</span>preauto<span class="sc">+</span>ttt24, </span>
+<span id="cb2-89"><a href="#cb2-89" tabindex="-1"></a><span class="at">formula.censor =</span> <span class="fu">Surv</span>(time,cause<span class="sc">==</span><span class="dv">0</span>)<span class="sc">~</span><span class="fu">strata</span>(gp,dnr), <span class="at">times =</span> <span class="dv">60</span>, </span>
+<span id="cb2-90"><a href="#cb2-90" tabindex="-1"></a><span class="at">data =</span> kumar, <span class="at">product.limit=</span><span class="cn">TRUE</span>,<span class="at">cause=</span><span class="dv">2</span>)</span>
+<span id="cb2-91"><a href="#cb2-91" tabindex="-1"></a><span class="fu">summary</span>(es.wglm)<span class="sc">$</span>coef</span>
+<span id="cb2-92"><a href="#cb2-92" tabindex="-1"></a><span class="fu">estimate</span>(ib5)</span>
+<span id="cb2-93"><a href="#cb2-93" tabindex="-1"></a>}</span></code></pre></div>
+<p>The cluster argument should not be used for the logitIPCWATE, but
+works for binregATE.</p>
 </div>
 <div id="average-treatment-effect-for-binary-or-continuous-responses" class="section level1">
 <h1>Average treatment effect for binary or continuous responses</h1>
@@ -623,114 +720,114 @@ done</p>
 </ul>
 <p>Running the code (can also use binregATE koding cause without
 censorings values, so setting cens.code=2, and time large)</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a>kumar<span class="sc">$</span>cause2 <span class="ot">&lt;-</span> <span class="dv">1</span><span class="sc">*</span>(kumar<span class="sc">$</span>cause<span class="sc">==</span><span class="dv">2</span>)</span>
-<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a></span>
-<span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a>b3 <span class="ot">&lt;-</span> <span class="fu">logitATE</span>(cause2<span class="sc">~</span>gp.f<span class="sc">+</span>dnr<span class="sc">+</span>preauto<span class="sc">+</span>ttt24,kumar,<span class="at">treat.model=</span>gp.f<span class="sc">~</span>dnr<span class="sc">+</span>preauto<span class="sc">+</span>ttt24)</span>
-<span id="cb2-4"><a href="#cb2-4" tabindex="-1"></a><span class="fu">summary</span>(b3)</span>
-<span id="cb2-5"><a href="#cb2-5" tabindex="-1"></a><span class="co">#&gt;    n events</span></span>
-<span id="cb2-6"><a href="#cb2-6" tabindex="-1"></a><span class="co">#&gt;  400    400</span></span>
-<span id="cb2-7"><a href="#cb2-7" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb2-8"><a href="#cb2-8" tabindex="-1"></a><span class="co">#&gt;  400 clusters</span></span>
-<span id="cb2-9"><a href="#cb2-9" tabindex="-1"></a><span class="co">#&gt; coeffients:</span></span>
-<span id="cb2-10"><a href="#cb2-10" tabindex="-1"></a><span class="co">#&gt;                Estimate     Std.Err        2.5%       97.5% P-value</span></span>
-<span id="cb2-11"><a href="#cb2-11" tabindex="-1"></a><span class="co">#&gt; (Intercept) -1.07282963  0.19388190 -1.45283117 -0.69282808  0.0000</span></span>
-<span id="cb2-12"><a href="#cb2-12" tabindex="-1"></a><span class="co">#&gt; gp.f1        0.26229718  0.23212023 -0.19265012  0.71724448  0.2585</span></span>
-<span id="cb2-13"><a href="#cb2-13" tabindex="-1"></a><span class="co">#&gt; dnr          0.47162640  0.24030425  0.00063871  0.94261408  0.0497</span></span>
-<span id="cb2-14"><a href="#cb2-14" tabindex="-1"></a><span class="co">#&gt; preauto      0.26934293  0.24156220 -0.20411028  0.74279614  0.2648</span></span>
-<span id="cb2-15"><a href="#cb2-15" tabindex="-1"></a><span class="co">#&gt; ttt24        0.40066829  0.24437556 -0.07829902  0.87963559  0.1011</span></span>
-<span id="cb2-16"><a href="#cb2-16" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb2-17"><a href="#cb2-17" tabindex="-1"></a><span class="co">#&gt; exp(coeffients):</span></span>
-<span id="cb2-18"><a href="#cb2-18" tabindex="-1"></a><span class="co">#&gt;             Estimate    2.5%  97.5%</span></span>
-<span id="cb2-19"><a href="#cb2-19" tabindex="-1"></a><span class="co">#&gt; (Intercept)  0.34204 0.23391 0.5002</span></span>
-<span id="cb2-20"><a href="#cb2-20" tabindex="-1"></a><span class="co">#&gt; gp.f1        1.29991 0.82477 2.0488</span></span>
-<span id="cb2-21"><a href="#cb2-21" tabindex="-1"></a><span class="co">#&gt; dnr          1.60260 1.00064 2.5667</span></span>
-<span id="cb2-22"><a href="#cb2-22" tabindex="-1"></a><span class="co">#&gt; preauto      1.30910 0.81537 2.1018</span></span>
-<span id="cb2-23"><a href="#cb2-23" tabindex="-1"></a><span class="co">#&gt; ttt24        1.49282 0.92469 2.4100</span></span>
-<span id="cb2-24"><a href="#cb2-24" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb2-25"><a href="#cb2-25" tabindex="-1"></a><span class="co">#&gt; Average Treatment effects (G-formula) :</span></span>
-<span id="cb2-26"><a href="#cb2-26" tabindex="-1"></a><span class="co">#&gt;           Estimate  Std.Err     2.5%    97.5% P-value</span></span>
-<span id="cb2-27"><a href="#cb2-27" tabindex="-1"></a><span class="co">#&gt; treat0    -0.65978  0.17273 -0.99833 -0.32122  0.0001</span></span>
-<span id="cb2-28"><a href="#cb2-28" tabindex="-1"></a><span class="co">#&gt; treat1    -0.39748  0.14485 -0.68139 -0.11357  0.0061</span></span>
-<span id="cb2-29"><a href="#cb2-29" tabindex="-1"></a><span class="co">#&gt; treat:1-0  0.26230  0.23212 -0.19265  0.71724  0.2585</span></span>
-<span id="cb2-30"><a href="#cb2-30" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb2-31"><a href="#cb2-31" tabindex="-1"></a><span class="co">#&gt; Average Treatment effects (double robust) :</span></span>
-<span id="cb2-32"><a href="#cb2-32" tabindex="-1"></a><span class="co">#&gt;            Estimate   Std.Err      2.5%     97.5% P-value</span></span>
-<span id="cb2-33"><a href="#cb2-33" tabindex="-1"></a><span class="co">#&gt; treat0     0.340232  0.040085  0.261667  0.418798   0.000</span></span>
-<span id="cb2-34"><a href="#cb2-34" tabindex="-1"></a><span class="co">#&gt; treat1     0.398325  0.034951  0.329823  0.466828   0.000</span></span>
-<span id="cb2-35"><a href="#cb2-35" tabindex="-1"></a><span class="co">#&gt; treat:1-0  0.058093  0.052008 -0.043842  0.160027   0.264</span></span>
-<span id="cb2-36"><a href="#cb2-36" tabindex="-1"></a></span>
-<span id="cb2-37"><a href="#cb2-37" tabindex="-1"></a><span class="do">###library(targeted)</span></span>
-<span id="cb2-38"><a href="#cb2-38" tabindex="-1"></a><span class="do">###b3a &lt;- ate(cause2~gp.f|dnr+preauto+ttt24| dnr+preauto+ttt24,kumar,family=binomial)</span></span>
-<span id="cb2-39"><a href="#cb2-39" tabindex="-1"></a><span class="do">###summary(b3a)</span></span>
-<span id="cb2-40"><a href="#cb2-40" tabindex="-1"></a></span>
-<span id="cb2-41"><a href="#cb2-41" tabindex="-1"></a><span class="do">## calculate also relative risk</span></span>
-<span id="cb2-42"><a href="#cb2-42" tabindex="-1"></a><span class="fu">estimate</span>(<span class="at">coef=</span>b3<span class="sc">$</span>riskDR,<span class="at">vcov=</span>b3<span class="sc">$</span>var.riskDR,<span class="at">f=</span><span class="cf">function</span>(p) p[<span class="dv">1</span>]<span class="sc">/</span>p[<span class="dv">2</span>])</span>
-<span id="cb2-43"><a href="#cb2-43" tabindex="-1"></a><span class="co">#&gt;        Estimate Std.Err   2.5% 97.5%   P-value</span></span>
-<span id="cb2-44"><a href="#cb2-44" tabindex="-1"></a><span class="co">#&gt; treat0   0.8542  0.1228 0.6135 1.095 3.506e-12</span></span></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a>kumar<span class="sc">$</span>cause2 <span class="ot">&lt;-</span> <span class="dv">1</span><span class="sc">*</span>(kumar<span class="sc">$</span>cause<span class="sc">==</span><span class="dv">2</span>)</span>
+<span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a></span>
+<span id="cb3-3"><a href="#cb3-3" tabindex="-1"></a>b3 <span class="ot">&lt;-</span> <span class="fu">logitATE</span>(cause2<span class="sc">~</span>gp.f<span class="sc">+</span>dnr<span class="sc">+</span>preauto<span class="sc">+</span>ttt24,kumar,<span class="at">treat.model=</span>gp.f<span class="sc">~</span>dnr<span class="sc">+</span>preauto<span class="sc">+</span>ttt24)</span>
+<span id="cb3-4"><a href="#cb3-4" tabindex="-1"></a><span class="fu">summary</span>(b3)</span>
+<span id="cb3-5"><a href="#cb3-5" tabindex="-1"></a><span class="co">#&gt;    n events</span></span>
+<span id="cb3-6"><a href="#cb3-6" tabindex="-1"></a><span class="co">#&gt;  400    400</span></span>
+<span id="cb3-7"><a href="#cb3-7" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb3-8"><a href="#cb3-8" tabindex="-1"></a><span class="co">#&gt;  400 clusters</span></span>
+<span id="cb3-9"><a href="#cb3-9" tabindex="-1"></a><span class="co">#&gt; coeffients:</span></span>
+<span id="cb3-10"><a href="#cb3-10" tabindex="-1"></a><span class="co">#&gt;                Estimate     Std.Err        2.5%       97.5% P-value</span></span>
+<span id="cb3-11"><a href="#cb3-11" tabindex="-1"></a><span class="co">#&gt; (Intercept) -1.07282963  0.19388190 -1.45283117 -0.69282808  0.0000</span></span>
+<span id="cb3-12"><a href="#cb3-12" tabindex="-1"></a><span class="co">#&gt; gp.f1        0.26229718  0.23212023 -0.19265012  0.71724448  0.2585</span></span>
+<span id="cb3-13"><a href="#cb3-13" tabindex="-1"></a><span class="co">#&gt; dnr          0.47162640  0.24030425  0.00063871  0.94261408  0.0497</span></span>
+<span id="cb3-14"><a href="#cb3-14" tabindex="-1"></a><span class="co">#&gt; preauto      0.26934293  0.24156220 -0.20411028  0.74279614  0.2648</span></span>
+<span id="cb3-15"><a href="#cb3-15" tabindex="-1"></a><span class="co">#&gt; ttt24        0.40066829  0.24437556 -0.07829902  0.87963559  0.1011</span></span>
+<span id="cb3-16"><a href="#cb3-16" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb3-17"><a href="#cb3-17" tabindex="-1"></a><span class="co">#&gt; exp(coeffients):</span></span>
+<span id="cb3-18"><a href="#cb3-18" tabindex="-1"></a><span class="co">#&gt;             Estimate    2.5%  97.5%</span></span>
+<span id="cb3-19"><a href="#cb3-19" tabindex="-1"></a><span class="co">#&gt; (Intercept)  0.34204 0.23391 0.5002</span></span>
+<span id="cb3-20"><a href="#cb3-20" tabindex="-1"></a><span class="co">#&gt; gp.f1        1.29991 0.82477 2.0488</span></span>
+<span id="cb3-21"><a href="#cb3-21" tabindex="-1"></a><span class="co">#&gt; dnr          1.60260 1.00064 2.5667</span></span>
+<span id="cb3-22"><a href="#cb3-22" tabindex="-1"></a><span class="co">#&gt; preauto      1.30910 0.81537 2.1018</span></span>
+<span id="cb3-23"><a href="#cb3-23" tabindex="-1"></a><span class="co">#&gt; ttt24        1.49282 0.92469 2.4100</span></span>
+<span id="cb3-24"><a href="#cb3-24" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb3-25"><a href="#cb3-25" tabindex="-1"></a><span class="co">#&gt; Average Treatment effects (G-formula) :</span></span>
+<span id="cb3-26"><a href="#cb3-26" tabindex="-1"></a><span class="co">#&gt;            Estimate   Std.Err      2.5%     97.5% P-value</span></span>
+<span id="cb3-27"><a href="#cb3-27" tabindex="-1"></a><span class="co">#&gt; treat0     0.345704  0.037959  0.271306  0.420102  0.0000</span></span>
+<span id="cb3-28"><a href="#cb3-28" tabindex="-1"></a><span class="co">#&gt; treat1     0.404802  0.033367  0.339404  0.470200  0.0000</span></span>
+<span id="cb3-29"><a href="#cb3-29" tabindex="-1"></a><span class="co">#&gt; treat:1-0  0.059098  0.052111 -0.043037  0.161232  0.2568</span></span>
+<span id="cb3-30"><a href="#cb3-30" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb3-31"><a href="#cb3-31" tabindex="-1"></a><span class="co">#&gt; Average Treatment effects (double robust) :</span></span>
+<span id="cb3-32"><a href="#cb3-32" tabindex="-1"></a><span class="co">#&gt;            Estimate   Std.Err      2.5%     97.5% P-value</span></span>
+<span id="cb3-33"><a href="#cb3-33" tabindex="-1"></a><span class="co">#&gt; treat0     0.331726  0.039466  0.254375  0.409078  0.0000</span></span>
+<span id="cb3-34"><a href="#cb3-34" tabindex="-1"></a><span class="co">#&gt; treat1     0.398074  0.034407  0.330637  0.465511  0.0000</span></span>
+<span id="cb3-35"><a href="#cb3-35" tabindex="-1"></a><span class="co">#&gt; treat:1-0  0.066348  0.052260 -0.036080  0.168775  0.2042</span></span>
+<span id="cb3-36"><a href="#cb3-36" tabindex="-1"></a></span>
+<span id="cb3-37"><a href="#cb3-37" tabindex="-1"></a><span class="do">###library(targeted)</span></span>
+<span id="cb3-38"><a href="#cb3-38" tabindex="-1"></a><span class="do">###b3a &lt;- ate(cause2~gp.f|dnr+preauto+ttt24| dnr+preauto+ttt24,kumar,family=binomial)</span></span>
+<span id="cb3-39"><a href="#cb3-39" tabindex="-1"></a><span class="do">###summary(b3a)</span></span>
+<span id="cb3-40"><a href="#cb3-40" tabindex="-1"></a></span>
+<span id="cb3-41"><a href="#cb3-41" tabindex="-1"></a><span class="do">## calculate also relative risk</span></span>
+<span id="cb3-42"><a href="#cb3-42" tabindex="-1"></a><span class="fu">estimate</span>(<span class="at">coef=</span>b3<span class="sc">$</span>riskDR,<span class="at">vcov=</span>b3<span class="sc">$</span>var.riskDR,<span class="at">f=</span><span class="cf">function</span>(p) p[<span class="dv">1</span>]<span class="sc">/</span>p[<span class="dv">2</span>])</span>
+<span id="cb3-43"><a href="#cb3-43" tabindex="-1"></a><span class="co">#&gt;        Estimate Std.Err   2.5% 97.5%   P-value</span></span>
+<span id="cb3-44"><a href="#cb3-44" tabindex="-1"></a><span class="co">#&gt; treat0   0.8333  0.1223 0.5936 1.073 9.589e-12</span></span></code></pre></div>
 <p>Or with continuous response using normal estimating equations</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a>b3 <span class="ot">&lt;-</span> <span class="fu">normalATE</span>(time<span class="sc">~</span>gp.f<span class="sc">+</span>dnr<span class="sc">+</span>preauto<span class="sc">+</span>ttt24,kumar,<span class="at">treat.model=</span>gp.f<span class="sc">~</span>dnr<span class="sc">+</span>preauto<span class="sc">+</span>ttt24)</span>
-<span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a><span class="fu">summary</span>(b3)</span>
-<span id="cb3-3"><a href="#cb3-3" tabindex="-1"></a><span class="co">#&gt;    n events</span></span>
-<span id="cb3-4"><a href="#cb3-4" tabindex="-1"></a><span class="co">#&gt;  400    400</span></span>
-<span id="cb3-5"><a href="#cb3-5" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb3-6"><a href="#cb3-6" tabindex="-1"></a><span class="co">#&gt;  400 clusters</span></span>
-<span id="cb3-7"><a href="#cb3-7" tabindex="-1"></a><span class="co">#&gt; coeffients:</span></span>
-<span id="cb3-8"><a href="#cb3-8" tabindex="-1"></a><span class="co">#&gt;              Estimate   Std.Err      2.5%     97.5% P-value</span></span>
-<span id="cb3-9"><a href="#cb3-9" tabindex="-1"></a><span class="co">#&gt; (Intercept)  27.80015   3.30304  21.32631  34.27399  0.0000</span></span>
-<span id="cb3-10"><a href="#cb3-10" tabindex="-1"></a><span class="co">#&gt; gp.f1       -16.06100   3.25515 -22.44098  -9.68102  0.0000</span></span>
-<span id="cb3-11"><a href="#cb3-11" tabindex="-1"></a><span class="co">#&gt; dnr          -6.51649   3.16550 -12.72075  -0.31223  0.0395</span></span>
-<span id="cb3-12"><a href="#cb3-12" tabindex="-1"></a><span class="co">#&gt; preauto       1.66745   2.93033  -4.07590   7.41080  0.5693</span></span>
-<span id="cb3-13"><a href="#cb3-13" tabindex="-1"></a><span class="co">#&gt; ttt24        -1.12151   3.27807  -7.54640   5.30338  0.7323</span></span>
-<span id="cb3-14"><a href="#cb3-14" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb3-15"><a href="#cb3-15" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb3-16"><a href="#cb3-16" tabindex="-1"></a><span class="co">#&gt; Average Treatment effects (G-formula) :</span></span>
-<span id="cb3-17"><a href="#cb3-17" tabindex="-1"></a><span class="co">#&gt;           Estimate  Std.Err     2.5%    97.5% P-value</span></span>
-<span id="cb3-18"><a href="#cb3-18" tabindex="-1"></a><span class="co">#&gt; treat0     26.2456   2.9998  20.3660  32.1251       0</span></span>
-<span id="cb3-19"><a href="#cb3-19" tabindex="-1"></a><span class="co">#&gt; treat1     10.1846   1.0464   8.1336  12.2355       0</span></span>
-<span id="cb3-20"><a href="#cb3-20" tabindex="-1"></a><span class="co">#&gt; treat:1-0 -16.0610   3.2552 -22.4410  -9.6810       0</span></span>
-<span id="cb3-21"><a href="#cb3-21" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb3-22"><a href="#cb3-22" tabindex="-1"></a><span class="co">#&gt; Average Treatment effects (double robust) :</span></span>
-<span id="cb3-23"><a href="#cb3-23" tabindex="-1"></a><span class="co">#&gt;           Estimate  Std.Err     2.5%    97.5% P-value</span></span>
-<span id="cb3-24"><a href="#cb3-24" tabindex="-1"></a><span class="co">#&gt; treat0     28.0289   3.2124  21.7328  34.3251       0</span></span>
-<span id="cb3-25"><a href="#cb3-25" tabindex="-1"></a><span class="co">#&gt; treat1     10.7094   1.0007   8.7481  12.6707       0</span></span>
-<span id="cb3-26"><a href="#cb3-26" tabindex="-1"></a><span class="co">#&gt; treat:1-0 -17.3195   3.3652 -23.9153 -10.7238       0</span></span></code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a>b3 <span class="ot">&lt;-</span> <span class="fu">normalATE</span>(time<span class="sc">~</span>gp.f<span class="sc">+</span>dnr<span class="sc">+</span>preauto<span class="sc">+</span>ttt24,kumar,<span class="at">treat.model=</span>gp.f<span class="sc">~</span>dnr<span class="sc">+</span>preauto<span class="sc">+</span>ttt24)</span>
+<span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a><span class="fu">summary</span>(b3)</span>
+<span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a><span class="co">#&gt;    n events</span></span>
+<span id="cb4-4"><a href="#cb4-4" tabindex="-1"></a><span class="co">#&gt;  400    400</span></span>
+<span id="cb4-5"><a href="#cb4-5" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb4-6"><a href="#cb4-6" tabindex="-1"></a><span class="co">#&gt;  400 clusters</span></span>
+<span id="cb4-7"><a href="#cb4-7" tabindex="-1"></a><span class="co">#&gt; coeffients:</span></span>
+<span id="cb4-8"><a href="#cb4-8" tabindex="-1"></a><span class="co">#&gt;              Estimate   Std.Err      2.5%     97.5% P-value</span></span>
+<span id="cb4-9"><a href="#cb4-9" tabindex="-1"></a><span class="co">#&gt; (Intercept)  27.80015   3.30304  21.32631  34.27399  0.0000</span></span>
+<span id="cb4-10"><a href="#cb4-10" tabindex="-1"></a><span class="co">#&gt; gp.f1       -16.06100   3.25515 -22.44098  -9.68102  0.0000</span></span>
+<span id="cb4-11"><a href="#cb4-11" tabindex="-1"></a><span class="co">#&gt; dnr          -6.51649   3.16550 -12.72075  -0.31223  0.0395</span></span>
+<span id="cb4-12"><a href="#cb4-12" tabindex="-1"></a><span class="co">#&gt; preauto       1.66745   2.93033  -4.07590   7.41080  0.5693</span></span>
+<span id="cb4-13"><a href="#cb4-13" tabindex="-1"></a><span class="co">#&gt; ttt24        -1.12151   3.27807  -7.54640   5.30338  0.7323</span></span>
+<span id="cb4-14"><a href="#cb4-14" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb4-15"><a href="#cb4-15" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb4-16"><a href="#cb4-16" tabindex="-1"></a><span class="co">#&gt; Average Treatment effects (G-formula) :</span></span>
+<span id="cb4-17"><a href="#cb4-17" tabindex="-1"></a><span class="co">#&gt;           Estimate  Std.Err     2.5%    97.5% P-value</span></span>
+<span id="cb4-18"><a href="#cb4-18" tabindex="-1"></a><span class="co">#&gt; treat0     26.2456   2.9998  20.3660  32.1251       0</span></span>
+<span id="cb4-19"><a href="#cb4-19" tabindex="-1"></a><span class="co">#&gt; treat1     10.1846   1.0464   8.1336  12.2355       0</span></span>
+<span id="cb4-20"><a href="#cb4-20" tabindex="-1"></a><span class="co">#&gt; treat:1-0 -16.0610   3.2552 -22.4410  -9.6810       0</span></span>
+<span id="cb4-21"><a href="#cb4-21" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb4-22"><a href="#cb4-22" tabindex="-1"></a><span class="co">#&gt; Average Treatment effects (double robust) :</span></span>
+<span id="cb4-23"><a href="#cb4-23" tabindex="-1"></a><span class="co">#&gt;           Estimate  Std.Err     2.5%    97.5% P-value</span></span>
+<span id="cb4-24"><a href="#cb4-24" tabindex="-1"></a><span class="co">#&gt; treat0     28.0289   3.2124  21.7328  34.3251       0</span></span>
+<span id="cb4-25"><a href="#cb4-25" tabindex="-1"></a><span class="co">#&gt; treat1     10.7094   1.0007   8.7481  12.6707       0</span></span>
+<span id="cb4-26"><a href="#cb4-26" tabindex="-1"></a><span class="co">#&gt; treat:1-0 -17.3195   3.3652 -23.9153 -10.7238       0</span></span></code></pre></div>
 </div>
 <div id="sessioninfo" class="section level1">
 <h1>SessionInfo</h1>
-<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a><span class="fu">sessionInfo</span>()</span>
-<span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a><span class="co">#&gt; R version 4.5.1 (2025-06-13)</span></span>
-<span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a><span class="co">#&gt; Platform: aarch64-apple-darwin24.5.0</span></span>
-<span id="cb4-4"><a href="#cb4-4" tabindex="-1"></a><span class="co">#&gt; Running under: macOS Sequoia 15.6.1</span></span>
-<span id="cb4-5"><a href="#cb4-5" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb4-6"><a href="#cb4-6" tabindex="-1"></a><span class="co">#&gt; Matrix products: default</span></span>
-<span id="cb4-7"><a href="#cb4-7" tabindex="-1"></a><span class="co">#&gt; BLAS:   /Users/kkzh/.asdf/installs/R/4.5.1/lib/R/lib/libRblas.dylib </span></span>
-<span id="cb4-8"><a href="#cb4-8" tabindex="-1"></a><span class="co">#&gt; LAPACK: /Users/kkzh/.asdf/installs/R/4.5.1/lib/R/lib/libRlapack.dylib;  LAPACK version 3.12.1</span></span>
-<span id="cb4-9"><a href="#cb4-9" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb4-10"><a href="#cb4-10" tabindex="-1"></a><span class="co">#&gt; locale:</span></span>
-<span id="cb4-11"><a href="#cb4-11" tabindex="-1"></a><span class="co">#&gt; [1] en_US.UTF-8/en_US.UTF-8/en_US.UTF-8/C/en_US.UTF-8/en_US.UTF-8</span></span>
-<span id="cb4-12"><a href="#cb4-12" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb4-13"><a href="#cb4-13" tabindex="-1"></a><span class="co">#&gt; time zone: Europe/Copenhagen</span></span>
-<span id="cb4-14"><a href="#cb4-14" tabindex="-1"></a><span class="co">#&gt; tzcode source: internal</span></span>
-<span id="cb4-15"><a href="#cb4-15" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb4-16"><a href="#cb4-16" tabindex="-1"></a><span class="co">#&gt; attached base packages:</span></span>
-<span id="cb4-17"><a href="#cb4-17" tabindex="-1"></a><span class="co">#&gt; [1] stats     graphics  grDevices utils     datasets  methods   base     </span></span>
-<span id="cb4-18"><a href="#cb4-18" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb4-19"><a href="#cb4-19" tabindex="-1"></a><span class="co">#&gt; other attached packages:</span></span>
-<span id="cb4-20"><a href="#cb4-20" tabindex="-1"></a><span class="co">#&gt; [1] timereg_2.0.7  survival_3.8-3 mets_1.3.7    </span></span>
-<span id="cb4-21"><a href="#cb4-21" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb4-22"><a href="#cb4-22" tabindex="-1"></a><span class="co">#&gt; loaded via a namespace (and not attached):</span></span>
-<span id="cb4-23"><a href="#cb4-23" tabindex="-1"></a><span class="co">#&gt;  [1] cli_3.6.5           knitr_1.50          rlang_1.1.6        </span></span>
-<span id="cb4-24"><a href="#cb4-24" tabindex="-1"></a><span class="co">#&gt;  [4] xfun_0.53           jsonlite_2.0.0      future.apply_1.20.0</span></span>
-<span id="cb4-25"><a href="#cb4-25" tabindex="-1"></a><span class="co">#&gt;  [7] listenv_0.9.1       lava_1.8.1          htmltools_0.5.8.1  </span></span>
-<span id="cb4-26"><a href="#cb4-26" tabindex="-1"></a><span class="co">#&gt; [10] sass_0.4.10         rmarkdown_2.29      grid_4.5.1         </span></span>
-<span id="cb4-27"><a href="#cb4-27" tabindex="-1"></a><span class="co">#&gt; [13] evaluate_1.0.5      jquerylib_0.1.4     fastmap_1.2.0      </span></span>
-<span id="cb4-28"><a href="#cb4-28" tabindex="-1"></a><span class="co">#&gt; [16] numDeriv_2016.8-1.1 yaml_2.3.10         mvtnorm_1.3-3      </span></span>
-<span id="cb4-29"><a href="#cb4-29" tabindex="-1"></a><span class="co">#&gt; [19] lifecycle_1.0.4     compiler_4.5.1      codetools_0.2-20   </span></span>
-<span id="cb4-30"><a href="#cb4-30" tabindex="-1"></a><span class="co">#&gt; [22] ucminf_1.2.2        Rcpp_1.1.0          future_1.67.0      </span></span>
-<span id="cb4-31"><a href="#cb4-31" tabindex="-1"></a><span class="co">#&gt; [25] lattice_0.22-7      digest_0.6.37       R6_2.6.1           </span></span>
-<span id="cb4-32"><a href="#cb4-32" tabindex="-1"></a><span class="co">#&gt; [28] parallelly_1.45.1   parallel_4.5.1      splines_4.5.1      </span></span>
-<span id="cb4-33"><a href="#cb4-33" tabindex="-1"></a><span class="co">#&gt; [31] Matrix_1.7-4        bslib_0.9.0         tools_4.5.1        </span></span>
-<span id="cb4-34"><a href="#cb4-34" tabindex="-1"></a><span class="co">#&gt; [34] globals_0.18.0      cachem_1.1.0</span></span></code></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a><span class="fu">sessionInfo</span>()</span>
+<span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a><span class="co">#&gt; R version 4.5.1 (2025-06-13)</span></span>
+<span id="cb5-3"><a href="#cb5-3" tabindex="-1"></a><span class="co">#&gt; Platform: aarch64-apple-darwin25.0.0</span></span>
+<span id="cb5-4"><a href="#cb5-4" tabindex="-1"></a><span class="co">#&gt; Running under: macOS Tahoe 26.0.1</span></span>
+<span id="cb5-5"><a href="#cb5-5" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb5-6"><a href="#cb5-6" tabindex="-1"></a><span class="co">#&gt; Matrix products: default</span></span>
+<span id="cb5-7"><a href="#cb5-7" tabindex="-1"></a><span class="co">#&gt; BLAS:   /Users/kkzh/.asdf/installs/R/4.5.1/lib/R/lib/libRblas.dylib </span></span>
+<span id="cb5-8"><a href="#cb5-8" tabindex="-1"></a><span class="co">#&gt; LAPACK: /Users/kkzh/.asdf/installs/R/4.5.1/lib/R/lib/libRlapack.dylib;  LAPACK version 3.12.1</span></span>
+<span id="cb5-9"><a href="#cb5-9" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb5-10"><a href="#cb5-10" tabindex="-1"></a><span class="co">#&gt; locale:</span></span>
+<span id="cb5-11"><a href="#cb5-11" tabindex="-1"></a><span class="co">#&gt; [1] en_US.UTF-8/en_US.UTF-8/en_US.UTF-8/C/en_US.UTF-8/en_US.UTF-8</span></span>
+<span id="cb5-12"><a href="#cb5-12" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb5-13"><a href="#cb5-13" tabindex="-1"></a><span class="co">#&gt; time zone: Europe/Copenhagen</span></span>
+<span id="cb5-14"><a href="#cb5-14" tabindex="-1"></a><span class="co">#&gt; tzcode source: internal</span></span>
+<span id="cb5-15"><a href="#cb5-15" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb5-16"><a href="#cb5-16" tabindex="-1"></a><span class="co">#&gt; attached base packages:</span></span>
+<span id="cb5-17"><a href="#cb5-17" tabindex="-1"></a><span class="co">#&gt; [1] stats     graphics  grDevices utils     datasets  methods   base     </span></span>
+<span id="cb5-18"><a href="#cb5-18" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb5-19"><a href="#cb5-19" tabindex="-1"></a><span class="co">#&gt; other attached packages:</span></span>
+<span id="cb5-20"><a href="#cb5-20" tabindex="-1"></a><span class="co">#&gt; [1] timereg_2.0.7  survival_3.8-3 mets_1.3.8    </span></span>
+<span id="cb5-21"><a href="#cb5-21" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb5-22"><a href="#cb5-22" tabindex="-1"></a><span class="co">#&gt; loaded via a namespace (and not attached):</span></span>
+<span id="cb5-23"><a href="#cb5-23" tabindex="-1"></a><span class="co">#&gt;  [1] cli_3.6.5           knitr_1.50          rlang_1.1.6        </span></span>
+<span id="cb5-24"><a href="#cb5-24" tabindex="-1"></a><span class="co">#&gt;  [4] xfun_0.53           jsonlite_2.0.0      future.apply_1.20.0</span></span>
+<span id="cb5-25"><a href="#cb5-25" tabindex="-1"></a><span class="co">#&gt;  [7] listenv_0.9.1       lava_1.8.1          htmltools_0.5.8.1  </span></span>
+<span id="cb5-26"><a href="#cb5-26" tabindex="-1"></a><span class="co">#&gt; [10] sass_0.4.10         rmarkdown_2.30      grid_4.5.1         </span></span>
+<span id="cb5-27"><a href="#cb5-27" tabindex="-1"></a><span class="co">#&gt; [13] evaluate_1.0.5      jquerylib_0.1.4     fastmap_1.2.0      </span></span>
+<span id="cb5-28"><a href="#cb5-28" tabindex="-1"></a><span class="co">#&gt; [16] numDeriv_2016.8-1.1 yaml_2.3.10         mvtnorm_1.3-3      </span></span>
+<span id="cb5-29"><a href="#cb5-29" tabindex="-1"></a><span class="co">#&gt; [19] lifecycle_1.0.4     compiler_4.5.1      codetools_0.2-20   </span></span>
+<span id="cb5-30"><a href="#cb5-30" tabindex="-1"></a><span class="co">#&gt; [22] ucminf_1.2.2        Rcpp_1.1.0          future_1.67.0      </span></span>
+<span id="cb5-31"><a href="#cb5-31" tabindex="-1"></a><span class="co">#&gt; [25] lattice_0.22-7      digest_0.6.37       R6_2.6.1           </span></span>
+<span id="cb5-32"><a href="#cb5-32" tabindex="-1"></a><span class="co">#&gt; [28] parallelly_1.45.1   parallel_4.5.1      splines_4.5.1      </span></span>
+<span id="cb5-33"><a href="#cb5-33" tabindex="-1"></a><span class="co">#&gt; [31] Matrix_1.7-4        bslib_0.9.0         tools_4.5.1        </span></span>
+<span id="cb5-34"><a href="#cb5-34" tabindex="-1"></a><span class="co">#&gt; [34] globals_0.18.0      cachem_1.1.0</span></span></code></pre></div>
 </div>
 
 

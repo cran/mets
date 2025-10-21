@@ -27,6 +27,32 @@ knitr::opts_chunk$set(
  pctimecox <- rchaz(cumhaz,rrcox)
 
 ## -----------------------------------------------------------------------------
+ library(mets)
+ n <- 100
+ data(bmt)
+ bmt$bmi <- rnorm(408)
+ dcut(bmt) <- gage~age
+ data <- bmt
+ cox1 <- phreg(Surv(time,cause==1)~tcell+platelet+age,data=bmt)
+
+ dd <- sim.phreg(cox1,n,data=bmt)
+ dtable(dd,~status)
+ scox1 <- phreg(Surv(time,status==1)~tcell+platelet+age,data=dd)
+ cbind(coef(cox1),coef(scox1))
+ par(mfrow=c(1,1))
+ plot(scox1,col=2); plot(cox1,add=TRUE,col=1)
+
+ ## changing the parametes 
+ cox10 <- cox1
+ cox10$coef <- c(0,0.4,0.3)
+ dd <- sim.phreg(cox10,n,data=bmt)
+ dtable(dd,~status)
+ scox1 <- phreg(Surv(time,status==1)~tcell+platelet+age,data=dd)
+ cbind(coef(cox10),coef(scox1))
+ par(mfrow=c(1,1))
+ plot(scox1,col=2); plot(cox10,add=TRUE,col=1)
+
+## -----------------------------------------------------------------------------
  data(bmt); 
  cox1 <- phreg(Surv(time,cause==1)~tcell+platelet,data=bmt)
  cox2 <- phreg(Surv(time,cause==2)~tcell+platelet,data=bmt)
@@ -49,6 +75,9 @@ knitr::opts_chunk$set(
  plot(cox2); plot(scox2,add=TRUE,col=2)
  cbind(cox1$coef,scox1$coef,cox2$coef,scox2$coef)
 
+
+
+
 ## -----------------------------------------------------------------------------
  data(sTRACE)
  dtable(sTRACE,~chf+diabetes)
@@ -59,44 +88,16 @@ knitr::opts_chunk$set(
  plot(coxs,col=1); plot(cc,add=TRUE,col=2)
 
 ## -----------------------------------------------------------------------------
- cox <-  survival::coxph(Surv(time,status==9)~vf+chf+wmi,data=sTRACE)
- sim1 <- sim.cox(cox,nsim,data=sTRACE)
- cc <- survival::coxph(Surv(time,status)~vf+chf+wmi,data=sim1)
- cbind(cox$coef,cc$coef)
- cor(sim1[,c("vf","chf","wmi")])
- cor(sTRACE[,c("vf","chf","wmi")])
- 
- cox <-  phreg(Surv(time, status==9)~vf+chf+wmi,data=sTRACE)
- sim3 <- sim.cox(cox,nsim,data=sTRACE)
- cc <-  phreg(Surv(time, status)~vf+chf+wmi,data=sim3)
- cbind(cox$coef,cc$coef)
- plot(cox,se=TRUE); plot(cc,add=TRUE,col=2)
- 
- coxs <-  phreg(Surv(time,status==9)~strata(chf,vf)+wmi,data=sTRACE)
- sim3 <- sim.phreg(coxs,nsim,data=sTRACE)
- cc <-   phreg(Surv(time, status)~strata(chf,vf)+wmi,data=sim3)
- cbind(coxs$coef,cc$coef)
- plot(coxs,col=1); plot(cc,add=TRUE,col=2)
-
-## -----------------------------------------------------------------------------
- data(bmt)
- # coxph          
- cox1 <- survival::coxph(Surv(time,cause==1)~tcell+platelet,data=bmt)
- cox2 <- survival::coxph(Surv(time,cause==2)~tcell+platelet,data=bmt)
- coxs <- list(cox1,cox2)
- dd <- sim.cause.cox(coxs,nsim,data=bmt)
- scox1 <- survival::coxph(Surv(time,status==1)~tcell+platelet,data=dd)
- scox2 <- survival::coxph(Surv(time,status==2)~tcell+platelet,data=dd)
- cbind(cox1$coef,scox1$coef)
- cbind(cox2$coef,scox2$coef)
-
-## -----------------------------------------------------------------------------
  ## stratified with phreg 
  cox0 <- phreg(Surv(time,cause==0)~tcell+platelet,data=bmt)
  cox1 <- phreg(Surv(time,cause==1)~tcell+platelet,data=bmt)
  cox2 <- phreg(Surv(time,cause==2)~strata(tcell)+platelet,data=bmt)
  coxs <- list(cox0,cox1,cox2)
- dd <- sim.cause.cox(coxs,nsim,data=bmt)
+### dd <- sim.cause.cox(coxs,nsim,data=bmt)
+ dd <- sim.phregs(coxs,n,data=bmt)
+
+ ## checking that  cause specific hazards are as given, make n larger
+
  scox0 <- phreg(Surv(time,status==1)~tcell+platelet,data=dd)
  scox1 <- phreg(Surv(time,status==2)~tcell+platelet,data=dd)
  scox2 <- phreg(Surv(time,status==3)~strata(tcell)+platelet,data=dd)
@@ -108,10 +109,15 @@ knitr::opts_chunk$set(
  plot(cox1); plot(scox1,add=TRUE,col=2); 
  plot(cox2); plot(scox2,add=TRUE,col=2); 
  
+ ########################################
+ ## second example 
+ ########################################
+
  cox1 <- phreg(Surv(time,cause==1)~strata(tcell)+platelet,data=bmt)
  cox2 <- phreg(Surv(time,cause==2)~tcell+strata(platelet),data=bmt)
  coxs <- list(cox1,cox2)
- dd <- sim.cause.cox(coxs,nsim,data=bmt)
+### dd <- sim.cause.cox(coxs,nsim,data=bmt)
+ dd <- sim.phregs(coxs,n,data=bmt)
  scox1 <- phreg(Surv(time,status==1)~strata(tcell)+platelet,data=dd)
  scox2 <- phreg(Surv(time,status==2)~tcell+strata(platelet),data=dd)
  cbind(cox1$coef,scox1$coef)
@@ -127,34 +133,21 @@ knitr::opts_chunk$set(
  bmt$bmi <- rnorm(408)
  dcut(bmt) <- gage~age
  data <- bmt
- cox1 <- phreg(Surv(time,cause==1)~strata(tcell)+platelet,data=bmt)
- cox2 <- phreg(Surv(time,cause==2)~strata(gage)+tcell+platelet,data=bmt)
+ cox1 <- phreg(Surv(time,cause==1)~strata(tcell,platelet),data=bmt)
+ cox2 <- phreg(Surv(time,cause==2)~strata(gage,tcell),data=bmt)
  cox3 <- phreg(Surv(time,cause==0)~strata(platelet)+bmi,data=bmt)
  coxs <- list(cox1,cox2,cox3)
 
  dd <- sim.phregs(coxs,n,data=bmt,extend=0.002)
- scox1 <- phreg(Surv(time,status==1)~strata(tcell)+platelet,data=dd)
- scox2 <- phreg(Surv(time,status==2)~strata(gage)+tcell+platelet,data=dd)
+ dtable(dd,~status)
+ scox1 <- phreg(Surv(time,status==1)~strata(tcell,platelet),data=dd)
+ scox2 <- phreg(Surv(time,status==2)~strata(gage,tcell),data=dd)
  scox3 <- phreg(Surv(time,status==3)~strata(platelet)+bmi,data=dd)
  cbind(coef(cox1),coef(scox1), coef(cox2),coef(scox2), coef(cox3),coef(scox3))
  par(mfrow=c(1,3))
  plot(scox1,col=2); plot(cox1,add=TRUE,col=1)
  plot(scox2,col=2); plot(cox2,add=TRUE,col=1)
  plot(scox3,col=2); plot(cox3,add=TRUE,col=1)
-
- coxs1 <- phreg(Surv(time,cause==1)~strata(tcell),data=bmt)
- dd <- sim.phreg(coxs1,n,data=bmt)
- scoxs1 <-  phreg(Surv(time,status==1)~strata(tcell),data=dd)
- ###
- plot(coxs1)
- plot(scoxs1,add=TRUE)
-
- coxs1 <- phreg(Surv(time,cause==1)~strata(tcell)+platelet,data=bmt)
- dd <- sim.phreg(coxs1,n,data=bmt)
- scoxs1 <-  phreg(Surv(time,status==1)~strata(tcell)+platelet,data=dd)
- ###
- plot(coxs1)
- plot(scoxs1,add=TRUE)
 
 
 ## -----------------------------------------------------------------------------
@@ -189,61 +182,21 @@ knitr::opts_chunk$set(
  
 
 ## -----------------------------------------------------------------------------
-cif1 <- cbind(c(0,10,20,100),c(0,0.1,0.15,0.2))
-cif2 <- cbind(c(0,10,20,100),c(0,0.4,0.45,0.5))
+library(mets)
+nsim <- 100
+rho1 <- 0.4; rho2 <- 2
+beta <- c(0.3,-0.3,-0.3,0.3)
 
-n <- 100; lrr1=c(0.2,0.1); lrr2=c(0.2,0.1); cens=NULL
-### A binary, L binary
-A <- rbinom(n,1,0.5)
-L <- rbinom(n,1,0.5)
-###
-rr1 <- exp(cbind(A,L) %*% lrr1)
-rr2 <- exp(cbind(A,L) %*% lrr2)
-## model is fine
-mmm<-max(rr1)*max(cif1[,2])+max(rr2)*max(cif2[,2])
-mcif1 <- max(cif1[,2])
-mcif2 <- max(cif2[,2])
-if (mmm>1) warning(" models not satisfying sum <=1\n")
-### here log-link model 
-T1 <- simsubdist(cif1,rr1,type="cif")
-T2 <- simsubdist(cif2,rr2,type="cif")
-###
-dies <- rbinom(n,1,rr1*mcif1+rr2*mcif2)
-sel1 <- rbinom(n,1,mcif2/(mcif1+mcif2))+1
-epsilon  <- dies*(sel1)
-T1$epsilon <- epsilon
-###
-T1$A <- A; T1$L <- L
-## times given 
-T1$time <- T1$timecause
-T1$time2 <- T2$timecause
-T1$status <- epsilon
-T1 <- dtransform(T1,time=100,epsilon==0)
-T1 <- dtransform(T1,status=0,epsilon==0)
-###
-T1 <- dtransform(T1,time=time2,epsilon==2)
-T1 <- dtransform(T1,status=2,epsilon==2)
+dats <- simul.cifs(nsim,rho1,rho2,beta,rc=0.5,depcens=0,type="logistic")
 
-dtable(T1,~status)
+# Fitting regression model with CIF logistic-link 
+cif1 <- cifreg(Event(time,status)~Z1+Z2,dats)
+summary(cif1)
 
-par(mfrow=c(1,2))
-lrr1=c(0.2,0.1);lrr2=c(0.2,0.1)
-pcif1 <- cif(Event(time,status)~strata(A,L),T1,cause=1)
-pcif2 <- cif(Event(time,status)~strata(A,L),T1,cause=2)
-###
-newd <- data.frame(expand.grid(A=0:1,L=0:1))
-rr1 <- c(exp(as.matrix(newd) %*% lrr1))
-rr2 <- c(exp(as.matrix(newd) %*% lrr2))
-###
-cifm1 <- cbind(cif1[,1],cif1[,2] %o% rr1)
-cifm2 <- cbind(cif2[,1],cif2[,2] %o% rr2)
-###
-par(mfrow=c(1,2))
-plot(pcif1,ylim=c(0,0.3)); 
-matlines(cifm1[,1],cifm1[,-1],col=1,lwd=2)
-###
-plot(pcif2,ylim=c(0,0.7))
-matlines(cifm2[,1],cifm2[,-1],col=1,lwd=2)
+
+dats <- simul.cifs(n,rho1,rho2,beta,rc=0.5,depcens=0,type="cloglog")
+ciff <- cifregFG(Event(time,status)~Z1+Z2,dats)
+summary(ciff)
 
 ## -----------------------------------------------------------------------------
  data(bmt)
@@ -266,17 +219,6 @@ matlines(cifm2[,1],cifm2[,-1],col=1,lwd=2)
  plot(cif2); plot(scif2,add=TRUE,col=2)
 
 ## -----------------------------------------------------------------------------
- set.seed(100)
- rho1 <- 0.2; rho2 <- 10
- n <- nsim
- beta=c(0.0,-0.1,-0.5,0.3)
- dats <- simul.cifs(n,rho1,rho2,beta,rc=0.2)
- dtable(dats,~status)
- dsort(dats) <- ~time
- fg <- cifreg(Event(time,status)~Z1+Z2,data=dats,cause=1,propodds=NULL)
- summary(fg)
-
-## -----------------------------------------------------------------------------
  data(CPH_HPN_CRBSI)
  dr <- CPH_HPN_CRBSI$terminal
  base1 <- CPH_HPN_CRBSI$crbsi 
@@ -290,7 +232,6 @@ matlines(cifm2[,1],cifm2[,-1],col=1,lwd=2)
 
  rr <- simRecurrentII(n,base1,base4,death.cumhaz=dr)
  dtable(rr,~death+status)
- par(mfrow=c(2,2))
  showfitsim(causes=2,rr,dr,base1,base4,which=1:2)
 
  cumhaz <- list(base1,base1,base4)
@@ -300,7 +241,6 @@ matlines(cifm2[,1],cifm2[,-1],col=1,lwd=2)
  showfitsimList(rr,cumhaz,drl) 
 
 ## -----------------------------------------------------------------------------
-
  data(hfactioncpx12)
  hf <- hfactioncpx12
  hf$x <- as.numeric(hf$treatment) 
@@ -314,6 +254,38 @@ matlines(cifm2[,1],cifm2[,-1],col=1,lwd=2)
 
  recGL <- recreg(Event(entry,time,status)~+cluster(id),hf,death.code=2)
  simglcox <- sim.recurrent(recGL,dr,n=n,data=hf)
+
+## -----------------------------------------------------------------------------
+ cox <-  survival::coxph(Surv(time,status==9)~vf+chf+wmi,data=sTRACE)
+ sim1 <- sim.cox(cox,nsim,data=sTRACE)
+ cc <- survival::coxph(Surv(time,status)~vf+chf+wmi,data=sim1)
+ cbind(cox$coef,cc$coef)
+ cor(sim1[,c("vf","chf","wmi")])
+ cor(sTRACE[,c("vf","chf","wmi")])
+ 
+ cox <-  phreg(Surv(time, status==9)~vf+chf+wmi,data=sTRACE)
+ sim3 <- sim.cox(cox,nsim,data=sTRACE)
+ cc <-  phreg(Surv(time, status)~vf+chf+wmi,data=sim3)
+ cbind(cox$coef,cc$coef)
+ plot(cox,se=TRUE); plot(cc,add=TRUE,col=2)
+ 
+ coxs <-  phreg(Surv(time,status==9)~strata(chf,vf)+wmi,data=sTRACE)
+ sim3 <- sim.phreg(coxs,nsim,data=sTRACE)
+ cc <-   phreg(Surv(time, status)~strata(chf,vf)+wmi,data=sim3)
+ cbind(coxs$coef,cc$coef)
+ plot(coxs,col=1); plot(cc,add=TRUE,col=2)
+
+## -----------------------------------------------------------------------------
+ data(bmt)
+ # coxph          
+ cox1 <- survival::coxph(Surv(time,cause==1)~tcell+platelet,data=bmt)
+ cox2 <- survival::coxph(Surv(time,cause==2)~tcell+platelet,data=bmt)
+ coxs <- list(cox1,cox2)
+ dd <- sim.cause.cox(coxs,nsim,data=bmt)
+ scox1 <- survival::coxph(Surv(time,status==1)~tcell+platelet,data=dd)
+ scox2 <- survival::coxph(Surv(time,status==2)~tcell+platelet,data=dd)
+ cbind(cox1$coef,scox1$coef)
+ cbind(cox2$coef,scox2$coef)
 
 ## -----------------------------------------------------------------------------
 sessionInfo()

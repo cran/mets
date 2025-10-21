@@ -12,7 +12,7 @@
 
 <meta name="author" content="Klaus Holst &amp; Thomas Scheike" />
 
-<meta name="date" content="2025-08-30" />
+<meta name="date" content="2025-10-21" />
 
 <title>Average treatment effect (ATE) for Restricted mean survival and years lost of Competing risks</title>
 
@@ -342,7 +342,7 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 <h1 class="title toc-ignore">Average treatment effect (ATE) for
 Restricted mean survival and years lost of Competing risks</h1>
 <h4 class="author">Klaus Holst &amp; Thomas Scheike</h4>
-<h4 class="date">2025-08-30</h4>
+<h4 class="date">2025-10-21</h4>
 
 
 
@@ -523,10 +523,10 @@ years lost in competing risks situation</p>
 <span id="cb3-25"><a href="#cb3-25" tabindex="-1"></a><span class="co">#&gt; treat:1-0  0.41667  2.41067 -4.30815  5.14150  0.8628</span></span>
 <span id="cb3-26"><a href="#cb3-26" tabindex="-1"></a><span class="co">#&gt; </span></span>
 <span id="cb3-27"><a href="#cb3-27" tabindex="-1"></a><span class="co">#&gt; Average Treatment effects (double robust) :</span></span>
-<span id="cb3-28"><a href="#cb3-28" tabindex="-1"></a><span class="co">#&gt;           Estimate Std.Err    2.5%   97.5% P-value</span></span>
-<span id="cb3-29"><a href="#cb3-29" tabindex="-1"></a><span class="co">#&gt; treat0     19.3262  1.0516 17.2650 21.3873  0.0000</span></span>
-<span id="cb3-30"><a href="#cb3-30" tabindex="-1"></a><span class="co">#&gt; treat1     21.5621  3.8018 14.1106 29.0135  0.0000</span></span>
-<span id="cb3-31"><a href="#cb3-31" tabindex="-1"></a><span class="co">#&gt; treat:1-0   2.2359  4.1993 -5.9946 10.4664  0.5944</span></span>
+<span id="cb3-28"><a href="#cb3-28" tabindex="-1"></a><span class="co">#&gt;           Estimate  Std.Err     2.5%    97.5% P-value</span></span>
+<span id="cb3-29"><a href="#cb3-29" tabindex="-1"></a><span class="co">#&gt; treat0    19.28131  0.95807 17.40352 21.15910  0.0000</span></span>
+<span id="cb3-30"><a href="#cb3-30" tabindex="-1"></a><span class="co">#&gt; treat1    20.34466  2.54101 15.36438 25.32494  0.0000</span></span>
+<span id="cb3-31"><a href="#cb3-31" tabindex="-1"></a><span class="co">#&gt; treat:1-0  1.06335  2.70979 -4.24773  6.37443  0.6948</span></span>
 <span id="cb3-32"><a href="#cb3-32" tabindex="-1"></a> </span>
 <span id="cb3-33"><a href="#cb3-33" tabindex="-1"></a> out1 <span class="ot">&lt;-</span> <span class="fu">resmeanATE</span>(<span class="fu">Event</span>(time,cause)<span class="sc">~</span>tcell<span class="sc">+</span>platelet,<span class="at">data=</span>bmt,<span class="at">cause=</span><span class="dv">1</span>,<span class="at">time=</span><span class="dv">40</span>,</span>
 <span id="cb3-34"><a href="#cb3-34" tabindex="-1"></a>            <span class="at">treat.model=</span>tcell<span class="sc">~</span>platelet)</span>
@@ -555,9 +555,9 @@ years lost in competing risks situation</p>
 <span id="cb3-57"><a href="#cb3-57" tabindex="-1"></a><span class="co">#&gt; </span></span>
 <span id="cb3-58"><a href="#cb3-58" tabindex="-1"></a><span class="co">#&gt; Average Treatment effects (double robust) :</span></span>
 <span id="cb3-59"><a href="#cb3-59" tabindex="-1"></a><span class="co">#&gt;             Estimate    Std.Err       2.5%      97.5% P-value</span></span>
-<span id="cb3-60"><a href="#cb3-60" tabindex="-1"></a><span class="co">#&gt; treat0     14.520356   0.957707  12.643285  16.397428  0.0000</span></span>
-<span id="cb3-61"><a href="#cb3-61" tabindex="-1"></a><span class="co">#&gt; treat1      9.456750   2.405120   4.742802  14.170697  0.0001</span></span>
-<span id="cb3-62"><a href="#cb3-62" tabindex="-1"></a><span class="co">#&gt; treat:1-0  -5.063606   2.585664 -10.131415   0.004202  0.0502</span></span>
+<span id="cb3-60"><a href="#cb3-60" tabindex="-1"></a><span class="co">#&gt; treat0     14.513742   0.958025  12.636048  16.391436  0.0000</span></span>
+<span id="cb3-61"><a href="#cb3-61" tabindex="-1"></a><span class="co">#&gt; treat1      9.365012   2.417032   4.627717  14.102307  0.0001</span></span>
+<span id="cb3-62"><a href="#cb3-62" tabindex="-1"></a><span class="co">#&gt; treat:1-0  -5.148730   2.597947 -10.240612  -0.056848  0.0475</span></span>
 <span id="cb3-63"><a href="#cb3-63" tabindex="-1"></a></span>
 <span id="cb3-64"><a href="#cb3-64" tabindex="-1"></a> out2 <span class="ot">&lt;-</span> <span class="fu">resmeanATE</span>(<span class="fu">Event</span>(time,cause)<span class="sc">~</span>tcell<span class="sc">+</span>platelet,<span class="at">data=</span>bmt,<span class="at">cause=</span><span class="dv">2</span>,<span class="at">time=</span><span class="dv">40</span>,</span>
 <span id="cb3-65"><a href="#cb3-65" tabindex="-1"></a>            <span class="at">treat.model=</span>tcell<span class="sc">~</span>platelet)</span>
@@ -586,16 +586,16 @@ years lost in competing risks situation</p>
 <span id="cb3-88"><a href="#cb3-88" tabindex="-1"></a><span class="co">#&gt; </span></span>
 <span id="cb3-89"><a href="#cb3-89" tabindex="-1"></a><span class="co">#&gt; Average Treatment effects (double robust) :</span></span>
 <span id="cb3-90"><a href="#cb3-90" tabindex="-1"></a><span class="co">#&gt;           Estimate  Std.Err     2.5%    97.5% P-value</span></span>
-<span id="cb3-91"><a href="#cb3-91" tabindex="-1"></a><span class="co">#&gt; treat0     6.21830  0.71424  4.81842  7.61818  0.0000</span></span>
-<span id="cb3-92"><a href="#cb3-92" tabindex="-1"></a><span class="co">#&gt; treat1    10.38142  2.22242  6.02556 14.73728  0.0000</span></span>
-<span id="cb3-93"><a href="#cb3-93" tabindex="-1"></a><span class="co">#&gt; treat:1-0  4.16312  2.33581 -0.41500  8.74123  0.0747</span></span></code></pre></div>
+<span id="cb3-91"><a href="#cb3-91" tabindex="-1"></a><span class="co">#&gt; treat0     6.20484  0.71392  4.80559  7.60410  0.0000</span></span>
+<span id="cb3-92"><a href="#cb3-92" tabindex="-1"></a><span class="co">#&gt; treat1    10.30065  2.21700  5.95542 14.64588  0.0000</span></span>
+<span id="cb3-93"><a href="#cb3-93" tabindex="-1"></a><span class="co">#&gt; treat:1-0  4.09581  2.32897 -0.46889  8.66050  0.0786</span></span></code></pre></div>
 </div>
 <div id="sessioninfo" class="section level1">
 <h1>SessionInfo</h1>
 <div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a><span class="fu">sessionInfo</span>()</span>
 <span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a><span class="co">#&gt; R version 4.5.1 (2025-06-13)</span></span>
-<span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a><span class="co">#&gt; Platform: aarch64-apple-darwin24.5.0</span></span>
-<span id="cb4-4"><a href="#cb4-4" tabindex="-1"></a><span class="co">#&gt; Running under: macOS Sequoia 15.6.1</span></span>
+<span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a><span class="co">#&gt; Platform: aarch64-apple-darwin25.0.0</span></span>
+<span id="cb4-4"><a href="#cb4-4" tabindex="-1"></a><span class="co">#&gt; Running under: macOS Tahoe 26.0.1</span></span>
 <span id="cb4-5"><a href="#cb4-5" tabindex="-1"></a><span class="co">#&gt; </span></span>
 <span id="cb4-6"><a href="#cb4-6" tabindex="-1"></a><span class="co">#&gt; Matrix products: default</span></span>
 <span id="cb4-7"><a href="#cb4-7" tabindex="-1"></a><span class="co">#&gt; BLAS:   /Users/kkzh/.asdf/installs/R/4.5.1/lib/R/lib/libRblas.dylib </span></span>
@@ -612,13 +612,13 @@ years lost in competing risks situation</p>
 <span id="cb4-18"><a href="#cb4-18" tabindex="-1"></a><span class="co">#&gt; [8] base     </span></span>
 <span id="cb4-19"><a href="#cb4-19" tabindex="-1"></a><span class="co">#&gt; </span></span>
 <span id="cb4-20"><a href="#cb4-20" tabindex="-1"></a><span class="co">#&gt; other attached packages:</span></span>
-<span id="cb4-21"><a href="#cb4-21" tabindex="-1"></a><span class="co">#&gt; [1] timereg_2.0.7  survival_3.8-3 mets_1.3.7    </span></span>
+<span id="cb4-21"><a href="#cb4-21" tabindex="-1"></a><span class="co">#&gt; [1] timereg_2.0.7  survival_3.8-3 mets_1.3.8    </span></span>
 <span id="cb4-22"><a href="#cb4-22" tabindex="-1"></a><span class="co">#&gt; </span></span>
 <span id="cb4-23"><a href="#cb4-23" tabindex="-1"></a><span class="co">#&gt; loaded via a namespace (and not attached):</span></span>
 <span id="cb4-24"><a href="#cb4-24" tabindex="-1"></a><span class="co">#&gt;  [1] cli_3.6.5           knitr_1.50          rlang_1.1.6        </span></span>
 <span id="cb4-25"><a href="#cb4-25" tabindex="-1"></a><span class="co">#&gt;  [4] xfun_0.53           KernSmooth_2.23-26  jsonlite_2.0.0     </span></span>
 <span id="cb4-26"><a href="#cb4-26" tabindex="-1"></a><span class="co">#&gt;  [7] future.apply_1.20.0 listenv_0.9.1       lava_1.8.1         </span></span>
-<span id="cb4-27"><a href="#cb4-27" tabindex="-1"></a><span class="co">#&gt; [10] htmltools_0.5.8.1   sass_0.4.10         rmarkdown_2.29     </span></span>
+<span id="cb4-27"><a href="#cb4-27" tabindex="-1"></a><span class="co">#&gt; [10] htmltools_0.5.8.1   sass_0.4.10         rmarkdown_2.30     </span></span>
 <span id="cb4-28"><a href="#cb4-28" tabindex="-1"></a><span class="co">#&gt; [13] grid_4.5.1          evaluate_1.0.5      jquerylib_0.1.4    </span></span>
 <span id="cb4-29"><a href="#cb4-29" tabindex="-1"></a><span class="co">#&gt; [16] fastmap_1.2.0       numDeriv_2016.8-1.1 yaml_2.3.10        </span></span>
 <span id="cb4-30"><a href="#cb4-30" tabindex="-1"></a><span class="co">#&gt; [19] mvtnorm_1.3-3       lifecycle_1.0.4     compiler_4.5.1     </span></span>

@@ -52,11 +52,10 @@
 ##' estimate(rmst302)
 ##' 
 ##' ## percentage of total cumulative incidence due to cause 1
-##' rmstratioI <- rmstRatio(Event(time,cause)~platelet+tcell+age,bmt,time=30,
-##'                         cause=1,outcome="rmst")
-##' summary(rmstratioI)
+##' rmtlratioI <- rmtlRatio(Event(time,cause)~platelet+tcell+age,bmt,time=30,cause=1)
+##' summary(rmtlratioI)
 ##' 
-##' pp <- predict(rmstratioI,bmt)
+##' pp <- predict(rmtlratioI,bmt)
 ##' ppb <- cbind(pp,bmt)
 ##' 
 ##' ## percentage of total cumulative incidence due to cause 1
@@ -64,13 +63,13 @@
 ##' summary(cifratio)
 ##' pp <- predict(cifratio,bmt)
 ##' 
-##' rmstratioI <- binregRatio(Event(time,cause)~platelet+tcell+age,bmt,
-##'                                time=30,cause=1,outcome="rmst")
-##' summary(rmstratioI)
+##' rmtlratioI <- binregRatio(Event(time,cause)~platelet+tcell+age,bmt,
+##'                                time=30,cause=1,outcome="rmtl")
+##' summary(rmtlratioI)
 ##' 
-##' pp <- predict(rmstratioI,bmt)
+##' pp <- predict(rmtlratioI,bmt)
 ##' ppb <- cbind(pp,bmt)
-##' @aliases rmstRatio
+##' @aliases rmtlRatio
 ##' @export
 binregRatio <- function(formula,data,cause=1,time=NULL,beta=NULL,type=c("II","I"),
 	   offset=NULL,weights=NULL,cens.weights=NULL,cens.model=~+1,se=TRUE,
@@ -357,7 +356,7 @@ hessian <- matrix(.Call("XXMatFULL",matrix(D2log,nrow=1),np,PACKAGE="mets")$XXf,
 }# }}}
 
 ##' @export
-rmstRatio <- function(formula,data,outcome=c("rmst","years-lost"),...)
+rmtlRatio <- function(formula,data,outcome=c("rmtl"),...)
 {# {{{
    out <- binregRatio(formula,data,outcome=outcome[1],...)
    return(out)
