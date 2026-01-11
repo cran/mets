@@ -15,7 +15,7 @@ knitr::opts_chunk$set(
  set.seed(10) # to control output in simulations
 
 ## -----------------------------------------------------------------------------
- nsim <- 200
+ nsim <- 1000
  chaz <-  c(0,1,1.5,2,2.1)
  breaks <- c(0,10,   20,  30,   40)
  cumhaz <- cbind(breaks,chaz)
@@ -28,7 +28,7 @@ knitr::opts_chunk$set(
 
 ## -----------------------------------------------------------------------------
  library(mets)
- n <- 100
+ n <- nsim
  data(bmt)
  bmt$bmi <- rnorm(408)
  dcut(bmt) <- gage~age
@@ -42,7 +42,7 @@ knitr::opts_chunk$set(
  par(mfrow=c(1,1))
  plot(scox1,col=2); plot(cox1,add=TRUE,col=1)
 
- ## changing the parametes 
+ ## changing the parameters 
  cox10 <- cox1
  cox10$coef <- c(0,0.4,0.3)
  dd <- sim.phreg(cox10,n,data=bmt)
@@ -75,60 +75,23 @@ knitr::opts_chunk$set(
  plot(cox2); plot(scox2,add=TRUE,col=2)
  cbind(cox1$coef,scox1$coef,cox2$coef,scox2$coef)
 
-
-
-
 ## -----------------------------------------------------------------------------
  data(sTRACE)
  dtable(sTRACE,~chf+diabetes)
  coxs <-   phreg(Surv(time,status==9)~strata(diabetes,chf),data=sTRACE)
  strata <- sample(0:3,nsim,replace=TRUE)
- simb <- sim.base(coxs$cumhaz,nsim,stratajump=coxs$strata.jumps,strata=strata)
+ simb <- sim.phreg(coxs,nsim,data=NULL,strata=strata)
+
  cc <-   phreg(Surv(time,status)~strata(strata),data=simb)
  plot(coxs,col=1); plot(cc,add=TRUE,col=2)
 
-## -----------------------------------------------------------------------------
- ## stratified with phreg 
- cox0 <- phreg(Surv(time,cause==0)~tcell+platelet,data=bmt)
- cox1 <- phreg(Surv(time,cause==1)~tcell+platelet,data=bmt)
- cox2 <- phreg(Surv(time,cause==2)~strata(tcell)+platelet,data=bmt)
- coxs <- list(cox0,cox1,cox2)
-### dd <- sim.cause.cox(coxs,nsim,data=bmt)
- dd <- sim.phregs(coxs,n,data=bmt)
-
- ## checking that  cause specific hazards are as given, make n larger
-
- scox0 <- phreg(Surv(time,status==1)~tcell+platelet,data=dd)
- scox1 <- phreg(Surv(time,status==2)~tcell+platelet,data=dd)
- scox2 <- phreg(Surv(time,status==3)~strata(tcell)+platelet,data=dd)
- cbind(cox0$coef,scox0$coef)
- cbind(cox1$coef,scox1$coef)
- cbind(cox2$coef,scox2$coef)
- par(mfrow=c(1,3))
- plot(cox0); plot(scox0,add=TRUE,col=2); 
- plot(cox1); plot(scox1,add=TRUE,col=2); 
- plot(cox2); plot(scox2,add=TRUE,col=2); 
- 
- ########################################
- ## second example 
- ########################################
-
- cox1 <- phreg(Surv(time,cause==1)~strata(tcell)+platelet,data=bmt)
- cox2 <- phreg(Surv(time,cause==2)~tcell+strata(platelet),data=bmt)
- coxs <- list(cox1,cox2)
-### dd <- sim.cause.cox(coxs,nsim,data=bmt)
- dd <- sim.phregs(coxs,n,data=bmt)
- scox1 <- phreg(Surv(time,status==1)~strata(tcell)+platelet,data=dd)
- scox2 <- phreg(Surv(time,status==2)~tcell+strata(platelet),data=dd)
- cbind(cox1$coef,scox1$coef)
- cbind(cox2$coef,scox2$coef)
- par(mfrow=c(1,2))
- plot(cox1); plot(scox1,add=TRUE); 
- plot(cox2); plot(scox2,add=TRUE); 
+ simb1 <- sim.phreg(coxs,nsim,data=sTRACE)
+ cc1 <-   phreg(Surv(time,status)~strata(diabetes,chf),data=simb1)
+ plot(cc1,add=TRUE,col=3)
 
 ## -----------------------------------------------------------------------------
  library(mets)
- n <- 100
+ n <- nsim
  data(bmt)
  bmt$bmi <- rnorm(408)
  dcut(bmt) <- gage~age
@@ -148,7 +111,6 @@ knitr::opts_chunk$set(
  plot(scox1,col=2); plot(cox1,add=TRUE,col=1)
  plot(scox2,col=2); plot(cox2,add=TRUE,col=1)
  plot(scox3,col=2); plot(cox3,add=TRUE,col=1)
-
 
 ## -----------------------------------------------------------------------------
  data(CPH_HPN_CRBSI)
@@ -189,34 +151,93 @@ beta <- c(0.3,-0.3,-0.3,0.3)
 
 dats <- simul.cifs(nsim,rho1,rho2,beta,rc=0.5,depcens=0,type="logistic")
 
+par(mfrow=c(1,2))
 # Fitting regression model with CIF logistic-link 
 cif1 <- cifreg(Event(time,status)~Z1+Z2,dats)
 summary(cif1)
+plot(cif1)
+lines(attr(dats,"Lam1"))
 
-
-dats <- simul.cifs(n,rho1,rho2,beta,rc=0.5,depcens=0,type="cloglog")
+dats <- simul.cifs(nsim,rho1,rho2,beta,rc=0.5,depcens=0,type="cloglog")
 ciff <- cifregFG(Event(time,status)~Z1+Z2,dats)
 summary(ciff)
+plot(ciff)
+lines(attr(dats,"Lam1"))
 
 ## -----------------------------------------------------------------------------
  data(bmt)
  ################################################################
  #  simulating several causes with specific cumulatives 
  ################################################################
+ ## two logistic link models 
  cif1 <-  cifreg(Event(time,cause)~tcell+age,data=bmt,cause=1)
  cif2 <-  cifreg(Event(time,cause)~tcell+age,data=bmt,cause=2)
 
- ## dd <- sim.cifs(list(cif1,cif2),nsim,data=bmt)
- dds <- sim.cifsRestrict(list(cif1,cif2),nsim,data=bmt)
+ dd <- sim.cifs(list(cif1,cif2),nsim,data=bmt)
 
- scif1 <-  cifreg(Event(time,cause)~tcell+age,data=dds,cause=1)
- scif2 <-  cifreg(Event(time,cause)~tcell+age,data=dds,cause=2)
+ ## still logistic link 
+ scif1 <-  cifreg(Event(time,cause)~tcell+age,data=dd,cause=1)
+ ## 2nd cause not on logistic form due to restriction
+ scif2 <-  cifreg(Event(time,cause)~tcell+age,data=dd,cause=2)
     
  cbind(cif1$coef,scif1$coef)
  cbind(cif2$coef,scif2$coef)
  par(mfrow=c(1,2))   
  plot(cif1); plot(scif1,add=TRUE,col=2)
  plot(cif2); plot(scif2,add=TRUE,col=2)
+
+## -----------------------------------------------------------------------------
+ data(hfactioncpx12)
+ hf <- hfactioncpx12
+ hf$x <- as.numeric(hf$treatment) 
+ n <- 1000
+
+ ##  to fit Cox  models 
+ xr <- phreg(Surv(entry,time,status==1)~treatment+cluster(id),data=hf)
+ dr <- phreg(Surv(entry,time,status==2)~treatment+cluster(id),data=hf)
+ estimate(xr)
+ estimate(dr)
+
+ simcoxcox <- sim.recurrent(xr,dr,n=n,data=hf)
+
+ xrs <- phreg(Surv(start,stop,statusD==1)~treatment+cluster(id),data=simcoxcox)
+ drs <- phreg(Surv(start,stop,statusD==3)~treatment+cluster(id),data=simcoxcox)
+ estimate(xrs)
+ estimate(drs)
+
+ par(mfrow=c(1,2))
+ plot(xrs); 
+ plot(xr,add=TRUE)
+###
+ plot(drs)
+ plot(dr,add=TRUE)
+
+
+## -----------------------------------------------------------------------------
+ recGL <- recreg(Event(entry,time,status)~treatment+cluster(id),hf,death.code=2)
+ estimate(recGL)
+ estimate(dr)
+
+ simglcox <- sim.recurrent(recGL,dr,n=n,data=hf)
+
+ simcoxcox <- sim.recurrent(xr,dr,n=n,data=hf)
+ dtable(simcoxcox,~statusD)
+
+ recGL <- recreg(Event(entry,time,status)~treatment+cluster(id),hf,death.code=2)
+ simglcox <- sim.recurrent(recGL,dr,n=n,data=hf)
+
+ GLs <- recreg(Event(start,stop,statusD)~treatment+cluster(id),data=simglcox,death.code=3)
+ drs <- phreg(Surv(start,stop,statusD==3)~treatment+cluster(id),data=simglcox)
+ estimate(GLs)
+ estimate(drs)
+
+ par(mfrow=c(1,2))
+ plot(GLs); 
+ plot(recGL,add=TRUE)
+###
+ plot(drs)
+ plot(dr,add=TRUE)
+
 
 ## -----------------------------------------------------------------------------
  data(CPH_HPN_CRBSI)
@@ -240,52 +261,47 @@ summary(ciff)
  dtable(rr,~death+status)
  showfitsimList(rr,cumhaz,drl) 
 
+## ----weibull1-----------------------------------------------------------------
+data(sTRACE, package = "mets")
+dat <- sTRACE
+cox1 <- phreg(Surv(time, status > 0) ~ strata(chf) + I(age - 67), data = sTRACE)
+coxw <- phreg_weibull(Surv(time, status > 0) ~ chf + age,
+    shape.formula = ~chf,
+    data = sTRACE
+    )
+coxw
+
+tt <- seq(0, max(sTRACE$time), length.out = 100)
+newd <- data.frame(chf = c(1, 0), age=67)
+pr <- predict(coxw, newdata = newd, times = tt, type="chaz")
+plot(cox1, col = 1)
+lines(tt, pr[, 1, 1], lty=2, lwd=2)
+lines(tt, pr[, 1, 2], lty = 1, lwd = 2)
+
+## ----weibull_sim--------------------------------------------------------------
+n <- 5000
+newd <- mets::dsample(size=n, sTRACE[,c("chf","age")]) # bootstrap covariates
+lp <- predict(coxw, newdata=newd, type="lp") # linear-predictors
+head(lp)
+
+## simulate event times
+tt <- rweibullcox(nrow(lp), rate = exp(lp[,1]), shape= exp(lp[,2]))
+
+# censoring model
+censw <- phreg_weibull(Surv(time, status==0) ~ 1, data=sTRACE)
+censpar <- exp(coef(censw))
+censtime <- pmin(8, rweibullcox(nrow(lp), censpar[1], censpar[2]))
+
+# combined simulated data
+newd <- transform(newd, time=pmin(tt, censtime), status=(tt<=censtime))
+head(newd)
+
+# estimate weibull model on new data
+phreg_weibull(Surv(time,status) ~ chf + age, ~chf, data=newd)
+
 ## -----------------------------------------------------------------------------
- data(hfactioncpx12)
- hf <- hfactioncpx12
- hf$x <- as.numeric(hf$treatment) 
- n <- 100
-
- ##  to fit non-parametric models with just a baseline 
- xr <- phreg(Surv(entry,time,status==1)~cluster(id),data=hf)
- dr <- phreg(Surv(entry,time,status==2)~cluster(id),data=hf)
-
- simcoxcox <- sim.recurrent(xr,dr,n=n,data=hf)
-
- recGL <- recreg(Event(entry,time,status)~+cluster(id),hf,death.code=2)
- simglcox <- sim.recurrent(recGL,dr,n=n,data=hf)
-
-## -----------------------------------------------------------------------------
- cox <-  survival::coxph(Surv(time,status==9)~vf+chf+wmi,data=sTRACE)
- sim1 <- sim.cox(cox,nsim,data=sTRACE)
- cc <- survival::coxph(Surv(time,status)~vf+chf+wmi,data=sim1)
- cbind(cox$coef,cc$coef)
- cor(sim1[,c("vf","chf","wmi")])
- cor(sTRACE[,c("vf","chf","wmi")])
- 
- cox <-  phreg(Surv(time, status==9)~vf+chf+wmi,data=sTRACE)
- sim3 <- sim.cox(cox,nsim,data=sTRACE)
- cc <-  phreg(Surv(time, status)~vf+chf+wmi,data=sim3)
- cbind(cox$coef,cc$coef)
- plot(cox,se=TRUE); plot(cc,add=TRUE,col=2)
- 
- coxs <-  phreg(Surv(time,status==9)~strata(chf,vf)+wmi,data=sTRACE)
- sim3 <- sim.phreg(coxs,nsim,data=sTRACE)
- cc <-   phreg(Surv(time, status)~strata(chf,vf)+wmi,data=sim3)
- cbind(coxs$coef,cc$coef)
- plot(coxs,col=1); plot(cc,add=TRUE,col=2)
-
-## -----------------------------------------------------------------------------
- data(bmt)
- # coxph          
- cox1 <- survival::coxph(Surv(time,cause==1)~tcell+platelet,data=bmt)
- cox2 <- survival::coxph(Surv(time,cause==2)~tcell+platelet,data=bmt)
- coxs <- list(cox1,cox2)
- dd <- sim.cause.cox(coxs,nsim,data=bmt)
- scox1 <- survival::coxph(Surv(time,status==1)~tcell+platelet,data=dd)
- scox2 <- survival::coxph(Surv(time,status==2)~tcell+platelet,data=dd)
- cbind(cox1$coef,scox1$coef)
- cbind(cox2$coef,scox2$coef)
+# simulate(coxw, n = 5, cens.model = NULL, data=newd, var.names = c("time", "status"))
+simulate(coxw, nsim = 5)
 
 ## -----------------------------------------------------------------------------
 sessionInfo()

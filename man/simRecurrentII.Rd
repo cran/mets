@@ -2,13 +2,13 @@
 % Please edit documentation in R/recurrent.marginal.R
 \name{simRecurrentII}
 \alias{simRecurrentII}
-\alias{simRecurrent}
 \alias{showfitsim}
 \alias{covIntH1dM1IntH2dM2}
 \alias{squareintHdM}
 \alias{simRecurrentList}
 \alias{showfitsimList}
-\title{Simulation of recurrent events data based on cumulative hazards with two types of  recurrent events}
+\title{Simulation of recurrent events data based on cumulative hazards with two
+types of recurrent events}
 \usage{
 simRecurrentII(
   n,
@@ -57,23 +57,24 @@ simRecurrentII(
 
 \item{max.recurrent}{limits number recurrent events to 100}
 
-\item{...}{Additional arguments to lower level funtions}
+\item{...}{Additional arguments to simRecurrentList}
 }
 \description{
 Simulation of recurrent events data based on cumulative hazards
 }
 \details{
-Must give hazard of death and two recurrent events.  Possible with two
-event types and their dependence can be specified but the two recurrent events need
-to share random effect. Based on drawing the from cumhaz and cumhaz2 and 
-taking the first event rather
-the cumulative and then distributing it out. Key advantage of this is that 
-there is  more flexibility wrt random effects
+Must give cumulative hazard of death and possibly two recurrent events. 
+Their dependence can be specified via random 
+effects but the two recurrent events need to share the random effect, and can also be
+specified via zzr. 
+The terminal event may share this random effect (dependence=1) or not 
+(dependence=4) and can be specified via zzr.
 }
 \examples{
 ########################################
 ## getting some rates to mimick 
 ########################################
+library(mets)
 data(CPH_HPN_CRBSI)
 dr <- CPH_HPN_CRBSI$terminal
 base1 <- CPH_HPN_CRBSI$crbsi 
@@ -94,11 +95,10 @@ showfitsim(causes=1,rr,dr,base1,base1)
 ### simulating simple model 
 ### random effect for all causes (Z shared for death and recurrent) 
 ######################################################################
-rr <- simRecurrent(100,base1,death.cumhaz=dr,dependence=1,var.gamma=0.4)
+rr <- simRecurrent(100,base1,death.cumhaz=dr,dependence=1,var.z=0.4)
 dtable(rr,~death+status)
 
 ######################################################################
-### simulating simple model that mimicks data 
 ### now with two event types and second type has same rate as death rate
 ######################################################################
 set.seed(100)
@@ -107,7 +107,9 @@ dtable(rr,~death+status)
 par(mfrow=c(2,2))
 showfitsim(causes=2,rr,dr,base1,base4)
 
-## general case, 3 recurrent events and 2 causes of death
+######################################################################
+### now with three event types and two causes of death 
+######################################################################
 set.seed(100)
 cumhaz <- list(base1,base1,base4)
 drl <- list(dr,base4)

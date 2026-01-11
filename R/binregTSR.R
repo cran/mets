@@ -76,52 +76,48 @@ binregTSR <- function(formula,data,cause=1,time=NULL,cens.code=0,
     return.dataw=0,pi0=0.5,pi1=0.5,cens.time.fixed=1,outcome.iid=1,meanCs=0,...)
 {# {{{
   cl <- match.call()# {{{
-  m <- match.call(expand.dots = TRUE)[1:3]
-  special <- c("strata", "cluster","offset")
-  Terms <- terms(formula, special, data = data)
-  m$formula <- Terms
-  m[[1]] <- as.name("model.frame")
-  m <- eval(m, parent.frame())
-  Y <- model.extract(m, "response")
-  if (!inherits(Y,"Event")) stop("Expected a 'Event'-object")
-  if (ncol(Y)==2) {
-    exit <- Y[,1]
-    entry <- NULL ## rep(0,nrow(Y))
-    status <- Y[,2]
-  } else {
-    entry <- Y[,1]
-    exit <- Y[,2]
-    status <- Y[,3]
-  }
-  id <- strata <- NULL
-  if (!is.null(attributes(Terms)$specials$cluster)) {
-    ts <- survival::untangle.specials(Terms, "cluster")
-    pos.cluster <- ts$terms
-    Terms  <- Terms[-ts$terms]
-    id <- m[[ts$vars]]
-  } else pos.cluster <- NULL
-  if (!is.null(stratapos <- attributes(Terms)$specials$strata)) {
-    ts <- survival::untangle.specials(Terms, "strata")
-    pos.strata <- ts$terms
-    Terms  <- Terms[-ts$terms]
-    strata <- m[[ts$vars]]
-    strata.name <- ts$vars
-  }  else { strata.name <- NULL; pos.strata <- NULL}
-  if (!is.null(offsetpos <- attributes(Terms)$specials$offset)) {
-    ts <- survival::untangle.specials(Terms, "offset")
-    Terms  <- Terms[-ts$terms]
-    offset <- m[[ts$vars]]
-  }  
-  X <- model.matrix(Terms, m)
+    m <- match.call(expand.dots = TRUE)[1:3]
+    des <- proc_design(
+        formula,
+        data = data,
+        specials = c("offset", "weights", "cluster"),
+        intercept = TRUE
+    )
+    Y <- des$y
+    if (!inherits(Y, c("Event", "Surv"))) {
+        stop("Expected a 'Surv' or 'Event'-object")
+    }
+    if (ncol(Y) == 2) {
+        exit <- Y[, 1]
+        entry <- rep(0, nrow(Y))
+        status <- Y[, 2]
+    } else {
+        entry <- Y[, 1]
+        exit <- Y[, 2]
+        status <- Y[, 3]
+    }
+    X <- des$x
+    des.weights <- des$weights
+    des.offset  <- des$offset
+    id      <- des$cluster
+
   if (ncol(X)==0) X <- matrix(nrow=0,ncol=0)
 
-
+  ### possible handling of id to code from 0:(antid-1)
   call.id <- id 
-  conid <- construct_id(id,nrow(X))
-  name.id <- conid$name.id; id <- conid$id+1; nid <- conid$nid
+  conid <- construct_id(id,nrow(X),namesX=rownames(X))
+  name.id <- conid$name.id; id <- conid$id; nid <- conid$nid
+  ## id before time-sorting later 
+  orig.id <- id
 
-  if (is.null(offset)) offset <- rep(0,length(exit)) 
-  if (is.null(weights)) weights <- rep(1,length(exit)) 
+  ## take offset and weight first from formula, but then from arguments
+  if (is.null(des.offset)) {
+	  if (is.null(offset)) offset <- rep(0,length(exit)) 
+  } else offset <- des.offset
+  if (is.null(des.weights)) {
+	  if (is.null(weights)) weights <- rep(1,length(exit)) 
+  } else weights <- des.weights
+
 # }}}
 
   if (is.null(time)) stop("Must give time for construction of survival outome modelling \n"); 
@@ -136,14 +132,14 @@ binregTSR <- function(formula,data,cause=1,time=NULL,cens.code=0,
   response__  <-  rid__  <- Count1__ <- NULL
 
   data$status__ <-  status 
-  data$id__ <-  id
-  data$Count1__ <- cumsumstrata(rep(1,length(entry)),id-1,nid)
+  data$id__ <-  id+1
+  data$Count1__ <- cumsumstrata(rep(1,length(entry)),id,nid)
   data$entry__ <- entry 
   data$exit__ <- exit 
   data$statusC__ <- statusC
   data$status__cause <- statusE
-  data$rid__ <- revcumsumstrata(rep(1,length(entry)),id-1,nid)
-  csr <- cumsumstratasum(statusR,id-1,nid) 
+  data$rid__ <- revcumsumstrata(rep(1,length(entry)),id,nid)
+  csr <- cumsumstratasum(statusR,id,nid) 
   data$response__  <-  csr$sum 
   data$response__lag  <-  csr$lagsum
   cens.strata <- cens.nstrata <- NULL 
@@ -731,15 +727,15 @@ if (!is.null(augmentC) & MG.se) names(Augment.times) <- rnames
 riskG <- list(riskG=riskG,riskG0=riskG0,riskG1=riskG1,riskG01=riskG01)
 
 if (!is.null(call.id)) {
-	riskG.iid <-  namesortme(riskG.iid,name.id)
-	riskG0.iid <- namesortme(riskG0.iid,name.id)
-	riskG1.iid <- namesortme(riskG1.iid,name.id)
-	riskG01.iid <- namesortme(riskG01.iid,name.id)
+	riskG.iid <-  nameme(riskG.iid,name.id)
+	riskG0.iid <- nameme(riskG0.iid,name.id)
+	riskG1.iid <- nameme(riskG1.iid,name.id)
+	riskG01.iid <- nameme(riskG01.iid,name.id)
 }
 
 riskG.iid <- list(riskG.iid=riskG.iid,riskG0.iid=riskG0.iid,
 		  riskG1.iid=riskG1.iid,riskG01.iid=riskG01.iid,
-	  id=id-1,call.id=call.id,name.id=name.id)
+	  id=id,call.id=call.id,name.id=name.id)
 varG <- list(varG=varG,varG0=varG0,varG1=varG1,varG01=varG01)
 val <- list(riskG=riskG,varG=varG,riskG.iid=riskG.iid,
 	     MGc=MGc,CensAugment.times=Augment.times,
@@ -824,72 +820,6 @@ print.summary.binregTSR  <- function(x,...) {# {{{
    iddata$tid <- cid$Totalid
    return(iddata) 
    } ## }}}
-
-######################## ##################### #####################
-## illness death competing risks with two causes of death
-## First simple model, then with covariates addedd 
-## effect of transition into 2 being early for cause 3, and 4
-######################## ##################### #####################
-simMultistateII <- function(cumhaz,death.cumhaz,death.cumhaz2,n=NULL,
-		    rr=NULL,rd=NULL,rd2=NULL,gamma23=0,gamma24=0,early2=10000,
-		    gap.time=FALSE,max.recurrent=100,cens=NULL,rrc=NULL,...) 
-{# {{{
-
-  status <- NULL
-
-  ## cumhaz is cumulative out of state 1 to state 2 
-  if (!is.null(n)) rr <- matrix(1,n,1) 
-  n <- nrow(rr); 
-  ## covariate adjustment 
-  if (is.null(rd))   rd  <- matrix(1,n,length(death.cumhaz))
-  if (is.null(rd2))  rd2  <- matrix(1,n,length(death.cumhaz2))
-
-  ####
-  if (!is.null(cens)) cens <- list(cens)
-  cumss  <-  c(list(cumhaz),death.cumhaz,death.cumhaz2,cens)
-  ### extend of cumulatives
-  for (i in seq_along(cumss))  cumss[[i]] <- rbind(0,cumss[[i]])
-  ## extend range of all cumulatives to max range, by linear extension
-  cumss <- extendCums(cumss,NULL)
-  maxtime <- tail(cumss[[1]],1)[1]
-
- if (!is.null(cens)) { 
-	  cens <- cumss[[1+length(death.cumhaz)+length(death.cumhaz2)+1]]
-	  if (is.null(rrc)) rrc <- rep(1,n); 
-	  ctime <- rchaz(cens,rrc)$time
-  } else ctime <- rep(maxtime,n)
-
-  ## hazards out of 1 and out of 2
-  chaz1 <- cumss[1:3]; rr1 <- cbind(rr,rd)
-  chaz2 <- cumss[4:5]; rr2 <- cbind(rd2)
-
-  ## time out of state 1 
-  tall <- rcrisks(chaz1,rr1,causes=c(2,3,4))
-  tall$id <- 1:n
-  tall$status[tall$time>ctime] <- 0; 
-  tall$time[tall$time>ctime] <- ctime[tall$time>ctime] 
-  tall$from <- 1
-  tall$to <- tall$status
-
-  ## simulating out of 2 
-  tall2 <- subset(tall,status==2)
-  rr23t <- exp(gamma23*(tall2$time<early2))
-  rr24t <- exp(gamma24*(tall2$time<early2))
-  sim2 <- rcrisks(chaz2,rr2[tall2$id,]*cbind(rr23t,rr24t),causes=c(3,4),entry=tall2$time)
-  sim2$id <- tall2$id
-  ctime2 <- ctime[tall2$id]
-  sim2$status[sim2$time>ctime2] <- 0; 
-  sim2$time[sim2$time>ctime2] <- ctime2[sim2$time>ctime2] 
-  sim2$from <- 2
-  sim2$to <- sim2$status
-  tall <- rbind(tall,sim2)
-
-  dsort(tall) <- ~id+entry+time
-  tall$start <- tall$entry
-  tall$stop  <- tall$time
-
-  return(tall)
-  }# }}}
 
 gsim <- function(n,null=1,cens=NULL,ce=2,covs=1,
 	    beta0=c(0.1,0.5,-0.5),beta1=c(0.4,0.3,0.5,-0.5),betaR=c(-0.3,-0.5,0.5),betac=c(0.3,0.3), 
@@ -1032,6 +962,5 @@ gsim <- function(n,null=1,cens=NULL,ce=2,covs=1,
   res <- list(data=data,datat=datat,TTt=TTt,CCt=CCt)
   return(res)
   } # }}}
-
 
 

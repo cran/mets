@@ -2,10 +2,6 @@
 % Please edit documentation in R/recurrent.marginal.R
 \name{prob.exceed.recurrent}
 \alias{prob.exceed.recurrent}
-\alias{prob.exceedRecurrent}
-\alias{prob.exceedBiRecurrent}
-\alias{prob.exceedRecurrentStrata}
-\alias{prob.exceedBiRecurrentStrata}
 \alias{summaryRecurrentobject}
 \alias{summaryTimeobject}
 \title{Estimation of probability of more that k events for recurrent events process}
@@ -18,8 +14,10 @@ prob.exceed.recurrent(
   cens.code = 0,
   exceed = NULL,
   marks = NULL,
-  cifmets = TRUE,
   all.cifs = FALSE,
+  return.data = FALSE,
+  conf.type = c("log", "plain"),
+  level = 0.95,
   ...
 )
 }
@@ -38,31 +36,35 @@ prob.exceed.recurrent(
 
 \item{marks}{may be give for jump-times and then exceed values needs to be specified}
 
-\item{cifmets}{if true uses cif of mets package rather than prodlim}
-
 \item{all.cifs}{if true then returns list of all fitted objects in cif.exceed}
+
+\item{return.data}{if true then returns list of data for fitting the different excess thresholds}
+
+\item{conf.type}{type of confidence interval c("log","plain")}
+
+\item{level}{of confidence intervals default is 0.95}
 
 \item{...}{Additional arguments to lower level funtions}
 }
 \description{
 Estimation of probability of more that k events for recurrent events process
 where there is terminal event, based on this also estimate of variance of recurrent events. The estimator is based on cumulative incidence of exceeding "k" events.
-In contrast the probability of exceeding k events can also be computed as a 
-counting process integral, and this is implemented in prob.exceedRecurrent
+In contrast the probability of exceeding k events can also be computed as a counting process integral.
 }
 \examples{
+library(mets)
 data(hfactioncpx12)
 dtable(hfactioncpx12,~status)
 
 oo <- prob.exceed.recurrent(Event(entry,time,status)~cluster(id),
         hfactioncpx12,cause=1,death.code=2)
 plot(oo)
+summary(oo,times=c(1,2,5))
 
 }
 \references{
-Scheike, Eriksson, Tribler (2019) 
-            The mean, variance and correlation for bivariate recurrent events
-            with a terminal event,  JRSS-C
+Scheike, Eriksson, Tribler (2019), The mean, variance and correlation for bivariate 
+                                       recurrent events with a terminal event, JRSS-C
 }
 \author{
 Thomas Scheike

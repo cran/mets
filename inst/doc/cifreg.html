@@ -12,7 +12,7 @@
 
 <meta name="author" content="Klaus Holst &amp; Thomas Scheike" />
 
-<meta name="date" content="2025-10-21" />
+<meta name="date" content="2026-01-11" />
 
 <title>Cumulative Incidence Regression</title>
 
@@ -341,7 +341,7 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 
 <h1 class="title toc-ignore">Cumulative Incidence Regression</h1>
 <h4 class="author">Klaus Holst &amp; Thomas Scheike</h4>
-<h4 class="date">2025-10-21</h4>
+<h4 class="date">2026-01-11</h4>
 
 
 
@@ -351,9 +351,8 @@ risks, and is completely scalable, that is, linear in the data. This
 includes computation of standard errors that is also linear in data. In
 addition for the Fine-Gray model predictions can be provided standard
 errors for specific time-points based on influence functions for the
-baseline and the regression coeficients. The function can thus be used
-for large data.</p>
-<p>In addition and to summarize</p>
+baseline and the regression coeficients.</p>
+<p>To summarize</p>
 <ul>
 <li>the baseline can be stratified</li>
 <li>the censoring weights can be strata dependent</li>
@@ -371,7 +370,15 @@ computed</li>
 </ul>
 <div id="fine-gray-model" class="section level1">
 <h1>Fine-Gray model</h1>
-<p> considered <span class="math display">\[\begin{align*}
+<p> considered a cumulative incidence on the form <span class="math display">\[\begin{align*}
+F_1(t,X) &amp; = P(T \leq t, \epsilon=1) = 1 - exp( - \Lambda_0(t)
+\exp(X^T \beta)).
+\end{align*}\]</span></p>
+<p>In the case of independent right-censoring with the censoring
+distribtion <span class="math inline">\(G_c(t,X) = P(C &gt; t |
+S(X))\)</span> where <span class="math inline">\(S(X)\)</span> is a set
+of strata defined from <span class="math inline">\(X\)</span>, then an
+ubiased estimating equation is given by <span class="math display">\[\begin{align*}
   U^{FG}_{n}(\beta) = \sum_{i=0}^{n} \int_0^{+\infty} \left( X_i-
 E_n(t,\beta) \right) w_i(t,X_i) dN_{1,i}(t)  \text{ where }
     E_n(t,\beta)=\frac{\tilde S_1(t,\beta) }{\tilde S_0(t,\beta)},
@@ -384,17 +391,13 @@ estimator of the censoring distribution, and since it does not depend on
 <span class="math inline">\(X\)</span> the <span class="math inline">\(\hat w_i(t) = \frac{\hat G_c(t,X_i)}{\hat G_c(T_i
 \wedge t,X_i)} I(C_i &gt; T_i \wedge t)\)</span> where <span class="math inline">\(\hat G_c\)</span> is the Kaplan-Meier estimator of
 the censoring distribution.</p>
-<p>In this article we briefly introduce some functions for doing
-cumulative incidence regression, and how to augment the Fine-Gray
-estimator.</p>
 <p>First we simulate some competing risks data using some utility
 functions.</p>
 <p>We simulate data with two causes based on the Fine-Gray model: <span class="math display">\[\begin{align}
 F_1(t,X) &amp;  = P(T\leq t, \epsilon=1|X)=( 1 - exp(-\Lambda_1(t)
 \exp(X^T \beta_1))) \\
 F_2(t,X) &amp; = P(T\leq t, \epsilon=2|X)= ( 1 - exp(-\Lambda_2(t)
-\exp(X^T \beta_2)))
-              \cdot (1 - F_1(\infty,X))  
+\exp(X^T \beta_2))) \cdot (1 - F_1(\infty,X))  
 \end{align}\]</span> where the baselines are given as <span class="math inline">\(\Lambda_j(t) = \rho_j (1- exp(-t/\nu_j))\)</span>
 for <span class="math inline">\(j=1,2\)</span>, and the <span class="math inline">\(X\)</span> being two independent binomials.
 Alternatively, one can also replace the FG-model with a logistic link
@@ -402,11 +405,12 @@ Alternatively, one can also replace the FG-model with a logistic link
 \beta_j))\)</span>.</p>
 <p>The advantage of the model is that it is easy to fit and to get
 standard errors, and that it is quite flexible essentially being a
-Cox-model. On the downside is that the coefficients are quite hard to
-interpret since they are the <span class="math inline">\(cloglog\)</span> coefficients of <span class="math inline">\(1-F_1(t,X)\)</span>. Specifically, <span class="math display">\[\begin{align}
+Cox-model. On the downside is that the coefficients must be interpreted
+on <span class="math inline">\(cloglog\)</span>-scale. Specifically,
+<span class="math display">\[\begin{align}
 \log(-\log( 1-F_1(t,X_1+1,X_2))) - \log(-\log( 1-F_1(t,X_1,X_2))) &amp;
 =  \beta_1,
-\end{align}\]</span> so the effect is <span class="math inline">\(\beta_1\)</span> of <span class="math inline">\(X_1\)</span> is on <span class="math inline">\(1-F_1(t,X)\)</span> on the <span class="math inline">\(cloglog\)</span> scale.</p>
+\end{align}\]</span> so the effect of an increase in <span class="math inline">\(X_1\)</span> is <span class="math inline">\(\beta_1\)</span> and leads to <span class="math inline">\(1-F_1(t,X)\)</span> on the <span class="math inline">\(cloglog\)</span> scale.</p>
 <div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a> <span class="fu">library</span>(mets)</span>
 <span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a> <span class="fu">options</span>(<span class="at">warn=</span><span class="sc">-</span><span class="dv">1</span>)</span>
 <span id="cb1-3"><a href="#cb1-3" tabindex="-1"></a> <span class="fu">set.seed</span>(<span class="dv">1000</span>) <span class="co"># to control output in simulatins for p-values below.</span></span>
@@ -748,42 +752,87 @@ much slower.</p>
 <span id="cb13-15"><a href="#cb13-15" tabindex="-1"></a><span class="co">#&gt; Z1  1.10535 0.66976 1.8242</span></span>
 <span id="cb13-16"><a href="#cb13-16" tabindex="-1"></a><span class="co">#&gt; Z2  1.24313 0.46287 3.3387</span></span></code></pre></div>
 </div>
+<div id="administrative-censoring" class="section level1">
+<h1>Administrative Censoring</h1>
+<p>In the case with administrative censoring we can simply provide the
+risk-set given by the administrative censoring times for the Fine-Gray
+or logistic link cumulative incidence regression models.</p>
+<div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" tabindex="-1"></a><span class="fu">library</span>(mets)</span>
+<span id="cb14-2"><a href="#cb14-2" tabindex="-1"></a>rho1 <span class="ot">&lt;-</span> <span class="fl">0.3</span>; rho2 <span class="ot">&lt;-</span> <span class="fl">5.9</span></span>
+<span id="cb14-3"><a href="#cb14-3" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">100</span>)</span>
+<span id="cb14-4"><a href="#cb14-4" tabindex="-1"></a>n <span class="ot">&lt;-</span> <span class="dv">100</span></span>
+<span id="cb14-5"><a href="#cb14-5" tabindex="-1"></a>beta<span class="ot">=</span><span class="fu">c</span>(<span class="fl">0.3</span>,<span class="sc">-</span><span class="fl">0.3</span>,<span class="sc">-</span><span class="fl">0.5</span>,<span class="fl">0.3</span>)</span>
+<span id="cb14-6"><a href="#cb14-6" tabindex="-1"></a>rc <span class="ot">&lt;-</span> <span class="fl">0.9</span></span>
+<span id="cb14-7"><a href="#cb14-7" tabindex="-1"></a><span class="do">###</span></span>
+<span id="cb14-8"><a href="#cb14-8" tabindex="-1"></a>dats <span class="ot">&lt;-</span> mets<span class="sc">:::</span><span class="fu">simul.cifsRA</span>(n,rho1,rho2,beta,<span class="at">bin=</span><span class="dv">1</span>,<span class="at">rc=</span>rc,<span class="at">rate=</span><span class="fu">c</span>(<span class="dv">3</span>,<span class="dv">7</span>))</span>
+<span id="cb14-9"><a href="#cb14-9" tabindex="-1"></a>dats<span class="sc">$</span>status07 <span class="ot">&lt;-</span> dats<span class="sc">$</span>status</span>
+<span id="cb14-10"><a href="#cb14-10" tabindex="-1"></a>dats<span class="sc">$</span>status07[dats<span class="sc">$</span>status <span class="sc">%in%</span> <span class="fu">c</span>(<span class="dv">0</span>,<span class="dv">7</span>)] <span class="ot">&lt;-</span> <span class="dv">0</span></span>
+<span id="cb14-11"><a href="#cb14-11" tabindex="-1"></a>tt <span class="ot">&lt;-</span> <span class="fu">seq</span>(<span class="dv">0</span>,<span class="dv">6</span>,<span class="at">by=</span><span class="fl">0.1</span>)</span>
+<span id="cb14-12"><a href="#cb14-12" tabindex="-1"></a>base1 <span class="ot">&lt;-</span> rho1<span class="sc">*</span>(<span class="dv">1</span><span class="sc">-</span><span class="fu">exp</span>(<span class="sc">-</span>tt<span class="sc">/</span><span class="dv">3</span>))</span>
+<span id="cb14-13"><a href="#cb14-13" tabindex="-1"></a></span>
+<span id="cb14-14"><a href="#cb14-14" tabindex="-1"></a>ccA  <span class="ot">&lt;-</span>  <span class="fu">cifregFG</span>(<span class="fu">Event</span>(timeA,statusA)<span class="sc">~</span>Z1<span class="sc">+</span>Z2,dats,</span>
+<span id="cb14-15"><a href="#cb14-15" tabindex="-1"></a>          <span class="at">adm.cens.time=</span>dats<span class="sc">$</span>censorA,<span class="at">no.codes=</span><span class="dv">7</span>)</span>
+<span id="cb14-16"><a href="#cb14-16" tabindex="-1"></a><span class="fu">estimate</span>(ccA)</span>
+<span id="cb14-17"><a href="#cb14-17" tabindex="-1"></a><span class="co">#&gt;    Estimate Std.Err    2.5%  97.5% P-value</span></span>
+<span id="cb14-18"><a href="#cb14-18" tabindex="-1"></a><span class="co">#&gt; Z1  0.08665  0.2116 -0.3280 0.5014  0.6821</span></span>
+<span id="cb14-19"><a href="#cb14-19" tabindex="-1"></a><span class="co">#&gt; Z2  0.40535  0.4276 -0.4328 1.2435  0.3432</span></span></code></pre></div>
+<p>The Fine-Gray model can similarly be estimated using the modified
+risk-set and the phreg function</p>
+<div class="sourceCode" id="cb15"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" tabindex="-1"></a>dats<span class="sc">$</span>entry <span class="ot">&lt;-</span> <span class="dv">0</span></span>
+<span id="cb15-2"><a href="#cb15-2" tabindex="-1"></a>dats<span class="sc">$</span>id <span class="ot">&lt;-</span> <span class="dv">1</span><span class="sc">:</span>n</span>
+<span id="cb15-3"><a href="#cb15-3" tabindex="-1"></a>datA <span class="ot">&lt;-</span> dats</span>
+<span id="cb15-4"><a href="#cb15-4" tabindex="-1"></a>datA2 <span class="ot">&lt;-</span> <span class="fu">subset</span>(datA,statusA<span class="sc">==</span><span class="dv">2</span>)</span>
+<span id="cb15-5"><a href="#cb15-5" tabindex="-1"></a>datA2<span class="sc">$</span>entry <span class="ot">&lt;-</span> datA2<span class="sc">$</span>timeA</span>
+<span id="cb15-6"><a href="#cb15-6" tabindex="-1"></a>datA2<span class="sc">$</span>timeA <span class="ot">&lt;-</span> datA2<span class="sc">$</span>censorA</span>
+<span id="cb15-7"><a href="#cb15-7" tabindex="-1"></a>datA2<span class="sc">$</span>statusA <span class="ot">&lt;-</span> <span class="dv">0</span></span>
+<span id="cb15-8"><a href="#cb15-8" tabindex="-1"></a>datA <span class="ot">&lt;-</span> <span class="fu">rbind</span>(datA,datA2)</span>
+<span id="cb15-9"><a href="#cb15-9" tabindex="-1"></a>ddA <span class="ot">&lt;-</span> <span class="fu">phreg</span>(<span class="fu">Event</span>(entry,timeA,statusA<span class="sc">==</span><span class="dv">1</span>)<span class="sc">~</span>Z1<span class="sc">+</span>Z2<span class="sc">+</span><span class="fu">cluster</span>(id),datA)</span>
+<span id="cb15-10"><a href="#cb15-10" tabindex="-1"></a><span class="fu">estimate</span>(ddA)</span>
+<span id="cb15-11"><a href="#cb15-11" tabindex="-1"></a><span class="co">#&gt;    Estimate Std.Err    2.5%  97.5% P-value</span></span>
+<span id="cb15-12"><a href="#cb15-12" tabindex="-1"></a><span class="co">#&gt; Z1  0.08665  0.2116 -0.3280 0.5014  0.6821</span></span>
+<span id="cb15-13"><a href="#cb15-13" tabindex="-1"></a><span class="co">#&gt; Z2  0.40535  0.4276 -0.4328 1.2435  0.3432</span></span>
+<span id="cb15-14"><a href="#cb15-14" tabindex="-1"></a></span>
+<span id="cb15-15"><a href="#cb15-15" tabindex="-1"></a><span class="do">## also checking the cumulative baseline </span></span>
+<span id="cb15-16"><a href="#cb15-16" tabindex="-1"></a><span class="do">###plotl(tt,base1) </span></span>
+<span id="cb15-17"><a href="#cb15-17" tabindex="-1"></a><span class="do">###plot(ccA,add=TRUE,col=3)</span></span>
+<span id="cb15-18"><a href="#cb15-18" tabindex="-1"></a><span class="do">###plot(ddA,col=2,add=TRUE)</span></span></code></pre></div>
+</div>
 <div id="sessioninfo" class="section level1">
 <h1>SessionInfo</h1>
-<div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" tabindex="-1"></a><span class="fu">sessionInfo</span>()</span>
-<span id="cb14-2"><a href="#cb14-2" tabindex="-1"></a><span class="co">#&gt; R version 4.5.1 (2025-06-13)</span></span>
-<span id="cb14-3"><a href="#cb14-3" tabindex="-1"></a><span class="co">#&gt; Platform: aarch64-apple-darwin25.0.0</span></span>
-<span id="cb14-4"><a href="#cb14-4" tabindex="-1"></a><span class="co">#&gt; Running under: macOS Tahoe 26.0.1</span></span>
-<span id="cb14-5"><a href="#cb14-5" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb14-6"><a href="#cb14-6" tabindex="-1"></a><span class="co">#&gt; Matrix products: default</span></span>
-<span id="cb14-7"><a href="#cb14-7" tabindex="-1"></a><span class="co">#&gt; BLAS:   /Users/kkzh/.asdf/installs/R/4.5.1/lib/R/lib/libRblas.dylib </span></span>
-<span id="cb14-8"><a href="#cb14-8" tabindex="-1"></a><span class="co">#&gt; LAPACK: /Users/kkzh/.asdf/installs/R/4.5.1/lib/R/lib/libRlapack.dylib;  LAPACK version 3.12.1</span></span>
-<span id="cb14-9"><a href="#cb14-9" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb14-10"><a href="#cb14-10" tabindex="-1"></a><span class="co">#&gt; locale:</span></span>
-<span id="cb14-11"><a href="#cb14-11" tabindex="-1"></a><span class="co">#&gt; [1] en_US.UTF-8/en_US.UTF-8/en_US.UTF-8/C/en_US.UTF-8/en_US.UTF-8</span></span>
-<span id="cb14-12"><a href="#cb14-12" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb14-13"><a href="#cb14-13" tabindex="-1"></a><span class="co">#&gt; time zone: Europe/Copenhagen</span></span>
-<span id="cb14-14"><a href="#cb14-14" tabindex="-1"></a><span class="co">#&gt; tzcode source: internal</span></span>
-<span id="cb14-15"><a href="#cb14-15" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb14-16"><a href="#cb14-16" tabindex="-1"></a><span class="co">#&gt; attached base packages:</span></span>
-<span id="cb14-17"><a href="#cb14-17" tabindex="-1"></a><span class="co">#&gt; [1] stats     graphics  grDevices utils     datasets  methods   base     </span></span>
-<span id="cb14-18"><a href="#cb14-18" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb14-19"><a href="#cb14-19" tabindex="-1"></a><span class="co">#&gt; other attached packages:</span></span>
-<span id="cb14-20"><a href="#cb14-20" tabindex="-1"></a><span class="co">#&gt; [1] timereg_2.0.7  survival_3.8-3 mets_1.3.8    </span></span>
-<span id="cb14-21"><a href="#cb14-21" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb14-22"><a href="#cb14-22" tabindex="-1"></a><span class="co">#&gt; loaded via a namespace (and not attached):</span></span>
-<span id="cb14-23"><a href="#cb14-23" tabindex="-1"></a><span class="co">#&gt;  [1] cli_3.6.5           knitr_1.50          rlang_1.1.6        </span></span>
-<span id="cb14-24"><a href="#cb14-24" tabindex="-1"></a><span class="co">#&gt;  [4] xfun_0.53           jsonlite_2.0.0      future.apply_1.20.0</span></span>
-<span id="cb14-25"><a href="#cb14-25" tabindex="-1"></a><span class="co">#&gt;  [7] listenv_0.9.1       lava_1.8.1          htmltools_0.5.8.1  </span></span>
-<span id="cb14-26"><a href="#cb14-26" tabindex="-1"></a><span class="co">#&gt; [10] sass_0.4.10         rmarkdown_2.30      grid_4.5.1         </span></span>
-<span id="cb14-27"><a href="#cb14-27" tabindex="-1"></a><span class="co">#&gt; [13] evaluate_1.0.5      jquerylib_0.1.4     fastmap_1.2.0      </span></span>
-<span id="cb14-28"><a href="#cb14-28" tabindex="-1"></a><span class="co">#&gt; [16] numDeriv_2016.8-1.1 yaml_2.3.10         mvtnorm_1.3-3      </span></span>
-<span id="cb14-29"><a href="#cb14-29" tabindex="-1"></a><span class="co">#&gt; [19] lifecycle_1.0.4     compiler_4.5.1      codetools_0.2-20   </span></span>
-<span id="cb14-30"><a href="#cb14-30" tabindex="-1"></a><span class="co">#&gt; [22] ucminf_1.2.2        Rcpp_1.1.0          future_1.67.0      </span></span>
-<span id="cb14-31"><a href="#cb14-31" tabindex="-1"></a><span class="co">#&gt; [25] lattice_0.22-7      digest_0.6.37       R6_2.6.1           </span></span>
-<span id="cb14-32"><a href="#cb14-32" tabindex="-1"></a><span class="co">#&gt; [28] parallelly_1.45.1   parallel_4.5.1      splines_4.5.1      </span></span>
-<span id="cb14-33"><a href="#cb14-33" tabindex="-1"></a><span class="co">#&gt; [31] Matrix_1.7-4        bslib_0.9.0         tools_4.5.1        </span></span>
-<span id="cb14-34"><a href="#cb14-34" tabindex="-1"></a><span class="co">#&gt; [34] globals_0.18.0      cachem_1.1.0</span></span></code></pre></div>
+<div class="sourceCode" id="cb16"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" tabindex="-1"></a><span class="fu">sessionInfo</span>()</span>
+<span id="cb16-2"><a href="#cb16-2" tabindex="-1"></a><span class="co">#&gt; R version 4.5.2 (2025-10-31)</span></span>
+<span id="cb16-3"><a href="#cb16-3" tabindex="-1"></a><span class="co">#&gt; Platform: aarch64-apple-darwin25.1.0</span></span>
+<span id="cb16-4"><a href="#cb16-4" tabindex="-1"></a><span class="co">#&gt; Running under: macOS Tahoe 26.2</span></span>
+<span id="cb16-5"><a href="#cb16-5" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb16-6"><a href="#cb16-6" tabindex="-1"></a><span class="co">#&gt; Matrix products: default</span></span>
+<span id="cb16-7"><a href="#cb16-7" tabindex="-1"></a><span class="co">#&gt; BLAS:   /Users/kkzh/.asdf/installs/r/4.5.2/lib/R/lib/libRblas.dylib </span></span>
+<span id="cb16-8"><a href="#cb16-8" tabindex="-1"></a><span class="co">#&gt; LAPACK: /Users/kkzh/.asdf/installs/r/4.5.2/lib/R/lib/libRlapack.dylib;  LAPACK version 3.12.1</span></span>
+<span id="cb16-9"><a href="#cb16-9" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb16-10"><a href="#cb16-10" tabindex="-1"></a><span class="co">#&gt; locale:</span></span>
+<span id="cb16-11"><a href="#cb16-11" tabindex="-1"></a><span class="co">#&gt; [1] en_US.UTF-8/en_US.UTF-8/en_US.UTF-8/C/en_US.UTF-8/en_US.UTF-8</span></span>
+<span id="cb16-12"><a href="#cb16-12" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb16-13"><a href="#cb16-13" tabindex="-1"></a><span class="co">#&gt; time zone: Europe/Copenhagen</span></span>
+<span id="cb16-14"><a href="#cb16-14" tabindex="-1"></a><span class="co">#&gt; tzcode source: internal</span></span>
+<span id="cb16-15"><a href="#cb16-15" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb16-16"><a href="#cb16-16" tabindex="-1"></a><span class="co">#&gt; attached base packages:</span></span>
+<span id="cb16-17"><a href="#cb16-17" tabindex="-1"></a><span class="co">#&gt; [1] stats     graphics  grDevices utils     datasets  methods   base     </span></span>
+<span id="cb16-18"><a href="#cb16-18" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb16-19"><a href="#cb16-19" tabindex="-1"></a><span class="co">#&gt; other attached packages:</span></span>
+<span id="cb16-20"><a href="#cb16-20" tabindex="-1"></a><span class="co">#&gt; [1] timereg_2.0.7  survival_3.8-3 mets_1.3.9    </span></span>
+<span id="cb16-21"><a href="#cb16-21" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb16-22"><a href="#cb16-22" tabindex="-1"></a><span class="co">#&gt; loaded via a namespace (and not attached):</span></span>
+<span id="cb16-23"><a href="#cb16-23" tabindex="-1"></a><span class="co">#&gt;  [1] cli_3.6.5              knitr_1.50             rlang_1.1.6           </span></span>
+<span id="cb16-24"><a href="#cb16-24" tabindex="-1"></a><span class="co">#&gt;  [4] xfun_0.54              jsonlite_2.0.0         future.apply_1.20.1   </span></span>
+<span id="cb16-25"><a href="#cb16-25" tabindex="-1"></a><span class="co">#&gt;  [7] listenv_0.10.0         lava_1.8.3             htmltools_0.5.8.1     </span></span>
+<span id="cb16-26"><a href="#cb16-26" tabindex="-1"></a><span class="co">#&gt; [10] sass_0.4.10            rmarkdown_2.30         grid_4.5.2            </span></span>
+<span id="cb16-27"><a href="#cb16-27" tabindex="-1"></a><span class="co">#&gt; [13] evaluate_1.0.5         jquerylib_0.1.4        fastmap_1.2.0         </span></span>
+<span id="cb16-28"><a href="#cb16-28" tabindex="-1"></a><span class="co">#&gt; [16] numDeriv_2016.8-1.1    yaml_2.3.10            mvtnorm_1.3-3         </span></span>
+<span id="cb16-29"><a href="#cb16-29" tabindex="-1"></a><span class="co">#&gt; [19] lifecycle_1.0.4        compiler_4.5.2         codetools_0.2-20      </span></span>
+<span id="cb16-30"><a href="#cb16-30" tabindex="-1"></a><span class="co">#&gt; [22] ucminf_1.2.2           Rcpp_1.1.1             future_1.68.0         </span></span>
+<span id="cb16-31"><a href="#cb16-31" tabindex="-1"></a><span class="co">#&gt; [25] lattice_0.22-7         digest_0.6.39          R6_2.6.1              </span></span>
+<span id="cb16-32"><a href="#cb16-32" tabindex="-1"></a><span class="co">#&gt; [28] parallelly_1.46.1      parallel_4.5.2         splines_4.5.2         </span></span>
+<span id="cb16-33"><a href="#cb16-33" tabindex="-1"></a><span class="co">#&gt; [31] Matrix_1.7-4           bslib_0.9.0            tools_4.5.2           </span></span>
+<span id="cb16-34"><a href="#cb16-34" tabindex="-1"></a><span class="co">#&gt; [34] RcppArmadillo_15.2.3-1 globals_0.18.0         cachem_1.1.0</span></span></code></pre></div>
 </div>
 
 

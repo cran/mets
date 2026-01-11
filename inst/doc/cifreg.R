@@ -139,5 +139,40 @@ if (run==1) {
  summary(or)
 
 ## -----------------------------------------------------------------------------
+library(mets)
+rho1 <- 0.3; rho2 <- 5.9
+set.seed(100)
+n <- 100
+beta=c(0.3,-0.3,-0.5,0.3)
+rc <- 0.9
+###
+dats <- mets:::simul.cifsRA(n,rho1,rho2,beta,bin=1,rc=rc,rate=c(3,7))
+dats$status07 <- dats$status
+dats$status07[dats$status %in% c(0,7)] <- 0
+tt <- seq(0,6,by=0.1)
+base1 <- rho1*(1-exp(-tt/3))
+
+ccA  <-  cifregFG(Event(timeA,statusA)~Z1+Z2,dats,
+		  adm.cens.time=dats$censorA,no.codes=7)
+estimate(ccA)
+
+## -----------------------------------------------------------------------------
+dats$entry <- 0
+dats$id <- 1:n
+datA <- dats
+datA2 <- subset(datA,statusA==2)
+datA2$entry <- datA2$timeA
+datA2$timeA <- datA2$censorA
+datA2$statusA <- 0
+datA <- rbind(datA,datA2)
+ddA <- phreg(Event(entry,timeA,statusA==1)~Z1+Z2+cluster(id),datA)
+estimate(ddA)
+
+## also checking the cumulative baseline 
+###plotl(tt,base1) 
+###plot(ccA,add=TRUE,col=3)
+###plot(ddA,col=2,add=TRUE)
+
+## -----------------------------------------------------------------------------
 sessionInfo()
 

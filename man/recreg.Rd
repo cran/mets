@@ -2,11 +2,11 @@
 % Please edit documentation in R/recreg.R
 \name{recreg}
 \alias{recreg}
+\alias{marks}
 \alias{strataAugment}
 \alias{scalecumhaz}
 \alias{GLprediid}
 \alias{recregIPCW}
-\alias{twostageREC}
 \alias{IIDrecreg}
 \alias{predicttime}
 \title{Recurrent events regression with terminal event}
@@ -89,6 +89,7 @@ dd <- data.frame(treatment=levels(hf$treatment),id=1)
 
 gl <- recreg(Event(entry,time,status)~treatment+cluster(id),data=hf,cause=1,death.code=2)
 summary(gl)
+head(iid(gl))
 pgl <- predict(gl,dd,se=1); plot(pgl,se=1)
 
 ## censoring stratified after treatment 
@@ -96,11 +97,19 @@ gls <- recreg(Event(entry,time,status)~treatment+cluster(id),data=hf,
 cause=1,death.code=2,cens.model=~strata(treatment))
 summary(gls)
 
+glss <- recreg(Event(entry,time,status)~strata(treatment)+cluster(id),data=hf,
+cause=1,death.code=2,cens.model=~strata(treatment))
+summary(glss)
+plot(glss)
+
 ## IPCW at 2 years 
 ll2 <- recregIPCW(Event(entry,time,status)~treatment+cluster(id),data=hf,
 cause=1,death.code=2,time=2,cens.model=~strata(treatment))
 summary(ll2)
 
+ll2i <- recregIPCW(Event(entry,time,status)~-1+treatment+cluster(id),data=hf,
+cause=1,death.code=2,time=2,cens.model=~strata(treatment))
+summary(ll2i)
 }
 \author{
 Thomas Scheike

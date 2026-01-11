@@ -3,8 +3,8 @@
 \docType{import}
 \name{reexports}
 \alias{reexports}
-\alias{IC}
 \alias{iid}
+\alias{IC}
 \alias{twostage}
 \alias{estimate}
 \alias{gof}

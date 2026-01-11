@@ -28,110 +28,77 @@
 ##' @param ... Additional arguments to lower level funtions
 ##' @author Thomas Scheike
 ##' @examples
+##' library(mets)
 ##' res <- 0
 ##' data(bmt)
 ##' bmt$age2 <- bmt$age
 ##' newdata <- bmt[1:19,]
-##' if (interactive()) par(mfrow=c(5,3))
+##' ## if (interactive()) par(mfrow=c(5,3))
 ##'
 ##' ## same X1 and X2
 ##' pr2 <- doubleFGR(Event(time,cause)~age+platelet,data=bmt,restrict=res)
-##' if (interactive()) {
-##'   bplotdFG(pr2,cause=1)
-##'   bplotdFG(pr2,cause=2,add=TRUE)
-##' }
-##' pp21 <- predictdFG(pr2,newdata=newdata)
-##' pp22 <- predictdFG(pr2,newdata=newdata,cause=2)
-##' if (interactive()) {
-##'   plot(pp21)
-##'   plot(pp22,add=TRUE,col=2)
-##' }
-##' pp21 <- predictdFG(pr2)
-##' pp22 <- predictdFG(pr2,cause=2)
-##' if (interactive()) {
-##'   plot(pp21)
-##'   plot(pp22,add=TRUE,col=2)
-##' }
+##' ##if (interactive()) {
+##' ##  bplotdFG(pr2,cause=1)
+##' ##  bplotdFG(pr2,cause=2,add=TRUE)
+##' ##}
+##' ##pp21 <- predictdFG(pr2,newdata=newdata)
+##' ##pp22 <- predictdFG(pr2,newdata=newdata,cause=2)
+##' ##if (interactive()) {
+##' ##  plot(pp21)
+##' ##  plot(pp22,add=TRUE,col=2)
+##' ##}
+##' ##pp21 <- predictdFG(pr2)
+##' ##pp22 <- predictdFG(pr2,cause=2)
+##' ##if (interactive()) {
+##'  ## plot(pp21)
+##'  ## plot(pp22,add=TRUE,col=2)
+##' ##}
 ##'
 ##' pr2 <- doubleFGR(Event(time,cause)~strata(platelet),data=bmt,restrict=res)
-##' if (interactive()) {
-##'   bplotdFG(pr2,cause=1)
-##'   bplotdFG(pr2,cause=2,add=TRUE)
-##' }
-##' pp21 <- predictdFG(pr2,newdata=newdata)
-##' pp22 <- predictdFG(pr2,,newdata=newdata,cause=2)
-##' if (interactive()) {
-##'   plot(pp21)
-##'   plot(pp22,add=TRUE,col=2)
-##' }
-##' pp21 <- predictdFG(pr2)
-##' pp22 <- predictdFG(pr2,cause=2)
-##' if (interactive()) {
-##'   plot(pp21)
-##'   plot(pp22,add=TRUE,col=2)
-##' }
 ##'
 ##' ## different X1 and X2
 ##' pr2 <- doubleFGR(Event(time,cause)~age+platelet+age2,data=bmt,X2=3,restrict=res)
-##' if (interactive()) {
-##'   bplotdFG(pr2,cause=1)
-##'   bplotdFG(pr2,cause=2,add=TRUE)
-##' }
-##' pp21 <- predictdFG(pr2,newdata=newdata)
-##' pp22 <- predictdFG(pr2,newdata=newdata,cause=2)
-##' if (interactive()) {
-##'   plot(pp21)
-##'   plot(pp22,add=TRUE,col=2)
-##' }
-##' pp21 <- predictdFG(pr2)
-##' pp22 <- predictdFG(pr2,cause=2)
-##' if (interactive()) {
-##'   plot(pp21)
-##'   plot(pp22,add=TRUE,col=2)
-##' }
 ##'
 ##' ### uden X1
 ##' pr2 <- doubleFGR(Event(time,cause)~age+platelet,data=bmt,X2=1:2,restrict=res)
-##' if (interactive()) {
-##'   bplotdFG(pr2,cause=1)
-##'   bplotdFG(pr2,cause=2,add=TRUE)
-##' }
-##' pp21 <- predictdFG(pr2,newdata=newdata)
-##' pp22 <- predictdFG(pr2,newdata=newdata,cause=2)
-##' if (interactive()) {
-##'   plot(pp21)
-##'   plot(pp22,add=TRUE,col=2)
-##' }
-##' pp21 <- predictdFG(pr2)
-##' p22 <- predictdFG(pr2,cause=2)
-##' if (interactive()) {
-##'   plot(pp21)
-##'   plot(pp22,add=TRUE,col=2)
-##' }
 ##'
 ##' ### without X2
 ##' pr2 <- doubleFGR(Event(time,cause)~age+platelet,data=bmt,X2=0,restrict=res)
-##' if (interactive()) {
-##'   bplotdFG(pr2,cause=1)
-##'   bplotdFG(pr2,cause=2,add=TRUE)
-##' }
-##' pp21 <- predictdFG(pr2,newdata=newdata)
-##' pp22 <- predictdFG(pr2,newdata=newdata,cause=2)
-##' if (interactive()) {
-##'   plot(pp21)
-##'   plot(pp22,add=TRUE,col=2)
-##' }
-##' pp21 <- predictdFG(pr2)
-##' pp22 <- predictdFG(pr2,cause=2)
-##' if (interactive()) {
-##'   plot(pp21)
-##'   plot(pp22,add=TRUE,col=2)
-##' }
 ##'
 ##' @aliases bplotdFG predictdFG
 ##' @export
 doubleFGR <- function(formula,data,offset=NULL,weights=NULL,X2=NULL,...) {# {{{
   cl <- match.call()
+   m <- match.call(expand.dots = TRUE)[1:3]
+    des <- proc_design(
+        formula,
+        data = data,
+        specials = c("offset", "weights", "cluster","strata"),
+        intercept = FALSE
+    )
+###    Y <- des$y
+###    if (!inherits(Y, c("Event", "Surv"))) {
+###        stop("Expected a 'Surv' or 'Event'-object")
+###    }
+###    if (ncol(Y) == 2) {
+###        exit <- Y[, 1]
+###        entry <- rep(0, nrow(Y))
+###        status <- Y[, 2]
+###    } else {
+###        entry <- Y[, 1]
+###        exit <- Y[, 2]
+###        status <- Y[, 3]
+###    }
+###    X <- des$x
+###    strata <- des$strata
+###    if (!is.null(strata)) strata.name <- names(des$xlevels) else strata.name <- NULL
+###    pos.strata <- NULL
+###    des.weights <- des$weights
+###    des.offset  <- des$offset
+###    id      <- des$cluster
+###    ## no use of 
+###    pos.cluster <- NULL
+
   m <- match.call(expand.dots = TRUE)[1:3]
   special <- c("strata", "cluster","offset")
   Terms <- terms(formula, special, data = data)
@@ -165,6 +132,7 @@ doubleFGR <- function(formula,data,offset=NULL,weights=NULL,X2=NULL,...) {# {{{
   X <- model.matrix(Terms, m)
   if (!is.null(intpos  <- attributes(Terms)$intercept))
     X <- X[,-intpos,drop=FALSE]
+
   X2call <- X2;
   if (!is.null(X2)) {
 	 if (X2[1]==0)  X2 <- matrix(nrow=0,ncol=0)
@@ -174,11 +142,13 @@ doubleFGR <- function(formula,data,offset=NULL,weights=NULL,X2=NULL,...) {# {{{
   } else X2 <- X
   if (ncol(X)==0) X <- matrix(nrow=0,ncol=0)
   if (ncol(X2)==0) X2 <- matrix(nrow=0,ncol=0)
+
   res <- c(doubleFG01R(X,X2,entry,exit,status,id,strata,offset,weights,strata.name,X2call=X2call,...),
    list(call=cl,model.frame=m,formula=formula,strata.pos=pos.strata,cluster.pos=pos.cluster))
   class(res) <- c("doubleFG")
+  res$design <- des
 
-  res
+  return(res)
 }# }}}
 
 doubleFG01R <- function(X,X2, entry,exit,status,id=NULL,strata=NULL,offset=NULL,weights=NULL,
@@ -237,6 +207,7 @@ doubleFG01R <- function(X,X2, entry,exit,status,id=NULL,strata=NULL,offset=NULL,
    cause <- status[dd$ord+1]
    dd$cause <- cause
    dd$nstrata <- nstrata
+
 
 	obj <- function(pp,U=FALSE,all=FALSE) {# {{{
 	  val <- with(dd, doubleFGstrataR(pp,X,XX,X2,XX2,sign,cause,jumps,strata,nstrata,weights,offset,ZX,caseweights,restrict))
@@ -337,7 +308,8 @@ doubleFGstrataR <- function(beta, X, XX, X2, XX2, Sign, cause, Jumps, strata, ns
 	Xb2 = c(X2 %*% beta2+offsets)
 	eXb1 = c(exp(Xb1)*weights);
 	eXb2 = c(exp(Xb2)*weights);
-	if (nrow((Sign))==length(eXb1)) { ## Truncation
+
+	if (length(Sign)==length(eXb1)) { ## Truncation
 		eXb1 = c(Sign)*eXb1;
 		eXb2 = c(Sign)*eXb2;
 	}
@@ -452,7 +424,7 @@ bplotdFG <- function(x,cause=1,...)  {# {{{
 }# }}}
 
 ##' @export
-predictdFG <- function(x,cause=1,se=FALSE,times=NULL,...)  {# {{{
+predictdFG <- function(x,newdata=NULL,cause=1,se=FALSE,times=NULL,...)  {# {{{
 	cumhaz <- x$cumhaz
 	coef <- x$coef
 	p <- x$p
@@ -492,7 +464,8 @@ predictdFG <- function(x,cause=1,se=FALSE,times=NULL,...)  {# {{{
 
 	x$cumhaz <- x$cumhaz[,c(1,cause+1)]
 	class(x) <- c("phreg","cifreg")
-	pll <- predict(x,se=se,times=times,...)
+	
+	pll <- predict(x,newdata,se=se,times=times,...)
 
 	if (x$restrict>0 & cause==2) {
 		x$cumhaz <- cumhaz[,1:2]
@@ -506,6 +479,4 @@ predictdFG <- function(x,cause=1,se=FALSE,times=NULL,...)  {# {{{
 	}
 	return(pll)
 }# }}}
-
-
 

@@ -77,7 +77,6 @@ plot(out,se=TRUE,ylab="marginal mean",col=1:2)
 ###outX <- recmarg(xr,dr,Xr=1,Xd=1)
 ###plot(outX,add=TRUE,col=3)
 
-
 ## -----------------------------------------------------------------------------
 rr <- simRecurrentList(100,list(base1,base1,base4),death.cumhaz=list(dr,base4),cens=3/5000,dependence=0)
 dtable(rr,~status+death,level=2)
@@ -157,61 +156,60 @@ fz <- NULL
 rr <- mets:::simGLcox(n,base1,dr,var.z=1,r1=r1,rd=rd,rc=rc,fz,cens=1/5000,type=2) 
 rr <- cbind(rr,X[rr$id+1,])
 
- out  <- recreg(Event(start,stop,statusD)~X1+X2+cluster(id),data=rr,cause=1,death.code=3,cens.code=0)
- outs <- recreg(Event(start,stop,statusD)~X1+X2+cluster(id),data=rr,cause=1,death.code=3,cens.code=0,
+out  <- recreg(Event(start,stop,statusD)~X1+X2+cluster(id),data=rr,cause=1,death.code=3,cens.code=0)
+outs <- recreg(Event(start,stop,statusD)~X1+X2+cluster(id),data=rr,cause=1,death.code=3,cens.code=0,
 		cens.model=~strata(X1,X2))
- summary(out)$coef
- summary(outs)$coef
+summary(out)$coef
+summary(outs)$coef
 
- ## checking baseline
- par(mfrow=c(1,1))
- plot(out)
- plot(outs,add=TRUE,col=2)
- lines(scalecumhaz(base1,1),col=3,lwd=2)
-
-## -----------------------------------------------------------------------------
- outipcw  <- recregIPCW(Event(start,stop,statusD)~X1+X2+cluster(id),data=rr,cause=1,death.code=3,
-			cens.code=0,times=2000)
- outipcws <- recregIPCW(Event(start,stop,statusD)~X1+X2+cluster(id),data=rr,cause=1,death.code=3,
-		    cens.code=0,times=2000,cens.model=~strata(X1,X2))
- summary(outipcw)$coef
- summary(outipcws)$coef
+## checking baseline
+par(mfrow=c(1,1))
+plot(out)
+plot(outs,add=TRUE,col=2)
+lines(scalecumhaz(base1,1),col=3,lwd=2)
 
 ## -----------------------------------------------------------------------------
- out  <- recreg(Event(start,stop,statusD)~X1+X2+cluster(id),data=rr,cause=c(1,3),
+outipcw  <- recregIPCW(Event(start,stop,statusD)~X1+X2+cluster(id),data=rr,cause=1,death.code=3,
+		cens.code=0,times=2000)
+outipcws <- recregIPCW(Event(start,stop,statusD)~X1+X2+cluster(id),data=rr,cause=1,death.code=3,
+	    cens.code=0,times=2000,cens.model=~strata(X1,X2))
+summary(outipcw)$coef
+summary(outipcws)$coef
+
+## -----------------------------------------------------------------------------
+out  <- recreg(Event(start,stop,statusD)~X1+X2+cluster(id),data=rr,cause=c(1,3),
 		death.code=3,cens.code=0)
- summary(out)$coef
+summary(out)$coef
 
 ## -----------------------------------------------------------------------------
- rr$binf <- rbinom(nrow(rr),1,0.5) 
- rr$statusDC <- rr$statusD
- rr <- dtransform(rr,statusDC=4, statusD==3 & binf==0)
- rr$weight <- 1
- rr <- dtransform(rr,weight=2,statusDC==3)
+rr$binf <- rbinom(nrow(rr),1,0.5) 
+rr$statusDC <- rr$statusD
+rr <- dtransform(rr,statusDC=4, statusD==3 & binf==0)
+rr$weight <- 1
+rr <- dtransform(rr,weight=2,statusDC==3)
 
- outC  <- recreg(Event(start,stop,statusDC)~X1+X2+cluster(id),data=rr,cause=c(1,3),
+outC  <- recreg(Event(start,stop,statusDC)~X1+X2+cluster(id),data=rr,cause=c(1,3),
 		 death.code=c(3,4),cens.code=0)
- summary(outC)$coef
+summary(outC)$coef
 
- outCW  <- recreg(Event(start,stop,statusDC)~X1+X2+cluster(id),data=rr,cause=c(1,3),
+outCW  <- recreg(Event(start,stop,statusDC)~X1+X2+cluster(id),data=rr,cause=c(1,3),
 		  death.code=c(3,4),cens.code=0,wcomp=c(1,2))
- summary(outCW)$coef
+summary(outCW)$coef
 
- plot(out,ylab="Mean composite")
- plot(outC,col=2,add=TRUE)
- plot(outCW,col=3,add=TRUE)
+plot(out,ylab="Mean composite")
+plot(outC,col=2,add=TRUE)
+plot(outCW,col=3,add=TRUE)
 
 ## -----------------------------------------------------------------------------
-out  <- recreg(Event(start,stop,statusD)~X1+X2+cluster(id),data=rr,cause=1,death.code=3,cens.code=0,
-	       cox.prep=TRUE)
+out  <- recreg(Event(start,stop,statusD)~X1+X2+cluster(id),data=rr,cause=1,death.code=3,cens.code=0)
 summary(out)
 baseiid <- iidBaseline(out,time=3000)
 GLprediid(baseiid,rr[1:5,])
 
 ## -----------------------------------------------------------------------------
- outA  <- recreg(Event(start,stop,statusD)~X1+X2+cluster(id),data=rr,cause=1,death.code=3,
+outA  <- recreg(Event(start,stop,statusD)~X1+X2+cluster(id),data=rr,cause=1,death.code=3,
 		 cens.code=0,augment.model=~Nt+X1+X2)
- summary(outA)$coef
+summary(outA)$coef
 
 ## -----------------------------------------------------------------------------
 set.seed(100)

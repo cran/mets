@@ -12,7 +12,7 @@
 
 <meta name="author" content="Klaus Holst &amp; Thomas Scheike" />
 
-<meta name="date" content="2025-10-21" />
+<meta name="date" content="2026-01-11" />
 
 <title>A practical guide to Human Genetics with Lifetime Data</title>
 
@@ -342,7 +342,7 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 <h1 class="title toc-ignore">A practical guide to Human Genetics with
 Lifetime Data</h1>
 <h4 class="author">Klaus Holst &amp; Thomas Scheike</h4>
-<h4 class="date">2025-10-21</h4>
+<h4 class="date">2026-01-11</h4>
 
 
 
@@ -1063,12 +1063,12 @@ the IPCW weighted AIC measure</p>
 <span id="cb38-2"><a href="#cb38-2" tabindex="-1"></a>                               <span class="at">cens.formula =</span> <span class="fu">Surv</span>(time,status<span class="sc">==</span><span class="dv">0</span>)<span class="sc">~</span><span class="dv">1</span>, <span class="at">pairs.only=</span><span class="cn">TRUE</span>,</span>
 <span id="cb38-3"><a href="#cb38-3" tabindex="-1"></a>                                <span class="at">breaks=</span>tt))</span>
 <span id="cb38-4"><a href="#cb38-4" tabindex="-1"></a><span class="co">#&gt;    user  system elapsed </span></span>
-<span id="cb38-5"><a href="#cb38-5" tabindex="-1"></a><span class="co">#&gt;   0.271   0.005   0.275</span></span>
+<span id="cb38-5"><a href="#cb38-5" tabindex="-1"></a><span class="co">#&gt;   0.293   0.003   0.298</span></span>
 <span id="cb38-6"><a href="#cb38-6" tabindex="-1"></a><span class="fu">system.time</span>(a.dz <span class="ot">&lt;-</span> <span class="fu">biprobit.time</span>(cancer<span class="sc">~</span><span class="dv">1</span>, <span class="at">id=</span><span class="st">&quot;id&quot;</span>, <span class="at">data=</span><span class="fu">subset</span>(prt0, zyg<span class="sc">==</span><span class="st">&quot;DZ&quot;</span>),</span>
 <span id="cb38-7"><a href="#cb38-7" tabindex="-1"></a>                               <span class="at">cens.formula =</span> <span class="fu">Event</span>(time,status<span class="sc">==</span><span class="dv">0</span>)<span class="sc">~</span><span class="dv">1</span>, <span class="at">pairs.only=</span><span class="cn">TRUE</span>,</span>
 <span id="cb38-8"><a href="#cb38-8" tabindex="-1"></a>                               <span class="at">breaks=</span>tt))</span>
 <span id="cb38-9"><a href="#cb38-9" tabindex="-1"></a><span class="co">#&gt;    user  system elapsed </span></span>
-<span id="cb38-10"><a href="#cb38-10" tabindex="-1"></a><span class="co">#&gt;   0.390   0.008   0.397</span></span>
+<span id="cb38-10"><a href="#cb38-10" tabindex="-1"></a><span class="co">#&gt;   0.470   0.004   0.475</span></span>
 <span id="cb38-11"><a href="#cb38-11" tabindex="-1"></a></span>
 <span id="cb38-12"><a href="#cb38-12" tabindex="-1"></a><span class="co">#system.time(a.zyg &lt;- biprobit.time(cancer~1, rho=~1+zyg, id=&quot;id&quot;, data=prt, </span></span>
 <span id="cb38-13"><a href="#cb38-13" tabindex="-1"></a><span class="co">#                               cens.formula = Event(time,status==0)~1,</span></span>
@@ -1249,13 +1249,13 @@ the IPCW weighted AIC measure</p>
 <div id="sessioninfo" class="section level1">
 <h1>SessionInfo</h1>
 <div class="sourceCode" id="cb46"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb46-1"><a href="#cb46-1" tabindex="-1"></a><span class="fu">sessionInfo</span>()</span>
-<span id="cb46-2"><a href="#cb46-2" tabindex="-1"></a><span class="co">#&gt; R version 4.5.1 (2025-06-13)</span></span>
-<span id="cb46-3"><a href="#cb46-3" tabindex="-1"></a><span class="co">#&gt; Platform: aarch64-apple-darwin25.0.0</span></span>
-<span id="cb46-4"><a href="#cb46-4" tabindex="-1"></a><span class="co">#&gt; Running under: macOS Tahoe 26.0.1</span></span>
+<span id="cb46-2"><a href="#cb46-2" tabindex="-1"></a><span class="co">#&gt; R version 4.5.2 (2025-10-31)</span></span>
+<span id="cb46-3"><a href="#cb46-3" tabindex="-1"></a><span class="co">#&gt; Platform: aarch64-apple-darwin25.1.0</span></span>
+<span id="cb46-4"><a href="#cb46-4" tabindex="-1"></a><span class="co">#&gt; Running under: macOS Tahoe 26.2</span></span>
 <span id="cb46-5"><a href="#cb46-5" tabindex="-1"></a><span class="co">#&gt; </span></span>
 <span id="cb46-6"><a href="#cb46-6" tabindex="-1"></a><span class="co">#&gt; Matrix products: default</span></span>
-<span id="cb46-7"><a href="#cb46-7" tabindex="-1"></a><span class="co">#&gt; BLAS:   /Users/kkzh/.asdf/installs/R/4.5.1/lib/R/lib/libRblas.dylib </span></span>
-<span id="cb46-8"><a href="#cb46-8" tabindex="-1"></a><span class="co">#&gt; LAPACK: /Users/kkzh/.asdf/installs/R/4.5.1/lib/R/lib/libRlapack.dylib;  LAPACK version 3.12.1</span></span>
+<span id="cb46-7"><a href="#cb46-7" tabindex="-1"></a><span class="co">#&gt; BLAS:   /Users/kkzh/.asdf/installs/r/4.5.2/lib/R/lib/libRblas.dylib </span></span>
+<span id="cb46-8"><a href="#cb46-8" tabindex="-1"></a><span class="co">#&gt; LAPACK: /Users/kkzh/.asdf/installs/r/4.5.2/lib/R/lib/libRlapack.dylib;  LAPACK version 3.12.1</span></span>
 <span id="cb46-9"><a href="#cb46-9" tabindex="-1"></a><span class="co">#&gt; </span></span>
 <span id="cb46-10"><a href="#cb46-10" tabindex="-1"></a><span class="co">#&gt; locale:</span></span>
 <span id="cb46-11"><a href="#cb46-11" tabindex="-1"></a><span class="co">#&gt; [1] en_US.UTF-8/en_US.UTF-8/en_US.UTF-8/C/en_US.UTF-8/en_US.UTF-8</span></span>
@@ -1268,21 +1268,22 @@ the IPCW weighted AIC measure</p>
 <span id="cb46-18"><a href="#cb46-18" tabindex="-1"></a><span class="co">#&gt; [8] base     </span></span>
 <span id="cb46-19"><a href="#cb46-19" tabindex="-1"></a><span class="co">#&gt; </span></span>
 <span id="cb46-20"><a href="#cb46-20" tabindex="-1"></a><span class="co">#&gt; other attached packages:</span></span>
-<span id="cb46-21"><a href="#cb46-21" tabindex="-1"></a><span class="co">#&gt; [1] prodlim_2025.04.28 timereg_2.0.7      survival_3.8-3     mets_1.3.8        </span></span>
+<span id="cb46-21"><a href="#cb46-21" tabindex="-1"></a><span class="co">#&gt; [1] prodlim_2025.04.28 timereg_2.0.7      survival_3.8-3     mets_1.3.9        </span></span>
 <span id="cb46-22"><a href="#cb46-22" tabindex="-1"></a><span class="co">#&gt; </span></span>
 <span id="cb46-23"><a href="#cb46-23" tabindex="-1"></a><span class="co">#&gt; loaded via a namespace (and not attached):</span></span>
-<span id="cb46-24"><a href="#cb46-24" tabindex="-1"></a><span class="co">#&gt;  [1] cli_3.6.5           knitr_1.50          rlang_1.1.6        </span></span>
-<span id="cb46-25"><a href="#cb46-25" tabindex="-1"></a><span class="co">#&gt;  [4] xfun_0.53           KernSmooth_2.23-26  data.table_1.17.8  </span></span>
-<span id="cb46-26"><a href="#cb46-26" tabindex="-1"></a><span class="co">#&gt;  [7] jsonlite_2.0.0      future.apply_1.20.0 listenv_0.9.1      </span></span>
-<span id="cb46-27"><a href="#cb46-27" tabindex="-1"></a><span class="co">#&gt; [10] lava_1.8.1          htmltools_0.5.8.1   sass_0.4.10        </span></span>
-<span id="cb46-28"><a href="#cb46-28" tabindex="-1"></a><span class="co">#&gt; [13] rmarkdown_2.30      grid_4.5.1          evaluate_1.0.5     </span></span>
-<span id="cb46-29"><a href="#cb46-29" tabindex="-1"></a><span class="co">#&gt; [16] jquerylib_0.1.4     fastmap_1.2.0       numDeriv_2016.8-1.1</span></span>
-<span id="cb46-30"><a href="#cb46-30" tabindex="-1"></a><span class="co">#&gt; [19] yaml_2.3.10         mvtnorm_1.3-3       lifecycle_1.0.4    </span></span>
-<span id="cb46-31"><a href="#cb46-31" tabindex="-1"></a><span class="co">#&gt; [22] compiler_4.5.1      codetools_0.2-20    ucminf_1.2.2       </span></span>
-<span id="cb46-32"><a href="#cb46-32" tabindex="-1"></a><span class="co">#&gt; [25] Rcpp_1.1.0          future_1.67.0       lattice_0.22-7     </span></span>
-<span id="cb46-33"><a href="#cb46-33" tabindex="-1"></a><span class="co">#&gt; [28] digest_0.6.37       R6_2.6.1            parallelly_1.45.1  </span></span>
-<span id="cb46-34"><a href="#cb46-34" tabindex="-1"></a><span class="co">#&gt; [31] parallel_4.5.1      Matrix_1.7-4        bslib_0.9.0        </span></span>
-<span id="cb46-35"><a href="#cb46-35" tabindex="-1"></a><span class="co">#&gt; [34] tools_4.5.1         globals_0.18.0      cachem_1.1.0</span></span></code></pre></div>
+<span id="cb46-24"><a href="#cb46-24" tabindex="-1"></a><span class="co">#&gt;  [1] cli_3.6.5              knitr_1.50             rlang_1.1.6           </span></span>
+<span id="cb46-25"><a href="#cb46-25" tabindex="-1"></a><span class="co">#&gt;  [4] xfun_0.54              KernSmooth_2.23-26     data.table_1.17.8     </span></span>
+<span id="cb46-26"><a href="#cb46-26" tabindex="-1"></a><span class="co">#&gt;  [7] jsonlite_2.0.0         future.apply_1.20.1    listenv_0.10.0        </span></span>
+<span id="cb46-27"><a href="#cb46-27" tabindex="-1"></a><span class="co">#&gt; [10] lava_1.8.3             htmltools_0.5.8.1      sass_0.4.10           </span></span>
+<span id="cb46-28"><a href="#cb46-28" tabindex="-1"></a><span class="co">#&gt; [13] rmarkdown_2.30         grid_4.5.2             evaluate_1.0.5        </span></span>
+<span id="cb46-29"><a href="#cb46-29" tabindex="-1"></a><span class="co">#&gt; [16] jquerylib_0.1.4        fastmap_1.2.0          numDeriv_2016.8-1.1   </span></span>
+<span id="cb46-30"><a href="#cb46-30" tabindex="-1"></a><span class="co">#&gt; [19] yaml_2.3.10            mvtnorm_1.3-3          lifecycle_1.0.4       </span></span>
+<span id="cb46-31"><a href="#cb46-31" tabindex="-1"></a><span class="co">#&gt; [22] compiler_4.5.2         codetools_0.2-20       ucminf_1.2.2          </span></span>
+<span id="cb46-32"><a href="#cb46-32" tabindex="-1"></a><span class="co">#&gt; [25] Rcpp_1.1.1             future_1.68.0          lattice_0.22-7        </span></span>
+<span id="cb46-33"><a href="#cb46-33" tabindex="-1"></a><span class="co">#&gt; [28] digest_0.6.39          R6_2.6.1               parallelly_1.46.1     </span></span>
+<span id="cb46-34"><a href="#cb46-34" tabindex="-1"></a><span class="co">#&gt; [31] parallel_4.5.2         Matrix_1.7-4           bslib_0.9.0           </span></span>
+<span id="cb46-35"><a href="#cb46-35" tabindex="-1"></a><span class="co">#&gt; [34] tools_4.5.2            RcppArmadillo_15.2.3-1 globals_0.18.0        </span></span>
+<span id="cb46-36"><a href="#cb46-36" tabindex="-1"></a><span class="co">#&gt; [37] cachem_1.1.0</span></span></code></pre></div>
 </div>
 
 

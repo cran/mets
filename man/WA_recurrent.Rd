@@ -52,6 +52,19 @@ Considers the ratio of means \deqn{E(N(min(D,t)))/E(min(D,t))} and the
 the mean of the events per time unit \deqn{E(N(min(D,t))/min(D,t))} both based on
 IPCW etimation. RMST estimator equivalent to Kaplan-Meier based estimator.
 }
+\examples{
+library(mets)
+data(hfactioncpx12)
+
+dtable(hfactioncpx12,~status)
+dd <- WA_recurrent(Event(entry,time,status)~treatment+cluster(id),hfactioncpx12,time=2,death.code=2)
+summary(dd)
+}
+\references{
+Nonparametric estimation of the Patient Weighted While-Alive Estimand arXiv preprint by A. Ragni, T. Martinussen, T. Scheike
+Mao, L. (2023). Nonparametric inference of general while-alive estimands for recurrent events. Biometrics, 79(3):1749–1760.
+Schmidli, H., Roger, J. H., and Akacha, M. (2023). Estimands for recurrent event endpoints in the presence of a terminal event. Statistics in Biopharmaceutical Research, 15(2):238–248.
+}
 \author{
 Thomas Scheike
 }

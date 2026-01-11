@@ -27,7 +27,8 @@
 ##' @param propodds to fit logit link model, and propodds=NULL to fit Fine-Gray model
 ##' @param cause of interest
 ##' @param cens.code code of censoring
-##' @param no.codes certain event codes to be ignored when finding competing causes
+##' @param no.codes certain event codes to be ignored when finding competing causes, can be used with administrative censoring.
+##' @param death.code can also specify death.code (in addition to cause) to overrule default which takes all remaining codes (minus cause,cens.code,no.codes)
 ##' @param ... Additional arguments to recreg 
 ##' @author Thomas Scheike
 ##' @examples
@@ -46,13 +47,22 @@
 ##' por <- predict(or,nd)
 ##' plot(por)
 ##'
+##' ## approximate standard errors 
+##' por <-mets:::predict.phreg(or,nd)
+##' plot(por,se=1)
+##'
 ##' ## Fine-Gray model
 ##' fg=cifregFG(Event(time,cause)~tcell+platelet+age,data=bmt,cause=1)
 ##' summary(fg)
+##' ##fg=recreg(Event(time,cause)~tcell+platelet+age,data=bmt,cause=1,death.code=2)
+##' ##summary(fg)
 ##' plot(fg)
 ##' nd <- data.frame(tcell=c(1,0),platelet=0,age=0)
 ##' pfg <- predict(fg,nd,se=1)
 ##' plot(pfg,se=1)
+##' 
+##' ## bt <- iidBaseline(fg,time=30)
+##' ## bt <- IIDrecreg(fg$cox.prep,fg,time=30)
 ##' 
 ##' ## not run to avoid timing issues
 ##' ## gofFG(Event(time,cause)~tcell+platelet+age,data=bmt,cause=1)
@@ -69,7 +79,7 @@
 ##' pfg1
 ##' @aliases vecAllStrata diffstrata FGprediid indexstratarightR gofFG cifregFG
 ##' @export
-cifreg  <- function(formula,data,propodds=1,cause=1,cens.code=0,no.codes=NULL,...)
+cifreg  <- function(formula,data,propodds=1,cause=1,cens.code=0,no.codes=NULL,death.code=NULL,...)
 {# {{{
     cl <- match.call()
     m <- match.call(expand.dots = TRUE)[1:3]
@@ -89,12 +99,14 @@ cifreg  <- function(formula,data,propodds=1,cause=1,cens.code=0,no.codes=NULL,..
         exit <- Y[,2]
         status <- Y[,3]
     }
+
     ## default version of codes, otherwise call recregN directly
     all.codes <-  unique(status)
     codes <- c(cause,cens.code) 
     if (!is.null(no.codes)) codes <- c(codes,no.codes) 
     mcodes <- match(codes,all.codes,nomatch=0)
-    death.code <- all.codes[-mcodes]
+    ## default death.code are all other codes 
+    if (is.null(death.code)) death.code <- all.codes[-mcodes]
 
     cif <- recreg(formula,data,propodds=propodds,cause=cause,cens.code=cens.code,death.code=death.code,...)
     class(cif) <- c("cifreg","phreg")
@@ -116,18 +128,46 @@ iidBaseline.cifreg <- function(object,time=NULL,...)
   return(out)
 } # }}}
 
+iidBaseline.recreg <- function(object,time=NULL,ft=NULL,fixbeta=NULL,beta.iid=object$iid,tminus=FALSE,...)
+{ ## {{{
+	if (is.null(object$cox.prep)) stop("must call cifreg/recreg with cox.prep=TRUE\n")
+	out <- IIDrecreg(object$cox.prep,object,time=time,fixbeta=fixbeta,beta.iid=beta.iid,adm.cens=object$adm.cens,tminus=tminus,...)
+	out$design <- object$design
+	return(out)
+}  ## }}}
+
 ##' @export
-IC.cifreg <- function(x,time=NULL,sort=TRUE,...) {# {{{
-if (!is.null(time)) {
-    res <- iidBaseline.recreg(x,time=time,...)$base.iid
-###if (sort) res <- namesortme(res,x$name.id)
-    return(res*NROW(res))
+IC.cifreg <- function(x, time=NULL, ...) {# {{{
+  if (!is.null(time)) {
+    iid <- iidBaseline.recreg(x, time=time,...)
+    res <- iid$base.iid
+    attr(res, "strata.level") <- iid$strata.level
+    attr(res, "coef") <- iid$cumhaz.time
+    attr(res, "time") <- time
+    return(res * NROW(res))
   }
   res <- with(x, iid * NROW(iid))
-###  if (sort) res <- namesortme(res,x$name.id)
   return(res)
 }
 # }}}
+
+##' @export
+estimate.cifreg <- function(x, ..., time = NULL, baseline.args = list()) {
+  if (NCOL(model.matrix(x))==0L & is.null(time)) stop("Non-parametric model; need `time` argument")
+  ic <- do.call(IC, c(list(x, time = time), baseline.args))
+  cc <- attr(ic, "coef")
+  if (is.null(cc)) cc <- coef(x)
+  lab <- names(cc)
+  if (!is.null(time)) {
+    lab <- x$strata.level
+    if (is.null(lab)) lab <- "cif"
+  }
+  b <- lava::estimate(
+      coef = cc, IC = ic, labels = lab,
+      function(x) 1 - exp(-x)
+  )
+  return(lava::estimate(b, ...))
+}
 
 ##' @export
 plot.cifreg <- function(x,se=FALSE,ylab=NULL,...) { ## {{{
@@ -336,22 +376,24 @@ strataC <- survival::strata
 ##' @param ... Additional arguments to lower level funtions
 ##' @author Thomas Scheike
 ##' @examples
+##' library(mets)
 ##' set.seed(100)
 ##' rho1 <- 0.2; rho2 <- 10
-##' n <- 400
+##' n <- 100
 ##' beta=c(0.0,-0.1,-0.5,0.3)
 ##' dats <- simul.cifs(n,rho1,rho2,beta,rc=0.2)
 ##' dtable(dats,~status)
 ##' dsort(dats) <- ~time
 ##' fg <- cifreg(Event(time,status)~Z1+Z2,data=dats,cause=1,propodds=NULL)
 ##' summary(fg)
+##' plot(fg);  lines(attr(dats,"Lam1"),col=2)
 ##'
 ##' fgaugS <- FG_AugmentCifstrata(Event(time,status)~Z1+Z2+strata(Z1,Z2),data=dats,cause=1,E=fg$E)
 ##' summary(fgaugS)
 ##' fgaugS2 <- FG_AugmentCifstrata(Event(time,status)~Z1+Z2+strata(Z1,Z2),data=dats,cause=1,E=fgaugS$E)
 ##' summary(fgaugS2)
 ##'
-##' @aliases strataC  simul.cifs setup.cif drop.strata
+##' @aliases strataC drop.strata
 ##' @export
 FG_AugmentCifstrata <- function(formula,data=data,E=NULL,cause=NULL,cens.code=0,km=TRUE,case.weights=NULL,weights=NULL,offset=NULL,...)
 {# {{{
@@ -463,20 +505,6 @@ FG_AugmentCifstrata <- function(formula,data=data,E=NULL,cause=NULL,cens.code=0,
 
     trunc <- (!is.null(entry))
     if (!trunc) entry <- rep(0,length(exit))
-
-###    call.id <- id
-###    if (!is.null(id)) {
-###        ids <- unique(id)
-###        nid <- length(ids)
-###        if (is.numeric(id))
-###            id <-  fast.approx(ids,id)-1
-###        else  {
-###            id <- as.integer(factor(id,labels=seq(nid)))-1
-###        }
-###    } else id <- as.integer(seq_along(entry))-1;
-###    ## orginal id coding into integers
-###    id.orig <- id+1;
-
 
   call.id <- id;
   conid <- construct_id(id,nrow(X),as.data=TRUE)
@@ -633,69 +661,4 @@ FG_AugmentCifstrata <- function(formula,data=data,E=NULL,cause=NULL,cens.code=0,
     return(fga)
 }# }}})
 
-##' @export
-simul.cifs <- function(n,rho1,rho2,beta,rc=0.5,depcens=0,rcZ=0.5,bin=1,type=c("cloglog","logistic"),rate=1,Z=NULL,U=NULL,pU=NULL) {# {{{
-    p=length(beta)/2
-    tt <- seq(0,6,by=0.1)
-    if (length(rate)==1) rate <- rep(rate,2)
-    Lam1 <- rho1*(1-exp(-tt/rate[1]))
-    Lam2 <- rho2*(1-exp(-tt/rate[2]))
 
-    if (length(bin)==1) bin <- rep(bin,2)
-    if (length(rcZ)==1) rcZ <- c(rcZ,0)
-
-    if (is.null(Z)) 
-    Z=cbind((bin[1]==1)*(2*rbinom(n,1,1/2)-1)+(bin[1]==0)*rnorm(n),(bin[2]==1)*(rbinom(n,1,1/2))+(bin[2]==0)*rnorm(n))
-    p <- ncol(Z)
-    colnames(Z) <- paste("Z",1:p,sep="")
-
-    cif1 <- setup.cif(cbind(tt,Lam1),beta[1:p],Znames=colnames(Z),type=type[1])
-    cif2 <- setup.cif(cbind(tt,Lam2),beta[(p+1):(2*p)],Znames=colnames(Z),type=type[1])
-    data <- sim.cifsRestrict(list(cif1,cif2),n,Z=Z,U=U,pU=pU)
-
-    if (!is.null(rc)) {
-    if (depcens==0) censor=pmin(rexp(n,1)*(1/rc),6) else censor=pmin(rexp(n,1)*(1/(rc*exp(Z %*% rcZ))),6)
-    } else censor <- 6 
-
-    status=data$status*(data$time<=censor)
-    time=pmin(data$time,censor)
-    data <- data.frame(time=time,status=status)
-    return(cbind(data,Z))
-
-}# }}}
-
-simul.mod <- function(n,rho1,rho2,beta,rc=0.5,k=1,depcens=0) {# {{{
-    p=length(beta)/2
-    tt <- seq(0,6,by=0.1)
-    Lam1 <- rho1*(1-exp(-tt))
-    Lam2 <- rho2*(1-exp(-tt))
-
-    Z=cbind(2*rbinom(n,1,1/2)-1,rnorm(n))
-    colnames(Z) <- paste("Z",1:2,sep="")
-    cif1 <- setup.cif(cbind(tt,Lam1),beta[1:2],Znames=colnames(Z),type="cloglog")
-    cif2 <- setup.cif(cbind(tt,Lam2),beta[3:4],Znames=colnames(Z),type="cloglog")
-    data <- sim.cifsRestrict(list(cif1,cif2),n,Z=Z)
-
-    censhaz  <-  cbind(tt,k*tt)
-    if (depcens==1) {
-        datc <- rchaz(censhaz,exp(Z[,1]*rc))
-    } else datc <- rchaz(censhaz,n=n)
-
-    data$time <- pmin(data$time,datc$time)
-    data$status <- ifelse(data$time<datc$time,data$status,0)
-    dsort(data) <- ~time
-
-    return(data)
-}# }}}
-
-#' @export
-setup.cif  <- function(cumhazard,coef,Znames=NULL,type="logistic")
-{# {{{
-    cif <- list()
-    cif$cumhaz <- cumhazard
-    cif$coef <- coef
-    cif$model <- type
-    class(cif) <- "defined"
-    attr(cif,"znames") <- Znames
-    return(cif)
-}# }}}

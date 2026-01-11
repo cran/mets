@@ -5,8 +5,12 @@ date: "`r Sys.Date()`"
 output:
   rmarkdown::html_vignette:
     fig_caption: yes
+    toc: true
     # fig_width: 7.15
     # fig_height: 5.5        
+header-includes: 
+  - \usepackage{tikz}
+  - \usetikzlibrary{positioning, arrows.meta,calc}
 vignette: >
   %\VignetteIndexEntry{Cooking survival data, 5 minutes recipes}
   %\VignetteEngine{knitr::rmarkdown}
@@ -25,8 +29,7 @@ knitr::opts_chunk$set(
 )
 ```
 
-Overview 
-========
+# Overview 
 
 Simulation of survival data is important for both
 theoretical and practical work. In a practical setting we might wish to
@@ -42,9 +45,9 @@ provide such tools.
 Bender et al. in a nice paper discussed how to generate
 survival data based on the Cox model, and restricted attention to some
 of the many useful parametric survival models (weibull, exponential).
-We here use piecwise linear baseline functions that make it easy to simulate
+We here use piecewise linear baseline functions that make it easy to simulate
 data that follows closely the baseline given by the data using semi or 
-nonparametric models. THis makes it easy to capture important aspects of the
+nonparametric models. This makes it easy to capture important aspects of the
 data. 
 
 Different survival models can be cooked, and we here give recipes for
@@ -62,8 +65,8 @@ given in vignette about recurrent events.
  set.seed(10) # to control output in simulations
 ```
 
-Hazard based, Cox models  
-=========================
+# Hazard based, Cox models  
+
 
 Given a survival time $T$ with cumulative hazard $\Lambda(t)=\int_0^t \lambda(s) ds$, it
 follows that \cite{}
@@ -72,14 +75,14 @@ same distribution as $T$.
 
 This provides the basis for simulations of survival times with a given hazard  and is 
 a consequence of this simple calculation
-\[
+$$
   P(\Lambda^{-1}(E) > t) = P(E > \Lambda(t)) = \exp( - \Lambda(t)) = P(T > t).
-\]
+$$
 
 Similarly if $T$ given $X$ have hazard on Cox form 
-\[
+$$
   \lambda_0(t) \exp( X^T \beta)
-\]
+$$
 where $\beta$ is a $p$-dimensional regression coefficient and $\lambda_0(t)$ a baseline 
 hazard funcion, 
 then it is useful to observe also that 
@@ -94,32 +97,31 @@ cumulative hazard and then simulate data according to this approximation. Recall
 the Cox model to data will give a piecewise constant cumulative hazard and the regression coefficients so 
 with these at hand we can first approximate the piecewise constant "Breslow"-estimator with a linear
 upper (or lower bound) by simply connecting the values by 
-straight lines.  
+straight lines. 
 
-Delayed entry 
-=============
+# Delayed entry 
 
 If $T$ given $X$ have hazard  on Cox form 
-\[
+$$
   \lambda_0(t) \exp( X^T \beta)
-\]
+$$
 and we wish to generate data according to this hazard for those that are alive at time $s$, that is 
 draw from the distribution of $T$ given $T>s$ (all given $X$ ), then we note that  
-\[
+$$
 \Lambda_0^{-1}( \Lambda_0(s) + E/HR)) 
-\]
+$$
 with $HR=\exp(X^T \beta))$ and with $E \sim Exp(1)$ has the distributiion we are after. 
 
 This is again a consequence of a simple calculation
-\[
+$$
   P_X(\Lambda^{-1}(\Lambda(s)+ E/HR) > t) = P_X(E > HR( \Lambda(t) - \Lambda(s)) ) = P_X(T>t | T>s)
-\]
+$$
 
 The engine is to simulate data with a given linear cumulative hazard. First generating survival data based on
 the cumulative hazard cumhaz:j
 
 ```{r}
- nsim <- 200
+ nsim <- 1000
  chaz <-  c(0,1,1.5,2,2.1)
  breaks <- c(0,10,   20,  30,   40)
  cumhaz <- cbind(breaks,chaz)
@@ -135,7 +137,7 @@ Now looking at a simple cox model
 
 ```{r}
  library(mets)
- n <- 100
+ n <- nsim
  data(bmt)
  bmt$bmi <- rnorm(408)
  dcut(bmt) <- gage~age
@@ -149,7 +151,7 @@ Now looking at a simple cox model
  par(mfrow=c(1,1))
  plot(scox1,col=2); plot(cox1,add=TRUE,col=1)
 
- ## changing the parametes 
+ ## changing the parameters 
  cox10 <- cox1
  cox10$coef <- c(0,0.4,0.3)
  dd <- sim.phreg(cox10,n,data=bmt)
@@ -187,37 +189,38 @@ the data,
  plot(cox1); plot(scox1,add=TRUE,col=2)
  plot(cox2); plot(scox2,add=TRUE,col=2)
  cbind(cox1$coef,scox1$coef,cox2$coef,scox2$coef)
-
-
-
 ```
 
-Now fully nonparametric model with stratified baselines and specific call of sim.base function
+Now fully nonparametric model with stratified baselines 
 
 ```{r}
  data(sTRACE)
  dtable(sTRACE,~chf+diabetes)
  coxs <-   phreg(Surv(time,status==9)~strata(diabetes,chf),data=sTRACE)
  strata <- sample(0:3,nsim,replace=TRUE)
- simb <- sim.base(coxs$cumhaz,nsim,stratajump=coxs$strata.jumps,strata=strata)
+ simb <- sim.phreg(coxs,nsim,data=NULL,strata=strata)
+
  cc <-   phreg(Surv(time,status)~strata(strata),data=simb)
  plot(coxs,col=1); plot(cc,add=TRUE,col=2)
+
+ simb1 <- sim.phreg(coxs,nsim,data=sTRACE)
+ cc1 <-   phreg(Surv(time,status)~strata(diabetes,chf),data=simb1)
+ plot(cc1,add=TRUE,col=3)
 ```
 
-We now fit 3 cause-specific hazard models and generate competing risks data with hazards taken
-from the fitted Cox models. Here a complex situation with stratified baselines of some of the models.
+We now fit cause-specific hazard models with 3 causes (censoring as one of them)
+and generate competing risks data with hazards taken from the fitted Cox models. 
+Here a situation with stratified baselines for some of the models:
 
-```{r}
- ## stratified with phreg 
+```{stratified}
+ ## r with phreg 
  cox0 <- phreg(Surv(time,cause==0)~tcell+platelet,data=bmt)
  cox1 <- phreg(Surv(time,cause==1)~tcell+platelet,data=bmt)
  cox2 <- phreg(Surv(time,cause==2)~strata(tcell)+platelet,data=bmt)
  coxs <- list(cox0,cox1,cox2)
-### dd <- sim.cause.cox(coxs,nsim,data=bmt)
  dd <- sim.phregs(coxs,n,data=bmt)
 
  ## checking that  cause specific hazards are as given, make n larger
-
  scox0 <- phreg(Surv(time,status==1)~tcell+platelet,data=dd)
  scox1 <- phreg(Surv(time,status==2)~tcell+platelet,data=dd)
  scox2 <- phreg(Surv(time,status==3)~strata(tcell)+platelet,data=dd)
@@ -236,7 +239,6 @@ from the fitted Cox models. Here a complex situation with stratified baselines o
  cox1 <- phreg(Surv(time,cause==1)~strata(tcell)+platelet,data=bmt)
  cox2 <- phreg(Surv(time,cause==2)~tcell+strata(platelet),data=bmt)
  coxs <- list(cox1,cox2)
-### dd <- sim.cause.cox(coxs,nsim,data=bmt)
  dd <- sim.phregs(coxs,n,data=bmt)
  scox1 <- phreg(Surv(time,status==1)~strata(tcell)+platelet,data=dd)
  scox2 <- phreg(Surv(time,status==2)~tcell+strata(platelet),data=dd)
@@ -247,16 +249,15 @@ from the fitted Cox models. Here a complex situation with stratified baselines o
  plot(cox2); plot(scox2,add=TRUE); 
 ```
 
- - sim.phreg only for phreg, but can deal with strata 
- - sim.cox for other cox models, see last part of vignette, can only deal with covariates that can be identified from
-     the names of its coefficients (so factors should be coded accordingly).
+ - sim.phreg for phreg, can deal with strata 
+ - sim.phregs cause specific hazards on phreg form 
 
 
-One more example 
+One more example  fully non-parametric 
 
 ```{r}
  library(mets)
- n <- 100
+ n <- nsim
  data(bmt)
  bmt$bmi <- rnorm(408)
  dcut(bmt) <- gage~age
@@ -276,20 +277,58 @@ One more example
  plot(scox1,col=2); plot(cox1,add=TRUE,col=1)
  plot(scox2,col=2); plot(cox2,add=TRUE,col=1)
  plot(scox3,col=2); plot(cox3,add=TRUE,col=1)
-
 ```
 
 
 
-Multistate models: The Illness Death model 
-==========================================
+# Multistate models: The Illness Death model 
 
 Using a hazard based simulation with delayed entry we can then simulate data 
 from for example the general illness-death model. Here the cumulative hazards 
 need to be specified.
 
-First we set up some cumulative hazards, then we simulate some data
-and re-estimate the cumulative baselines
+
+
+
+\begin{tikzpicture}[
+    >=Stealth,
+    node distance=4cm,
+    state/.style={
+        rectangle,
+        draw=black,
+        thick,
+        minimum width=3cm,
+        minimum height=1cm,
+        align=center
+    }
+]
+
+  % Top states
+  \node[state] (H) {Healthy \\ (1)};
+  \node[state] (I) [right=of H] {Ill \\ (2)};
+
+  % Dead centered below
+  \node[state] (D) at ($(H)!0.5!(I) + (0,-3)$) {Dead \\ (3)};
+
+  % Two straight arrows between Healthy and Ill
+  \draw[->, thick] 
+    ($(H.east)+(0,0.15)$) -- ($(I.west)+(0,0.15)$)
+    node[midway, above] {$\lambda_{12}$};
+
+  \draw[->, thick] 
+    ($(I.west)+(0,-0.15)$) -- ($(H.east)+(0,-0.15)$)
+    node[midway, below] {$\lambda_{21}$};
+
+  % Death transitions
+  \draw[->, thick] (H) -- node[left] {$\lambda_{13}$} (D);
+  \draw[->, thick] (I) -- node[right] {$\lambda_{23}$} (D);
+
+\end{tikzpicture}
+
+We simply give the cumulative hazards for the different transitions to the function simMultistate
+to simulate data from the model, subsequently we re-estimate the parameters based on the simulated
+data to validate the procedure. 
+
 
 ```{r}
  data(CPH_HPN_CRBSI)
@@ -325,8 +364,7 @@ and re-estimate the cumulative baselines
 
 
 
-Cumulative incidence 
-======================
+# Cumulative incidence 
 
 In this section we discuss how to simulate competing risks data that have a specfied cumulative 
 incidence function.  We consider for simplicity a competing risks model with two causes and denote the
@@ -351,8 +389,7 @@ We again note and use that if $\tilde F_j(s)$ and $F_j(s)$ are piecewise linear
 continuous functions then the inverse is easy to compute. 
 
 
-Cumulative incidence I
-================================
+## Cumulative incidence I
 
 We here simulate two causes of death with two binary covarites of logistic type
 \begin{align*}
@@ -383,14 +420,18 @@ beta <- c(0.3,-0.3,-0.3,0.3)
 
 dats <- simul.cifs(nsim,rho1,rho2,beta,rc=0.5,depcens=0,type="logistic")
 
+par(mfrow=c(1,2))
 # Fitting regression model with CIF logistic-link 
 cif1 <- cifreg(Event(time,status)~Z1+Z2,dats)
 summary(cif1)
+plot(cif1)
+lines(attr(dats,"Lam1"))
 
-
-dats <- simul.cifs(n,rho1,rho2,beta,rc=0.5,depcens=0,type="cloglog")
+dats <- simul.cifs(nsim,rho1,rho2,beta,rc=0.5,depcens=0,type="cloglog")
 ciff <- cifregFG(Event(time,status)~Z1+Z2,dats)
 summary(ciff)
+plot(ciff)
+lines(attr(dats,"Lam1"))
 ```
 
 We can also use the parameters based on fitted models 
@@ -400,14 +441,16 @@ We can also use the parameters based on fitted models
  ################################################################
  #  simulating several causes with specific cumulatives 
  ################################################################
+ ## two logistic link models 
  cif1 <-  cifreg(Event(time,cause)~tcell+age,data=bmt,cause=1)
  cif2 <-  cifreg(Event(time,cause)~tcell+age,data=bmt,cause=2)
 
- ## dd <- sim.cifs(list(cif1,cif2),nsim,data=bmt)
- dds <- sim.cifsRestrict(list(cif1,cif2),nsim,data=bmt)
+ dd <- sim.cifs(list(cif1,cif2),nsim,data=bmt)
 
- scif1 <-  cifreg(Event(time,cause)~tcell+age,data=dds,cause=1)
- scif2 <-  cifreg(Event(time,cause)~tcell+age,data=dds,cause=2)
+ ## still logistic link 
+ scif1 <-  cifreg(Event(time,cause)~tcell+age,data=dd,cause=1)
+ ## 2nd cause not on logistic form due to restriction
+ scif2 <-  cifreg(Event(time,cause)~tcell+age,data=dd,cause=2)
     
  cbind(cif1$coef,scif1$coef)
  cbind(cif2$coef,scif2$coef)
@@ -417,31 +460,103 @@ We can also use the parameters based on fitted models
 ```
 
 
-CIF Delayed entry
-=================
+## CIF Delayed entry
 
 Now assume that given covariates $F_1(t;X) = P(T < t, \epsilon=1|X)$ and  $F_2(t;X) = P(T < t, \epsilon=2|X)$ are two 
 cumulative incidence functions that satistifes the needed constraints. We wish to generate data that follows these two
 piecewise linear cumulative indidence functions with delayed entry at time $s$.  We should thus
 generate data that follows the cumulative incidence functions
-\[
+$$
 \tilde F_1(t,s;X)=   \frac{F_1(t;X) - F_1(s;;X)}{ 1 - F_1(s;X) - F_2(s;X)}
-\]
+$$
 and 
-\[
+$$
 \tilde F_2(t,s;X)=   \frac{F_2(t;X) - F_2(s;;X)}{ 1 - F_1(s;X) - F_2(s;X)}
-\]
+$$
 this can be done according to the recipe in the previous section.  
 To be specific (ignoring the $X$ in the formula)
-\[
+$$
   F_1^{-1}( F_1(s) + U \cdot (1 - F_1(s;X) - F_2(s;X)) )
-\]
+$$
 where $U$ is a uniform, will have distribution given by $\tilde F_1(t,s)$.
 
-Recurrent events
-=================
+# Recurrent events
 
 See also recurrent events vignette
+
+ - sim.recurrent can simulate based on the Two-Stage model where the the 
+    - the rate of the terminal event among survivors in on Cox form (phreg)
+      - the rate of the recurrent events among survivors is on Cox form (phreg)
+      - the rate of the recurrent events is a  marginal Ghosh-Lin model (recreg)
+    - the simulations is based on approximations with piecewise linear models based on a grid.
+    - the events can be dependent via a frailty random effects (Gamma distributed)
+  - simRecurrentII, simRecurrent, simRecurrentList
+    - A frailty Gamma model where the rate of the  events and the terminal event are given based on 
+       cumulative baselines and relative risk covariate effects. Thus ends up on Cox form  given the frailty and covariates.
+    - simRecurrentList can take multiple recurrent events and multiple causes of death 
+
+
+Two-stage models 
+
+```{r}
+ data(hfactioncpx12)
+ hf <- hfactioncpx12
+ hf$x <- as.numeric(hf$treatment) 
+ n <- 1000
+
+ ##  to fit Cox  models 
+ xr <- phreg(Surv(entry,time,status==1)~treatment+cluster(id),data=hf)
+ dr <- phreg(Surv(entry,time,status==2)~treatment+cluster(id),data=hf)
+ estimate(xr)
+ estimate(dr)
+
+ simcoxcox <- sim.recurrent(xr,dr,n=n,data=hf)
+
+ xrs <- phreg(Surv(start,stop,statusD==1)~treatment+cluster(id),data=simcoxcox)
+ drs <- phreg(Surv(start,stop,statusD==3)~treatment+cluster(id),data=simcoxcox)
+ estimate(xrs)
+ estimate(drs)
+
+ par(mfrow=c(1,2))
+ plot(xrs); 
+ plot(xr,add=TRUE)
+###
+ plot(drs)
+ plot(dr,add=TRUE)
+
+```
+
+and a now with Ghosh-Lin and Cox marginals 
+
+```{r}
+ recGL <- recreg(Event(entry,time,status)~treatment+cluster(id),hf,death.code=2)
+ estimate(recGL)
+ estimate(dr)
+
+ simglcox <- sim.recurrent(recGL,dr,n=n,data=hf)
+
+ simcoxcox <- sim.recurrent(xr,dr,n=n,data=hf)
+ dtable(simcoxcox,~statusD)
+
+ recGL <- recreg(Event(entry,time,status)~treatment+cluster(id),hf,death.code=2)
+ simglcox <- sim.recurrent(recGL,dr,n=n,data=hf)
+
+ GLs <- recreg(Event(start,stop,statusD)~treatment+cluster(id),data=simglcox,death.code=3)
+ drs <- phreg(Surv(start,stop,statusD==3)~treatment+cluster(id),data=simglcox)
+ estimate(GLs)
+ estimate(drs)
+
+ par(mfrow=c(1,2))
+ plot(GLs); 
+ plot(recGL,add=TRUE)
+###
+ plot(drs)
+ plot(dr,add=TRUE)
+
+```
+
+
+Frailty models 
 
 ```{r}
  data(CPH_HPN_CRBSI)
@@ -466,70 +581,77 @@ See also recurrent events vignette
  showfitsimList(rr,cumhaz,drl) 
 ```
 
- - sim.recurrent can simulate based on cox hazard for events and death based on phreg
-    - similar to sim.phreg
+
+# Parametric models
+While the semi‑parametric Cox model provides substantial flexibility for
+simulating survival data, there are situations where a fully parametric
+simulation model is convenient or preferable. Here we consider a Weibull model
+ parametrized so that the cumulative hazard is given by $$\Lambda(t) = \lambda
+ \cdot t^s$$ where $s$ is the **shape parameter**, and $\lambda$ the **rate
+ parameter**. We allow regression on both parameters
+ \begin{align*} \lambda :=
+ \exp(\beta^\top X), \quad s := \exp(\gamma^\top Z) \end{align*}
+  where $X$ and
+ $Z$ are covariate vectors. Specifically, this opens up for exploring
+ non‑proportional hazards when $s$ depends on covariates.
+
+Revisiting the TRACE data example we can compare the predictions from the Cox
+and the Weibull-Cox model stratified by `chf` and with a proportional hazard
+effect of `age` 
+```{r weibull1}
+data(sTRACE, package = "mets")
+dat <- sTRACE
+cox1 <- phreg(Surv(time, status > 0) ~ strata(chf) + I(age - 67), data = sTRACE)
+coxw <- phreg_weibull(Surv(time, status > 0) ~ chf + age,
+    shape.formula = ~chf,
+    data = sTRACE
+    )
+coxw
+
+tt <- seq(0, max(sTRACE$time), length.out = 100)
+newd <- data.frame(chf = c(1, 0), age=67)
+pr <- predict(coxw, newdata = newd, times = tt, type="chaz")
+plot(cox1, col = 1)
+lines(tt, pr[, 1, 1], lty=2, lwd=2)
+lines(tt, pr[, 1, 2], lty = 1, lwd = 2)
+```
+
+To simulate data we can use the `rweibullcox()` function. Note that the
+`stats::rweibull()` function gives a different parametrization where the
+cumulative hazard is given by $H(t) = (t/b)^s$, i.e., with the same scale
+parameter but where the scale parameter $b$ is related to the rate parameter we consider by $r := b^{-s}$.
 
 
+```{r weibull_sim}
+n <- 5000
+newd <- mets::dsample(size=n, sTRACE[,c("chf","age")]) # bootstrap covariates
+lp <- predict(coxw, newdata=newd, type="lp") # linear-predictors
+head(lp)
+
+## simulate event times
+tt <- rweibullcox(nrow(lp), rate = exp(lp[,1]), shape= exp(lp[,2]))
+
+# censoring model
+censw <- phreg_weibull(Surv(time, status==0) ~ 1, data=sTRACE)
+censpar <- exp(coef(censw))
+censtime <- pmin(8, rweibullcox(nrow(lp), censpar[1], censpar[2]))
+
+# combined simulated data
+newd <- transform(newd, time=pmin(tt, censtime), status=(tt<=censtime))
+head(newd)
+
+# estimate weibull model on new data
+phreg_weibull(Surv(time,status) ~ chf + age, ~chf, data=newd)
+```
+
+All these steps are wrapped in the `simulate` method:
 ```{r}
- data(hfactioncpx12)
- hf <- hfactioncpx12
- hf$x <- as.numeric(hf$treatment) 
- n <- 100
-
- ##  to fit non-parametric models with just a baseline 
- xr <- phreg(Surv(entry,time,status==1)~cluster(id),data=hf)
- dr <- phreg(Surv(entry,time,status==2)~cluster(id),data=hf)
-
- simcoxcox <- sim.recurrent(xr,dr,n=n,data=hf)
-
- recGL <- recreg(Event(entry,time,status)~+cluster(id),hf,death.code=2)
- simglcox <- sim.recurrent(recGL,dr,n=n,data=hf)
+# simulate(coxw, n = 5, cens.model = NULL, data=newd, var.names = c("time", "status"))
+simulate(coxw, nsim = 5)
 ```
 
 
-Simulations based on coxph 
-===========================
-
-
-```{r}
- cox <-  survival::coxph(Surv(time,status==9)~vf+chf+wmi,data=sTRACE)
- sim1 <- sim.cox(cox,nsim,data=sTRACE)
- cc <- survival::coxph(Surv(time,status)~vf+chf+wmi,data=sim1)
- cbind(cox$coef,cc$coef)
- cor(sim1[,c("vf","chf","wmi")])
- cor(sTRACE[,c("vf","chf","wmi")])
- 
- cox <-  phreg(Surv(time, status==9)~vf+chf+wmi,data=sTRACE)
- sim3 <- sim.cox(cox,nsim,data=sTRACE)
- cc <-  phreg(Surv(time, status)~vf+chf+wmi,data=sim3)
- cbind(cox$coef,cc$coef)
- plot(cox,se=TRUE); plot(cc,add=TRUE,col=2)
- 
- coxs <-  phreg(Surv(time,status==9)~strata(chf,vf)+wmi,data=sTRACE)
- sim3 <- sim.phreg(coxs,nsim,data=sTRACE)
- cc <-   phreg(Surv(time, status)~strata(chf,vf)+wmi,data=sim3)
- cbind(coxs$coef,cc$coef)
- plot(coxs,col=1); plot(cc,add=TRUE,col=2)
-```
-
-More Cox games with cause  specific hazards
-
-```{r}
- data(bmt)
- # coxph          
- cox1 <- survival::coxph(Surv(time,cause==1)~tcell+platelet,data=bmt)
- cox2 <- survival::coxph(Surv(time,cause==2)~tcell+platelet,data=bmt)
- coxs <- list(cox1,cox2)
- dd <- sim.cause.cox(coxs,nsim,data=bmt)
- scox1 <- survival::coxph(Surv(time,status==1)~tcell+platelet,data=dd)
- scox2 <- survival::coxph(Surv(time,status==2)~tcell+platelet,data=dd)
- cbind(cox1$coef,scox1$coef)
- cbind(cox2$coef,scox2$coef)
-```
- 
-
-SessionInfo
-============
+# SessionInfo
 
 
 ```{r}

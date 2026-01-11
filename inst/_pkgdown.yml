@@ -1,5 +1,4 @@
-destination: docs
-
+url: http://kkholst.github.io/mets/
 template:
-  params:
-    bootswatch: spacelab
+  bootstrap: 5
+

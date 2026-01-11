@@ -12,7 +12,7 @@
 
 <meta name="author" content="Klaus Holst &amp; Thomas Scheike" />
 
-<meta name="date" content="2025-10-21" />
+<meta name="date" content="2026-01-11" />
 
 <title>Analysis of multivariate survival data</title>
 
@@ -341,7 +341,7 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 
 <h1 class="title toc-ignore">Analysis of multivariate survival data</h1>
 <h4 class="author">Klaus Holst &amp; Thomas Scheike</h4>
-<h4 class="date">2025-10-21</h4>
+<h4 class="date">2026-01-11</h4>
 
 
 
@@ -1582,13 +1582,13 @@ model.</p>
 <div id="sessioninfo" class="section level1">
 <h1>SessionInfo</h1>
 <div class="sourceCode" id="cb32"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb32-1"><a href="#cb32-1" tabindex="-1"></a><span class="fu">sessionInfo</span>()</span>
-<span id="cb32-2"><a href="#cb32-2" tabindex="-1"></a><span class="co">#&gt; R version 4.5.1 (2025-06-13)</span></span>
-<span id="cb32-3"><a href="#cb32-3" tabindex="-1"></a><span class="co">#&gt; Platform: aarch64-apple-darwin25.0.0</span></span>
-<span id="cb32-4"><a href="#cb32-4" tabindex="-1"></a><span class="co">#&gt; Running under: macOS Tahoe 26.0.1</span></span>
+<span id="cb32-2"><a href="#cb32-2" tabindex="-1"></a><span class="co">#&gt; R version 4.5.2 (2025-10-31)</span></span>
+<span id="cb32-3"><a href="#cb32-3" tabindex="-1"></a><span class="co">#&gt; Platform: aarch64-apple-darwin25.1.0</span></span>
+<span id="cb32-4"><a href="#cb32-4" tabindex="-1"></a><span class="co">#&gt; Running under: macOS Tahoe 26.2</span></span>
 <span id="cb32-5"><a href="#cb32-5" tabindex="-1"></a><span class="co">#&gt; </span></span>
 <span id="cb32-6"><a href="#cb32-6" tabindex="-1"></a><span class="co">#&gt; Matrix products: default</span></span>
-<span id="cb32-7"><a href="#cb32-7" tabindex="-1"></a><span class="co">#&gt; BLAS:   /Users/kkzh/.asdf/installs/R/4.5.1/lib/R/lib/libRblas.dylib </span></span>
-<span id="cb32-8"><a href="#cb32-8" tabindex="-1"></a><span class="co">#&gt; LAPACK: /Users/kkzh/.asdf/installs/R/4.5.1/lib/R/lib/libRlapack.dylib;  LAPACK version 3.12.1</span></span>
+<span id="cb32-7"><a href="#cb32-7" tabindex="-1"></a><span class="co">#&gt; BLAS:   /Users/kkzh/.asdf/installs/r/4.5.2/lib/R/lib/libRblas.dylib </span></span>
+<span id="cb32-8"><a href="#cb32-8" tabindex="-1"></a><span class="co">#&gt; LAPACK: /Users/kkzh/.asdf/installs/r/4.5.2/lib/R/lib/libRlapack.dylib;  LAPACK version 3.12.1</span></span>
 <span id="cb32-9"><a href="#cb32-9" tabindex="-1"></a><span class="co">#&gt; </span></span>
 <span id="cb32-10"><a href="#cb32-10" tabindex="-1"></a><span class="co">#&gt; locale:</span></span>
 <span id="cb32-11"><a href="#cb32-11" tabindex="-1"></a><span class="co">#&gt; [1] en_US.UTF-8/en_US.UTF-8/en_US.UTF-8/C/en_US.UTF-8/en_US.UTF-8</span></span>
@@ -1601,21 +1601,22 @@ model.</p>
 <span id="cb32-18"><a href="#cb32-18" tabindex="-1"></a><span class="co">#&gt; [8] base     </span></span>
 <span id="cb32-19"><a href="#cb32-19" tabindex="-1"></a><span class="co">#&gt; </span></span>
 <span id="cb32-20"><a href="#cb32-20" tabindex="-1"></a><span class="co">#&gt; other attached packages:</span></span>
-<span id="cb32-21"><a href="#cb32-21" tabindex="-1"></a><span class="co">#&gt; [1] prodlim_2025.04.28 timereg_2.0.7      survival_3.8-3     mets_1.3.8        </span></span>
+<span id="cb32-21"><a href="#cb32-21" tabindex="-1"></a><span class="co">#&gt; [1] prodlim_2025.04.28 timereg_2.0.7      survival_3.8-3     mets_1.3.9        </span></span>
 <span id="cb32-22"><a href="#cb32-22" tabindex="-1"></a><span class="co">#&gt; </span></span>
 <span id="cb32-23"><a href="#cb32-23" tabindex="-1"></a><span class="co">#&gt; loaded via a namespace (and not attached):</span></span>
-<span id="cb32-24"><a href="#cb32-24" tabindex="-1"></a><span class="co">#&gt;  [1] cli_3.6.5           knitr_1.50          rlang_1.1.6        </span></span>
-<span id="cb32-25"><a href="#cb32-25" tabindex="-1"></a><span class="co">#&gt;  [4] xfun_0.53           KernSmooth_2.23-26  data.table_1.17.8  </span></span>
-<span id="cb32-26"><a href="#cb32-26" tabindex="-1"></a><span class="co">#&gt;  [7] jsonlite_2.0.0      future.apply_1.20.0 listenv_0.9.1      </span></span>
-<span id="cb32-27"><a href="#cb32-27" tabindex="-1"></a><span class="co">#&gt; [10] lava_1.8.1          htmltools_0.5.8.1   sass_0.4.10        </span></span>
-<span id="cb32-28"><a href="#cb32-28" tabindex="-1"></a><span class="co">#&gt; [13] rmarkdown_2.30      grid_4.5.1          evaluate_1.0.5     </span></span>
-<span id="cb32-29"><a href="#cb32-29" tabindex="-1"></a><span class="co">#&gt; [16] jquerylib_0.1.4     fastmap_1.2.0       numDeriv_2016.8-1.1</span></span>
-<span id="cb32-30"><a href="#cb32-30" tabindex="-1"></a><span class="co">#&gt; [19] yaml_2.3.10         mvtnorm_1.3-3       lifecycle_1.0.4    </span></span>
-<span id="cb32-31"><a href="#cb32-31" tabindex="-1"></a><span class="co">#&gt; [22] compiler_4.5.1      codetools_0.2-20    ucminf_1.2.2       </span></span>
-<span id="cb32-32"><a href="#cb32-32" tabindex="-1"></a><span class="co">#&gt; [25] Rcpp_1.1.0          future_1.67.0       lattice_0.22-7     </span></span>
-<span id="cb32-33"><a href="#cb32-33" tabindex="-1"></a><span class="co">#&gt; [28] digest_0.6.37       R6_2.6.1            parallelly_1.45.1  </span></span>
-<span id="cb32-34"><a href="#cb32-34" tabindex="-1"></a><span class="co">#&gt; [31] parallel_4.5.1      Matrix_1.7-4        bslib_0.9.0        </span></span>
-<span id="cb32-35"><a href="#cb32-35" tabindex="-1"></a><span class="co">#&gt; [34] tools_4.5.1         globals_0.18.0      cachem_1.1.0</span></span></code></pre></div>
+<span id="cb32-24"><a href="#cb32-24" tabindex="-1"></a><span class="co">#&gt;  [1] cli_3.6.5              knitr_1.50             rlang_1.1.6           </span></span>
+<span id="cb32-25"><a href="#cb32-25" tabindex="-1"></a><span class="co">#&gt;  [4] xfun_0.54              KernSmooth_2.23-26     data.table_1.17.8     </span></span>
+<span id="cb32-26"><a href="#cb32-26" tabindex="-1"></a><span class="co">#&gt;  [7] jsonlite_2.0.0         future.apply_1.20.1    listenv_0.10.0        </span></span>
+<span id="cb32-27"><a href="#cb32-27" tabindex="-1"></a><span class="co">#&gt; [10] lava_1.8.3             htmltools_0.5.8.1      sass_0.4.10           </span></span>
+<span id="cb32-28"><a href="#cb32-28" tabindex="-1"></a><span class="co">#&gt; [13] rmarkdown_2.30         grid_4.5.2             evaluate_1.0.5        </span></span>
+<span id="cb32-29"><a href="#cb32-29" tabindex="-1"></a><span class="co">#&gt; [16] jquerylib_0.1.4        fastmap_1.2.0          numDeriv_2016.8-1.1   </span></span>
+<span id="cb32-30"><a href="#cb32-30" tabindex="-1"></a><span class="co">#&gt; [19] yaml_2.3.10            mvtnorm_1.3-3          lifecycle_1.0.4       </span></span>
+<span id="cb32-31"><a href="#cb32-31" tabindex="-1"></a><span class="co">#&gt; [22] compiler_4.5.2         codetools_0.2-20       ucminf_1.2.2          </span></span>
+<span id="cb32-32"><a href="#cb32-32" tabindex="-1"></a><span class="co">#&gt; [25] Rcpp_1.1.1             future_1.68.0          lattice_0.22-7        </span></span>
+<span id="cb32-33"><a href="#cb32-33" tabindex="-1"></a><span class="co">#&gt; [28] digest_0.6.39          R6_2.6.1               parallelly_1.46.1     </span></span>
+<span id="cb32-34"><a href="#cb32-34" tabindex="-1"></a><span class="co">#&gt; [31] parallel_4.5.2         Matrix_1.7-4           bslib_0.9.0           </span></span>
+<span id="cb32-35"><a href="#cb32-35" tabindex="-1"></a><span class="co">#&gt; [34] tools_4.5.2            RcppArmadillo_15.2.3-1 globals_0.18.0        </span></span>
+<span id="cb32-36"><a href="#cb32-36" tabindex="-1"></a><span class="co">#&gt; [37] cachem_1.1.0</span></span></code></pre></div>
 </div>
 
 

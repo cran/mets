@@ -4,14 +4,14 @@
 \alias{binregG}
 \title{G-estimator for binomial regression model (Standardized estimates)}
 \usage{
-binregG(x, data, Avalues = c(0, 1), varname = NULL)
+binregG(x, data, Avalues = NULL, varname = NULL)
 }
 \arguments{
 \item{x}{binreg object}
 
 \item{data}{data frame for risk averaging}
 
-\item{Avalues}{values to compare for first covariate A}
+\item{Avalues}{values to compare for first covariate A, assumes that first variable is factor and take all levels}
 
 \item{varname}{if given then averages for this variable, default is first variable}
 }
@@ -30,7 +30,10 @@ bmt$event <- (bmt$cause!=0)*1
 b1 <- binreg(Event(time,cause)~age+tcell+platelet,bmt,cause=1,time=50)
 sb1 <- binregG(b1,bmt,Avalues=c(0,1,2))
 summary(sb1)
-
+}
+\references{
+Blanche PF, Holt A, Scheike T (2022). “On logistic regression with right censored data, with or without competing risks, and its use for estimating treatment effects.” Lifetime data analysis,
+29, 441–482.
 }
 \author{
 Thomas Scheike

@@ -100,12 +100,20 @@ dfactor(bmt)  <-  ~.
 brs <- binregATE(Event(time,cause)~tcell.f+platelet+age,bmt,time=50,cause=1,
   treat.model=tcell.f~platelet+age)
 summary(brs)
+head(brs$riskDR.iid)
+head(brs$riskG.iid)
 
 brsi <- binregATE(Event(time,cause)~tcell.f+tcell.f*platelet+tcell.f*age,bmt,time=50,cause=1,
   treat.model=tcell.f~platelet+age)
 summary(brsi)
+head(brs$riskDR.iid)
+head(brs$riskG.iid)
 
 
+}
+\references{
+Blanche PF, Holt A, Scheike T (2022). “On logistic regression with right censored data, with or without competing risks, and its use for estimating treatment effects.” Lifetime data analysis,
+29, 441–482.
 }
 \author{
 Thomas Scheike

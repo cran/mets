@@ -1,3 +1,5 @@
+
+
 gsub2 <- function(pattern, replacement, x, ...) {
   if (length(pattern)!=length(replacement)) {
       pattern <- rep(pattern, length.out=length(replacement))
@@ -259,12 +261,12 @@ Specials <- function(f,spec,split1=",",split2=NULL,...) {# {{{
   if (!is.null(split1))
       res <- unlist(strsplit(res,split1))
   res <- as.list(res)
-  for (i in seq(length(res))) {
-      if (length(grep("~",res[[i]]))>0) {
+  for (i in seq_along(res)) {
+      if (length(grep("~", res[[i]])) > 0) {
           res[[i]] <- as.formula(res[[i]])
       }
   }
-  return(res)
+  return(structure(res, "name.mf" = x))
 }# }}}
 
 decomp.specials <- function (x, pattern = "[()]", sep = ",", ...)
@@ -274,3 +276,322 @@ decomp.specials <- function (x, pattern = "[()]", sep = ",", ...)
       st <- rev(unlist(strsplit(st, pattern, ...)))[1]
     unlist(strsplit(st, sep, ...))
   }
+
+
+model.extract2 <- function(frame, component) {
+  component <- as.character(substitute(component))
+  if (component %in% c("response", "offset")) {
+    return(do.call(
+      model.extract,
+      list(frame = frame, component = component)
+    ))
+  }
+  vname <- paste0("(", component, ")")
+  if (!(vname %in% names(frame))) {
+    regex <- paste0("^", component, "\\(.*\\)$")
+    if (any(grepl(regex, names(frame)))) {
+      vname <- grep(regex, names(frame))
+      if (length(vname) > 1) stop("model.extract2: non-unique component")
+    }
+  }
+  rval <- frame[[vname]]
+
+  if (!is.null(rval)) {
+    if (length(rval) == nrow(frame)) {
+      names(rval) <- attr(frame, "row.names")
+    } else if (is.matrix(rval) && nrow(rval) == nrow(frame)) {
+      t1 <- dimnames(rval)
+      dimnames(rval) <- list(
+        attr(frame, "row.names"),
+        t1[[2L]]
+      )
+    }
+  }
+  return(rval)
+}
+
+# #' Extract design matrix from data.frame and formula
+# #' @title Extract design matrix
+# #' @param formula formula
+# #' @param data data.frame
+# #' @param intercept (logical) If FALSE an intercept is not included in the
+# #'   design matrix
+# #' @param response (logical) if FALSE the response variable is dropped
+# #' @param rm_envir Remove environment
+# #' @param ... additional arguments (e.g, specials such weights, offsets, ...)
+# #' @param specials character vector specifying functions in the formula that
+# #'   should be marked as special in the [terms] object
+# #' @param specials.call (call) specials optionally defined as a call-type
+# #' @param levels a named list of character vectors giving the full set of
+# #'   levels
+# #'   to be assumed for each factor
+# #' @param design.matrix (logical) if FALSE then only response and specials are
+# #'   returned. Otherwise, the design.matrix `x` is als part of the returned
+# #'   object.
+# #' @param na.action method to handle missing data
+# #' @return An object of class 'mets.design'
+# #' @examples
+# #' n <- 1e3
+# #' a <- rbinom(n, 1, 0.5)
+# #' t <- rweibull(n, shape=0.5, exp(3 + a))
+# #' d <- data.frame(time=t, status=TRUE, a=a, id=seq(n), x=rnorm(n))
+# #' des <- proc_design(
+# #' Surv(time, status) ~ x + strata(a) + cluster(id),
+# #'   specials = c("strata", "cluster"),
+# #'   data=d)
+# #' new <- update_design(des, head(d))
+# #' new$strata
+# #' new$cluster
+# #' new$y
+# #' new$x
+proc_design <- function(formula, data, ..., # nolint
+                        intercept = FALSE,
+                        response = TRUE,
+                        rm_envir = FALSE,
+                        specials = NULL,
+                        specials.call = NULL,
+                        levels = NULL,
+                        design.matrix = TRUE,
+                        na.action = na.omit
+                        ) {
+  if (inherits(data, c("data.table", "tbl_df"))) {
+    data <- as.data.frame(data)
+  }
+  dots <- substitute(list(...))
+  if ("subset" %in% names(dots)) {
+    stop("subset is not an allowed specials argument for `proc_design`")
+  }
+  formulaenv <- environment(formula)
+  tt <- terms(formula, data = data, specials = specials)
+  term.labels <- attr(tt, "term.labels") # predictors
+
+  if (response && inherits(
+                    try(model.frame(update(tt, ~1),
+                                    data = data,
+                                    na.action = na.action),
+                        silent = TRUE),
+                    "try-error"
+                  )) {
+    response <- FALSE
+  }
+  # delete response to generate design matrix when making predictions
+  if (!response) tt <- delete.response(tt)
+
+  sterm.list <- c()
+  if (length(specials) > 0) {
+    des <- attr(tt, "factors")
+    for (s in specials) {
+      sterm <- rownames(des)[attr(tt, "specials")[[s]]]
+      sterm.list <- c(sterm.list, sterm)
+    }
+    if (length(sterm.list) > 0) {
+      # create formula without specials
+      if ((nrow(attr(tt, "factors")) - attr(tt, "response")) ==
+          length(sterm.list)) {
+        # only specials on the rhs, remove everything
+        formula <- update(formula, ~1)
+      } else {
+        # predictors without the specials
+        term.labels <- setdiff(
+          term.labels,
+          unlist(sterm.list)
+        )
+        ## formula <- update(tt, reformulate(term.labels))
+      }
+      fst <- lava::trim(paste(deparse(formula), collapse = ""), all = TRUE)
+      for (s in sterm.list) {
+        fst <- gsub(trim(s, all = TRUE), "", fst, fixed = TRUE)
+      }
+      fst <- gsub("[\\+]*$", "", fst) # remove potential any trailing '+'
+      formula <- as.formula(fst)
+      environment(formula) <- formulaenv
+    }
+  }
+
+  formula0 <- formula
+  environment(formula0) <- formulaenv
+  if (!response) formula0 <- formula(delete.response(terms(formula)))
+  xlev <- levels
+  xlev[["response_"]] <- NULL
+  if (!design.matrix) { # only extract specials, response
+    des <- attr(tt, "factors")
+    fs <- update(formula0, ~1)
+    if (length(sterm.list) > 0) {
+      # formula with only special-terms
+      fs <- reformulate(paste(sterm.list, collapse = " + "))
+      fs <- update(formula0, fs)
+    }
+    environment(formula) <- formulaenv
+    mf <- model.frame(fs, data=data, na.action = na.action, ...)
+  } else { # also extract design matrix
+    mf <- model.frame(tt,
+                      data = data, ...,
+                      xlev = xlev,
+                      na.action = na.action,
+                      drop.unused.levels = FALSE
+                      )
+    if (is.null(xlev)) {
+      xlev <- .getXlevels(tt, mf)
+    }
+    xlev0 <- xlev
+  }
+
+  y <- NULL
+  if (response) {
+    y <- tryCatch(
+      model.response(mf, type = "any"),
+      error = function(...) NULL
+    )
+    if (is.factor(y) || is.character(y)) {
+      ylev <- levels[["response_"]]
+      if (!is.null(ylev)) {
+        factor(y, levels = ylev)
+      } else {
+        ylev <- if (is.factor(y)) {
+                  levels(y)
+                } else if (is.character(y)) {
+                  levels(as.factor(y))
+                }
+        levels[["response_"]] <- ylev
+      }
+    }
+  }
+
+  has_intercept <- attr(tt, "intercept") == 1L
+  specials <- union(
+    specials,
+    names(dots)[-1] # removing "" at first position when calling dots, which
+  ) # is a call object
+
+  specials.list <- c()
+  specials.var <- c()
+  if (length(specials) > 0) {
+    for (s in specials) {
+      w <- eval(substitute(model.extract2(mf, s), list(s = s)))
+      specials.list <- c(specials.list, list(w))
+      spec <- Specials(tt, spec = s)
+      if (!is.null(unlist(spec))) {
+        spec <- structure(unlist(spec), "name.mf" = attr(spec, "name.mf"))
+      }
+      specials.var <- c(
+        specials.var,
+        list(spec)
+      )
+    }
+    names(specials.var) <- specials
+    names(specials.list) <- specials
+    if (length(sterm.list) > 0) {
+      if (design.matrix) {
+        xlev0[sterm.list] <- NULL
+        mf <- model.frame(formula0,
+                          data = data, ...,
+                          xlev = xlev0,
+                          na.action = na.action,
+                          drop.unused.levels = FALSE
+                          )
+      }
+    }
+  }
+
+  if (!is.null(specials.call)) {
+    specials.list2 <- eval(specials.call, data)
+    for (n in names(specials.list2)) {
+      if (is.null(specials.list[[n]])) {
+        specials.list[[n]] <- specials.list2[[n]]
+      }
+    }
+  }
+
+  if (design.matrix) {
+    x <- model.matrix(mf, data = structure(data, terms=NULL),
+                      xlev = xlev0)
+    if (!intercept && has_intercept) {
+      has_intercept <- FALSE
+      x <- x[, -1, drop = FALSE]
+    }
+  } else {
+    term.labels <- NULL
+    x <- NULL
+  }
+
+  if (rm_envir) attr(tt, ".Environment") <- NULL
+  if (is.null(specials.call)) specials.call <- dots
+
+  xlev[["response_"]] <- levels[["response_"]]
+  res <- c(
+    list(
+      formula = formula, # formula without specials
+      terms = tt,
+      term.labels = term.labels,
+      levels = xlev,
+      x = x, y = y,
+      design.matrix = design.matrix,
+      intercept = has_intercept,
+      data = mf,
+      ## data[0, ], ## Empty data.frame to capture structure of data
+      specials = specials,
+      na.action = na.action,
+      specials.var = specials.var,
+      specials.call = specials.call
+    ),
+    specials.list
+  )
+  return(structure(res, class="mets.design"))
+}
+
+
+update_design <- function(object, data = NULL, response = TRUE, ...) {
+  if (is.null(data)) data <- object$data
+  missing_spec_var <- missing_spec <- c()
+  levels <- object$levels
+  for (s in names(object$specials.var)) {
+    miss <- FALSE
+    specials.var <- object$specials.var[[s]]
+    if (!is.null(specials.var)) { ## special used in original design object
+      for (v in specials.var) {
+        # looping through variables used in special-term checking if missing
+        if (!v %in% colnames(data)) {
+          if (is.null(object$levels[[v]])) {
+            data[[v]] <- 0
+          } else { # if factor replace with first level
+            data[[v]] <- object$levels[[v]][1]
+          }
+          miss <- TRUE
+        }
+      }
+      if (miss) {
+        missing_spec <- c(missing_spec, s)
+        missing_spec_var <- c(missing_spec_var, attr(specials.var, "name.mf"))
+      }
+    }
+  }
+  if (length(missing_spec) > 0) object$levels[missing_spec_var] <- NULL
+  res <- proc_design(object$terms,
+    data = data,
+    design.matrix = object$design.matrix,
+    levels = object$levels,
+    response = response,
+    na.action = object$na.action,
+    intercept = object$intercept,
+    specials = object$specials,
+    specials.call = object$specials.call
+    )
+  object$levels <- levels
+  res[missing_spec] <- NULL
+  return(res)
+}
+
+
+clean_design <- function(object, ...) {
+  object$x <- object$x[0, , drop = FALSE]
+  object$y <- NULL
+  for (i in object$specials) object[[i]] <- NULL
+  return(object)
+}
+
+
+##' @export
+model.frame.mets.design <- function(formula, data = NULL, ...) {
+  if (is.null(data)) return(formula$data)
+  model.frame(formula$formula, data = data, ...)
+}

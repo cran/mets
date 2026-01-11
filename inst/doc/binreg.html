@@ -12,7 +12,7 @@
 
 <meta name="author" content="Klaus Holst &amp; Thomas Scheike" />
 
-<meta name="date" content="2025-10-21" />
+<meta name="date" content="2026-01-11" />
 
 <title>Binomial Regression for Survival and Competing Risks Data</title>
 
@@ -342,7 +342,7 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 <h1 class="title toc-ignore">Binomial Regression for Survival and
 Competing Risks Data</h1>
 <h4 class="author">Klaus Holst &amp; Thomas Scheike</h4>
-<h4 class="date">2025-10-21</h4>
+<h4 class="date">2026-01-11</h4>
 
 
 
@@ -431,25 +431,26 @@ Clusters can be specified to get cluster corrected standard errors.</p>
 <span id="cb1-3"><a href="#cb1-3" tabindex="-1"></a> <span class="fu">set.seed</span>(<span class="dv">1000</span>) <span class="co"># to control output in random noise just below.</span></span>
 <span id="cb1-4"><a href="#cb1-4" tabindex="-1"></a> <span class="fu">data</span>(bmt)</span>
 <span id="cb1-5"><a href="#cb1-5" tabindex="-1"></a> bmt<span class="sc">$</span>time <span class="ot">&lt;-</span> bmt<span class="sc">$</span>time<span class="sc">+</span><span class="fu">runif</span>(<span class="fu">nrow</span>(bmt))<span class="sc">*</span><span class="fl">0.01</span></span>
-<span id="cb1-6"><a href="#cb1-6" tabindex="-1"></a></span>
-<span id="cb1-7"><a href="#cb1-7" tabindex="-1"></a> <span class="co"># logistic regresion with IPCW binomial regression </span></span>
-<span id="cb1-8"><a href="#cb1-8" tabindex="-1"></a> out <span class="ot">&lt;-</span> <span class="fu">binreg</span>(<span class="fu">Event</span>(time,cause)<span class="sc">~</span>tcell<span class="sc">+</span>platelet,bmt,<span class="at">time=</span><span class="dv">50</span>)</span>
-<span id="cb1-9"><a href="#cb1-9" tabindex="-1"></a> <span class="fu">summary</span>(out)</span>
-<span id="cb1-10"><a href="#cb1-10" tabindex="-1"></a><span class="co">#&gt;    n events</span></span>
-<span id="cb1-11"><a href="#cb1-11" tabindex="-1"></a><span class="co">#&gt;  408    160</span></span>
-<span id="cb1-12"><a href="#cb1-12" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb1-13"><a href="#cb1-13" tabindex="-1"></a><span class="co">#&gt;  408 clusters</span></span>
-<span id="cb1-14"><a href="#cb1-14" tabindex="-1"></a><span class="co">#&gt; coeffients:</span></span>
-<span id="cb1-15"><a href="#cb1-15" tabindex="-1"></a><span class="co">#&gt;              Estimate   Std.Err      2.5%     97.5% P-value</span></span>
-<span id="cb1-16"><a href="#cb1-16" tabindex="-1"></a><span class="co">#&gt; (Intercept) -0.180338  0.126748 -0.428760  0.068084  0.1548</span></span>
-<span id="cb1-17"><a href="#cb1-17" tabindex="-1"></a><span class="co">#&gt; tcell       -0.418545  0.345480 -1.095675  0.258584  0.2257</span></span>
-<span id="cb1-18"><a href="#cb1-18" tabindex="-1"></a><span class="co">#&gt; platelet    -0.437644  0.240978 -0.909952  0.034665  0.0694</span></span>
-<span id="cb1-19"><a href="#cb1-19" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb1-20"><a href="#cb1-20" tabindex="-1"></a><span class="co">#&gt; exp(coeffients):</span></span>
-<span id="cb1-21"><a href="#cb1-21" tabindex="-1"></a><span class="co">#&gt;             Estimate    2.5%  97.5%</span></span>
-<span id="cb1-22"><a href="#cb1-22" tabindex="-1"></a><span class="co">#&gt; (Intercept)  0.83499 0.65132 1.0705</span></span>
-<span id="cb1-23"><a href="#cb1-23" tabindex="-1"></a><span class="co">#&gt; tcell        0.65800 0.33431 1.2951</span></span>
-<span id="cb1-24"><a href="#cb1-24" tabindex="-1"></a><span class="co">#&gt; platelet     0.64556 0.40254 1.0353</span></span></code></pre></div>
+<span id="cb1-6"><a href="#cb1-6" tabindex="-1"></a> bmt<span class="sc">$</span>id <span class="ot">&lt;-</span> <span class="dv">1</span><span class="sc">:</span><span class="dv">408</span></span>
+<span id="cb1-7"><a href="#cb1-7" tabindex="-1"></a></span>
+<span id="cb1-8"><a href="#cb1-8" tabindex="-1"></a> <span class="co"># logistic regresion with IPCW binomial regression </span></span>
+<span id="cb1-9"><a href="#cb1-9" tabindex="-1"></a> out <span class="ot">&lt;-</span> <span class="fu">binreg</span>(<span class="fu">Event</span>(time,cause)<span class="sc">~</span>tcell<span class="sc">+</span>platelet,bmt,<span class="at">time=</span><span class="dv">50</span>)</span>
+<span id="cb1-10"><a href="#cb1-10" tabindex="-1"></a> <span class="fu">summary</span>(out)</span>
+<span id="cb1-11"><a href="#cb1-11" tabindex="-1"></a><span class="co">#&gt;    n events</span></span>
+<span id="cb1-12"><a href="#cb1-12" tabindex="-1"></a><span class="co">#&gt;  408    160</span></span>
+<span id="cb1-13"><a href="#cb1-13" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb1-14"><a href="#cb1-14" tabindex="-1"></a><span class="co">#&gt;  408 clusters</span></span>
+<span id="cb1-15"><a href="#cb1-15" tabindex="-1"></a><span class="co">#&gt; coeffients:</span></span>
+<span id="cb1-16"><a href="#cb1-16" tabindex="-1"></a><span class="co">#&gt;              Estimate   Std.Err      2.5%     97.5% P-value</span></span>
+<span id="cb1-17"><a href="#cb1-17" tabindex="-1"></a><span class="co">#&gt; (Intercept) -0.180338  0.126748 -0.428760  0.068084  0.1548</span></span>
+<span id="cb1-18"><a href="#cb1-18" tabindex="-1"></a><span class="co">#&gt; tcell       -0.418545  0.345480 -1.095675  0.258584  0.2257</span></span>
+<span id="cb1-19"><a href="#cb1-19" tabindex="-1"></a><span class="co">#&gt; platelet    -0.437644  0.240978 -0.909952  0.034665  0.0694</span></span>
+<span id="cb1-20"><a href="#cb1-20" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb1-21"><a href="#cb1-21" tabindex="-1"></a><span class="co">#&gt; exp(coeffients):</span></span>
+<span id="cb1-22"><a href="#cb1-22" tabindex="-1"></a><span class="co">#&gt;             Estimate    2.5%  97.5%</span></span>
+<span id="cb1-23"><a href="#cb1-23" tabindex="-1"></a><span class="co">#&gt; (Intercept)  0.83499 0.65132 1.0705</span></span>
+<span id="cb1-24"><a href="#cb1-24" tabindex="-1"></a><span class="co">#&gt; tcell        0.65800 0.33431 1.2951</span></span>
+<span id="cb1-25"><a href="#cb1-25" tabindex="-1"></a><span class="co">#&gt; platelet     0.64556 0.40254 1.0353</span></span></code></pre></div>
 <p>We can also compute predictions using the estimates</p>
 <div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a> <span class="fu">predict</span>(out,<span class="fu">data.frame</span>(<span class="at">tcell=</span><span class="fu">c</span>(<span class="dv">0</span>,<span class="dv">1</span>),<span class="at">platelet=</span><span class="fu">c</span>(<span class="dv">1</span>,<span class="dv">1</span>)),<span class="at">se=</span><span class="cn">TRUE</span>)</span>
 <span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a><span class="co">#&gt;        pred         se     lower     upper</span></span>
@@ -598,13 +599,13 @@ F_2^*(t,s)\)</span>.</p>
 <div id="sessioninfo" class="section level1">
 <h1>SessionInfo</h1>
 <div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" tabindex="-1"></a><span class="fu">sessionInfo</span>()</span>
-<span id="cb9-2"><a href="#cb9-2" tabindex="-1"></a><span class="co">#&gt; R version 4.5.1 (2025-06-13)</span></span>
-<span id="cb9-3"><a href="#cb9-3" tabindex="-1"></a><span class="co">#&gt; Platform: aarch64-apple-darwin25.0.0</span></span>
-<span id="cb9-4"><a href="#cb9-4" tabindex="-1"></a><span class="co">#&gt; Running under: macOS Tahoe 26.0.1</span></span>
+<span id="cb9-2"><a href="#cb9-2" tabindex="-1"></a><span class="co">#&gt; R version 4.5.2 (2025-10-31)</span></span>
+<span id="cb9-3"><a href="#cb9-3" tabindex="-1"></a><span class="co">#&gt; Platform: aarch64-apple-darwin25.1.0</span></span>
+<span id="cb9-4"><a href="#cb9-4" tabindex="-1"></a><span class="co">#&gt; Running under: macOS Tahoe 26.2</span></span>
 <span id="cb9-5"><a href="#cb9-5" tabindex="-1"></a><span class="co">#&gt; </span></span>
 <span id="cb9-6"><a href="#cb9-6" tabindex="-1"></a><span class="co">#&gt; Matrix products: default</span></span>
-<span id="cb9-7"><a href="#cb9-7" tabindex="-1"></a><span class="co">#&gt; BLAS:   /Users/kkzh/.asdf/installs/R/4.5.1/lib/R/lib/libRblas.dylib </span></span>
-<span id="cb9-8"><a href="#cb9-8" tabindex="-1"></a><span class="co">#&gt; LAPACK: /Users/kkzh/.asdf/installs/R/4.5.1/lib/R/lib/libRlapack.dylib;  LAPACK version 3.12.1</span></span>
+<span id="cb9-7"><a href="#cb9-7" tabindex="-1"></a><span class="co">#&gt; BLAS:   /Users/kkzh/.asdf/installs/r/4.5.2/lib/R/lib/libRblas.dylib </span></span>
+<span id="cb9-8"><a href="#cb9-8" tabindex="-1"></a><span class="co">#&gt; LAPACK: /Users/kkzh/.asdf/installs/r/4.5.2/lib/R/lib/libRlapack.dylib;  LAPACK version 3.12.1</span></span>
 <span id="cb9-9"><a href="#cb9-9" tabindex="-1"></a><span class="co">#&gt; </span></span>
 <span id="cb9-10"><a href="#cb9-10" tabindex="-1"></a><span class="co">#&gt; locale:</span></span>
 <span id="cb9-11"><a href="#cb9-11" tabindex="-1"></a><span class="co">#&gt; [1] en_US.UTF-8/en_US.UTF-8/en_US.UTF-8/C/en_US.UTF-8/en_US.UTF-8</span></span>
@@ -616,21 +617,21 @@ F_2^*(t,s)\)</span>.</p>
 <span id="cb9-17"><a href="#cb9-17" tabindex="-1"></a><span class="co">#&gt; [1] stats     graphics  grDevices utils     datasets  methods   base     </span></span>
 <span id="cb9-18"><a href="#cb9-18" tabindex="-1"></a><span class="co">#&gt; </span></span>
 <span id="cb9-19"><a href="#cb9-19" tabindex="-1"></a><span class="co">#&gt; other attached packages:</span></span>
-<span id="cb9-20"><a href="#cb9-20" tabindex="-1"></a><span class="co">#&gt; [1] timereg_2.0.7  survival_3.8-3 mets_1.3.8    </span></span>
+<span id="cb9-20"><a href="#cb9-20" tabindex="-1"></a><span class="co">#&gt; [1] timereg_2.0.7  survival_3.8-3 mets_1.3.9    </span></span>
 <span id="cb9-21"><a href="#cb9-21" tabindex="-1"></a><span class="co">#&gt; </span></span>
 <span id="cb9-22"><a href="#cb9-22" tabindex="-1"></a><span class="co">#&gt; loaded via a namespace (and not attached):</span></span>
-<span id="cb9-23"><a href="#cb9-23" tabindex="-1"></a><span class="co">#&gt;  [1] cli_3.6.5           knitr_1.50          rlang_1.1.6        </span></span>
-<span id="cb9-24"><a href="#cb9-24" tabindex="-1"></a><span class="co">#&gt;  [4] xfun_0.53           jsonlite_2.0.0      future.apply_1.20.0</span></span>
-<span id="cb9-25"><a href="#cb9-25" tabindex="-1"></a><span class="co">#&gt;  [7] listenv_0.9.1       lava_1.8.1          htmltools_0.5.8.1  </span></span>
-<span id="cb9-26"><a href="#cb9-26" tabindex="-1"></a><span class="co">#&gt; [10] sass_0.4.10         rmarkdown_2.30      grid_4.5.1         </span></span>
-<span id="cb9-27"><a href="#cb9-27" tabindex="-1"></a><span class="co">#&gt; [13] evaluate_1.0.5      jquerylib_0.1.4     fastmap_1.2.0      </span></span>
-<span id="cb9-28"><a href="#cb9-28" tabindex="-1"></a><span class="co">#&gt; [16] numDeriv_2016.8-1.1 yaml_2.3.10         mvtnorm_1.3-3      </span></span>
-<span id="cb9-29"><a href="#cb9-29" tabindex="-1"></a><span class="co">#&gt; [19] lifecycle_1.0.4     compiler_4.5.1      codetools_0.2-20   </span></span>
-<span id="cb9-30"><a href="#cb9-30" tabindex="-1"></a><span class="co">#&gt; [22] ucminf_1.2.2        Rcpp_1.1.0          future_1.67.0      </span></span>
-<span id="cb9-31"><a href="#cb9-31" tabindex="-1"></a><span class="co">#&gt; [25] lattice_0.22-7      digest_0.6.37       R6_2.6.1           </span></span>
-<span id="cb9-32"><a href="#cb9-32" tabindex="-1"></a><span class="co">#&gt; [28] parallelly_1.45.1   parallel_4.5.1      splines_4.5.1      </span></span>
-<span id="cb9-33"><a href="#cb9-33" tabindex="-1"></a><span class="co">#&gt; [31] Matrix_1.7-4        bslib_0.9.0         tools_4.5.1        </span></span>
-<span id="cb9-34"><a href="#cb9-34" tabindex="-1"></a><span class="co">#&gt; [34] globals_0.18.0      cachem_1.1.0</span></span></code></pre></div>
+<span id="cb9-23"><a href="#cb9-23" tabindex="-1"></a><span class="co">#&gt;  [1] cli_3.6.5              knitr_1.50             rlang_1.1.6           </span></span>
+<span id="cb9-24"><a href="#cb9-24" tabindex="-1"></a><span class="co">#&gt;  [4] xfun_0.54              jsonlite_2.0.0         future.apply_1.20.1   </span></span>
+<span id="cb9-25"><a href="#cb9-25" tabindex="-1"></a><span class="co">#&gt;  [7] listenv_0.10.0         lava_1.8.3             htmltools_0.5.8.1     </span></span>
+<span id="cb9-26"><a href="#cb9-26" tabindex="-1"></a><span class="co">#&gt; [10] sass_0.4.10            rmarkdown_2.30         grid_4.5.2            </span></span>
+<span id="cb9-27"><a href="#cb9-27" tabindex="-1"></a><span class="co">#&gt; [13] evaluate_1.0.5         jquerylib_0.1.4        fastmap_1.2.0         </span></span>
+<span id="cb9-28"><a href="#cb9-28" tabindex="-1"></a><span class="co">#&gt; [16] numDeriv_2016.8-1.1    yaml_2.3.10            mvtnorm_1.3-3         </span></span>
+<span id="cb9-29"><a href="#cb9-29" tabindex="-1"></a><span class="co">#&gt; [19] lifecycle_1.0.4        compiler_4.5.2         codetools_0.2-20      </span></span>
+<span id="cb9-30"><a href="#cb9-30" tabindex="-1"></a><span class="co">#&gt; [22] ucminf_1.2.2           Rcpp_1.1.1             future_1.68.0         </span></span>
+<span id="cb9-31"><a href="#cb9-31" tabindex="-1"></a><span class="co">#&gt; [25] lattice_0.22-7         digest_0.6.39          R6_2.6.1              </span></span>
+<span id="cb9-32"><a href="#cb9-32" tabindex="-1"></a><span class="co">#&gt; [28] parallelly_1.46.1      parallel_4.5.2         splines_4.5.2         </span></span>
+<span id="cb9-33"><a href="#cb9-33" tabindex="-1"></a><span class="co">#&gt; [31] Matrix_1.7-4           bslib_0.9.0            tools_4.5.2           </span></span>
+<span id="cb9-34"><a href="#cb9-34" tabindex="-1"></a><span class="co">#&gt; [34] RcppArmadillo_15.2.3-1 globals_0.18.0         cachem_1.1.0</span></span></code></pre></div>
 </div>
 
 

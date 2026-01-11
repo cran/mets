@@ -2,7 +2,6 @@
 % Please edit documentation in R/phreg.R
 \name{phreg}
 \alias{phreg}
-\alias{phreg.par}
 \alias{robust.phreg}
 \alias{readPhreg}
 \alias{conftype}
@@ -11,7 +10,7 @@
 \alias{predictO.phreg}
 \alias{predictrecreg}
 \alias{summarybase.phreg}
-\alias{namesortme}
+\alias{nameme}
 \alias{construct_id}
 \title{Fast Cox PH regression}
 \usage{
@@ -40,7 +39,7 @@ so ordering after $id will give iid in order of data-set.
 library(mets)
 data(TRACE)
 dcut(TRACE) <- ~.
-out1 <- phreg(Surv(time,status==9)~vf+chf+strata(wmicat.4)+cluster(id),data=TRACE)
+out1 <- phreg(Surv(time,status==9)~wmi+age+strata(vf,chf)+cluster(id),data=TRACE)
 summary(out1)
 
 par(mfrow=c(1,2))
@@ -61,6 +60,10 @@ dd <- iidBaseline(out1,time=30)
 head(dd$beta.iid)
 head(dd$base.iid)
 
+outs <- phreg(Surv(time,status==9)~strata(vf,wmicat.4)+cluster(id),data=TRACE)
+summary(outs)
+par(mfrow=c(1,2))
+plot(outs)
 }
 \author{
 Klaus K. Holst, Thomas Scheike

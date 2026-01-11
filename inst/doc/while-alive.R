@@ -5,7 +5,7 @@ knitr::opts_chunk$set(
 )
 library(mets)
 
-## -----------------------------------------------------------------------------
+## ----while-alive--------------------------------------------------------------
 data(hfactioncpx12)
 
 dtable(hfactioncpx12,~status)
@@ -17,7 +17,7 @@ dd <- WA_recurrent(Event(entry,time,status)~treatment+cluster(id),hfactioncpx12,
 summary(dd,type="log")
 
 
-## -----------------------------------------------------------------------------
+## ----wa-composite-------------------------------------------------------------
 hfactioncpx12$marks <- runif(nrow(hfactioncpx12))
 
 ##ddmg <- WA_recurrent(Event(entry,time,status)~treatment+cluster(id),hfactioncpx12,time=2,

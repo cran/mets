@@ -11,6 +11,7 @@ library(mets)
  set.seed(1000) # to control output in random noise just below.
  data(bmt)
  bmt$time <- bmt$time+runif(nrow(bmt))*0.01
+ bmt$id <- 1:408
 
  # logistic regresion with IPCW binomial regression 
  out <- binreg(Event(time,cause)~tcell+platelet,bmt,time=50)

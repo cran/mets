@@ -1,3 +1,10 @@
+# mets 1.3.9
+  
+  - Vignette updates
+  - `phreg_weibull`: allows for regression design on both rate and shape
+    parameter. Replaces `phreg.par`
+  - `Event` methods updated
+
 # mets 1.3.8
   - Updated vignette on simulation of survival data
   - percentage of years lost due to cause regression `rmtlRatio`, `binregRatio`

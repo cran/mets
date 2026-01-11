@@ -11,18 +11,19 @@
 ##' @author Klaus K. Holst and Thomas Scheike
 ##' @useDynLib mets, .registration=TRUE
 ##' @import stats splines Rcpp mvtnorm
-##' @importFrom lava iid estimate bootstrap compare score information twostage
-##'   %++% %ni% addvar<- blockdiag cancel Col confband constrain<- constraints
-##'   covariance covariance<- coxWeibull.lvm devcoords distribution<- endogenous
-##'   eventTime Expand getoutcome gof intercept<- Inverse kill<- latent latent<-
-##'   lava.options lvm Model multigroup parameter<- pars regression regression<-
-##'   revdiag trim IC expit logit
+##' @importFrom lava iid estimate bootstrap compare score information
+##'   twostage %++% %ni% addvar<- blockdiag cancel Col confband constrain<-
+##'   constraints covariance covariance<- coxWeibull.lvm devcoords
+##'   distribution<- endogenous eventTime Expand getoutcome gof intercept<-
+##'   Inverse kill<- latent latent<- lava.options lvm Model multigroup
+##'   parameter<- pars regression regression<- revdiag trim IC expit logit
 ##' @importFrom survival Surv is.Surv concordance strata cluster finegray
 ##' @importFrom timereg two.stage predict.two.stage
 ##' @importFrom utils head tail getS3method glob2rx capture.output
 ##' @importFrom graphics matplot lines plot polygon par points abline title
 ##'   matlines legend mtext layout axis barplot mosaicplot
 ##' @importFrom methods hasArg
+##' @importFrom RcppArmadillo armadillo_set_number_of_omp_threads
 ##' @importFrom grDevices dev.list devAskNewPage dev.interactive
 ##' @aliases mets mets-package
 ##' @examples
@@ -32,10 +33,10 @@
 NULL
 
 ##' @export
-lava::IC
+lava::iid
 
 ##' @export
-lava::iid
+lava::IC
 
 ##' @export
 lava::twostage

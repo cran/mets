@@ -52,9 +52,9 @@ summary(out)
 data(calgb8923)
 calgt <- calgb8923
 
-tm=At.f~factor(Count2)+age+sex+wbc
-tm=At.f~factor(Count2)
-tm=At.f~factor(Count2)*A0.f
+## tm <- At.f~factor(Count2)+age+sex+wbc
+## tm <- At.f~factor(Count2)
+tm <-  At.f~factor(Count2)*A0.f
 
 head(calgt)
 ll0 <- phreg_IPTW(Event(start,time,status==1)~strata(A0,A10)+cluster(id),calgt,treat.model=tm)

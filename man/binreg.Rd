@@ -26,6 +26,7 @@ binreg(
   outcome = c("cif", "rmst", "rmtl"),
   model = c("default", "logit", "exp", "lin"),
   Ydirect = NULL,
+  monotone = TRUE,
   ...
 )
 }
@@ -68,6 +69,8 @@ binreg(
 
 \item{Ydirect}{use this Y instead of outcome constructed inside the program (e.g. I(T< t, epsilon=1)), then uses IPCW vesion of the Y, set outcome to "rmst" to fit using the model specified by model}
 
+\item{monotone}{if true then uses del link functions used, with defaults logit for cif, exp for rmst or rmtl, but can be logit, exp or lin (for identity link)}
+
 \item{...}{Additional arguments to lower level funtions}
 }
 \description{
@@ -85,8 +88,11 @@ censoring distribution. For (type="II") the default an additional
 censoring augmentation term \deqn{X \int E(Y(t)| T>s)/G_c(s) d \hat M_c} is added.
 
 logitIPCW instead considers 
-\deqn{ X  I(min(T_i,t) < G_i)/G_c(min(T_i ,t)) ( I(T \leq t, \epsilon=1 ) - expit( X^T beta)) = 0 }
+\deqn{ X  I(min(T_i,t) < G_i)/G_c(min(T_i ,t)) ( I(T \leq t, \epsilon=1 ) - expit( X^T beta)) = 0 } 
 a standard logistic regression with weights that adjust for IPCW.
+
+When monotone is FALSE the solved equation for binreg is equivalent to minmizing the least squares problem and thus becomes 
+\deqn{ D_\beta h(\beta)  ( \Delta^{ipcw}(t) I(T \leq t, \epsilon=1 ) - h( X^T beta)) = 0 }.
 
 The variance is based on the squared influence functions that are also returned as the iid component. naive.var is variance 
 under known censoring model. 
@@ -130,7 +136,7 @@ cif2 <- cif(Event(time,cause)~+1,bmt,cause=2)
 plot(cif1)
 plot(cif2,add=TRUE,col=2)
 
-cifs1 <- binreg(Event(time,cause)~tcell+platelet+age,bmt,cause=2,time=50)
+cifs1 <- binreg(Event(time,cause)~tcell+platelet+age,bmt,cause=1,time=50)
 cifs2 <- binreg(Event(time,cause)~tcell+platelet+age,bmt,cause=2,time=50)
 summary(cifs1)
 summary(cifs2)
@@ -139,16 +145,26 @@ cifdob <- binreg(Event(time,status)~-1+factor(strata)+
 	 tcell*factor(strata)+platelet*factor(strata)+age*factor(strata)
 	 +cluster(id),bmtdob,cause=1,time=50,cens.model=~strata(strata))
 summary(cifdob)
+head(iid(cifdob)) 
 
+newdata <- data.frame(tcell=1,platelet=1,age=0,strata=1:2,id=1)
 riskratio <- function(p) {
-  Z <- rbind(c(1,0,1,1,0,0,0,0), c(0,1,1,1,0,1,1,0))
-  lp <- c(Z \%*\% p)
-  p <- lava::expit(lp)
+  cifdob$coef <- p
+  p <- predict(cifdob,newdata,se=0)
   return(p[1]/p[2])
 }
-
 lava::estimate(cifdob,f=riskratio)
 
+predict(cifdob,newdata)
+(p1 <- predict(cifs1,newdata))
+(p2 <- predict(cifs2,newdata))
+p1[1,1]/p2[1,1]
+
+}
+\references{
+Blanche PF, Holt A, Scheike T (2022). “On logistic regression with right censored data, with or without competing risks, and its use for estimating treatment effects.” Lifetime data analysis,
+29, 441–482. 
+Scheike TH, Zhang MJ, Gerds TA (2008). “Predicting cumulative incidence probability by direct binomial regression.” Biometrika, 95(1), 205–220.
 }
 \author{
 Thomas Scheike
