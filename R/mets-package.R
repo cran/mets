@@ -12,24 +12,20 @@
 ##' @useDynLib mets, .registration=TRUE
 ##' @import stats splines Rcpp mvtnorm
 ##' @importFrom lava iid estimate bootstrap compare score information
-##'   twostage %++% %ni% addvar<- blockdiag cancel Col confband constrain<-
-##'   constraints covariance covariance<- coxWeibull.lvm devcoords
-##'   distribution<- endogenous eventTime Expand getoutcome gof intercept<-
-##'   Inverse kill<- latent latent<- lava.options lvm Model multigroup
-##'   parameter<- pars regression regression<- revdiag trim IC expit logit
+##' @importFrom lava twostage %++% %ni% addvar<- blockdiag cancel Col confband constrain<-
+##' @importFrom lava constraints covariance covariance<- coxWeibull.lvm devcoords
+##' @importFrom lava distribution<- endogenous eventTime Expand getoutcome gof intercept<-
+##' @importFrom lava Inverse kill<- latent latent<- lava.options lvm Model multigroup
+##' @importFrom lava parameter<- pars regression regression<- revdiag trim IC expit logit
 ##' @importFrom survival Surv is.Surv concordance strata cluster finegray
 ##' @importFrom timereg two.stage predict.two.stage
 ##' @importFrom utils head tail getS3method glob2rx capture.output
 ##' @importFrom graphics matplot lines plot polygon par points abline title
-##'   matlines legend mtext layout axis barplot mosaicplot
+##' @importFrom graphics matlines legend mtext layout axis barplot mosaicplot
 ##' @importFrom methods hasArg
 ##' @importFrom RcppArmadillo armadillo_set_number_of_omp_threads
 ##' @importFrom grDevices dev.list devAskNewPage dev.interactive
 ##' @aliases mets mets-package
-##' @examples
-##'
-##' ## To appear
-##'
 NULL
 
 ##' @export
@@ -127,7 +123,7 @@ NULL
 ##' data(calgb8923)
 NULL
 
-##' ACTG175, block randmized study from speff2trial package
+##' ACTG175, block randomized study from speff2trial package
 ##'
 ##' Data from speff2trial
 ##' @name ACTG175
@@ -139,7 +135,7 @@ NULL
 ##' data(ACTG175)
 NULL
 
-##' hfaction, subset of block randmized study HF-ACtion from WA package  
+##' hfaction, subset of block randomized study HF-ACtion from WA package  
 ##'
 ##' Data from HF-action trial slightly modified from WA package,
 ##' consisting of 741 nonischemic patients with baseline
@@ -208,34 +204,6 @@ NULL
 ##' @keywords data
 ##' @source Simulated data
 NULL
-
-##' For internal use
-##'
-##' @title For internal use
-##' @name npc
-##' @rdname internal
-##' @author Klaus K. Holst
-##' @keywords utilities
-##' @export
-##' @aliases plotcr npc nonparcuminc simnordic corsim.prostate
-##'  alpha2kendall alpha2spear coefmat piecewise.twostage surv.boxarea
-##'  faster.reshape piecewise.data
-##'  simBinPlack simBinFam simBinFam2 simSurvFam corsim.prostate.random
-##'  simnordic.random simCox sim
-##'  grouptable jumptimes folds
-##'  ace.family.design ascertained.pairs CCbinomial.twostage
-##'  coarse.clust concordanceTwinACE concordanceTwostage
-##'  fast.cluster force.same.cens ilap
-##'  kendall.ClaytonOakes.twin.ace kendall.normal.twin.ace
-##'  make.pairwise.design make.pairwise.design.competing
-##'  matplot.mets.twostage object.defined p11.binomial.twostage.RV
-##'  predictPairPlack simbinClaytonOakes.family.ace
-##'  simbinClaytonOakes.pairs simbinClaytonOakes.twin.ace
-##'  simClaytonOakes.family.ace simClaytonOakes.twin.ace simFrailty.simple
-##'  simCompete.simple simCompete.twin.ace twin.polygen.design
-##'  procform procform3 procformdata drop.specials
-NULL
-
 
 ##' Rates for HPN program for patients of Copenhagen Cohort
 ##'

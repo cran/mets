@@ -2,7 +2,6 @@
 % Please edit documentation in R/sim-pc-hazard.R
 \name{rcrisk}
 \alias{rcrisk}
-\alias{rchazl}
 \title{Simulation of Piecewise constant hazard models with two causes (Cox).}
 \usage{
 rcrisk(
@@ -42,10 +41,9 @@ rcrisk(
 \description{
 Simulates data from piecwise constant baseline hazard that can also be of
 Cox type. Censor data at highest value of the break points for either of the
-cumulatives, see also sim.phregs
+cumulatives, see also sim_phregs
 }
 \examples{
-library(mets)
 data(bmt); 
 n <- 100
 cox1 <- phreg(Surv(time,cause==1)~tcell+platelet,data=bmt)

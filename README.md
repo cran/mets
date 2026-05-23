@@ -1,4 +1,35 @@
 
+- [Multivariate Event Times (`mets`)
+  <img src="man/figures/logo.png" align="right" height="250" style="float:right; height:250px;"  alt="mets website">](#multivariate-event-times-mets-)
+  - [Installation](#installation)
+  - [Citation](#citation)
+  - [Examples: Twins Polygenic
+    modelling](#examples-twins-polygenic-modelling)
+  - [Examples: Twins Polygenic modelling time-to-events
+    Data](#examples-twins-polygenic-modelling-time-to-events-data)
+  - [Examples: Twins Concordance for time-to-events
+    Data](#examples-twins-concordance-for-time-to-events-data)
+  - [Examples: Cox model, RMST](#examples-cox-model-rmst)
+  - [Examples: Cox model IPTW](#examples-cox-model-iptw)
+  - [Examples: Competing risks regression, Binomial
+    Regression](#examples-competing-risks-regression-binomial-regression)
+  - [Examples: Competing risks regression, Fine-Gray/Logistic
+    link](#examples-competing-risks-regression-fine-graylogistic-link)
+  - [Examples: Marginal mean for recurrent
+    events](#examples-marginal-mean-for-recurrent-events)
+  - [Examples: Ghosh-Lin for recurrent
+    events](#examples-ghosh-lin-for-recurrent-events)
+  - [Examples: Fixed time modelling for recurrent
+    events](#examples-fixed-time-modelling-for-recurrent-events)
+  - [Examples: Cumulative Medical Cost](#examples-cumulative-medical-cost)
+  - [Examples: Regression for RMST/Restricted mean survival for survival
+    and competing risks using
+    IPCW](#examples-regression-for-rmstrestricted-mean-survival-for-survival-and-competing-risks-using-ipcw)
+  - [Examples: Average treatment effects (ATE) for survival or competing
+    risks](#examples-average-treatment-effects-ate-for-survival-or-competing-risks)
+  - [Examples: While Alive estimands for recurrent
+    events](#examples-while-alive-estimands-for-recurrent-events)
+
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
 <!-- badges: start-->
@@ -51,7 +82,7 @@ To cite the `mets` package please use one of the following references
 > Thomas H. Scheike and Klaus K. Holst (2022). A Practical Guide to
 > Family Studies with Lifetime Data. Annual Review of Statistics and Its
 > Application 9, pp. 47-69. doi:
-> 10.1146/annurev-statistics-040120-024253
+> <http://dx.doi.org/10.1146/annurev-statistics-040120-024253>
 
 > Thomas H. Scheike and Klaus K. Holst and Jacob B. Hjelmborg (2013).
 > Estimating heritability for cause specific mortality based on twin
@@ -88,8 +119,7 @@ BibTeX:
             Left truncation; Heritability; Survival analysis},
       pages={1-24},
       language={English}
-
-}
+    }
 
     @Article{,
       title={The Liability Threshold Model for Censored Twin Data},
@@ -109,7 +139,7 @@ models)
 # simulated data with pairs of observations in twins on long #data format
 set.seed(1)
 d <- twinsim(1000, b1=c(1,-1), b2=c(), acde=c(1,1,0,1))
-# Polygenic model with Additive genetic effects, and shared and invidual environmental effects (ACE)
+# Polygenic model with Additive genetic effects, and shared and individual environmental effects (ACE)
 ace <- twinlm(y ~ 1, data=d, DZ="DZ", zyg="zyg", id="id")
 ace
 #>        Estimate Std. Error Z value  Pr(>|z|)
@@ -179,7 +209,7 @@ summary(ace2)
 
 ## Examples: Twins Polygenic modelling time-to-events Data
 
-In the context of time-to-events data we consider the “Liabilty
+In the context of time-to-events data we consider the “Liability
 Threshold model” with IPCW adjustment for censoring.
 
 First we fit the bivariate probit model (same marginals in MZ and DZ
@@ -325,7 +355,7 @@ abline(h=summary(bpmz)$prob["Concordance",],lwd=c(2,1,1),col="lightgray",lty=2)
 ## Examples: Cox model, RMST
 
 We can fit the Cox model and compute many useful summaries, such as
-restricted mean survival and stanardized treatment effects
+restricted mean survival and standardized treatment effects
 (G-estimation). First estimating the standardized survival
 
 ``` r
@@ -379,7 +409,7 @@ years lost at the different time horizons
 ``` r
  out1 <- phreg(Surv(time,cause!=0)~strata(tcell,platelet),data=bmt)
  
- rm1 <- resmean.phreg(out1, times=c(50))
+ rm1 <- resmean_phreg(out1, times=c(50))
  summary(rm1)
 #>                     strata times    rmean se.rmean    lower    upper years.lost
 #> tcell=0, platelet=0      0    50 20.48245 1.411055 17.89542 23.44348   29.51755
@@ -399,7 +429,7 @@ different strata
 
 ``` r
  ## years.lost decomposed into causes
- drm1 <- cif.yearslost(Event(time,cause)~strata(tcell,platelet),data=bmt,times=50)
+drm1 <- cif_yearslost(Event(time,cause)~strata(tcell,platelet),data=bmt,times=50)
  par(mfrow=c(1,2)); plot(drm1,cause=1,se=1); title(main="Cause 1"); plot(drm1,cause=2,se=1); title(main="Cause 2")
 ```
 
@@ -430,9 +460,9 @@ in the plot.
 
 ## Examples: Cox model IPTW
 
-We can fit the Cox model with inverse probabilty of treatment weights
+We can fit the Cox model with inverse probability of treatment weights
 based on logistic regression. The treatment weights can be
-time-dependent and then mutiplicative weights are applied (see details
+time-dependent and then multiplicative weights are applied (see details
 and vignette).
 
 ``` r
@@ -473,7 +503,7 @@ IPCW adjustment
 
 ``` r
 data(bmt); bmt$time <- bmt$time+runif(408)*0.001
-# logistic regresion with IPCW binomial regression 
+# logistic regression with IPCW binomial regression 
 out <- binreg(Event(time,cause)~tcell+platelet,bmt,time=50)
 summary(out)
 #>    n events
@@ -591,7 +621,7 @@ head(iid(fg))
 ```
 
 and we can get standard errors for predictions based on the influence
-functions of the baseline and the regression coefiicients (these are
+functions of the baseline and the regression coefficients (these are
 used in the predict function)
 
 ``` r
@@ -639,7 +669,7 @@ dtable(hfactioncpx12,~status)
 #>    0    1    2 
 #>  617 1391  124
 
-gl1 <- recurrentMarginal(Event(entry,time,status)~strata(treatment)+cluster(id),hfactioncpx12,cause=1,death.code=2)
+gl1 <- recurrent_marginal(Event(entry,time,status)~strata(treatment)+cluster(id),hfactioncpx12,cause=1,death.code=2)
 summary(gl1,times=1:5)
 #> [[1]]
 #>       new.time      mean         se   CI-2.5% CI-97.5% strata
@@ -701,7 +731,7 @@ head(iid(gl1))
 ```
 
 and we can get standard errors for predictions based on the influence
-functions of the baseline and the regression coefiicients
+functions of the baseline and the regression coefficients
 
 ``` r
  nd=data.frame(treatment=levels(hfactioncpx12$treatment),id=1)
@@ -822,6 +852,43 @@ head(iid(e2))
 #> 6 -2.861359e-03  2.871831e-03
 ```
 
+## Examples: Cumulative Medical Cost 
+
+Estimate mean cumulative cost (see also vignette)
+
+``` r
+library(mets)
+data(hfactioncpx12)
+hf <- hfactioncpx12
+hf$severity <- abs((5+rnorm(741)*2))[hf$id]
+
+## marginal mean using formula  
+outNZ <- recurrent_marginal(Event(entry,time,status)~strata(treatment)+cluster(id)
+			 +marks(severity),hf,cause=1,death.code=2)
+plot(outNZ,se=TRUE)
+summary(outNZ,times=3) 
+```
+
+For comparison we also compute the IPCW estimates at time 3, using 
+the linear model, and note that they are identical. Standard errors are however based on different formula that are asymptotically 
+equivalent, and we note that they are very similar.
+
+```{r}
+outNZ3 <- recregIPCW(Event(entry,time,status)~-1+treatment+cluster(id)+marks(severity),data=hf,
+		  cause=1,death.code=2,time=3,cens.model=~strata(treatment),model="lin")
+summary(outNZ3)
+head(iid(outNZ3))
+```
+
+We also apply the semiparametric proportional cost model with 
+IPCW adjustment: 
+
+```{r}
+propNZ <- recreg(Event(entry,time,status)~treatment+marks(severity)+cluster(id),data=hf,cause=1,death.code=2)
+summary(propNZ) 
+plot(propNZ,main="Baselines")
+```
+
 ## Examples: Regression for RMST/Restricted mean survival for survival and competing risks using IPCW
 
 RMST can be computed using the Kaplan-Meier (via phreg) and the for
@@ -849,7 +916,7 @@ get these estimates via IPCW adjustment and then we can do regression
 #> [6,] -0.05341259    0    0    0
  ## same as 
  out1 <- phreg(Surv(time,cause!=0)~strata(tcell,platelet),data=bmt)
- rm1 <- resmean.phreg(out1,times=30)
+ rm1 <- resmean_phreg(out1,times=30)
  summary(rm1)
 #>                     strata times    rmean  se.rmean    lower    upper
 #> tcell=0, platelet=0      0    30 13.60584 0.8314012 12.07012 15.33695
@@ -872,7 +939,7 @@ get these estimates via IPCW adjustment and then we can do regression
 #> inttcell=1, platelet=0    7.260  2.3529  2.648 11.871 2.033e-03
 #> inttcell=1, platelet=1    5.779  2.0921  1.679  9.880 5.737e-03
  ## same as 
- drm1 <- cif.yearslost(Event(time,cause)~strata(tcell,platelet),data=bmt,times=30)
+ drm1 <- cif_yearslost(Event(time,cause)~strata(tcell,platelet),data=bmt,times=30)
  summary(drm1)
 #> $estimate
 #>                     strata times    intF_1   intF_2 se.intF_1 se.intF_2
@@ -895,7 +962,7 @@ get these estimates via IPCW adjustment and then we can do regression
 ## Examples: Average treatment effects (ATE) for survival or competing risks
 
 We can compute ATE for survival or competing risks data for the
-probabilty of dying
+probability of dying
 
 ``` r
  bmt$event <- bmt$cause!=0; dfactor(bmt) <- tcell~tcell

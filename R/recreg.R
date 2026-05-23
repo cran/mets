@@ -1,45 +1,49 @@
-##' Recurrent events regression with terminal event 
+##' Recurrent Events Regression with Terminal Event
 ##'
-##' Fits Ghosh-Lin IPCW Cox-type model
+##' Fits a Ghosh-Lin IPCW (Inverse Probability of Censoring Weighted) Cox-type model for recurrent events
+##' in the presence of a terminal event (e.g., death).
 ##'
-##' For Cox type model :
-##' \deqn{
-##' E(dN_1(t)|X) = \mu_0(t)dt exp(X^T \beta)
-##' }
-##' by solving Cox-type IPCW weighted score equations 
-##' \deqn{
-##'  \int (Z - E(t)) w(t) dN_1(t) 
-##' }
-##' where \deqn{w(t) = G(t) (I(T_i \wedge t < C_i)/G_c(T_i \wedge t))} and
-##' \deqn{E(t) = S_1(t)/S_0(t)} and \deqn{S_j(t) = \sum X_i^j w_i(t) \exp(X_i^T \beta)}.
+##' For the Cox-type model, the expectation is modeled as:
+##' \deqn{ E(dN_1(t)|X) = \mu_0(t) dt \exp(X^T \beta) }
+##' by solving Cox-type IPCW weighted score equations:
+##' \deqn{ \int (Z - E(t)) w(t) dN_1(t) }
+##' where \deqn{w(t) = G(t) (I(T_i \wedge t < C_i)/G_c(T_i \wedge t))},
+##' \deqn{E(t) = S_1(t)/S_0(t)}, and \deqn{S_j(t) = \sum X_i^j w_i(t) \exp(X_i^T \beta)}.
 ##'
+##' The IID decomposition of the beta coefficients takes the form:
+##' \deqn{ \int (Z - E) w(t) dM_1 + \int q(s)/p(s) dM_c }
+##' and is returned as the \code{iid} component.
 ##'
-##' The iid decomposition of the beta's are on the form
-##' \deqn{
-##' \int (Z - E ) w(t) dM_1 + \int q(s)/p(s) dM_c
-##' }
-##' and returned as iid.
+##' Events, deaths, and censorings are specified via a start-stop structure and the \code{Event} call.
+##' The function identifies these via a status vector and cause codes, censoring codes (\code{cens.code}),
+##' and death codes (\code{death.code}). See examples and vignettes for details.
 ##'
-##' Events, deaths and censorings are specified via stop start structure and the Event call, that via a status vector 
-##' and cause (code), censoring-codes (cens.code) and death-codes (death.code) indentifies these. See example and vignette. 
+##' @param formula Formula with an 'Event' outcome.
+##' @param data Data frame containing the variables.
+##' @param cause Cause of interest (default is 1).
+##' @param death.code Codes for the terminal event/death (default is 2).
+##' @param cens.code Code for censoring (default is 0).
+##' @param cens.model Formula for a stratified Cox model without covariates used to estimate censoring probabilities.
+##' @param weights Weights for the score equations.
+##' @param offset Offsets for the model.
+##' @param Gc Censoring weights for the time argument. If \code{NULL}, these are calculated using a Kaplan-Meier estimator
+##' (should then provide \eqn{G_c(T_i-)}).
+##' @param wcomp Weights for composite outcomes (e.g., when \code{cause=c(1,3)}, \code{wcomp} might be \code{c(1,2)}).
+##' @param augmentation.type Type of augmentation when an augmentation model is given (options: \code{"lindyn.augment"}, \code{"lin.augment"}).
+##' @param marks A mark value vector from the data frame, specifying the mark value at all events.
+##' @param ... Additional arguments passed to lower-level functions.
 ##'
-##' @param formula formula with 'Event' outcome
-##' @param data data frame
-##' @param cause of interest (1 default)
-##' @param death.code codes for death (terminating event, 2 default)
-##' @param cens.code code of censoring (0 default)
-##' @param cens.model for stratified Cox model without covariates
-##' @param weights weights for score equations
-##' @param offset offsets for model
-##' @param Gc censoring weights for time argument, default is to calculate these with a Kaplan-Meier estimator, should then give G_c(T_i-)
-##' @param wcomp weights for composite outcome, so when cause=c(1,3), we might have wcomp=c(1,2).
-##' @param augmentation.type of augmentation when augmentation model is given 
-##' @param marks  a mark value can be specified, this is vector from the data-frame where the mark value can be found at all events
-##' @param ... Additional arguments to lower level funtions
+##' @return An object of class \code{"recreg"} (extending \code{"phreg"}) containing:
+##' \item{coef}{Estimated coefficients.}
+##' \item{var}{Robust variance-covariance matrix.}
+##' \item{iid}{Influence functions for the coefficients.}
+##' \item{cumhaz}{Cumulative hazard estimates.}
+##' \item{se.cumhaz}{Standard errors for cumulative hazard.}
+##'
 ##' @author Thomas Scheike
+##' @seealso \code{\link{recregIPCW}} 
 ##' @examples
 ##' ## data with no ties
-##' library(mets)
 ##' data(hfactioncpx12)
 ##' hf <- hfactioncpx12
 ##' hf$x <- as.numeric(hf$treatment) 
@@ -48,7 +52,8 @@
 ##' gl <- recreg(Event(entry,time,status)~treatment+cluster(id),data=hf,cause=1,death.code=2)
 ##' summary(gl)
 ##' head(iid(gl))
-##' pgl <- predict(gl,dd,se=1); plot(pgl,se=1)
+##' pgl <- predict(gl,dd,se=1); 
+##' plot(pgl,se=1)
 ##' 
 ##' ## censoring stratified after treatment 
 ##' gls <- recreg(Event(entry,time,status)~treatment+cluster(id),data=hf,
@@ -68,7 +73,7 @@
 ##' ll2i <- recregIPCW(Event(entry,time,status)~-1+treatment+cluster(id),data=hf,
 ##' cause=1,death.code=2,time=2,cens.model=~strata(treatment))
 ##' summary(ll2i)
-##' @aliases marks strataAugment scalecumhaz GLprediid recregIPCW IIDrecreg predicttime
+##' @aliases marks scalecumhaz GLprediid IIDrecreg 
 ##' @export
 recreg <- function(formula,data,cause=1,death.code=2,cens.code=0,cens.model=~1,weights=NULL,offset=NULL,Gc=NULL,wcomp=NULL,marks=NULL,augmentation.type=c("lindyn.augment","lin.augment"),...)
 { ## {{{
@@ -90,7 +95,7 @@ marks <- function(x) x
 recregBN <- function(formula,data=data,cause=c(1),death.code=c(2),cens.code=c(0),cens.model=~1,weights=NULL,offset=NULL,Gc=NULL,wcomp=NULL,marks=NULL,...)
 { ## {{{
 cl <- match.call()
-    m <- match.call(expand.dots = TRUE)[1:3]
+###    m <- match.call(expand.dots = TRUE)[1:3]
     des <- proc_design(
         formula,
         data = data,
@@ -200,6 +205,7 @@ recregN01 <- function(data,X,entry,exit,status,id=NULL,strata=NULL,offset=NULL,w
 	name.id <- conid$name.id; id <- conid$id; nid <- conid$nid
 	orig.id <- id
 
+	exit.call <- exit
 	### censoring weights constructed
 	whereC <- which(status %in% cens.code)
 	time <- exit
@@ -211,7 +217,7 @@ recregN01 <- function(data,X,entry,exit,status,id=NULL,strata=NULL,offset=NULL,w
 	data$status__ <- (status %in% cause)*1
 	cens.strata <- cens.nstrata <- NULL
 	## lag-count to use for augment.model=~Nt+X1+X2
-	data <- count.history(data,status="status__",id="id__",types=cause,multitype=TRUE)
+	data <- count_history(data,status="status__",id="id__",types=cause,multitype=TRUE)
 	data$Nt <- data[,paste("Count",cause[1],sep="")]
 
 	## augmentation model and remove intercept
@@ -226,7 +232,7 @@ recregN01 <- function(data,X,entry,exit,status,id=NULL,strata=NULL,offset=NULL,w
 			}
 			if (cens.model$p>0) kmt <- FALSE
 			###        Pcens.model <- predict(cens.model,data,times=exit,tminus=TRUE,individual.time=TRUE,se=FALSE,km=kmt)
-			Pcens.model <- predict(cens.model,data,times=exit,individual.time=TRUE,se=FALSE,km=kmt)
+			Pcens.model <- predict(cens.model,data,times=exit,individual.time=TRUE,se=FALSE,km=kmt,tminus=TRUE)
 			Stime <- Pcens.model$surv <- c(Pcens.model$surv)
 			## strata from original data
 			nCstrata <- cens.model$nstrata
@@ -300,7 +306,7 @@ recregN01 <- function(data,X,entry,exit,status,id=NULL,strata=NULL,offset=NULL,w
 			xx2$sign   <- xx2$sign[-fentry]
 			xx2$X      <- xx2$X[-fentry,,drop=FALSE]
 			xx2$XX     <- xx2$XX[-fentry,,drop=FALSE]
-			if (nrow(xx2$ZX)==nrow(xx2$X)) xx$ZX <- xx2$ZX[-fentry,,drop=FALSE]
+			if (nrow(xx2$ZX)==nrow(xx2$X)) xx2$ZX <- xx2$ZX[-fentry,,drop=FALSE]
 			xx2$Z      <- xx2$Z[-fentry,,drop=FALSE]
 			xx2$offset <-xx2$offset[-fentry]
 			xx2$weights <-xx2$weights[-fentry]
@@ -325,8 +331,9 @@ recregN01 <- function(data,X,entry,exit,status,id=NULL,strata=NULL,offset=NULL,w
 		S0rrr <- revcumsumstrata(rr0,strataCxx2,nCstrata)
 		S0iC[jumpsC] <- 1/S0rrr[jumpsC]
 		S0iC2[jumpsC] <- 1/S0rrr[jumpsC]^2
-  ## Gc(t) computed  along all times of combined data-set: data + [D,\infty]
-        Gcxx2 <- exp(cumsumstrata(log(1 - S0iC), strataCxx2, nCstrata))
+                ## Gc(t) computed  along all times of combined data-set: data + [D,\infty]
+		## not lag because it is lagged later in GcjumpsR 
+                Gcxx2 <- exp(cumsumstratasum(log(1 - S0iC), strataCxx2, nCstrata)$sum)
 		Gstart <- rep(1,nCstrata)
 		Gjumps <- Gcxx2[jumps]
 
@@ -346,18 +353,10 @@ recregN01 <- function(data,X,entry,exit,status,id=NULL,strata=NULL,offset=NULL,w
 
 		rr2 <- c(xx2$sign*exp(xx2$X %*% pp + xx2$offset)*xx2$weights)
 		rr2now <- c(xx2$sign*exp(xx2$X %*% pp + xx2$offset))
-
-		###     S0ooN <-   .Call("_mets_S0_FG_GcR",rr2,Gcxx2,typexx2-1,c(xx2$status),xx2$strata,xx2$nstrata,strataCxx2,nCstrata,Gstart)
-
-		###     S0ooA <-   .Call("_mets_S0_FGRN",rr2,typexx2-1,c(xx2$status),xx2$strata,xx2$nstrata,strataCxx2,nCstrata,Gts)
 		S0oo <-   .Call("_mets_S0_FGRN",rr2,typexx2-1,c(xx2$status),xx2$strata,xx2$nstrata,strataCxx2,nCstrata,Gts)$S0
-
 		f  <-  function(x) {
 			ll <-   .Call("_mets_S0_FGRN",x,typexx2-1,c(xx2$status),xx2$strata,xx2$nstrata,strataCxx2,nCstrata,Gts)$S0
 		}
-		###	f  <-  function(x) {
-		###           ll <-   .Call("_mets_S0_FG_GcR",x,Gcxx2,typexx2-1,c(xx2$status),xx2$strata,xx2$nstrata,strataCxx2,nCstrata,Gstart)$S0
-		###	}
 
 		S1oo  <- apply(xx2$X*rr2,2,f)
 		S2oo  <- apply(xx2$XX*rr2,2,f)
@@ -445,7 +444,7 @@ recregN01 <- function(data,X,entry,exit,status,id=NULL,strata=NULL,offset=NULL,w
 	opt <-  val ## obj(beta.s,all=TRUE)
 
 	if (p>0) {
-		iH <- - tryCatch(solve(opt$hessian),error=function(e) matrix(0,nrow(opt$hessian),ncol(opt$hessian)) )
+		iH <- - tryCatch(pinv(opt$hessian),error=function(e) matrix(0,nrow(opt$hessian),ncol(opt$hessian)) )
 		opt$ihessian <- iH
 		opt$no.opt <- FALSE
 		dd <- IIDrecreg(xx2,opt,cause=cause,cens.code=cens.code,death.code=death.code,adm.cens=adm.cens.time) 
@@ -621,7 +620,7 @@ recregN01 <- function(data,X,entry,exit,status,id=NULL,strata=NULL,offset=NULL,w
 		time.gammat <- gamma <- gammat <- NULL
 		ftime.gamma <- NULL
 		Gcj <- NULL
-		varmc <- var1 <- 0; MGc <- iH <- UUiid <- Uiid <- NULL
+		varmc <- var1 <- NULL; MGc <- iH <- UUiid <- Uiid <- NULL
 	}
 	strata <- xx2$strata[jumps]
 	cumhaz <- cbind(opt$time,cumsumstrata(1/opt$S0,strata,nstrata))
@@ -646,8 +645,10 @@ recregN01 <- function(data,X,entry,exit,status,id=NULL,strata=NULL,offset=NULL,w
 		Uiid.augment.times  <- nameme(Uiid.augment.times,name.id)
 	}
 
-	out <- list(coef=beta.s,var=varmc,se.coef=diag(varmc)^.5,iid.naive=UUiid,
-   iid=Uiid,ncluster=nid,ihessian=iH,hessian=opt$hessian,var1=var1,se1.coef=diag(var1)^.5,
+	if (p==0) {beta.s <- NULL; varmc <- NULL;se.coef <- NULL} else se.coef <- diag(varmc)^.5
+
+	out <- list(coef=beta.s,var=varmc,se.coef=se.coef,iid.naive=UUiid,
+                    iid=Uiid,ncluster=nid,ihessian=iH,hessian=opt$hessian,var1=var1,se1.coef=diag(var1)^.5,
 		    hessianttime=opt$hessianttime,
 		    ploglik=opt$ploglik,gradient=opt$gradient,
 		    cumhaz=cumhaz,se.cumhaz=se.cumhaz,MGciid=MGc,
@@ -656,7 +657,7 @@ recregN01 <- function(data,X,entry,exit,status,id=NULL,strata=NULL,offset=NULL,w
 		    nstrata=nstrata,strata.name=strata.name,strata.level=strata.level,
 		    propodds=propodds,
 		    S0=opt$S0,E=opt$E,S2S0=opt$S2S0,time=opt$time,Ut=opt$U,
-		    jumps=jumps,exit=exit,
+		    jumps=jumps,exit=exit.call,
 		    p=p,S0s=val$S0s,
 		    no.opt=no.opt,##n=nrow(X),nevent=length(jumps),
 		    Pcens.model=Pcens.model,Gjumps=Gjumps,
@@ -676,7 +677,6 @@ recregN01 <- function(data,X,entry,exit,status,id=NULL,strata=NULL,offset=NULL,w
 	return(out)
 } ## }}}
 
-##' @export
 IIDrecreg <- function(coxprep,x,time=NULL,cause=1,cens.code=0,death.code=2,fixbeta=NULL,beta.iid=NULL,adm.cens=NULL,tminus=FALSE)
 { ## {{{
 	if (is.null(fixbeta)) 
@@ -714,7 +714,7 @@ IIDrecreg <- function(coxprep,x,time=NULL,cause=1,cens.code=0,death.code=2,fixbe
 		Gcxx2 <- exp(cumsumstrata(log(1-S0iC),strataCxx2,nCstrata))
 		Gstart <- rep(1,nCstrata)
 		Gjumps <- Gcxx2[jumps]
-	} else  Gcxx2 <- rep(1,length(xx2$stata))
+	} else  Gcxx2 <- rep(1,length(xx2$strata))
 	### all administrative censoring, or no censoring at all 
 	if (!anyC) typexx2 <- 1
 
@@ -783,12 +783,9 @@ IIDrecreg <- function(coxprep,x,time=NULL,cause=1,cens.code=0,death.code=2,fixbe
 	   if (!is.null(time) ) {
 	   HBt <- cumsum2strata(Gcxx2,S0i2*btimexx,strataCxx2,nCstrata,xx2$strata,xx2$nstrata,Gstart)
 	   HBtinf <- HBt$res[lastt][dstrata]-HBt$res
-###	   if ( is.null(adm.cens)) {
 		## baseline
 		MGAiid2 <- -HBt$res*c(rrw2)
 		MGAiid <- MGAiid+MGAiid2
-###		MGAiid <- apply(MGAiid,2,sumstrata,xx2$id,mid+1)
-###	   }
 	   }
 	   if ( ((!is.null(beta.iid)) | fixbeta==0) ) {
 		Htinf <- GdL[lastt][dstrata]-GdL
@@ -817,21 +814,20 @@ IIDrecreg <- function(coxprep,x,time=NULL,cause=1,cens.code=0,death.code=2,fixbe
 	 	   GdLast <- GdL[lastid][xx2$id+1]
 		   EGdLast <- EGdL[lastid,,drop=FALSE][xx2$id+1,,drop=FALSE]
                         
-		   GadmXE2 <- apply(GdLast*Z*rrw2,2,revcumsumstrata,strataCxx2,nCstrata)
-		   XE2 <- apply(Z*rrw2,2,revcumsumstrata,strataCxx2,nCstrata)
-		   EGadmRR2 <- apply(EGdLast*rrw2,2,revcumsumstrata,strataCxx2,nCstrata)
-		   RR2 <- revcumsumstrata(rrw2,strataCxx2,nCstrata)
+                   rrw2j <- -c(rrw2*(xx2$sign==-1))
+		   Xos <- Z*rrw2j
+                   rrsx <- cumsumstrata(rrw2j,strataCxx2,nCstrata)
+		   Xos <- apply(Xos,2,cumsumstrata,strataCxx2,nCstrata)
 
-		   q11 <- GadmXE2-XE2*GdL
-		   q21 <- EGadmRR2-c(RR2)*EGdL
-                   ###
-		   qq <- q11-q21
+		   GadmXE2 <-  apply(GdLast*Z*rrw2j,2,cumsumstrata,strataCxx2,nCstrata)
+		   EGadmRR2 <- apply(EGdLast*rrw2j,2,cumsumstrata,strataCxx2,nCstrata)
+		   qq <- (GadmXE2-EGadmRR2)-(c(GdL)*Xos-EGdL*c(rrsx))
 
                    if ( (!is.null(beta.iid)) | fixbeta==0) q2 <- qq
                    if (!is.null(time))  {
 		       HBlast <- HBt$res[lastid][xx2$id+1]
-	               HBadmRR2 <- revcumsumstrata(HBlast*rrw2,strataCxx2,nCstrata)
-		       qB2 <- (HBadmRR2-HBt$res*RR2)
+	               HBadmRR2 <- cumsumstrata(HBlast*rrw2j,strataCxx2,nCstrata)
+		       qB2 <- (HBadmRR2-HBt$res*c(rrsx))
                    }
 
               }
@@ -911,6 +907,7 @@ IIDrecreg <- function(coxprep,x,time=NULL,cause=1,cens.code=0,death.code=2,fixbe
 	} else {
 		out <- list(time=time,base.iid=MGAiid,id=xx2$id,beta.iid=Uiid,beta.iid.naive=Uiid.naive, MGt=UU,MGc=MGc,Ut=U,EdLam0=EdLam0,cumhaz=cumhaz)
 	}
+	class(out) <- "iidBaseline"
 	return(out)
 }  ## }}}
 
@@ -943,6 +940,23 @@ IC.recreg <- function(x, time = NULL, ..., wwww) {
 }
 
 ##' @export
+estimate.recreg <- function(x, ..., time = NULL, all=FALSE, baseline.args = list()) {
+  if (NCOL(model.matrix(x))==0L & is.null(time)) stop("Non-parametric model; need `time` argument")
+  ic <- do.call(IC, c(list(x, time = time,all=all), baseline.args))
+  cc <- attr(ic, "coef")
+  if (is.null(cc)) cc <- coef(x)
+###  lab <- names(cc)
+  if (!is.null(time)) {
+    lab <- x$strata.level
+    if (is.null(lab)) lab <- "mean"
+  }
+  b <- lava::estimate( coef = cc, IC = ic)
+  return(lava::estimate(b, ...))
+}
+
+
+
+##' @export
 plot.recreg <- function(x,se=FALSE,ylab=NULL,...) { #
 	if (inherits(x,"recreg") & is.null(ylab)) ylab <- "Mean number"
 	if (!se) baseplot(x,se=se,ylab=ylab,...)
@@ -953,7 +967,7 @@ plot.recreg <- function(x,se=FALSE,ylab=NULL,...) { #
 } #
 
 ##' @export
-predict.recreg <- function(object,newdata,se=FALSE,times=NULL,np=50,...) { #
+predict.recreg <- function(object,newdata=NULL,se=FALSE,times=NULL,np=50,...) { #
 	if (!se) out <- predict.phreg(object,newdata,se=se,times=times,...)
 	else {
 		out <- predictrecreg(object,newdata,times=times,np=np,...)
@@ -963,44 +977,14 @@ predict.recreg <- function(object,newdata,se=FALSE,times=NULL,np=50,...) { #
 } #
 
 ##' @export
-summary.predictrecreg <- function(object,times=NULL,strata=NULL,type=c("cif","cumhaz","surv")[2],np=10,...) { ## {{{
-	if (!is.null(times)) {
-		indexcol <- predictCumhaz(c(0,object$times),times,return.index=TRUE)
-	} else {
-		## all predictions
-		nl <- length(object$times)+1 
-		indexcol  <- seq(1,nl,length=np)
-		times <- c(0,object$times)[indexcol]
-		print("summary.predictrecreg")
-		print(times)
-	}
+summary.predictrecreg <- function(object,type=c("cif","cumhaz","surv")[2],...) { ## {{{
+   summary.predictphreg(object,type=type[1],...)
+} ## }}}
 
-	out <- object[[type[1]]]
-	nlower <- paste(type[1],".lower",sep="")
-	nupper <- paste(type[1],".upper",sep="")
-	lower <- object[[nlower]]
-	upper <- object[[nupper]]
-	nse <-  paste("se.",type[1],sep="")
-	se.out  <- object[[paste("se.",type[1],sep="")]]
-	if (type[1]=="surv") {
-		out <- cbind(1,out) 
-		if (!is.null(se.out)) se.out <- cbind(0,se.out)
-		if (!is.null(lower)) lower <- cbind(1,lower) 
-		if (!is.null(upper)) upper <- cbind(1,upper) 
-	} else { 
-		out <- cbind(0,out)
-		if (!is.null(se.out)) se.out <- cbind(0,se.out)
-		if (!is.null(lower)) lower <- cbind(0,lower) 
-		if (!is.null(upper)) upper <- cbind(0,upper) 
-	}
-	if (length(lower)>1) { se <- 1; } else  { se <- 0; lower <- upper <- NULL}
-
-	if (!is.null(lower)) ret <- list(pred=out[,indexcol],se.pred=se.out[,indexcol],lower=lower[,indexcol],upper=upper[,indexcol],times=times)
-	else  ret <- list(pred=out[,indexcol],times=times)
-	rownames(ret) <- NULL
-	###ret$strata <- object$strata; ret$X <- object$X; ret$RR <- object$RR
-	class(ret) <- "summarypredictrecreg"
-	return(ret)
+##' @export
+print.predictrecreg <- function(x,type=c("cif","cumhaz","surv")[2],...) 
+{ ## }}}
+ print.predictphreg(x,type=type[1],...)
 } ## }}}
 
 
@@ -1011,7 +995,6 @@ plot.predictrecreg <- function(x,se=FALSE,ylab=NULL,type="cumhaz",...)
 	plotpredictphreg(x,se=se,ylab=ylab,type=type[1],...)
 } ## }}}
 
-##' @export
 predictrecreg <- function(x,newdata,times=NULL,individual.time=FALSE,tminus=FALSE,conf.type="log",conf.int=0.95,np=50,...)
 { ## {{{
 	if (!inherits(x,c("cifreg","recreg","phreg")))  stop("only for phreg/recreg/cifreg models\n")
@@ -1021,7 +1004,14 @@ predictrecreg <- function(x,newdata,times=NULL,individual.time=FALSE,tminus=FALS
 		if (is.null(np)) times <- x$cumhaz[,1] else 
 			times <- quantile(x$cumhaz[,1],probs=seq(0,1,length=np))
 	} 
-	des <- readPhreg(x,newdata)
+	if (!is.null(newdata)) xx <- update_design(x$design,data = newdata,response=FALSE) else xx <- x$design
+	X <- xx$x
+	des <- list()
+	des$X <- X
+	if (!is.null(xx$strata)) strataNew <- as.numeric(xx$strata)-1 else strataNew <- rep(0,nrow(X))
+	des$strata <- strataNew
+
+###	des <- readPhreg(x,newdata)
 
 	if (x$p>0)  {
 		RRj <- RR <- c(exp(des$X %*% x$coef))
@@ -1080,6 +1070,40 @@ predictrecreg <- function(x,newdata,times=NULL,individual.time=FALSE,tminus=FALS
 	return(out)
 } ## }}}
 
+##' IPCW Estimator for Recurrent Events
+##'
+##' Computes the Inverse Probability of Censoring Weighted (IPCW) estimator for the mean number of recurrent events.
+##' Supports various estimators including the Ghosh-Lin and Lawless-Cook estimators.
+##'
+##' @param formula Formula with an 'Event' outcome.
+##' @param data Data frame.
+##' @param cause Cause of interest (default is 1).
+##' @param cens.code Censoring code (default is 0).
+##' @param death.code Death code (default is 2).
+##' @param cens.model Formula for the censoring model (default is \code{~1}).
+##' @param km Logical; if \code{TRUE}, uses Kaplan-Meier for censoring weights; otherwise uses Cox model.
+##' @param times Time points for estimation (required).
+##' @param beta Initial values for coefficients (optional).
+##' @param offset Offsets.
+##' @param type Type of estimator: \code{"II"} (default) or \code{"I"}.
+##' @param marks Mark values.
+##' @param weights Weights.
+##' @param model Model type for the mean: \code{"exp"} (default) or \code{"lin"}.
+##' @param no.opt Logical; if \code{TRUE}, skips optimization.
+##' @param augmentation Augmentation terms.
+##' @param method Optimization method (default is "nr").
+##' @param se Logical; if \code{TRUE}, computes standard errors.
+##' @param ... Additional arguments.
+##'
+##' @return An object of class \code{"binreg"} (extending \code{"resmean"}) containing:
+##' \item{coef}{Estimated coefficients.}
+##' \item{var}{Variance-covariance matrix.}
+##' \item{iid}{Influence functions.}
+##' \item{times}{Time points.}
+##' \item{Y}{Observed counts.}
+##'
+##' @author Thomas Scheike
+##' @seealso \code{\link{recreg}} 
 ##' @export
 recregIPCW <- function(formula,data=data,cause=1,cens.code=0,death.code=2,
 		       cens.model=~1,km=TRUE,times=NULL,beta=NULL,offset=NULL,type=c("II","I"),
@@ -1135,11 +1159,13 @@ recregIPCW <- function(formula,data=data,cause=1,cens.code=0,death.code=2,
   if (is.null(marks)) marks <- rep(1,length(id))
 # }}}
 
+        if (length(times) > 1) stop("recregIPCW currently supports only a single time point.")
+
 	### setting up with artificial names
 	data$status__ <-  status 
 	data$id__ <-  id
 	## lave Countcause
-	data <- count.history(data,status="status__",id="id__",types=cause,multitype=TRUE)
+	data <- count_history(data,status="status__",id="id__",types=cause,multitype=TRUE)
 	data$Count1__ <- data[,paste("Count",cause[1],sep="")]
 	data$death__ <- (status %in% death.code)*1
 	data$entry__ <- entry 
@@ -1287,7 +1313,7 @@ recregIPCW <- function(formula,data=data,cause=1,cens.code=0,death.code=2,
 
 		if (all) {
 			ploglik <- sum(weights * (Y - p)^2)
-			ihess <- solve(hessian)
+			ihess <- pinv(hessian)
 			beta.iid <- Dlogl %*% ihess
 			beta.iid <- apply(beta.iid, 2, sumstrata, idR, max(id) + 1)
 			robvar <- crossprod(beta.iid)
@@ -1312,8 +1338,7 @@ recregIPCW <- function(formula,data=data,cause=1,cens.code=0,death.code=2,
 	if (p > 0) {
 		if (no.opt == FALSE) {
 			if (tolower(method) == "nr") {
-				tim <- system.time(opt <- lava::NR(beta, obj,control=control))
-				opt$timing <- tim
+				opt <- lava::NR(beta, obj,control=control)
 				opt$estimate <- opt$par
 			}
 			else {
@@ -1383,10 +1408,10 @@ recregIPCW <- function(formula,data=data,cause=1,cens.code=0,death.code=2,
 		MGCiid <- MGCiid %*% val$ihessian 
 		val$iid <- val$iid + MGCiid
 	} else val$MGCiid <- MGCiid 
+	oid <- order(name.id)  
 	if (is.matrix(val$iid)) 
 		if (length(name.id)==nrow(val$iid)) {
 			rownames(val$iid) <- name.id
-			oid <- order(name.id)  
 			val$iid <- val$iid[oid,,drop=FALSE]
 		}
 	if (is.matrix(val$MGCiid))  {
@@ -1413,36 +1438,44 @@ recregIPCW <- function(formula,data=data,cause=1,cens.code=0,death.code=2,
 
 strataAugment <- survival::strata
 
-##' Simulation of two-stage recurrent events data based on Cox/Cox or Cox/Ghosh-Lin structure 
+##' Simulation of Two-Stage Recurrent Events Data
 ##'
-##' Simulation of two-stage recurrent events data based on Cox/Cox or Cox/Ghosh-Lin structure. type=3 will generate
-##' Cox/Cox twostage mode, type=2 will generate Ghosh-Lin/Cox model. 
-##' If the variance is var.z=0, then generates data without any dependence or frailty. If model="twostage" then default is to generate data from Ghosh-Lin/Cox model, and
-##' if type=3 then will generate data with marginal Cox models (Cox/Cox). 
-##' Simulation based on linear aproximation of hazard for two-stage models based on grid on time-scale. Must be sufficientyly fine. 
+##' Simulates data based on Cox/Cox or Cox/Ghosh-Lin structures for recurrent events with a terminal event.
 ##'
-##' Must specify baselines of recurrent events and terminal event and possible covariate effects.
+##' \itemize{
+##' \item \code{type=3}: Generates data from a Cox/Cox two-stage model.
+##' \item \code{type=2}: Generates data from a Ghosh-Lin/Cox model.
+##' }
 ##'
-##' @param n number of id's 
-##' @param base1 baseline for cox/ghosh-lin models
-##' @param drcumhaz baseline for terminal event
-##' @param var.z variance of gamma frailty 
-##' @param r1 relative risk term for baseline 
-##' @param rd relative risk term for terminal event 
-##' @param rc relative risk term for censorings
-##' @param fz possible transformation (function) of frailty term 
-##' @param fdz possible transformation (function) of frailty term for death 
-##' @param model twostage, frailty, shared (partly shared two-stage model)
-##' @param type type of simulation, default is decided based on model
-##' @param cens to right censor
-##' @param share to fit patly shared random effects model
-##' @param cens censoring rate for exponential censoring
-##' @param nmin default 100, at least nmin or number of rows of the two-baselines max(nmin,nrow(base1),nrow(drcumhaz)) points in time-grid from 0 to maximum time for base1
-##' @param nmax default 1000, at most nmax points in time-grid 
-##' @references 
-##' Scheike (2025), Two-stage recurrent events random effects models, LIDA, to appear
+##' If \code{var.z=0}, data is generated without dependence or frailty.
+##' If \code{model="twostage"}, the default is to generate data from a Ghosh-Lin/Cox model.
+##' If \code{type=3}, data is generated with marginal Cox models (Cox/Cox).
+##'
+##' Simulation is based on a linear approximation of the hazard for two-stage models on a time grid.
+##' The grid must be sufficiently fine.
+##'
+##' @param n Number of IDs.
+##' @param base1 Baseline cumulative hazard for recurrent events.
+##' @param drcumhaz Baseline cumulative hazard for the terminal event.
+##' @param var.z Variance of the gamma frailty.
+##' @param r1 Relative risk term for the recurrent event baseline.
+##' @param rd Relative risk term for the terminal event.
+##' @param rc Relative risk term for censoring.
+##' @param fz Function for transformation of the frailty term.
+##' @param fdz Function for transformation of the frailty term for death.
+##' @param model Model type: \code{"twostage"}, \code{"frailty"}, or \code{"shared"}.
+##' @param type Type of simulation (default depends on \code{model}).
+##' @param cens Censoring rate for exponential censoring.
+##' @param share Proportion of shared random effects (for partially shared models).
+##' @param nmin Minimum number of points in the time grid (default 100).
+##' @param nmax Maximum number of points in the time grid (default 1000).
+##'
+##' @return A data frame with simulated recurrent events and terminal events, including frailty terms.
+##'
+##' @author Thomas Scheike
+##' @references Scheike (2025), Two-stage recurrent events random effects models, LIDA, to appear.
 ##' @export
-simGLcox <- function(n,base1,drcumhaz,var.z=0,r1=NULL,rd=NULL,rc=NULL,fz=NULL,fdz=NULL,
+sim_GLcox <- function(n,base1,drcumhaz,var.z=0,r1=NULL,rd=NULL,rc=NULL,fz=NULL,fdz=NULL,
 		     model=c("twostage","frailty","shared"),type=NULL,share=1,cens=NULL,nmin=100,nmax=1000)
 { ## {{{
 	## setting up baselines for simulations 
@@ -1453,8 +1486,8 @@ simGLcox <- function(n,base1,drcumhaz,var.z=0,r1=NULL,rd=NULL,rc=NULL,fz=NULL,fd
 	seqt <- seq(from=0,to=maxt,length.out=nmin)
 	if (base1[1,1]!=0) base1 <- rbind(0,base1) 
 	if (drcumhaz[1,1]!=0) drcumhaz <- rbind(0,drcumhaz) 
-	base1 <- cbind(seqt, lin.approx(seqt,base1))
-	cumD <- cbind(seqt, lin.approx(seqt,drcumhaz))
+	base1 <- cbind(seqt, lin_approx(seqt,base1))
+	cumD <- cbind(seqt, lin_approx(seqt,drcumhaz))
 	###
 	St <- exp(-cumD[,2])
 	Stm <- cbind(base1[,1],St)
@@ -1486,7 +1519,8 @@ simGLcox <- function(n,base1,drcumhaz,var.z=0,r1=NULL,rd=NULL,rc=NULL,fz=NULL,fd
 		} 
 	}  else fzz <- z <- z1 <- rep(1,n)
 
-	if (var.z[1]==0) model <- "frailty"
+	if (isTRUE(var.z[1] == 0)) model <- "frailty"
+
 	if (is.null(type)) 
 		if (model[1]=="twostage") type <- 2 else type <- 1
 	## for frailty setting we also consider any function of z 
@@ -1541,7 +1575,7 @@ simGLcox <- function(n,base1,drcumhaz,var.z=0,r1=NULL,rd=NULL,rc=NULL,fz=NULL,fd
 } ## }}}
 
 
-simGLcoxC <- function(n,base1,drcumhaz,var.z=0,r1=NULL,rd=NULL,rc=NULL,fz=NULL,fdz=NULL,
+sim_GLcoxC <- function(n,base1,drcumhaz,var.z=0,r1=NULL,rd=NULL,rc=NULL,fz=NULL,fdz=NULL,
 		      model=c("twostage","frailty","shared","multiplicative"),type=NULL,share=1,cens=NULL,nmax=200,by=1)
 { ## {{{
 	## setting up baselines for simulations 
@@ -1623,8 +1657,7 @@ simGLcoxC <- function(n,base1,drcumhaz,var.z=0,r1=NULL,rd=NULL,rc=NULL,fz=NULL,f
 	return(ll)
 } ## }}}
 
-
-simRecurrentCox <- function(n,cumhaz,cumhaz2,death.cumhaz=NULL,X=NULL,r1=NULL,r2=NULL,rd=NULL,rc=NULL, 
+sim_recurrentCox <- function(n,cumhaz,cumhaz2,death.cumhaz=NULL,X=NULL,r1=NULL,r2=NULL,rd=NULL,rc=NULL, 
 			    model=c("not-random","random"),frailty=TRUE,var.z=0.5,death.code=3,alpha=1,...)
 { ## {{{
 	if (is.null(r1)) r1 <- rep(1,n)
@@ -1644,7 +1677,7 @@ simRecurrentCox <- function(n,cumhaz,cumhaz2,death.cumhaz=NULL,X=NULL,r1=NULL,r2
 
 	## addapt to make recurrent mean on cox form with this baseline
 	base1 <- cumhaz
-	if (is.null(death.cumhaz)) stop("Modification for death in this function otherwise just use simRecurrentII\n")
+	if (is.null(death.cumhaz)) stop("Modification for death in this function otherwise just use sim_recurrentII\n")
 	if (is.null(X)) stop("X must be given to link with simulated data\n"); 
 
 	### Cox baseline 
@@ -1675,7 +1708,7 @@ simRecurrentCox <- function(n,cumhaz,cumhaz2,death.cumhaz=NULL,X=NULL,r1=NULL,r2
 			cumhaz1 <- cbind(base1[,1],cumsum(lam1ms))
 			LamDr <- scalecumhaz(death.cumhaz,rdss) 
 
-			datss <- simRecurrentII(nk,cumhaz1,cumhaz2,death.cumhaz=LamDr,
+			datss <- sim_recurrentII(nk,cumhaz1,cumhaz2,death.cumhaz=LamDr,
 						r1=r1[where],r2=NULL,rd=NULL,rc=rc[where],...)
 			Xs <- X[where,,drop=FALSE][datss$id,,drop=FALSE]
 			XX <- rbind(XX,Xs)
@@ -1699,7 +1732,7 @@ simRecurrentCox <- function(n,cumhaz,cumhaz2,death.cumhaz=NULL,X=NULL,r1=NULL,r2
 			if (!frailty) LamDr <- cbind(base1[,1],-log(Stt)) 
 			if (frailty) LamDr <- scalecumhaz(death.cumhaz,z[k]*rdss) 
 
-			datss <- simRecurrentII(nk,cumhaz1,cumhaz2,death.cumhaz=LamDr,
+			datss <- sim_recurrentII(nk,cumhaz1,cumhaz2,death.cumhaz=LamDr,
 						r1=r1[where],r2=NULL,rd=NULL,rc=rc[where],...)
 			Xs <- X[where,,drop=FALSE][datss$id,,drop=FALSE]
 			XX <- rbind(XX,Xs)
@@ -1724,7 +1757,7 @@ simRecurrentCox <- function(n,cumhaz,cumhaz2,death.cumhaz=NULL,X=NULL,r1=NULL,r2
 } ## }}}
 
 
-simMarginalMeanCox <- function(n,cens=3/5000,k1=0.1,k2=0,bin=1,Lam1=NULL,Lam2=NULL,LamD=NULL,
+sim_MarginalMeanCox <- function(n,cens=3/5000,k1=0.1,k2=0,bin=1,Lam1=NULL,Lam2=NULL,LamD=NULL,
 			       beta1=rep(0,2),betad=rep(0,2),betac=rep(0,2),X=NULL,...)
 { ## {{{
 
@@ -1742,7 +1775,7 @@ simMarginalMeanCox <- function(n,cens=3/5000,k1=0.1,k2=0,bin=1,Lam1=NULL,Lam2=NU
 
 	if (is.null(Lam2)) Lam2 <- Lam1; 
 
-	rr <- simRecurrentCox(n,scalecumhaz(Lam1,k1),cumhaz2=scalecumhaz(Lam1,k2),death.cumhaz=LamD,X=X,cens=cens,r1=r1,rd=rd,rc=rc,...)
+	rr <- sim_recurrentCox(n,scalecumhaz(Lam1,k1),cumhaz2=scalecumhaz(Lam1,k2),death.cumhaz=LamD,X=X,cens=cens,r1=r1,rd=rd,rc=rc,...)
 
 	if (bin==0) dcut(rr,breaks=4) <- X1g~X1 else rr$X1g <- rr$X1
 	if (bin==0) dcut(rr,breaks=4) <- X2g~X2 else rr$X2g <- rr$X2
@@ -1762,6 +1795,153 @@ GLprediid <- function(...)
 	return(out)
 } ## }}}
 
+
+sim_GLRA <- function(n,base1,drcumhaz,varz=0,beta=c(0.3,-0.3,-0.3,0.3),rcZ=c(0.5,-0.5),pCA=0.5,pCR=0.5,censA=0.5,censR=0.5,
+	    depcens.Adm=0,depcens.R=1,Z=NULL,bin=1) { ## {{{
+Count0 <- NULL ## to fix R check, variable name returned below 
+if (length(bin)==1) bin <- rep(bin,2)
+if (is.null(Z))
+Z = cbind((bin[1] == 1) * (2 * rbinom(n, 1, 1/2) - 1)+(bin[1]==0)*rnorm(n),(bin[2]==1)*(rbinom(n, 1, 1/2)) + (bin[2] == 0) * rnorm(n))
+colnames(Z) <- paste("Z", 1:ncol(Z), sep = "")
+p <- ncol(Z)
+r1 <- exp( Z %*% beta[1:p])
+rd <- exp( Z %*% beta[(p+1):(2*p)])
+rrc <-  exp( Z %*% rcZ)
+
+## generate with Adm censurering 
+out <- sim_GLcoxRA(n,base1,drcumhaz,var.z=varz,r1=r1,rd=rd,rrc=rrc,rcA=censA,fz=NULL,fdz=NULL,pCA=pCA,
+    model=c("twostage","frailty","shared"),type=NULL,share=1,cens=NULL,nmin=100,nmax=1000,
+    depcens.Adm=depcens.Adm)
+
+out$Z1 <- Z[,1][out$id+1]
+out$Z2 <- Z[,2][out$id+1]
+outID <- countID(out)
+out$last <- out$stop[outID$reverseCountid==1][out$id+1]
+maxtime <- tail(base1,1)[1]
+
+Rcens <- rbinom(n,1,pCR)
+if (depcens.R==1) rrC <- exp(Z %*% rcZ) else rrC <- 1
+censorR = censorR = Rcens*pmin(rexp(n, 1)*(1/(censR*rrC)),maxtime)+maxtime*(Rcens==0)
+censorA <- out$censorA[out$Countid==1]
+censor <- pmin(censorR,censorA)
+
+###lasttime <- out$stop[out$reverseCountid==1]
+###laststatusD <- out$statusD[out$reverseCountid==1]
+outRA <- out
+outRA$censorR <- censorR[outRA$id+1]
+outRA <- event_split(outRA,status="statusD",time="stop",name.start="start",name.id="id",cuts="censorR",cens.code=0)
+outRA <- count_history(outRA,status="statusD",types=0)
+outRA <- subset(outRA,Count0==0)
+###print(table(out$statusD))
+###print(table(outRA$statusD))
+
+data <- list(out=out,outRA=outRA)
+return(data)
+} ## }}} 
+
+sim_GLcoxRA <- function(n,base1,drcumhaz,var.z=0,r1=NULL,rd=NULL,rrc=NULL,rcA=0.5,fz=NULL,fdz=NULL,
+     pCA=0.5,depcens.Adm=1,
+     model=c("twostage","frailty","shared"),type=NULL,share=1,cens=NULL,nmin=100,nmax=1000)
+{ ## {{{
+## setting up baselines for simulations 
+maxt <- tail(base1[,1],1)
+base1 <- as.matrix(base1); drcumhaz <- as.matrix(drcumhaz)
+nmin <- max(nrow(base1),nrow(drcumhaz),nmin)
+nmin <- min(nmax,nmin)
+seqt <- seq(from=0,to=maxt,length.out=nmin)
+if (base1[1,1]!=0) base1 <- rbind(0,base1) 
+if (drcumhaz[1,1]!=0) drcumhaz <- rbind(0,drcumhaz) 
+base1 <- cbind(seqt, lin_approx(seqt,base1))
+cumD <- cbind(seqt, lin_approx(seqt,drcumhaz))
+###
+St <- exp(-cumD[,2])
+Stm <- cbind(base1[,1],St)
+###
+dbase1 <- diff(c(0,base1[,2]))
+dcum <- cbind(base1[,1],dbase1)
+maxtime <- tail(base1[,1],1)
+
+if (is.null(r1)) r1 <- rep(1,n)
+if (is.null(rd)) rd <- rep(1,n)
+
+fz.orig <- fz
+if (is.null(fz)) fz <- function(x) x
+
+if (var.z[1]>0) {
+	z1 <- z <- rgamma(n,share/var.z[1])*var.z[1] 
+	if (share<1) { 
+		z2 <- rgamma(n,(1-share)/var.z[1])*var.z[1] 
+		z <- z+z2
+	} 
+	fzz <- fz(z1)
+	if (share<1) fzz <- fzz/share; 
+	mza <- mean(fzz)
+	if (n<10000 & (!is.null(fz.orig))) {
+		zl <- rgamma(100000,share/var.z[1])*var.z[1] 
+		fzl <- fz(z)
+		mza <- mean(fzl)
+	} 
+}  else fzz <- z <- z1 <- rep(1,n)
+
+if (var.z[1]==0) model <- "frailty"
+if (is.null(type)) 
+	if (model[1]=="twostage") type <- 2 else type <- 1
+## for frailty setting we also consider any function of z 
+if (!is.null(fdz)) { fdzz <- fdz(z); rd <- rd*fdzz; z <- rep(1,n);}
+
+## survival censoring given X, Z, either twostage or frailty-model 
+if (type>=2) stype <- 2 else stype <- 1
+if (var.z[1]==0) stype <- 1
+### dd <- .Call("_mets_simSurvZ",as.matrix(rbind(c(0,1),Stm)),rd,z,var.z[1],stype)
+dd <- .Call("_mets_simSurvZ",as.matrix(rbind(Stm)),rd,z,var.z[1],stype)
+dd <- data.frame(time=dd[,1],status=(dd[,1]<maxtime))
+
+admcens <- rbinom(n,1,pCA)
+if (depcens.Adm==1) rrA <- rrc else rrA <- 1
+censorA = admcens*pmin(rexp(n, 1)*(1/(rcA*rrA)),maxtime)+ maxtime*(admcens==0)
+dd$censorA <- censorA
+cens <- censorA
+dd$status <- ifelse(dd$time<cens,dd$status,7)
+dd$time <- pmin(dd$time,cens)
+
+## to avoid R check error
+reverseCountid  <-  death  <- NULL
+
+if (model[1]=="multiplicative") {
+	## other random effect 
+	z2 <- rgamma(n,share/var.z[2])*var.z[2] 
+	fzz <- z1*z2
+	type <- 3
+}
+## type=2 draw recurrent process given X,Z with rate:
+##  Z exp(X^t beta_1) d \Lambda_1(t)/S(t|X,Z) 
+## such that GL model holds with exp(X^t beta_1) \Lambda_1(t)
+## type=3, observed hazards on Cox form among survivors
+## twostage shared<1: W_1 ~ N1, W_1+W_2 ~ D observed hazards on Cox form among survivors
+## twostage share=1: or W_1 ~ N1, W_1~ D   observed hazards on Cox form among survivors
+## multiplicatve:       W_2 * W_1 ~ N1, W_1~ D   observed hazards on Cox form among survivors
+dcum <- cbind(base1[,1],dbase1)
+### ll <- .Call("_mets_simGL",as.matrix(rbind(0,dcum)),c(1,St),r1,rd,z1,fzz,dd$time,type,var.z[1],nmax,1)
+ll <- .Call("_mets_simGL",as.matrix(dcum),c(St),r1,rd,z1,fzz,dd$time,type,var.z[1],nmax,1)
+colnames(ll) <- c("id","start","stop","death")
+ll <- data.frame(ll)
+ll$death <- dd$status[ll$id+1]
+ll$censorA <- dd$censorA[ll$id+1]
+## add frailty to data for possible validation
+ll$z <- z1[ll$id+1]
+ll$fz <- fzz[ll$id+1]
+## add counts of id
+ids <- countID(ll)
+ll <- cbind(ll,ids[,c(2,4,5)]); 
+ll$status <- 1; 
+ll <- dtransform(ll,status=7,reverseCountid==1)
+ll$statusD <- ll$status
+ll <- dtransform(ll,statusD=3,reverseCountid==1 & death==1)
+
+attr(ll,"base1events") <- base1
+attr(ll,"deathcumbase") <- cumD
+return(ll)
+} ## }}}
 
 boottwostageREC <- function(margsurv,recurrent,data,bootstrap=100,id="id",stepsize=0.5,...) 
 { ## {{{
@@ -1792,31 +1972,46 @@ boottwostageREC <- function(margsurv,recurrent,data,bootstrap=100,id="id",stepsi
   list(outb=outb,var=varb,se=diag(varb)^.5,se.coxD=diag(vard)^.5,se.coxR=diag(varr)^.5)
 } ## }}}
 
-##' Fittting of Two-stage recurrent events random effects model based on Cox/Cox or Cox/Ghosh-Lin marginals 
+
+##' Fitting of Two-Stage Recurrent Events Random Effects Model
 ##'
-##' Fittting of Two-stage recurrent events random effects model based on Cox/Cox or Cox/Ghosh-Lin marginals. Random
-##' effects model fore recurrent events with terminal  event. Marginal models fitted first and given to twostageREC function.
+##' Fits a two-stage random effects model for recurrent events with a terminal event.
+##' Marginal models (Cox or Ghosh-Lin) are fitted first and passed to this function.
 ##'
-##' @param margsurv marginal model for terminal event 
-##' @param recurrent marginal model for recurrent events
-##' @param data used for fitting
-##' @param theta starting value for total variance of gamma frailty
-##' @param model can fully shared "full", partly shared "shared", or non-shared where the random effect acts only on recurrent events
-##' @param ghosh.lin to force use ghosh.lin marginals based on recurrent (taking baseline and coefficients) 
-##' @param theta.des regression design for variance
-##' @param var.link possible link  function 1 is exponential link
-##' @param method NR
-##' @param no.opt to not optimize
-##' @param weights possible weights
-##' @param se.cluster  to combine influence functions for naive variance based on these clusters GEE style
-##' @param fnu a function to make transformation for nu (amount shared)
-##' @param nufix to fix the amount shared
-##' @param nu starting value for amount shared
-##' @param numderiv uses numerical derivatives for some derivatives
-##' @param derivmethod method for numerical derivative
-##' @param ... arguments for 
-##' @references 
-##' Scheike (2026), Two-stage recurrent events random effects models, LIDA, to appear
+##' Supports:
+##' \itemize{
+##' \item Cox/Cox marginals.
+##' \item Cox/Ghosh-Lin marginals.
+##' \item Fully shared, partly shared, or non-shared random effects.
+##' }
+##'
+##' @param margsurv Marginal model for the terminal event (object of class \code{"phreg"}).
+##' @param recurrent Marginal model for recurrent events (object of class \code{"phreg"} or \code{"recreg"}).
+##' @param data Data frame used for fitting.
+##' @param theta Starting value for total variance of gamma frailty.
+##' @param model Model type: \code{"full"} (fully shared), \code{"shared"} (partly shared), or \code{"non-shared"}.
+##' @param ghosh.lin Logical; if \code{TRUE}, forces use of Ghosh-Lin marginals based on the recurrent model.
+##' @param theta.des Regression design for variance parameters.
+##' @param var.link Link function for variance (1 for exponential).
+##' @param method Optimization method (default "NR").
+##' @param no.opt Logical; if \code{TRUE}, skips optimization.
+##' @param weights Weights.
+##' @param se.cluster Clusters for SE calculation (GEE style).
+##' @param fnu Function to transform \eqn{\nu} (amount shared).
+##' @param nufix Logical; if \code{TRUE}, fixes the amount shared.
+##' @param nu Starting value for the amount shared.
+##' @param numderiv Logical; if \code{TRUE}, uses numerical derivatives.
+##' @param derivmethod Method for numerical derivative.
+##' @param ... Arguments for the optimizer.
+##'
+##' @return An object of class \code{"twostageREC"} containing:
+##' \item{coef}{Estimated coefficients.}
+##' \item{var}{Variance-covariance matrix.}
+##' \item{theta}{Dependence parameters.}
+##' \item{model}{Model type.}
+##'
+##' @author Thomas Scheike
+##' @references Scheike (2026), Two-stage recurrent events random effects models, LIDA, to appear.
 ##' @export
 twostageREC  <-  function (margsurv,recurrent, data = parent.frame(), theta = NULL, model=c("full","shared","non-shared"),ghosh.lin=NULL,
   theta.des = NULL, var.link = 0, method = "NR", no.opt = FALSE, weights = NULL, se.cluster = NULL, 
@@ -1878,7 +2073,7 @@ twostageREC  <-  function (margsurv,recurrent, data = parent.frame(), theta = NU
     H1 <- c(cumhaz1 * RR1)
     ###
     ## designs of fixed time covariates and weights
-    cc <- cluster.index(xx$id)
+    cc <- cluster_index(xx$id)
     firstid <- cc$firstclustid + 1
     if (max(cc$cluster.size) == 1) stop("No clusters !, maxclust size=1\n")
     ###
@@ -2153,7 +2348,7 @@ twostageREC  <-  function (margsurv,recurrent, data = parent.frame(), theta = NU
 	    val$hessian <- -hessian
     }
 
-    hessianI <- solve(val$hessian)
+    hessianI <- pinv(val$hessian)
     val$theta.iid.naive <- val$score.iid %*% hessianI
 
     if (!is.null(se.cluster))
@@ -2190,7 +2385,7 @@ twostageREC  <-  function (margsurv,recurrent, data = parent.frame(), theta = NU
 
 ##' @export
 summary.twostageREC <- function(object,vcov=NULL,delta=0,...) { ## {{{
-    I <- -solve(object$hessian)
+    I <- -pinv(object$hessian)
     if (!is.null(vcov)) V <- vcov else V <- object$var
     ncluster <- object$n
     cc <- estimate(coef=object$coef,vcov=V)$coefmat

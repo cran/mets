@@ -98,6 +98,33 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// riskstrataR
+RcppExport SEXP riskstrataR(SEXP ia, SEXP istrata, SEXP instrata);
+RcppExport SEXP _mets_riskstrataR(SEXP iaSEXP, SEXP istrataSEXP, SEXP instrataSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< SEXP >::type ia(iaSEXP);
+    Rcpp::traits::input_parameter< SEXP >::type istrata(istrataSEXP);
+    Rcpp::traits::input_parameter< SEXP >::type instrata(instrataSEXP);
+    rcpp_result_gen = Rcpp::wrap(riskstrataR(ia, istrata, instrata));
+    return rcpp_result_gen;
+END_RCPP
+}
+// cumsumstratasumR
+RcppExport SEXP cumsumstratasumR(SEXP ia, SEXP istrata, SEXP instrata, SEXP iallstrata);
+RcppExport SEXP _mets_cumsumstratasumR(SEXP iaSEXP, SEXP istrataSEXP, SEXP instrataSEXP, SEXP iallstrataSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< SEXP >::type ia(iaSEXP);
+    Rcpp::traits::input_parameter< SEXP >::type istrata(istrataSEXP);
+    Rcpp::traits::input_parameter< SEXP >::type instrata(instrataSEXP);
+    Rcpp::traits::input_parameter< SEXP >::type iallstrata(iallstrataSEXP);
+    rcpp_result_gen = Rcpp::wrap(cumsumstratasumR(ia, istrata, instrata, iallstrata));
+    return rcpp_result_gen;
+END_RCPP
+}
 // scoreMVN
 arma::mat scoreMVN(arma::mat& Y, arma::mat& Mu, arma::mat& dMu, arma::mat& S, arma::mat& dS, double itol);
 static SEXP _mets_scoreMVN_try(SEXP YSEXP, SEXP MuSEXP, SEXP dMuSEXP, SEXP SSEXP, SEXP dSSEXP, SEXP itolSEXP) {
@@ -640,13 +667,11 @@ RcppExport SEXP _mets_RcppExport_registerCCallable() {
     return R_NilValue;
 }
 
-RcppExport SEXP Bhat(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
 RcppExport SEXP biprobit0(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
 RcppExport SEXP biprobit2(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
 RcppExport SEXP bvncdf(SEXP, SEXP, SEXP);
 RcppExport SEXP claytonoakes(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
 RcppExport SEXP claytonoakesbinRV(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
-RcppExport SEXP claytonoakesR(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
 RcppExport SEXP clusterindexdata(SEXP, SEXP, SEXP, SEXP);
 RcppExport SEXP clusterindexM(SEXP, SEXP, SEXP, SEXP, SEXP);
 RcppExport SEXP cor(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
@@ -659,11 +684,8 @@ RcppExport SEXP CubeVec(SEXP, SEXP, SEXP);
 RcppExport SEXP cumsum2strataR(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
 RcppExport SEXP cumsumidstratasumCovR(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
 RcppExport SEXP cumsumidstratasumR(SEXP, SEXP, SEXP, SEXP, SEXP);
-RcppExport SEXP cumsumstrataDFGR(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
-RcppExport SEXP cumsumstrataDFGRestrictR(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
 RcppExport SEXP cumsumstrataPOR(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
 RcppExport SEXP cumsumstrataR(SEXP, SEXP, SEXP);
-RcppExport SEXP cumsumstratasumR(SEXP, SEXP, SEXP);
 RcppExport SEXP diffstrataR(SEXP, SEXP, SEXP);
 RcppExport SEXP DLambetaR(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
 RcppExport SEXP familypairindex(SEXP, SEXP, SEXP);
@@ -709,6 +731,8 @@ static const R_CallMethodDef CallEntries[] = {
     {"_mets_S0_FG_GcR", (DL_FUNC) &_mets_S0_FG_GcR, 9},
     {"_mets_GcjumpsR", (DL_FUNC) &_mets_GcjumpsR, 6},
     {"_mets_S0_FGRN", (DL_FUNC) &_mets_S0_FGRN, 8},
+    {"_mets_riskstrataR", (DL_FUNC) &_mets_riskstrataR, 3},
+    {"_mets_cumsumstratasumR", (DL_FUNC) &_mets_cumsumstratasumR, 4},
     {"_mets_scoreMVN", (DL_FUNC) &_mets_scoreMVN, 6},
     {"_mets_loglikMVN", (DL_FUNC) &_mets_loglikMVN, 9},
     {"_mets_dmvn", (DL_FUNC) &_mets_dmvn, 3},
@@ -723,13 +747,11 @@ static const R_CallMethodDef CallEntries[] = {
     {"_mets_logl_weibull", (DL_FUNC) &_mets_logl_weibull, 6},
     {"_mets_score_weibull", (DL_FUNC) &_mets_score_weibull, 7},
     {"_mets_RcppExport_registerCCallable", (DL_FUNC) &_mets_RcppExport_registerCCallable, 0},
-    {"Bhat",                     (DL_FUNC) &Bhat,                      6},
     {"biprobit0",                (DL_FUNC) &biprobit0,                 8},
     {"biprobit2",                (DL_FUNC) &biprobit2,                10},
     {"bvncdf",                   (DL_FUNC) &bvncdf,                    3},
     {"claytonoakes",             (DL_FUNC) &claytonoakes,              9},
     {"claytonoakesbinRV",        (DL_FUNC) &claytonoakesbinRV,        10},
-    {"claytonoakesR",            (DL_FUNC) &claytonoakesR,             6},
     {"clusterindexdata",         (DL_FUNC) &clusterindexdata,          4},
     {"clusterindexM",            (DL_FUNC) &clusterindexM,             5},
     {"cor",                      (DL_FUNC) &cor,                      40},
@@ -742,11 +764,8 @@ static const R_CallMethodDef CallEntries[] = {
     {"cumsum2strataR",           (DL_FUNC) &cumsum2strataR,            7},
     {"cumsumidstratasumCovR",    (DL_FUNC) &cumsumidstratasumCovR,     6},
     {"cumsumidstratasumR",       (DL_FUNC) &cumsumidstratasumR,        5},
-    {"cumsumstrataDFGR",         (DL_FUNC) &cumsumstrataDFGR,          6},
-    {"cumsumstrataDFGRestrictR", (DL_FUNC) &cumsumstrataDFGRestrictR,  7},
     {"cumsumstrataPOR",          (DL_FUNC) &cumsumstrataPOR,           6},
     {"cumsumstrataR",            (DL_FUNC) &cumsumstrataR,             3},
-    {"cumsumstratasumR",         (DL_FUNC) &cumsumstratasumR,          3},
     {"diffstrataR",              (DL_FUNC) &diffstrataR,               3},
     {"DLambetaR",                (DL_FUNC) &DLambetaR,                 8},
     {"familypairindex",          (DL_FUNC) &familypairindex,           3},

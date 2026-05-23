@@ -12,7 +12,7 @@
 
 <meta name="author" content="Klaus Holst &amp; Thomas Scheike" />
 
-<meta name="date" content="2026-01-11" />
+<meta name="date" content="2026-05-23" />
 
 <title>Average treatment effect (ATE) for Competing risks and binary outcomes</title>
 
@@ -50,9 +50,8 @@ overflow: visible;
 }
 </style>
 <style type="text/css" data-origin="pandoc">
-html { -webkit-text-size-adjust: 100%; }
 pre > code.sourceCode { white-space: pre; position: relative; }
-pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span { line-height: 1.25; }
 pre > code.sourceCode > span:empty { height: 1.2em; }
 .sourceCode { overflow: visible; }
 code.sourceCode > span { color: inherit; text-decoration: inherit; }
@@ -342,53 +341,63 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 <h1 class="title toc-ignore">Average treatment effect (ATE) for
 Competing risks and binary outcomes</h1>
 <h4 class="author">Klaus Holst &amp; Thomas Scheike</h4>
-<h4 class="date">2026-01-11</h4>
+<h4 class="date">2026-05-23</h4>
 
 
 
-<p>The binregATE function can fit a logistic link model with IPCW
-adjustment for a specific time-point, and can thus be used for
-describing survival or competing risks data. The function can be used
-for large data and is completely scalable, that is, linear in the data.
-A nice feature is that influcence functions are computed and are
-available.</p>
-<p>In addition and to summarize</p>
+<p>The <code>binregATE</code> function estimates the average treatment
+effect for binary outcomes with IPCW adjustment at a specific
+time-point, and can thus be used for survival or competing risks data.
+Computation is linear in data size and influence functions are computed
+and available.</p>
+<p>Key features:</p>
 <ul>
-<li>the censoring weights can be strata dependent</li>
+<li>the censoring weights can be stratum-dependent</li>
 <li>predictions can be computed with standard errors</li>
-<li>computation time is linear in data
-<ul>
-<li>including standard errors</li>
-</ul></li>
-<li>clusters can be given and then cluster corrected standard errors are
-computed</li>
+<li>computation time is linear in data size, including standard
+errors</li>
+<li>cluster-corrected standard errors are available via the
+<code>clusters</code> argument</li>
 </ul>
 <div id="average-treatment-effect" class="section level1">
 <h1>Average treatment effect</h1>
-<p>First we simulate some data that mimics that of Kumar et al 2012.
+<p>First we simulate some data that mimics that of Kumar et al. (2012).
 This is data from multiple myeloma patients treated with allogeneic stem
 cell transplantation from the Center for International Blood and Marrow
-Transplant Research (CIBMTR) Kumar et al (2012), “Trends in allogeneic
-stem cell transplantation for multiple myeloma: a CIBMTR analysis”. The
-data used in this paper consist of patients transplanted from 1995 to
-2005, and we compared the outcomes between transplant periods: 2001-2005
-(N=488) versus 1995-2000 (N=375). The two competing events were relapse
-(cause 2) and treatment-related mortality (TRM, cause 1) defined as
-death without relapse. considered the following risk covariates:
-transplant time period (gp (main interest of the study): 1 for
-transplanted in 2001-2005 versus 0 for transplanted in 1995-2000), donor
-type (dnr: 1 for Unrelated or other related donor (N=280) versus 0 for
-HLA-identical sibling (N=584)), prior autologous transplant (preauto: 1
-for Auto+Allo transplant (N=399) versus 0 for allogeneic transplant
-alone (N=465)) and time to transplant (ttt24: 1 for more than 24 months
-(N=289) versus 0 for less than or equal to 24 months (N=575))).</p>
-<p>We here generate similar data by assuming that the two cumlative
-incidence curves are logistic and we have censoring that depends on the
-covariates via a Cox model. All this is wrapped in the kumarsim
-function. The simulation does not deal with possible violations of the
-bound that <span class="math inline">\(F_1+F_2 &lt; 1\)</span>. But as
-we increase the sample size we still see that we recover the parameters
-of cause 2.</p>
+Transplant Research (CIBMTR). The data consisted of patients
+transplanted from 1995 to 2005, comparing outcomes between transplant
+periods: 2001–2005 (<span class="math inline">\(N=488\)</span>) versus
+1995–2000 (<span class="math inline">\(N=375\)</span>). The two
+competing events were relapse (cause 2) and treatment-related mortality
+(TRM, cause 1) defined as death without relapse. Kumar et al. (2012)
+considered the following risk covariates: transplant time period
+(<code>gp</code>, main interest of the study: 1 for transplanted in
+2001–2005 versus 0 for transplanted in 1995–2000), donor type
+(<code>dnr</code>: 1 for unrelated or other related donor (<span class="math inline">\(N=280\)</span>) versus 0 for HLA-identical sibling
+(<span class="math inline">\(N=584\)</span>)), prior autologous
+transplant (<code>preauto</code>: 1 for Auto+Allo transplant (<span class="math inline">\(N=399\)</span>) versus 0 for allogeneic transplant
+alone (<span class="math inline">\(N=465\)</span>)) and time to
+transplant (<code>ttt24</code>: 1 for more than 24 months (<span class="math inline">\(N=289\)</span>) versus 0 for less than or equal to
+24 months (<span class="math inline">\(N=575\)</span>)).</p>
+<p>We generate similar data by assuming that the two cumulative
+incidence curves are logistic and that censoring depends on covariates
+via a Cox model, all wrapped in the <code>kumarsim</code> function. The
+simulation does not enforce the constraint <span class="math inline">\(F_1+F_2 &lt; 1\)</span>, but as we increase the
+sample size we still recover the parameters of cause 2.</p>
+<p>We start by computing the average treatment effects for the
+transplant periods (<code>gp</code>), then consider the possible
+interaction between <code>gp</code> and donor type (<code>dnr</code>)
+and estimate all contrasts between the risk estimates for all
+combinations of <code>gp</code> and <code>dnr</code>. The key components
+are:</p>
+<ul>
+<li>an outcome model (fitted by IPCW):
+<code>Event(...) ~ .....</code></li>
+<li>a propensity score model (using logistic regression):
+<code>treat.model=...</code></li>
+<li>an IPCW weight estimated using a stratified Kaplan-Meier model:
+<code>cens.model=~strata(..)</code></li>
+</ul>
 <div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="fu">library</span>(mets) </span>
 <span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">100</span>)</span>
 <span id="cb1-3"><a href="#cb1-3" tabindex="-1"></a><span class="do">###</span></span>
@@ -509,7 +518,9 @@ model.</p>
 <p>The binregATE default uses binreg with its default to fit the working
 model and is recommended, but the logitIPCW and logitIPCWATE can also be
 used and are GLM-type IPCW weighted models (see binreg help
-page/vignette).</p>
+page/vignette). We can compare the logitIPCWATE/logitIPCW with that of
+wglm and its ate function in the riskRegression package, and they
+agree.</p>
 <div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a>ib2 <span class="ot">&lt;-</span> <span class="fu">logitIPCWATE</span>(<span class="fu">Event</span>(time,cause)<span class="sc">~</span>gp.f<span class="sc">+</span>dnr<span class="sc">+</span>preauto<span class="sc">+</span>ttt24,kumar,<span class="at">cause=</span><span class="dv">2</span>,</span>
 <span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a>    <span class="at">treat.model=</span>gp.f<span class="sc">~</span>dnr<span class="sc">+</span>preauto<span class="sc">+</span>ttt24,<span class="at">time=</span><span class="dv">40</span>,<span class="at">cens.model=</span><span class="sc">~</span><span class="fu">strata</span>(gp,dnr))</span>
 <span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a><span class="fu">summary</span>(ib2)</span>
@@ -619,17 +630,12 @@ U(\beta) = &amp;  X \left( \Delta(t) I(T \leq t, \epsilon=1 )/G_c(T
 \end{align*}\]</span> where <span class="math inline">\(G_c(t)=P(C &gt;
 t)\)</span>, the censoring survival distribution, and with <span class="math inline">\(\Delta(t) = I( C &gt; T \wedge t)\)</span> the
 indicator of being uncensored at time <span class="math inline">\(t\)</span>.</p>
-<p>The function logitIPCW instead considers the EE the EE <span class="math display">\[\begin{align*}
+<p>The function logitIPCW instead considers the EE <span class="math display">\[\begin{align*}
 U(\beta) = &amp;  X  \frac{\Delta(t)}{G_c(T \wedge t)} \left( I(T \leq
 t, \epsilon=1 ) - \mbox{expit}( X^T beta) \right) = 0.
 \end{align*}\]</span> The two score equations are quite similar, and
 exactly the same when the censoring model is fully-nonparametric given
 <span class="math inline">\(X\)</span>.</p>
-<ul>
-<li>It seems that the binreg estimating equations most often is
-preferable to use, and the estimating equation used is also augmented in
-the default implementation (see the binreg vignette).</li>
-</ul>
 <p>Additional functions logitATE, and binregATE computes the average
 treatment effect. We demonstrate their use below.</p>
 <p>The functions binregATE (recommended) and logitATE also works when
@@ -643,7 +649,7 @@ outcome model.</p>
 <li>We estimate the average treatment effect of our binary response
 <span class="math inline">\(I(T \leq t, \epsilon=1)\)</span>
 <ul>
-<li>Using a working logistic model for the resonse (possibly with a
+<li>Using a working logistic model for the response (possibly with a
 cluster specification)</li>
 <li>Using a working logistic model for treatment given covariates
 <ul>
@@ -665,7 +671,7 @@ E(Y(1) - Y(0))
 <p>The DR-estimator instead uses the estimating equations that are
 double robust wrt</p>
 <ul>
-<li>A working logistic model for the resonse</li>
+<li>A working logistic model for the response</li>
 <li>A working logistic model for treatment given covariates</li>
 </ul>
 <p>This is estimated using the estimator <span class="math display">\[\begin{align*}
@@ -682,7 +688,7 @@ treatment model</li>
 censoring is censoring adjusted <span class="math inline">\(\tilde Y_i
 \Delta(t) /G_c(T_i- \wedge t)\)</span></li>
 <li><span class="math inline">\(\tilde Y_i = I(T_i \leq t,
-\epsilon_i=1)\)</span> oucome before censoring.</li>
+\epsilon_i=1)\)</span> outcome before censoring.</li>
 <li><span class="math inline">\(m_j(X_i)=P(Y_i=1| A_i=j,X_i)\)</span> is
 outcome model, using binomial regression.</li>
 </ul>
@@ -690,36 +696,39 @@ outcome model, using binomial regression.</li>
 taylor-expansions for the parameters of the treatment-model and the
 outcome-model, and the censoring probability.</p>
 <p>We need that the censoring model is correct, so it can be important
-to use a sufficiently large censorng model as we also illustrate
+to use a sufficiently large censoring model as we also illustrate
 below.</p>
 <ul>
-<li>The censoring model can be specified by strata (used for phreg</li>
+<li>The censoring model can be specified by strata (used for
+<code>phreg</code>).</li>
 </ul>
 <p>We also compute standard marginalization for average treatment effect
 (called differenceG) <span class="math display">\[\begin{align*}
 \sum \left[  m_1(X_i) - m_0(X_i) \right]
 \end{align*}\]</span> and again standard errors are based on the related
-influcence functions and are also returned.</p>
+influence functions and are also returned.</p>
 <p>For large data where there are more than 2 treatment groups the
 computations can be memory extensive when there are many covariates due
 to the multinomial-regression model used for the propensity scores.
 Otherwise the function (binregATE) will run for large data.</p>
-<p>The ATE functions need that the treatment that is given as the first
-variable on the right hand side of the outcome model is a factor. The
-variable is also indentified from the left hand side of the treatment
-model (treat.model), that per default assumes that treatment does not
-depend on any covariates.</p>
+<p>The ATE functions require that the treatment variable, given as the
+first variable on the right-hand side of the outcome model, is a factor.
+The variable is also identified from the left-hand side of the treatment
+model (<code>treat.model</code>), which by default assumes that
+treatment does not depend on any covariates.</p>
 </div>
 <div id="average-treatment-effect-for-binary-or-continuous-responses" class="section level1">
 <h1>Average treatment effect for binary or continuous responses</h1>
 <p>In the binary case a binary outcome is specified instead of the
-survival outcome, and as a consequence no-censoring adjustment is
-done</p>
+survival outcome, and as a consequence no censoring adjustment is
+done.</p>
 <ul>
-<li>the binary/numeric outcome must be a variable in the data-frame</li>
+<li>the binary/numeric outcome must be a variable in the data frame</li>
 </ul>
-<p>Running the code (can also use binregATE koding cause without
-censorings values, so setting cens.code=2, and time large)</p>
+<p>The following code runs the analysis (one can also use
+<code>binregATE</code> by coding <code>cause</code> without censoring
+values, i.e. setting <code>cens.code=2</code> and <code>time</code>
+large):</p>
 <div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a>kumar<span class="sc">$</span>cause2 <span class="ot">&lt;-</span> <span class="dv">1</span><span class="sc">*</span>(kumar<span class="sc">$</span>cause<span class="sc">==</span><span class="dv">2</span>)</span>
 <span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a></span>
 <span id="cb3-3"><a href="#cb3-3" tabindex="-1"></a>b3 <span class="ot">&lt;-</span> <span class="fu">logitATE</span>(cause2<span class="sc">~</span>gp.f<span class="sc">+</span>dnr<span class="sc">+</span>preauto<span class="sc">+</span>ttt24,kumar,<span class="at">treat.model=</span>gp.f<span class="sc">~</span>dnr<span class="sc">+</span>preauto<span class="sc">+</span>ttt24)</span>
@@ -795,39 +804,45 @@ censorings values, so setting cens.code=2, and time large)</p>
 <div id="sessioninfo" class="section level1">
 <h1>SessionInfo</h1>
 <div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a><span class="fu">sessionInfo</span>()</span>
-<span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a><span class="co">#&gt; R version 4.5.2 (2025-10-31)</span></span>
-<span id="cb5-3"><a href="#cb5-3" tabindex="-1"></a><span class="co">#&gt; Platform: aarch64-apple-darwin25.1.0</span></span>
-<span id="cb5-4"><a href="#cb5-4" tabindex="-1"></a><span class="co">#&gt; Running under: macOS Tahoe 26.2</span></span>
+<span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a><span class="co">#&gt; R version 4.6.0 (2026-04-24)</span></span>
+<span id="cb5-3"><a href="#cb5-3" tabindex="-1"></a><span class="co">#&gt; Platform: x86_64-pc-linux-gnu</span></span>
+<span id="cb5-4"><a href="#cb5-4" tabindex="-1"></a><span class="co">#&gt; Running under: Ubuntu 24.04.4 LTS</span></span>
 <span id="cb5-5"><a href="#cb5-5" tabindex="-1"></a><span class="co">#&gt; </span></span>
 <span id="cb5-6"><a href="#cb5-6" tabindex="-1"></a><span class="co">#&gt; Matrix products: default</span></span>
-<span id="cb5-7"><a href="#cb5-7" tabindex="-1"></a><span class="co">#&gt; BLAS:   /Users/kkzh/.asdf/installs/r/4.5.2/lib/R/lib/libRblas.dylib </span></span>
-<span id="cb5-8"><a href="#cb5-8" tabindex="-1"></a><span class="co">#&gt; LAPACK: /Users/kkzh/.asdf/installs/r/4.5.2/lib/R/lib/libRlapack.dylib;  LAPACK version 3.12.1</span></span>
+<span id="cb5-7"><a href="#cb5-7" tabindex="-1"></a><span class="co">#&gt; BLAS:   /home/kkzh/.asdf/installs/r/4.6.0/lib/R/lib/libRblas.so </span></span>
+<span id="cb5-8"><a href="#cb5-8" tabindex="-1"></a><span class="co">#&gt; LAPACK: /usr/lib/x86_64-linux-gnu/lapack/liblapack.so.3.12.0  LAPACK version 3.12.0</span></span>
 <span id="cb5-9"><a href="#cb5-9" tabindex="-1"></a><span class="co">#&gt; </span></span>
 <span id="cb5-10"><a href="#cb5-10" tabindex="-1"></a><span class="co">#&gt; locale:</span></span>
-<span id="cb5-11"><a href="#cb5-11" tabindex="-1"></a><span class="co">#&gt; [1] en_US.UTF-8/en_US.UTF-8/en_US.UTF-8/C/en_US.UTF-8/en_US.UTF-8</span></span>
-<span id="cb5-12"><a href="#cb5-12" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb5-13"><a href="#cb5-13" tabindex="-1"></a><span class="co">#&gt; time zone: Europe/Copenhagen</span></span>
-<span id="cb5-14"><a href="#cb5-14" tabindex="-1"></a><span class="co">#&gt; tzcode source: internal</span></span>
-<span id="cb5-15"><a href="#cb5-15" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb5-16"><a href="#cb5-16" tabindex="-1"></a><span class="co">#&gt; attached base packages:</span></span>
-<span id="cb5-17"><a href="#cb5-17" tabindex="-1"></a><span class="co">#&gt; [1] stats     graphics  grDevices utils     datasets  methods   base     </span></span>
-<span id="cb5-18"><a href="#cb5-18" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb5-19"><a href="#cb5-19" tabindex="-1"></a><span class="co">#&gt; other attached packages:</span></span>
-<span id="cb5-20"><a href="#cb5-20" tabindex="-1"></a><span class="co">#&gt; [1] timereg_2.0.7  survival_3.8-3 mets_1.3.9    </span></span>
-<span id="cb5-21"><a href="#cb5-21" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb5-22"><a href="#cb5-22" tabindex="-1"></a><span class="co">#&gt; loaded via a namespace (and not attached):</span></span>
-<span id="cb5-23"><a href="#cb5-23" tabindex="-1"></a><span class="co">#&gt;  [1] cli_3.6.5              knitr_1.50             rlang_1.1.6           </span></span>
-<span id="cb5-24"><a href="#cb5-24" tabindex="-1"></a><span class="co">#&gt;  [4] xfun_0.54              jsonlite_2.0.0         future.apply_1.20.1   </span></span>
-<span id="cb5-25"><a href="#cb5-25" tabindex="-1"></a><span class="co">#&gt;  [7] listenv_0.10.0         lava_1.8.3             htmltools_0.5.8.1     </span></span>
-<span id="cb5-26"><a href="#cb5-26" tabindex="-1"></a><span class="co">#&gt; [10] sass_0.4.10            rmarkdown_2.30         grid_4.5.2            </span></span>
-<span id="cb5-27"><a href="#cb5-27" tabindex="-1"></a><span class="co">#&gt; [13] evaluate_1.0.5         jquerylib_0.1.4        fastmap_1.2.0         </span></span>
-<span id="cb5-28"><a href="#cb5-28" tabindex="-1"></a><span class="co">#&gt; [16] numDeriv_2016.8-1.1    yaml_2.3.10            mvtnorm_1.3-3         </span></span>
-<span id="cb5-29"><a href="#cb5-29" tabindex="-1"></a><span class="co">#&gt; [19] lifecycle_1.0.4        compiler_4.5.2         codetools_0.2-20      </span></span>
-<span id="cb5-30"><a href="#cb5-30" tabindex="-1"></a><span class="co">#&gt; [22] ucminf_1.2.2           Rcpp_1.1.1             future_1.68.0         </span></span>
-<span id="cb5-31"><a href="#cb5-31" tabindex="-1"></a><span class="co">#&gt; [25] lattice_0.22-7         digest_0.6.39          R6_2.6.1              </span></span>
-<span id="cb5-32"><a href="#cb5-32" tabindex="-1"></a><span class="co">#&gt; [28] parallelly_1.46.1      parallel_4.5.2         splines_4.5.2         </span></span>
-<span id="cb5-33"><a href="#cb5-33" tabindex="-1"></a><span class="co">#&gt; [31] Matrix_1.7-4           bslib_0.9.0            tools_4.5.2           </span></span>
-<span id="cb5-34"><a href="#cb5-34" tabindex="-1"></a><span class="co">#&gt; [34] RcppArmadillo_15.2.3-1 globals_0.18.0         cachem_1.1.0</span></span></code></pre></div>
+<span id="cb5-11"><a href="#cb5-11" tabindex="-1"></a><span class="co">#&gt;  [1] LC_CTYPE=en_US.UTF-8       LC_NUMERIC=C              </span></span>
+<span id="cb5-12"><a href="#cb5-12" tabindex="-1"></a><span class="co">#&gt;  [3] LC_TIME=en_US.UTF-8        LC_COLLATE=en_US.UTF-8    </span></span>
+<span id="cb5-13"><a href="#cb5-13" tabindex="-1"></a><span class="co">#&gt;  [5] LC_MONETARY=en_US.UTF-8    LC_MESSAGES=en_US.UTF-8   </span></span>
+<span id="cb5-14"><a href="#cb5-14" tabindex="-1"></a><span class="co">#&gt;  [7] LC_PAPER=en_US.UTF-8       LC_NAME=C                 </span></span>
+<span id="cb5-15"><a href="#cb5-15" tabindex="-1"></a><span class="co">#&gt;  [9] LC_ADDRESS=C               LC_TELEPHONE=C            </span></span>
+<span id="cb5-16"><a href="#cb5-16" tabindex="-1"></a><span class="co">#&gt; [11] LC_MEASUREMENT=en_US.UTF-8 LC_IDENTIFICATION=C       </span></span>
+<span id="cb5-17"><a href="#cb5-17" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb5-18"><a href="#cb5-18" tabindex="-1"></a><span class="co">#&gt; time zone: Europe/Copenhagen</span></span>
+<span id="cb5-19"><a href="#cb5-19" tabindex="-1"></a><span class="co">#&gt; tzcode source: system (glibc)</span></span>
+<span id="cb5-20"><a href="#cb5-20" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb5-21"><a href="#cb5-21" tabindex="-1"></a><span class="co">#&gt; attached base packages:</span></span>
+<span id="cb5-22"><a href="#cb5-22" tabindex="-1"></a><span class="co">#&gt; [1] stats     graphics  grDevices utils     datasets  methods   base     </span></span>
+<span id="cb5-23"><a href="#cb5-23" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb5-24"><a href="#cb5-24" tabindex="-1"></a><span class="co">#&gt; other attached packages:</span></span>
+<span id="cb5-25"><a href="#cb5-25" tabindex="-1"></a><span class="co">#&gt; [1] timereg_2.0.7  survival_3.8-6 mets_1.3.10   </span></span>
+<span id="cb5-26"><a href="#cb5-26" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb5-27"><a href="#cb5-27" tabindex="-1"></a><span class="co">#&gt; loaded via a namespace (and not attached):</span></span>
+<span id="cb5-28"><a href="#cb5-28" tabindex="-1"></a><span class="co">#&gt;  [1] cli_3.6.6              knitr_1.51             rlang_1.2.0           </span></span>
+<span id="cb5-29"><a href="#cb5-29" tabindex="-1"></a><span class="co">#&gt;  [4] xfun_0.57              otel_0.2.0             jsonlite_2.0.0        </span></span>
+<span id="cb5-30"><a href="#cb5-30" tabindex="-1"></a><span class="co">#&gt;  [7] listenv_0.10.1         future.apply_1.20.2    lava_1.9.1            </span></span>
+<span id="cb5-31"><a href="#cb5-31" tabindex="-1"></a><span class="co">#&gt; [10] htmltools_0.5.9        stats4_4.6.0           sass_0.4.10           </span></span>
+<span id="cb5-32"><a href="#cb5-32" tabindex="-1"></a><span class="co">#&gt; [13] rmarkdown_2.31         grid_4.6.0             evaluate_1.0.5        </span></span>
+<span id="cb5-33"><a href="#cb5-33" tabindex="-1"></a><span class="co">#&gt; [16] jquerylib_0.1.4        fastmap_1.2.0          numDeriv_2016.8-1.1   </span></span>
+<span id="cb5-34"><a href="#cb5-34" tabindex="-1"></a><span class="co">#&gt; [19] yaml_2.3.12            mvtnorm_1.3-7          lifecycle_1.0.5       </span></span>
+<span id="cb5-35"><a href="#cb5-35" tabindex="-1"></a><span class="co">#&gt; [22] compiler_4.6.0         codetools_0.2-20       ucminf_1.2.3          </span></span>
+<span id="cb5-36"><a href="#cb5-36" tabindex="-1"></a><span class="co">#&gt; [25] Rcpp_1.1.1-1.1         future_1.70.0          lattice_0.22-9        </span></span>
+<span id="cb5-37"><a href="#cb5-37" tabindex="-1"></a><span class="co">#&gt; [28] digest_0.6.39          R6_2.6.1               parallelly_1.47.0     </span></span>
+<span id="cb5-38"><a href="#cb5-38" tabindex="-1"></a><span class="co">#&gt; [31] parallel_4.6.0         splines_4.6.0          Matrix_1.7-5          </span></span>
+<span id="cb5-39"><a href="#cb5-39" tabindex="-1"></a><span class="co">#&gt; [34] bslib_0.11.0           tools_4.6.0            RcppArmadillo_15.2.6-1</span></span>
+<span id="cb5-40"><a href="#cb5-40" tabindex="-1"></a><span class="co">#&gt; [37] globals_0.19.1         cachem_1.1.0</span></span></code></pre></div>
 </div>
 
 

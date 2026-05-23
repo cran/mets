@@ -1,50 +1,56 @@
-##' Discrete time to event interval censored data 
+##' Discrete Time-to-Event Analysis with Interval Censoring
 ##'
-##' We consider the cumulative odds model 
-##' \deqn{
-##'    P(T \leq t | x) =  \frac{G(t) \exp(x \beta) }{1 + G(t) exp( x \beta) }
-##' }
-##' or equivalently 
-##' \deqn{
-##'    logit(P(T \leq t | x)) = log(G(t)) + x \beta
-##' }
-##' and we can thus also compute the probability of surviving 
-##' \deqn{
-##'    P(T >t | x) =  \frac{1}{1 + G(t) exp( x \beta) }
-##' }
+##' Fits a cumulative odds model for discrete time-to-event data, handling interval 
+##' censoring where the event time is known only to lie within an interval \eqn{(t_l, t_r]}.
+##' The model assumes:
+##' \deqn{ \text{logit}(P(T \leq t | x)) = \log(G(t)) + x \beta }
+##' where \eqn{G(t)} is the baseline cumulative odds function and \eqn{\beta} are the 
+##' regression coefficients. This is equivalent to:
+##' \deqn{ P(T \leq t | x) = \frac{G(t) \exp(x \beta)}{1 + G(t) \exp(x \beta)} }
 ##' 
-##' The baseline \eqn{G(t)} is written as \eqn{cumsum(exp(\alpha))} and this is not the standard
-##' parametrization that takes log of \eqn{G(t)} as the parameters. Note that the regression 
-##' coefficients are describing the probability of dying before or at time t. 
+##' The baseline \eqn{G(t)} is parameterized as the cumulative sum of exponentials 
+##' (\eqn{G(t) = \sum \exp(\alpha)}), ensuring positivity. The regression coefficients 
+##' describe the log-odds of the event occurring by time \eqn{t}.
 ##' 
-##' Input are intervals given by ]t_l,t_r] where t_r can be infinity for right-censored intervals 
-##' When truly discrete ]0,1] will be an observation at 1, and  ]j,j+1] will be an observation at j+1.
-##' Can be used for fitting the usual ordinal regression model (with logit link) that in contrast, however, 
-##' describes the probibility of surviving time t (thus leads to -beta).
-##' 
-##' Likelihood is maximized:
-##' \deqn{
-##'  \prod  P(T_i >t_{il} | x) - P(T_i> t_{ir}| x) 
-##' }
-##' 
-##' @param formula  formula
-##' @param data  data 
-##' @param beta starting values 
-##' @param no.opt optimization TRUE/FALSE 
-##' @param method NR, nlm 
-##' @param stderr to return only estimate 
-##' @param weights weights following id for GLM 
-##' @param offsets following id  for GLM
-##' @param exp.link parametrize increments exp(alpha) > 0
-##' @param increment using increments dG(t)=exp(alpha) as parameters
-##' @param ... Additional arguments to lower level funtions lava::NR  optimizer or nlm
+##' The likelihood is maximized over the observed intervals:
+##' \deqn{ L = \prod_i [ P(T_i > t_{il} | x_i) - P(T_i > t_{ir} | x_i) ] }
+##' where \eqn{t_{il}} and \eqn{t_{ir}} are the left and right endpoints of the interval 
+##' for subject \eqn{i}. Right-censored intervals have \eqn{t_{ir} = \infty}.
+##'
+##' @param formula Formula with an \code{Interval} object (e.g., \code{Interval(entry, time)}) 
+##'   on the left-hand side and covariates on the right. Can include \code{cluster()} for 
+##'   correlated data.
+##' @param data Data frame containing the variables in the formula.
+##' @param beta Starting values for the optimization (vector of length \eqn{p + k}, where 
+##'   \eqn{p} is the number of covariates and \eqn{k} is the number of time intervals).
+##' @param no.opt Logical; if TRUE, skips optimization and returns estimates based on 
+##'   the provided \code{beta} (useful for initialization).
+##' @param method Optimization method: \code{"NR"} (Newton-Raphson, default) or \code{"nlm"}.
+##' @param stderr Logical; if FALSE, returns only the coefficient estimates.
+##' @param weights Observation weights (follows ID).
+##' @param offsets Offsets (follows ID).
+##' @param exp.link Logical; if TRUE, parameterizes increments as \eqn{\exp(\alpha) > 0}.
+##' @param increment Logical; if TRUE, uses increments \eqn{dG(t) = \exp(\alpha)} as parameters.
+##' @param ... Additional arguments passed to the optimizer (\code{lava::NR} or \code{nlm}).
+##' @return An object of class \code{"cumoddsreg"} containing:
+##'   \item{coef}{Estimated coefficients (baseline time effects and covariate effects).}
+##'   \item{se.coef}{Standard errors of the coefficients.}
+##'   \item{var}{Variance-covariance matrix.}
+##'   \item{iid}{Influence function (IID) decomposition for robust variance estimation.}
+##'   \item{ntimes}{Number of distinct time intervals.}
+##'   \item{utimes}{Unique time points.}
+##'   \item{ploglik}{Log-likelihood at convergence.}
+##'   \item{gradient, hessian}{Optimization results.}
+##'   \item{call}{Original function call.}
 ##' @author Thomas Scheike
+##' @references 
+##' Scheike, T. H. (2024). Discrete time survival analysis with interval censoring. mets package documentation.
+##' @seealso \code{\link{cumoddsreg}}, \code{\link{predictlogitSurvd}}, \code{\link{simlogitSurvd}}
 ##' @examples
-##' library(mets)
 ##' data(ttpd) 
 ##' dtable(ttpd,~entry+time2)
 ##' 
-##' out <- interval.logitsurv.discrete(Interval(entry,time2)~X1+X2+X3+X4,ttpd)
+##' out <- interval_logitsurv_discrete(Interval(entry,time2)~X1+X2+X3+X4,ttpd)
 ##' summary(out)
 ##' head(iid(out)) 
 ##' 
@@ -54,11 +60,9 @@
 ##' ttpd <- dfactor(ttpd,fentry~entry)
 ##' out <- cumoddsreg(fentry~X1+X2+X3+X4,ttpd)
 ##' summary(out)
-##' head(iid(out)) 
-##' 
-##' @aliases Interval dInterval simlogitSurvd predictlogitSurvd cumoddsreg simTTP predictSurvd plotSurvd 
+##' @aliases Interval dInterval predictlogitSurvd predictSurvd plotSurvd
 ##' @export
-interval.logitsurv.discrete <- function (formula,data,beta=NULL,no.opt=FALSE,method="NR",
+interval_logitsurv_discrete <- function (formula,data,beta=NULL,no.opt=FALSE,method="NR",
 	   stderr=TRUE,weights=NULL,offsets=NULL,exp.link=1,increment=1,...)
 { ## {{{ 
 
@@ -130,7 +134,7 @@ interval.logitsurv.discrete <- function (formula,data,beta=NULL,no.opt=FALSE,met
   ## design for ]t_l,t_r], for t_l=0 row is  0
   if (increment==0) {
 	  tL <- matdoubleindex(tL,1:n,entrytime,rep(1,n))
-	  tR <- matdoubleindex(tL,1:n,time2,rep(1,n))
+	  tR <- matdoubleindex(tR,1:n,time2,rep(1,n))
   } else {
      for (i in 1:mutimes) {
         tL[,i] <- (i <= entrytime) 
@@ -273,12 +277,12 @@ gradient <- Dlogl
 hessian <- D2log
 
   if (all) {
-      ihess <- solve(hessian)
+      ihess <- pinv(hessian)
       beta.iid <- Dlogliid %*% ihess ## %*% t(Dlogl) 
       beta.iid <- apply(beta.iid,2,sumstrata,id,nid)
       robvar <- crossprod(beta.iid)
       val <- list(par=pp,ploglik=ploglik,gradient=gradient,hessian=hessian,ihessian=ihess,
-		  iid=beta.iid,robvar=robvar,var=robvar,ihessian=ihess,id=id,
+		  iid=beta.iid,robvar=robvar,var=robvar,id=id,
 		  se=diag(robvar)^.5,coef=pp,se.coef=diag(robvar)^.5)
       return(val)
   }  
@@ -318,6 +322,21 @@ hessian <- D2log
 ##' @export
 IC.cumoddsreg <- function(x,...) { x$iid*NROW(x$iid) }
 
+##' Cumulative Odds Regression for Discrete Time Data
+##'
+##' A wrapper function for \code{interval_logitsurv_discrete} that simplifies the 
+##' interface for discrete time-to-event data where the event time is observed exactly 
+##' or as a factor level. It converts a factor response into an interval-censored format 
+##' internally.
+##'
+##' @param formula Formula with a factor response on the left-hand side (representing 
+##'   the event time) and covariates on the right.
+##' @param data Data frame.
+##' @param ... Arguments passed to \code{interval_logitsurv_discrete}.
+##' @return An object of class \code{"cumoddsreg"} with the same structure as 
+##'   \code{interval_logitsurv_discrete}.
+##' @author Thomas Scheike
+##' @seealso \code{\link{interval_logitsurv_discrete}}
 ##' @export
 cumoddsreg <- function (formula,data,...)
 { ## {{{ 
@@ -337,7 +356,7 @@ cumoddsreg <- function (formula,data,...)
   xf <- update.formula(formula,Interval(entrytime__,time2__)~.)
   data$entrytime__ <- entrytime__
   data$time2__ <- time2__
-  out <- interval.logitsurv.discrete(xf,data,...)
+  out <- interval_logitsurv_discrete(xf,data,...)
 
  return(out)
 } ## }}}
@@ -354,7 +373,7 @@ Interval <- function (time, time2 , ...)
 ##' @export
 dInterval <- function (time, time2 ,cuts=NULL,cut.first=0,show=FALSE, ...) 
 {# {{{
-if (is.null(cuts)) cuts <-  sort(unique(time,time2))
+if (is.null(cuts)) cuts <-  sort(unique(c(time,time2)))
 if (min(cuts)> 0)  cuts <- c(cut.first,cuts)
 ###
 lleft <- fast.approx(cuts,time,type="left")
@@ -470,8 +489,7 @@ if (missing(Z)) Z <- NULL
 return(preds)
 } ## }}} 
 
-##' @export
-simTTP <- function(coef=NULL,n=100,Xglm=NULL,times=NULL)
+sim_TTP <- function(coef=NULL,n=100,Xglm=NULL,times=NULL)
 {# {{{
 	  
   Z <- Xglm  
@@ -491,10 +509,10 @@ simTTP <- function(coef=NULL,n=100,Xglm=NULL,times=NULL)
   y <- rbinom(length(p),1,p)
 
   data <- cbind(y,data)
-  data <- count.history(data,status="y",id="id",types=1)
+  data <- count_history(data,status="y",id="id",types=1)
   data <- subset(data,data$Count1<=0)
 
-  attr(data,"coef") <- beta
+  attr(data,"coef") <- coef
   return(data)
  }# }}}
 
@@ -516,7 +534,6 @@ summary.cumoddsreg <- function(object,...) { ## {{{
 	} else out <- list(baseline=outb)
 	return(out)
 } ## }}} 
-
 
 ##' @export
 print.cumoddsreg <- function(x,...) summary(x,...)
@@ -554,7 +571,7 @@ predictSurvd <- function(ds,Z,times=1:6,se=FALSE,type="prob")
 	  p <- c(expit(as.matrix(Z) %*% ccc))
 
 	  preds <- data.frame(p=p,id=data$id,times=data$times)
-	  survt <- exp(cumsumstrata(log(1-preds$p),data$id-1,6))
+	  survt <- exp(cumsumstrata(log(1-preds$p),data$id-1,max(data$id)))
 	  if (type=="prob") pred <- 1-survt
 	  if (type=="surv") pred <- survt
 	  if (type=="hazard") pred <- p
@@ -586,7 +603,8 @@ predictSurvd <- function(ds,Z,times=1:6,se=FALSE,type="prob")
      Zi <- data.frame(Z[i,,drop=FALSE])
      data <- Zi
      if (!is.null(times)) {
-        timesf <- data.frame(times=rep(times,n),id=rep(1:n,each=length(times)))
+        timesf <- data.frame(times=times, id=rep(i, length(times)))
+###        timesf <- data.frame(times=rep(times,n),id=rep(1:n,each=length(times)))
         data <- merge(data,timesf,by.x="id",by.y="id")
         mt <- model.matrix(~factor(times),data)
         nm <- match(c("id","times"),names(data))

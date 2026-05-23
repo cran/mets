@@ -1,59 +1,59 @@
-#' event.split (SurvSplit).
-#' 
-#' contstructs start stop formulation of event time data after a variable in
-#' the data.set. Similar to SurvSplit of the survival package but can also
-#' split after random time given in data frame.
-#' 
-#' 
-#' @param data data to be split
-#' @param time time variable.
-#' @param status status variable.
-#' @param cuts cuts variable or numeric cut (only one value)
-#' @param name.id name of id variable.
-#' @param name.start name of start variable in data, start can also be numeric "0"
-#' @param cens.code code for the censoring.
-#' @param order.id order data after id and start.
-#' @param time.group make variable "before"."cut" that keeps track of wether start,stop is before (1) or after cut (0).
-#' @author Thomas Scheike
-#' @keywords survival
-#' @examples
-#' 
-#' set.seed(1)
-#' d <- data.frame(event=round(5*runif(5),2),start=1:5,time=2*1:5,
-#' 		status=rbinom(5,1,0.5),x=1:5)
-#' d
-#' 
-#' d0 <- event.split(d,cuts="event",name.start=0)
-#' d0
-#' 
-#' dd <- event.split(d,cuts="event")
-#' dd
-#' ddd <- event.split(dd,cuts=3.5)
-#' ddd
-#' event.split(ddd,cuts=5.5)
-#' 
-#' ### successive cutting for many values 
-#' dd <- d
-#' for  (cuts in seq(2,3,by=0.3)) dd <- event.split(dd,cuts=cuts)
-#' dd
-#' 
-#' ###########################################################################
-#' ### same but for situation with multiple events along the time-axis
-#' ###########################################################################
-#' d <- data.frame(event1=1:5+runif(5)*0.5,start=1:5,time=2*1:5,
-#' 		status=rbinom(5,1,0.5),x=1:5,start0=0)
-#' d$event2 <- d$event1+0.2
-#' d$event2[4:5] <- NA 
-#' d
-#' 
-#' d0 <- event.split(d,cuts="event1",name.start="start",time="time",status="status")
-#' d0
-#' ###
-#' d00 <- event.split(d0,cuts="event2",name.start="start",time="time",status="status")
-#' d00
-#' 
-#' @export
-event.split <- function(data,
+##' event_split (SurvSplit).
+##' 
+##' Constructs start stop formulation of event time data after a variable in
+##' the data.set. Similar to SurvSplit of the survival package but can also
+##' split after random time given in data frame.
+##' 
+##' 
+##' @param data data to be split
+##' @param time time variable.
+##' @param status status variable.
+##' @param cuts cuts variable or numeric cut (only one value)
+##' @param name.id name of id variable.
+##' @param name.start name of start variable in data, start can also be numeric "0"
+##' @param cens.code code for the censoring.
+##' @param order.id order data after id and start.
+##' @param time.group make variable "before"."cut" that keeps track of wether start,stop is before (1) or after cut (0).
+##' @author Thomas Scheike
+##' @keywords survival
+##' @examples
+##' 
+##' set.seed(1)
+##' d <- data.frame(event=round(5*runif(5),2),start=1:5,time=2*1:5,
+##' 		status=rbinom(5,1,0.5),x=1:5)
+##' d
+##' 
+##' d0 <- event_split(d,cuts="event",name.start=0)
+##' d0
+##' 
+##' dd <- event_split(d,cuts="event")
+##' dd
+##' ddd <- event_split(dd,cuts=3.5)
+##' ddd
+##' event_split(ddd,cuts=5.5)
+##' 
+##' ### successive cutting for many values 
+##' dd <- d
+##' for  (cuts in seq(2,3,by=0.3)) dd <- event_split(dd,cuts=cuts)
+##' dd
+##' 
+##' ###########################################################################
+##' ### same but for situation with multiple events along the time-axis
+##' ###########################################################################
+##' d <- data.frame(event1=1:5+runif(5)*0.5,start=1:5,time=2*1:5,
+##' 		status=rbinom(5,1,0.5),x=1:5,start0=0)
+##' d$event2 <- d$event1+0.2
+##' d$event2[4:5] <- NA 
+##' d
+##' 
+##' d0 <- event_split(d,cuts="event1",name.start="start",time="time",status="status")
+##' d0
+##' ###
+##' d00 <- event_split(d0,cuts="event2",name.start="start",time="time",status="status")
+##' d00
+##' 
+##' @export
+event_split <- function(data,
 		time="time",status="status",cuts="cuts",name.id="id",
 		name.start="start", cens.code=0,order.id=TRUE, time.group=FALSE)
 { ## {{{
@@ -78,7 +78,7 @@ event.split <- function(data,
       new.start <- data[,name.start]
     } else new.start <- rep(0,n)
 
-    if (any(new.start>= new.time)) cat("any(new.start>= new.time) is TRUE\n"); 
+    if (any(new.start>= new.time)) cat("any(new.start>= new.time) is TRUE\n")
 
     if ((name.id %in% names(data))) idl <- data[,name.id] else {
 	    idl <- 1:n
@@ -115,8 +115,6 @@ event.split <- function(data,
     return(data)
 }  ## }}}
 
-
-
 ##' Event split with two time-scales, time and gaptime 
 ##'
 ##' Cuts time for two time-scales, as event.split 
@@ -139,14 +137,14 @@ event.split <- function(data,
 ##' rr$gaptime <-  rr$time-rr$start
 ##' rr$gapstart <- 0
 ##'
-##' rr1 <- EventSplit2(rr,cuts=600,cuttime="time",   gaptime="gaptime",gaptime.entry="gapstart")
-##' rr2 <- EventSplit2(rr1,cuts=100,cuttime="gaptime",gaptime="gaptime",gaptime.entry="gapstart")
+##' rr1 <- event_split2(rr,cuts=600,cuttime="time",   gaptime="gaptime",gaptime.entry="gapstart")
+##' rr2 <- event_split2(rr1,cuts=100,cuttime="gaptime",gaptime="gaptime",gaptime.entry="gapstart")
 ##'
 ##' dlist(rr1,start-time+status+gapstart+gaptime~id)
 ##' dlist(rr2,start-time+status+gapstart+gaptime~id)
 ##'
 ##' @export 
-EventSplit2 <- function(data,
+event_split2 <- function(data,
 		time="time",status="status",entry="start",cuts="cuts",name.id="id",
 		gaptime=NULL,gaptime.entry=NULL,cuttime=c("time","gaptime"),
 		cens.code=0,order.id=TRUE)
@@ -174,7 +172,7 @@ EventSplit2 <- function(data,
     } else new.start <- rep(0,n)
     nnstart <- new.start
 
-    if (any(new.start>= new.time)) cat("any(new.start>= new.time) is TRUE\n"); 
+    if (any(new.start>= new.time)) cat("any(new.start>= new.time) is TRUE\n")
 
     if ((name.id %in% names(data))) idl <- data[,name.id] else {
 	    idl <- 1:n
@@ -214,7 +212,6 @@ EventSplit2 <- function(data,
     splits <- which(new.cuts<new.gaptime & new.gapstart<new.cuts)
 
     if (length(splits)) {
-        nord <- c(1:n,(1:n)[splits]+0.1)
 	rows  <- c(1:n,splits)
 	new.gaptime <-   c(new.gaptime,new.gaptime[splits])
         new.gapstart <-  c(new.gapstart,new.cuts[splits])

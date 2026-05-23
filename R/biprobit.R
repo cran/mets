@@ -197,7 +197,7 @@ biprobit.vector <- function(x,id,X=NULL,Z=NULL,
         suppressWarnings(op <- nlminb(p0,f0,gradient=g0,control=control))
     }
     
-    iI <- Inverse(numDeriv::jacobian(g0,op$par))
+    iI <- pinv(numDeriv::jacobian(g0,op$par))
     V <- iI
     UU <- U(op$par,w0)
     logLik <- sum(attributes(UU)$logLik)
@@ -518,7 +518,7 @@ biprobit <- function(x, data, id, rho=~1, num=NULL, strata=NULL, eqmarg=TRUE,
       if (indiv) {
           val <- U$score
           if (!is.null(MyData$idmarg) && !pairs.only) {
-              val <- with(MyData, cluster.index(c(id,idmarg),mat=U$score))
+              val <- with(MyData, cluster_index(c(id,idmarg),mat=U$score))
           }          
           ## val <- U$score[MyData$id,,drop=FALSE]
           ## N <- length(MyData$id)
@@ -603,17 +603,16 @@ biprobit <- function(x, data, id, rho=~1, num=NULL, strata=NULL, eqmarg=TRUE,
     UU <- U(op$par,indiv=TRUE)
     idx <- seq(nrow(UU))
     if (!is.null(MyData$idmarg))
-        idx <- with(MyData,cluster.index(c(id,idmarg)))$firstclustid+1
+        idx <- with(MyData,cluster_index(c(id,idmarg)))$firstclustid+1
     idvar <- with(MyData, c(id0,idmarg0))[idx] 
        
   J <- crossprod(UU)
-  ##  iJ <- Inverse(J)
-  iI <- Inverse(-numDeriv::jacobian(U,op$par))
+  iI <- pinv(-numDeriv::jacobian(U,op$par))
   V <- switch(vcov,
               robust=,
               sandwich=iI%*%J%*%iI,##iJ%*%I%*%iJ,
               score=,
-              outer=Inverse(J),
+              outer=pinv(J),
               hessian=iI              
               )
 
@@ -758,7 +757,7 @@ Ubiprobit <- function(p,Rho,eqmarg,nx,MyData,indiv=FALSE) {
     }
 
     if (indiv) {
-        val <- with(MyData, cluster.index(c(id,idmarg),mat=U$score))
+        val <- with(MyData, cluster_index(c(id,idmarg),mat=U$score))
         attributes(val)$logLik <- U$loglik
         return(val)
     }

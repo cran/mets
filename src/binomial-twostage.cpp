@@ -1,5 +1,4 @@
 #include <RcppArmadillo.h>
-#include <Rcpp.h>
 #include <algorithm>
 #include <iostream>
 #include <vector>
@@ -503,7 +502,7 @@ return(res);
 } catch( std::exception &ex ) {
     forward_exception_to_r( ex );
   } catch(...) {  
-    ::Rf_error( "c++ exception (unknown reason)" ); 
+    (Rf_error)( "c++ exception (unknown reason)" ); 
   }
   return R_NilValue; // -Wall
 
@@ -742,7 +741,7 @@ return(res);
 } catch( std::exception &ex ) {
     forward_exception_to_r( ex );
   } catch(...) {  
-    ::Rf_error( "c++ exception (unknown reason)" ); 
+    (Rf_error)( "c++ exception (unknown reason)" ); 
   }
   return R_NilValue; // -Wall
 

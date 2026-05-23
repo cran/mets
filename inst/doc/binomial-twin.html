@@ -12,7 +12,7 @@
 
 <meta name="author" content="Klaus Holst &amp; Thomas Scheike" />
 
-<meta name="date" content="2026-01-11" />
+<meta name="date" content="2026-05-23" />
 
 <title>Analysis of bivariate binomial data: Twin analysis</title>
 
@@ -50,9 +50,8 @@ overflow: visible;
 }
 </style>
 <style type="text/css" data-origin="pandoc">
-html { -webkit-text-size-adjust: 100%; }
 pre > code.sourceCode { white-space: pre; position: relative; }
-pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span { line-height: 1.25; }
 pre > code.sourceCode > span:empty { height: 1.2em; }
 .sourceCode { overflow: visible; }
 code.sourceCode > span { color: inherit; text-decoration: inherit; }
@@ -342,20 +341,20 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 <h1 class="title toc-ignore">Analysis of bivariate binomial data: Twin
 analysis</h1>
 <h4 class="author">Klaus Holst &amp; Thomas Scheike</h4>
-<h4 class="date">2026-01-11</h4>
+<h4 class="date">2026-05-23</h4>
 
 
 
 <div id="overview" class="section level1">
 <h1>Overview</h1>
-<p>When looking at bivariate binomial data with the aim of learning
-about the dependence that is present, possibly after correcting for some
-covariates many models are available.</p>
+<p>When analysing bivariate binomial data with the aim of learning about
+the dependence present, possibly after adjusting for covariates, many
+models are available.</p>
 <ul>
-<li>Random-effects models logistic regression covered elsewhere (glmer
-in lme4).</li>
+<li>Random-effects logistic regression models covered elsewhere
+(<code>glmer</code> in <code>lme4</code>).</li>
 </ul>
-<p>in the mets package you can fit the</p>
+<p>In the mets package you can fit the</p>
 <ul>
 <li><p>Pairwise odds ratio model</p></li>
 <li><p>Bivariate Probit model</p>
@@ -372,18 +371,19 @@ ACE, ADE ,AE and so forth.</li>
 </ul>
 <p>Typically it can be hard or impossible to specify random effects
 models with special structure among the parameters of the random
-effects. This is possible in our models.</p>
-<p>To be concrete about the model structure assume that we have paired
-binomial data <span class="math inline">\((Y_1, Y_2, X_1, X_)2\)</span>
+effects. This is possible with our models.</p>
+<p>To be concrete about the model structure, assume that we have paired
+binomial data <span class="math inline">\((Y_1, Y_2, X_1, X_2)\)</span>
 where the responses are <span class="math inline">\(Y_1, Y_2\)</span>
-and we have covariates <span class="math inline">\(X_1,
+and the covariates are <span class="math inline">\(X_1,
 X_2\)</span>.</p>
 <p>We start by giving a brief description of these different models.
 First we for bivariate data one can specify the marginal probability
 using logistic regression models <span class="math display">\[
 logit(P(Y_i=1|X_i)) = \alpha_i + X_i^T \beta  i=1,2.
-\]</span> These model can be estimated under working independence .</p>
-<p>A typical twin analysis will typically consist of looking at both</p>
+\]</span> These models can be estimated under working independence
+(Zeger and Liang, 1986).</p>
+<p>A typical twin analysis will consist of looking at both</p>
 <ul>
 <li><p>Pairwise odds ratio model</p></li>
 <li><p>Bivariate Probit model</p></li>
@@ -395,28 +395,30 @@ bivariate probit model.</p>
 </div>
 <div id="biprobit-with-random-effects" class="section level1">
 <h1>Biprobit with random effects</h1>
-<p>For these model we assume that given random effects <span class="math inline">\(Z\)</span> and a covariate vector <span class="math inline">\(V_{12}\)</span> we have independent logistic
+<p>For these models we assume that given random effects <span class="math inline">\(Z\)</span> and a covariate vector <span class="math inline">\(V_{12}\)</span> we have independent probit
 regression models <span class="math display">\[
-probit(P(Y_i=1|X_i, Z)) = \alpha_i + X_i^T \beta + V_{12}^T Z  i=1,2.
-\]</span> where Z$ is a bivariate normal distribution with some
-covariance <span class="math inline">\(\Sigma\)</span>. The general
-covariance structure <span class="math inline">\(\Sigma\)</span> makes
-the model very flexible.</p>
+\mbox{probit}(P(Y_i=1|X_i, Z)) = \alpha_i + X_i^T \beta + V_{12}^T
+Z,  \quad i=1,2.
+\]</span> where <span class="math inline">\(Z\)</span> follows a
+bivariate normal distribution with covariance <span class="math inline">\(\Sigma\)</span>. The general covariance structure
+<span class="math inline">\(\Sigma\)</span> makes the model very
+flexible.</p>
 <p>We note that</p>
 <ul>
-<li>Paramters <span class="math inline">\(\beta\)</span> are subject
-specific</li>
-<li>The <span class="math inline">\(\Sigma\)</span> will reflect
-dependence</li>
+<li>Parameters <span class="math inline">\(\beta\)</span> are
+subject-specific</li>
+<li><span class="math inline">\(\Sigma\)</span> reflects the dependence
+structure</li>
 </ul>
-<p>The more standard link function <span class="math inline">\(logit\)</span> rather than the <span class="math inline">\(probit\)</span> link is often used and implemented
-in for example . The advantage is that one now gets an odds-ratio
-interpretation of the subject specific effects, but one then needs
-numerical integration to fit the model.</p>
+<p>The more standard <span class="math inline">\(\mbox{logit}\)</span>
+link rather than the <span class="math inline">\(\mbox{probit}\)</span>
+link is often used and implemented in, for example, Tutz and Hennevogl
+(1996). The advantage is that one obtains an odds-ratio interpretation
+of the subject-specific effects, but numerical integration is then
+needed to fit the model.</p>
 <div id="pairwise-odds-ratio-model" class="section level2">
 <h2>Pairwise odds ratio model</h2>
-<p>Now the pairwise odds ratio model the specifies that given $ X_1, X_2
-$ the marginal models are <span class="math display">\[
+<p>The pairwise odds ratio model specifies that given <span class="math inline">\(X_1, X_2\)</span> the marginal models are <span class="math display">\[
 logit(P(Y_i=1|X_i)) = \alpha_i + X_i^T \beta  i=1,2
 \]</span></p>
 <p>The primary object of interest are the odds ratio between <span class="math inline">\(Y_{1}\)</span> and <span class="math inline">\(Y_{2}\)</span> <span class="math display">\[
@@ -426,23 +428,24 @@ logit(P(Y_i=1|X_i)) = \alpha_i + X_i^T \beta  i=1,2
 \]</span> given <span class="math inline">\(X_{ki}\)</span>, <span class="math inline">\(X_{kj}\)</span>, and <span class="math inline">\(Z_{kji}\)</span>.</p>
 <p>We model the odds ratio with the regression <span class="math display">\[
 \gamma_{12} = \exp( Z_{12}^T \lambda)
-\]</span> Where <span class="math inline">\(Z_{12}\)</span> are some
-covarites that may influence the odds-ratio between between <span class="math inline">\(Y_{1}\)</span> and <span class="math inline">\(Y_{2}\)</span> and contains the marginal
-covariates, . This odds-ratio is given covariates as well as marginal
+\]</span> Where <span class="math inline">\(Z_{12}\)</span> are
+covariates that may influence the odds ratio between <span class="math inline">\(Y_{1}\)</span> and <span class="math inline">\(Y_{2}\)</span> and contains the marginal
+covariates . This odds-ratio is given covariates as well as marginal
 covariates. The odds-ratio and marginals specify the joint bivariate
 distribution via the so-called Placckett-distribution.</p>
-<p>One way of fitting this model is the ALR algoritm, the alternating
-logistic regression ahd this has been described in several papers . We
-here simply estimate the parameters in a two stage-procedure</p>
+<p>One way of fitting this model is the ALR (alternating logistic
+regression) algorithm, described in several papers (Kuk, 2004; Kuk,
+2007; Qaqish, 2012). We estimate the parameters in a two-stage
+procedure:</p>
 <ul>
 <li>Estimating the marginal parameters via GEE</li>
 <li>Using marginal estimates, estimate dependence parameters</li>
 </ul>
-<p>This gives efficient estimates of the dependence parameters because
-of orthogonality, but some efficiency may be gained for the marginal
-parameters by using the full likelihood or iterative fitting such as for
-the ALR.</p>
-<p>The pairwise odds-ratio model is very useful, but one do not have a
+<p>This gives efficient estimates of the dependence parameters due to
+orthogonality, though some efficiency may be gained for the marginal
+parameters by using the full likelihood or iterative fitting such as
+ALR.</p>
+<p>The pairwise odds-ratio model is very useful, but one does not have a
 random effects model.</p>
 </div>
 <div id="additive-gamma-model" class="section level2">
@@ -465,7 +468,7 @@ transform of a Gamma distributed random effect with <span class="math inline">\(
 <li>Estimating the marginal parameters via GEE</li>
 <li>Using marginal estimates, estimate dependence parameters</li>
 </ul>
-<p>To deal with multiple random effects we consider random effects <span class="math inline">\(Z_i  i=1,...,d\)</span> such that <span class="math inline">\(Z_i\)</span> is gamma distributed with * mean:
+<p>To deal with multiple random effects we consider random effects <span class="math inline">\(Z_i i=1,...,d\)</span> such that <span class="math inline">\(Z_i\)</span> is gamma distributed with * mean:
 <span class="math inline">\(\lambda_j/\lambda_{\bullet}\)</span> *
 variance: <span class="math inline">\(\lambda_j/\lambda_{\bullet}^2\)</span>, where we
 define the scalar <span class="math inline">\(\lambda_{\bullet}\)</span>
@@ -488,7 +491,7 @@ have no restrictions on parameters.</p>
 <p>This parametrization is obtained with the var.par=0 option that thus
 estimates <span class="math inline">\(\theta\)</span>.</p>
 <p>The DEFAULT parametrization instead estimates the variances of the
-random effecs (var.par=1) via the parameters <span class="math inline">\(\nu\)</span> <span class="math display">\[
+random effects (var.par=1) via the parameters <span class="math inline">\(\nu\)</span> <span class="math display">\[
 M \nu = ( \lambda_1/\lambda_{\bullet}^2,
 ...,\lambda_d/\lambda_{\bullet}^2)^T
 \]</span></p>
@@ -502,10 +505,10 @@ logit(P(Y_i=1|X_i,Z)) = exp( -V_{12,i}^T Z \cdot
 <li>Estimating the marginal parameters via GEE</li>
 <li>Using marginal estimates, estimate dependence parameters</li>
 </ul>
-<p>Even though the model not formaly in this formulation allows negative
-correlation in practice the paramters can be negative and this reflects
-negative correlation. An advanatage is that no numerical integration is
-needed.</p>
+<p>Even though the model not formally in this formulation allows
+negative correlation in practice the parameters can be negative and this
+reflects negative correlation. An advantage is that no numerical
+integration is needed.</p>
 </div>
 <div id="the-twin-stutter-data" class="section level2">
 <h2>The twin-stutter data</h2>
@@ -560,7 +563,7 @@ the risk of stuttering.</p>
 <span id="cb2-22"><a href="#cb2-22" tabindex="-1"></a><span class="co">#&gt; Number of Fisher Scoring iterations: 6</span></span></code></pre></div>
 <p>Now estimating the OR parameter. We see a strong dependence with an
 OR at around 8 that is clearly significant.</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a>bina <span class="ot">&lt;-</span> <span class="fu">binomial.twostage</span>(margbin,<span class="at">data=</span>twinstut,<span class="at">var.link=</span><span class="dv">1</span>,</span>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a>bina <span class="ot">&lt;-</span> <span class="fu">binomial_twostage</span>(margbin,<span class="at">data=</span>twinstut,<span class="at">var.link=</span><span class="dv">1</span>,</span>
 <span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a>                       <span class="at">clusters=</span>twinstut<span class="sc">$</span>tvparnr,<span class="at">detail=</span><span class="dv">0</span>)</span>
 <span id="cb3-3"><a href="#cb3-3" tabindex="-1"></a><span class="fu">summary</span>(bina)</span>
 <span id="cb3-4"><a href="#cb3-4" tabindex="-1"></a><span class="co">#&gt; Dependence parameter for Odds-Ratio (Plackett) model </span></span>
@@ -579,13 +582,13 @@ OR at around 8 that is clearly significant.</p>
 <span id="cb3-17"><a href="#cb3-17" tabindex="-1"></a><span class="co">#&gt; attr(,&quot;class&quot;)</span></span>
 <span id="cb3-18"><a href="#cb3-18" tabindex="-1"></a><span class="co">#&gt; [1] &quot;summary.mets.twostage&quot;</span></span></code></pre></div>
 <p>Now, and more interestingly, we consider an OR that depends on
-zygosity and note that MZ have a much larger OR than DZ twins. This type
-of trait is somewhat complicated to interpret, but clearly, one option
-is that that there is a genetic effect, alternatively there might be a
-stronger environmental effect for MZ twins.</p>
+zygosity and note that MZ twins have a much larger OR than DZ twins.
+This type of result is somewhat complex to interpret: one possibility is
+a genetic effect, another is a stronger shared environmental effect for
+MZ twins.</p>
 <div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a><span class="co"># design for OR dependence </span></span>
 <span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a>theta.des <span class="ot">&lt;-</span> <span class="fu">model.matrix</span>( <span class="sc">~-</span><span class="dv">1</span><span class="sc">+</span><span class="fu">factor</span>(zyg),<span class="at">data=</span>twinstut)</span>
-<span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a>bin <span class="ot">&lt;-</span> <span class="fu">binomial.twostage</span>(margbin,<span class="at">data=</span>twinstut,<span class="at">var.link=</span><span class="dv">1</span>,</span>
+<span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a>bin <span class="ot">&lt;-</span> <span class="fu">binomial_twostage</span>(margbin,<span class="at">data=</span>twinstut,<span class="at">var.link=</span><span class="dv">1</span>,</span>
 <span id="cb4-4"><a href="#cb4-4" tabindex="-1"></a>                          <span class="at">clusters=</span>twinstut<span class="sc">$</span>tvparnr,<span class="at">theta.des=</span>theta.des)</span>
 <span id="cb4-5"><a href="#cb4-5" tabindex="-1"></a><span class="fu">summary</span>(bin)</span>
 <span id="cb4-6"><a href="#cb4-6" tabindex="-1"></a><span class="co">#&gt; Dependence parameter for Odds-Ratio (Plackett) model </span></span>
@@ -606,13 +609,13 @@ stronger environmental effect for MZ twins.</p>
 <span id="cb4-21"><a href="#cb4-21" tabindex="-1"></a><span class="co">#&gt; attr(,&quot;class&quot;)</span></span>
 <span id="cb4-22"><a href="#cb4-22" tabindex="-1"></a><span class="co">#&gt; [1] &quot;summary.mets.twostage&quot;</span></span></code></pre></div>
 <p>We now consider further regression modelling of the OR structure by
-considering possible interactions between sex and zygozsity. We see that
+considering possible interactions between sex and zygosity. We see that
 MZ has a much higher dependence and that males have a much lower
 dependence. We tested for interaction in this model and these were not
 significant.</p>
 <div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a>twinstut<span class="sc">$</span>cage <span class="ot">&lt;-</span> <span class="fu">scale</span>(twinstut<span class="sc">$</span>age)</span>
 <span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a>theta.des <span class="ot">&lt;-</span> <span class="fu">model.matrix</span>( <span class="sc">~-</span><span class="dv">1</span><span class="sc">+</span><span class="fu">factor</span>(zyg)<span class="sc">+</span><span class="fu">factor</span>(sex),<span class="at">data=</span>twinstut)</span>
-<span id="cb5-3"><a href="#cb5-3" tabindex="-1"></a>bina <span class="ot">&lt;-</span> <span class="fu">binomial.twostage</span>(margbin,<span class="at">data=</span>twinstut,<span class="at">var.link=</span><span class="dv">1</span>,</span>
+<span id="cb5-3"><a href="#cb5-3" tabindex="-1"></a>bina <span class="ot">&lt;-</span> <span class="fu">binomial_twostage</span>(margbin,<span class="at">data=</span>twinstut,<span class="at">var.link=</span><span class="dv">1</span>,</span>
 <span id="cb5-4"><a href="#cb5-4" tabindex="-1"></a>                          <span class="at">clusters=</span>twinstut<span class="sc">$</span>tvparnr,<span class="at">theta.des=</span>theta.des)</span>
 <span id="cb5-5"><a href="#cb5-5" tabindex="-1"></a><span class="fu">summary</span>(bina)</span>
 <span id="cb5-6"><a href="#cb5-6" tabindex="-1"></a><span class="co">#&gt; Dependence parameter for Odds-Ratio (Plackett) model </span></span>
@@ -635,125 +638,61 @@ significant.</p>
 <span id="cb5-23"><a href="#cb5-23" tabindex="-1"></a><span class="co">#&gt; attr(,&quot;class&quot;)</span></span>
 <span id="cb5-24"><a href="#cb5-24" tabindex="-1"></a><span class="co">#&gt; [1] &quot;summary.mets.twostage&quot;</span></span></code></pre></div>
 </div>
-<div id="alternative-syntax" class="section level2">
-<h2>Alternative syntax</h2>
-<p>We now demonstrate how the models can fitted jointly and with anohter
-syntax, that ofcourse just fits the marginal model and subsequently fits
-the pairwise OR model.</p>
-<p>First noticing as before that MZ twins have a much higher
-dependence.</p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a> <span class="co"># refers to zygosity of first subject in eash pair : zyg1</span></span>
-<span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a> <span class="co"># could also use zyg2 (since zyg2=zyg1 within twinpair&#39;s)</span></span>
-<span id="cb6-3"><a href="#cb6-3" tabindex="-1"></a> out <span class="ot">&lt;-</span> <span class="fu">easy.binomial.twostage</span>(stutter<span class="sc">~</span><span class="fu">factor</span>(sex)<span class="sc">+</span>age,<span class="at">data=</span>twinstut,</span>
-<span id="cb6-4"><a href="#cb6-4" tabindex="-1"></a>                <span class="at">response=</span><span class="st">&quot;binstut&quot;</span>,<span class="at">id=</span><span class="st">&quot;tvparnr&quot;</span>,<span class="at">var.link=</span><span class="dv">1</span>,</span>
-<span id="cb6-5"><a href="#cb6-5" tabindex="-1"></a>                <span class="at">theta.formula=</span><span class="sc">~-</span><span class="dv">1</span><span class="sc">+</span><span class="fu">factor</span>(zyg1))</span>
-<span id="cb6-6"><a href="#cb6-6" tabindex="-1"></a><span class="fu">summary</span>(out)</span>
-<span id="cb6-7"><a href="#cb6-7" tabindex="-1"></a><span class="co">#&gt; Dependence parameter for Odds-Ratio (Plackett) model </span></span>
-<span id="cb6-8"><a href="#cb6-8" tabindex="-1"></a><span class="co">#&gt; With log-link</span></span>
-<span id="cb6-9"><a href="#cb6-9" tabindex="-1"></a><span class="co">#&gt; $estimates</span></span>
-<span id="cb6-10"><a href="#cb6-10" tabindex="-1"></a><span class="co">#&gt;                    theta        se</span></span>
-<span id="cb6-11"><a href="#cb6-11" tabindex="-1"></a><span class="co">#&gt; factor(zyg1)dz 0.1624942 1.0050473</span></span>
-<span id="cb6-12"><a href="#cb6-12" tabindex="-1"></a><span class="co">#&gt; factor(zyg1)mz 3.7460315 0.7259771</span></span>
-<span id="cb6-13"><a href="#cb6-13" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-14"><a href="#cb6-14" tabindex="-1"></a><span class="co">#&gt; $or</span></span>
-<span id="cb6-15"><a href="#cb6-15" tabindex="-1"></a><span class="co">#&gt;                Estimate Std.Err    2.5%   97.5% P-value</span></span>
-<span id="cb6-16"><a href="#cb6-16" tabindex="-1"></a><span class="co">#&gt; factor(zyg1)dz    1.176   1.182  -1.141   3.494  0.3197</span></span>
-<span id="cb6-17"><a href="#cb6-17" tabindex="-1"></a><span class="co">#&gt; factor(zyg1)mz   42.353  30.747 -17.910 102.616  0.1684</span></span>
-<span id="cb6-18"><a href="#cb6-18" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-19"><a href="#cb6-19" tabindex="-1"></a><span class="co">#&gt; $type</span></span>
-<span id="cb6-20"><a href="#cb6-20" tabindex="-1"></a><span class="co">#&gt; [1] &quot;plackett&quot;</span></span>
-<span id="cb6-21"><a href="#cb6-21" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-22"><a href="#cb6-22" tabindex="-1"></a><span class="co">#&gt; attr(,&quot;class&quot;)</span></span>
-<span id="cb6-23"><a href="#cb6-23" tabindex="-1"></a><span class="co">#&gt; [1] &quot;summary.mets.twostage&quot;</span></span></code></pre></div>
-<p>Now considering all data and estimating separate effects for the OR
-for opposite sex DZ twins and same sex twins. We here find that os twins
-are not markedly different from the same sex DZ twins.</p>
-<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a> <span class="co"># refers to zygosity of first subject in eash pair : zyg1</span></span>
-<span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a> <span class="co"># could also use zyg2 (since zyg2=zyg1 within twinpair&#39;s))</span></span>
-<span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a> </span>
-<span id="cb7-4"><a href="#cb7-4" tabindex="-1"></a> desfs<span class="ot">&lt;-</span><span class="cf">function</span>(x,<span class="at">num1=</span><span class="st">&quot;zyg1&quot;</span>,<span class="at">num2=</span><span class="st">&quot;zyg2&quot;</span>)</span>
-<span id="cb7-5"><a href="#cb7-5" tabindex="-1"></a>         <span class="fu">c</span>(x[num1]<span class="sc">==</span><span class="st">&quot;dz&quot;</span>,x[num1]<span class="sc">==</span><span class="st">&quot;mz&quot;</span>,x[num1]<span class="sc">==</span><span class="st">&quot;os&quot;</span>)<span class="sc">*</span><span class="dv">1</span></span>
-<span id="cb7-6"><a href="#cb7-6" tabindex="-1"></a>     </span>
-<span id="cb7-7"><a href="#cb7-7" tabindex="-1"></a> margbinall <span class="ot">&lt;-</span> <span class="fu">glm</span>(binstut<span class="sc">~</span><span class="fu">factor</span>(sex)<span class="sc">+</span>age,<span class="at">data=</span>twinsall,<span class="at">family=</span><span class="fu">binomial</span>())</span>
-<span id="cb7-8"><a href="#cb7-8" tabindex="-1"></a> out3 <span class="ot">&lt;-</span> <span class="fu">easy.binomial.twostage</span>(binstut<span class="sc">~</span><span class="fu">factor</span>(sex)<span class="sc">+</span>age,</span>
-<span id="cb7-9"><a href="#cb7-9" tabindex="-1"></a>       <span class="at">data=</span>twinsall,<span class="at">response=</span><span class="st">&quot;binstut&quot;</span>,<span class="at">id=</span><span class="st">&quot;tvparnr&quot;</span>,<span class="at">var.link=</span><span class="dv">1</span>,</span>
-<span id="cb7-10"><a href="#cb7-10" tabindex="-1"></a>       <span class="at">theta.formula=</span>desfs,<span class="at">desnames=</span><span class="fu">c</span>(<span class="st">&quot;dz&quot;</span>,<span class="st">&quot;mz&quot;</span>,<span class="st">&quot;os&quot;</span>))</span>
-<span id="cb7-11"><a href="#cb7-11" tabindex="-1"></a> <span class="fu">summary</span>(out3)</span>
-<span id="cb7-12"><a href="#cb7-12" tabindex="-1"></a><span class="co">#&gt; Dependence parameter for Odds-Ratio (Plackett) model </span></span>
-<span id="cb7-13"><a href="#cb7-13" tabindex="-1"></a><span class="co">#&gt; With log-link</span></span>
-<span id="cb7-14"><a href="#cb7-14" tabindex="-1"></a><span class="co">#&gt; $estimates</span></span>
-<span id="cb7-15"><a href="#cb7-15" tabindex="-1"></a><span class="co">#&gt;        theta        se</span></span>
-<span id="cb7-16"><a href="#cb7-16" tabindex="-1"></a><span class="co">#&gt; dz 0.5278527 0.2396796</span></span>
-<span id="cb7-17"><a href="#cb7-17" tabindex="-1"></a><span class="co">#&gt; mz 3.4850037 0.1864190</span></span>
-<span id="cb7-18"><a href="#cb7-18" tabindex="-1"></a><span class="co">#&gt; os 0.7802940 0.2894394</span></span>
-<span id="cb7-19"><a href="#cb7-19" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb7-20"><a href="#cb7-20" tabindex="-1"></a><span class="co">#&gt; $or</span></span>
-<span id="cb7-21"><a href="#cb7-21" tabindex="-1"></a><span class="co">#&gt;    Estimate Std.Err    2.5%  97.5%   P-value</span></span>
-<span id="cb7-22"><a href="#cb7-22" tabindex="-1"></a><span class="co">#&gt; dz    1.695  0.4063  0.8989  2.492 3.016e-05</span></span>
-<span id="cb7-23"><a href="#cb7-23" tabindex="-1"></a><span class="co">#&gt; mz   32.623  6.0815 20.7031 44.542 8.128e-08</span></span>
-<span id="cb7-24"><a href="#cb7-24" tabindex="-1"></a><span class="co">#&gt; os    2.182  0.6316  0.9442  3.420 5.504e-04</span></span>
-<span id="cb7-25"><a href="#cb7-25" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb7-26"><a href="#cb7-26" tabindex="-1"></a><span class="co">#&gt; $type</span></span>
-<span id="cb7-27"><a href="#cb7-27" tabindex="-1"></a><span class="co">#&gt; [1] &quot;plackett&quot;</span></span>
-<span id="cb7-28"><a href="#cb7-28" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb7-29"><a href="#cb7-29" tabindex="-1"></a><span class="co">#&gt; attr(,&quot;class&quot;)</span></span>
-<span id="cb7-30"><a href="#cb7-30" tabindex="-1"></a><span class="co">#&gt; [1] &quot;summary.mets.twostage&quot;</span></span></code></pre></div>
-</div>
 <div id="bivariate-probit-model" class="section level2">
 <h2>Bivariate Probit model</h2>
-<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a><span class="fu">library</span>(mets)</span>
-<span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a><span class="fu">data</span>(twinstut)</span>
-<span id="cb8-3"><a href="#cb8-3" tabindex="-1"></a>twinstut <span class="ot">&lt;-</span> <span class="fu">subset</span>(twinstut,zyg<span class="sc">%in%</span><span class="fu">c</span>(<span class="st">&quot;mz&quot;</span>,<span class="st">&quot;dz&quot;</span>))</span>
-<span id="cb8-4"><a href="#cb8-4" tabindex="-1"></a>twinstut<span class="sc">$</span>binstut <span class="ot">&lt;-</span> <span class="dv">1</span><span class="sc">*</span>(twinstut<span class="sc">$</span>stutter<span class="sc">==</span><span class="st">&quot;yes&quot;</span>)</span>
-<span id="cb8-5"><a href="#cb8-5" tabindex="-1"></a><span class="fu">head</span>(twinstut)</span>
-<span id="cb8-6"><a href="#cb8-6" tabindex="-1"></a><span class="co">#&gt;    tvparnr zyg stutter    sex age nr binstut</span></span>
-<span id="cb8-7"><a href="#cb8-7" tabindex="-1"></a><span class="co">#&gt; 1        1  mz      no female  71  1       0</span></span>
-<span id="cb8-8"><a href="#cb8-8" tabindex="-1"></a><span class="co">#&gt; 2        1  mz      no female  71  2       0</span></span>
-<span id="cb8-9"><a href="#cb8-9" tabindex="-1"></a><span class="co">#&gt; 3        2  dz      no female  71  1       0</span></span>
-<span id="cb8-10"><a href="#cb8-10" tabindex="-1"></a><span class="co">#&gt; 8        5  mz      no female  71  1       0</span></span>
-<span id="cb8-11"><a href="#cb8-11" tabindex="-1"></a><span class="co">#&gt; 9        5  mz      no female  71  2       0</span></span>
-<span id="cb8-12"><a href="#cb8-12" tabindex="-1"></a><span class="co">#&gt; 11       7  dz      no   male  71  1       0</span></span>
-<span id="cb8-13"><a href="#cb8-13" tabindex="-1"></a>twinstut <span class="ot">&lt;-</span> <span class="fu">subset</span>(twinstut,tvparnr <span class="sc">&lt;</span> <span class="dv">2000</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a><span class="fu">library</span>(mets)</span>
+<span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a><span class="fu">data</span>(twinstut)</span>
+<span id="cb6-3"><a href="#cb6-3" tabindex="-1"></a>twinstut <span class="ot">&lt;-</span> <span class="fu">subset</span>(twinstut,zyg<span class="sc">%in%</span><span class="fu">c</span>(<span class="st">&quot;mz&quot;</span>,<span class="st">&quot;dz&quot;</span>))</span>
+<span id="cb6-4"><a href="#cb6-4" tabindex="-1"></a>twinstut<span class="sc">$</span>binstut <span class="ot">&lt;-</span> <span class="dv">1</span><span class="sc">*</span>(twinstut<span class="sc">$</span>stutter<span class="sc">==</span><span class="st">&quot;yes&quot;</span>)</span>
+<span id="cb6-5"><a href="#cb6-5" tabindex="-1"></a><span class="fu">head</span>(twinstut)</span>
+<span id="cb6-6"><a href="#cb6-6" tabindex="-1"></a><span class="co">#&gt;    tvparnr zyg stutter    sex age nr binstut</span></span>
+<span id="cb6-7"><a href="#cb6-7" tabindex="-1"></a><span class="co">#&gt; 1        1  mz      no female  71  1       0</span></span>
+<span id="cb6-8"><a href="#cb6-8" tabindex="-1"></a><span class="co">#&gt; 2        1  mz      no female  71  2       0</span></span>
+<span id="cb6-9"><a href="#cb6-9" tabindex="-1"></a><span class="co">#&gt; 3        2  dz      no female  71  1       0</span></span>
+<span id="cb6-10"><a href="#cb6-10" tabindex="-1"></a><span class="co">#&gt; 8        5  mz      no female  71  1       0</span></span>
+<span id="cb6-11"><a href="#cb6-11" tabindex="-1"></a><span class="co">#&gt; 9        5  mz      no female  71  2       0</span></span>
+<span id="cb6-12"><a href="#cb6-12" tabindex="-1"></a><span class="co">#&gt; 11       7  dz      no   male  71  1       0</span></span>
+<span id="cb6-13"><a href="#cb6-13" tabindex="-1"></a>twinstut <span class="ot">&lt;-</span> <span class="fu">subset</span>(twinstut,tvparnr <span class="sc">&lt;</span> <span class="dv">2000</span>)</span></code></pre></div>
 <p>First testing for same dependence in MZ and DZ that we recommend
 doing by comparing the correlations of MZ and DZ twins. Apart from
 regression correction in the mean this is an un-structured model, and
 the useful concordance and casewise concordance estimates can be
 reported from this analysis.</p>
-<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" tabindex="-1"></a>b1 <span class="ot">&lt;-</span> <span class="fu">bptwin</span>(binstut<span class="sc">~</span>sex,<span class="at">data=</span>twinstut,<span class="at">id=</span><span class="st">&quot;tvparnr&quot;</span>,<span class="at">zyg=</span><span class="st">&quot;zyg&quot;</span>,<span class="at">DZ=</span><span class="st">&quot;dz&quot;</span>,<span class="at">type=</span><span class="st">&quot;un&quot;</span>)</span>
-<span id="cb9-2"><a href="#cb9-2" tabindex="-1"></a><span class="fu">summary</span>(b1)</span>
-<span id="cb9-3"><a href="#cb9-3" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb9-4"><a href="#cb9-4" tabindex="-1"></a><span class="co">#&gt;               Estimate  Std.Err        Z   p-value    </span></span>
-<span id="cb9-5"><a href="#cb9-5" tabindex="-1"></a><span class="co">#&gt; (Intercept)   -2.04432  0.10246 -19.9532 &lt; 2.2e-16 ***</span></span>
-<span id="cb9-6"><a href="#cb9-6" tabindex="-1"></a><span class="co">#&gt; sexmale        0.41203  0.12392   3.3249 0.0008844 ***</span></span>
-<span id="cb9-7"><a href="#cb9-7" tabindex="-1"></a><span class="co">#&gt; atanh(rho) MZ  1.11748  0.43188   2.5875 0.0096683 ** </span></span>
-<span id="cb9-8"><a href="#cb9-8" tabindex="-1"></a><span class="co">#&gt; atanh(rho) DZ  0.23000  0.25889   0.8884 0.3743295    </span></span>
-<span id="cb9-9"><a href="#cb9-9" tabindex="-1"></a><span class="co">#&gt; ---</span></span>
-<span id="cb9-10"><a href="#cb9-10" tabindex="-1"></a><span class="co">#&gt; Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1</span></span>
-<span id="cb9-11"><a href="#cb9-11" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb9-12"><a href="#cb9-12" tabindex="-1"></a><span class="co">#&gt;  Total MZ/DZ Complete pairs MZ/DZ</span></span>
-<span id="cb9-13"><a href="#cb9-13" tabindex="-1"></a><span class="co">#&gt;  583/1192    212/354             </span></span>
-<span id="cb9-14"><a href="#cb9-14" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb9-15"><a href="#cb9-15" tabindex="-1"></a><span class="co">#&gt;                            Estimate 2.5%     97.5%   </span></span>
-<span id="cb9-16"><a href="#cb9-16" tabindex="-1"></a><span class="co">#&gt; Tetrachoric correlation MZ  0.80669  0.26456  0.96139</span></span>
-<span id="cb9-17"><a href="#cb9-17" tabindex="-1"></a><span class="co">#&gt; Tetrachoric correlation DZ  0.22603 -0.27052  0.62759</span></span>
-<span id="cb9-18"><a href="#cb9-18" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb9-19"><a href="#cb9-19" tabindex="-1"></a><span class="co">#&gt; MZ:</span></span>
-<span id="cb9-20"><a href="#cb9-20" tabindex="-1"></a><span class="co">#&gt;                      Estimate 2.5%     97.5%   </span></span>
-<span id="cb9-21"><a href="#cb9-21" tabindex="-1"></a><span class="co">#&gt; Concordance           0.00886  0.00272  0.02840</span></span>
-<span id="cb9-22"><a href="#cb9-22" tabindex="-1"></a><span class="co">#&gt; Casewise Concordance  0.43282  0.13214  0.79272</span></span>
-<span id="cb9-23"><a href="#cb9-23" tabindex="-1"></a><span class="co">#&gt; Marginal              0.02046  0.01258  0.03312</span></span>
-<span id="cb9-24"><a href="#cb9-24" tabindex="-1"></a><span class="co">#&gt; Rel.Recur.Risk       21.15321  2.70681 39.59960</span></span>
-<span id="cb9-25"><a href="#cb9-25" tabindex="-1"></a><span class="co">#&gt; log(OR)               4.15336  1.96005  6.34666</span></span>
-<span id="cb9-26"><a href="#cb9-26" tabindex="-1"></a><span class="co">#&gt; DZ:</span></span>
-<span id="cb9-27"><a href="#cb9-27" tabindex="-1"></a><span class="co">#&gt;                      Estimate 2.5%     97.5%   </span></span>
-<span id="cb9-28"><a href="#cb9-28" tabindex="-1"></a><span class="co">#&gt; Concordance           0.00128  0.00013  0.01240</span></span>
-<span id="cb9-29"><a href="#cb9-29" tabindex="-1"></a><span class="co">#&gt; Casewise Concordance  0.06251  0.00705  0.38497</span></span>
-<span id="cb9-30"><a href="#cb9-30" tabindex="-1"></a><span class="co">#&gt; Marginal              0.02046  0.01258  0.03312</span></span>
-<span id="cb9-31"><a href="#cb9-31" tabindex="-1"></a><span class="co">#&gt; Rel.Recur.Risk        3.05481 -3.12067  9.23029</span></span>
-<span id="cb9-32"><a href="#cb9-32" tabindex="-1"></a><span class="co">#&gt; log(OR)               1.20535 -1.09090  3.50161</span></span>
-<span id="cb9-33"><a href="#cb9-33" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb9-34"><a href="#cb9-34" tabindex="-1"></a><span class="co">#&gt;                          Estimate 2.5% 97.5%</span></span>
-<span id="cb9-35"><a href="#cb9-35" tabindex="-1"></a><span class="co">#&gt; Broad-sense heritability   1      NaN  NaN</span></span></code></pre></div>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a>b1 <span class="ot">&lt;-</span> <span class="fu">bptwin</span>(binstut<span class="sc">~</span>sex,<span class="at">data=</span>twinstut,<span class="at">id=</span><span class="st">&quot;tvparnr&quot;</span>,<span class="at">zyg=</span><span class="st">&quot;zyg&quot;</span>,<span class="at">DZ=</span><span class="st">&quot;dz&quot;</span>,<span class="at">type=</span><span class="st">&quot;un&quot;</span>)</span>
+<span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a><span class="fu">summary</span>(b1)</span>
+<span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb7-4"><a href="#cb7-4" tabindex="-1"></a><span class="co">#&gt;               Estimate  Std.Err        Z   p-value    </span></span>
+<span id="cb7-5"><a href="#cb7-5" tabindex="-1"></a><span class="co">#&gt; (Intercept)   -2.04432  0.10246 -19.9532 &lt; 2.2e-16 ***</span></span>
+<span id="cb7-6"><a href="#cb7-6" tabindex="-1"></a><span class="co">#&gt; sexmale        0.41203  0.12392   3.3249 0.0008844 ***</span></span>
+<span id="cb7-7"><a href="#cb7-7" tabindex="-1"></a><span class="co">#&gt; atanh(rho) MZ  1.11748  0.43188   2.5875 0.0096683 ** </span></span>
+<span id="cb7-8"><a href="#cb7-8" tabindex="-1"></a><span class="co">#&gt; atanh(rho) DZ  0.23000  0.25889   0.8884 0.3743295    </span></span>
+<span id="cb7-9"><a href="#cb7-9" tabindex="-1"></a><span class="co">#&gt; ---</span></span>
+<span id="cb7-10"><a href="#cb7-10" tabindex="-1"></a><span class="co">#&gt; Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1</span></span>
+<span id="cb7-11"><a href="#cb7-11" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb7-12"><a href="#cb7-12" tabindex="-1"></a><span class="co">#&gt;  Total MZ/DZ Complete pairs MZ/DZ</span></span>
+<span id="cb7-13"><a href="#cb7-13" tabindex="-1"></a><span class="co">#&gt;  583/1192    212/354             </span></span>
+<span id="cb7-14"><a href="#cb7-14" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb7-15"><a href="#cb7-15" tabindex="-1"></a><span class="co">#&gt;                            Estimate 2.5%     97.5%   </span></span>
+<span id="cb7-16"><a href="#cb7-16" tabindex="-1"></a><span class="co">#&gt; Tetrachoric correlation MZ  0.80669  0.26456  0.96139</span></span>
+<span id="cb7-17"><a href="#cb7-17" tabindex="-1"></a><span class="co">#&gt; Tetrachoric correlation DZ  0.22603 -0.27052  0.62759</span></span>
+<span id="cb7-18"><a href="#cb7-18" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb7-19"><a href="#cb7-19" tabindex="-1"></a><span class="co">#&gt; MZ:</span></span>
+<span id="cb7-20"><a href="#cb7-20" tabindex="-1"></a><span class="co">#&gt;                      Estimate 2.5%     97.5%   </span></span>
+<span id="cb7-21"><a href="#cb7-21" tabindex="-1"></a><span class="co">#&gt; Concordance           0.00886  0.00272  0.02840</span></span>
+<span id="cb7-22"><a href="#cb7-22" tabindex="-1"></a><span class="co">#&gt; Casewise Concordance  0.43282  0.13214  0.79272</span></span>
+<span id="cb7-23"><a href="#cb7-23" tabindex="-1"></a><span class="co">#&gt; Marginal              0.02046  0.01258  0.03312</span></span>
+<span id="cb7-24"><a href="#cb7-24" tabindex="-1"></a><span class="co">#&gt; Rel.Recur.Risk       21.15321  2.70681 39.59960</span></span>
+<span id="cb7-25"><a href="#cb7-25" tabindex="-1"></a><span class="co">#&gt; log(OR)               4.15336  1.96005  6.34666</span></span>
+<span id="cb7-26"><a href="#cb7-26" tabindex="-1"></a><span class="co">#&gt; DZ:</span></span>
+<span id="cb7-27"><a href="#cb7-27" tabindex="-1"></a><span class="co">#&gt;                      Estimate 2.5%     97.5%   </span></span>
+<span id="cb7-28"><a href="#cb7-28" tabindex="-1"></a><span class="co">#&gt; Concordance           0.00128  0.00013  0.01240</span></span>
+<span id="cb7-29"><a href="#cb7-29" tabindex="-1"></a><span class="co">#&gt; Casewise Concordance  0.06251  0.00705  0.38497</span></span>
+<span id="cb7-30"><a href="#cb7-30" tabindex="-1"></a><span class="co">#&gt; Marginal              0.02046  0.01258  0.03312</span></span>
+<span id="cb7-31"><a href="#cb7-31" tabindex="-1"></a><span class="co">#&gt; Rel.Recur.Risk        3.05481 -3.12067  9.23029</span></span>
+<span id="cb7-32"><a href="#cb7-32" tabindex="-1"></a><span class="co">#&gt; log(OR)               1.20535 -1.09090  3.50161</span></span>
+<span id="cb7-33"><a href="#cb7-33" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb7-34"><a href="#cb7-34" tabindex="-1"></a><span class="co">#&gt;                          Estimate 2.5% 97.5%</span></span>
+<span id="cb7-35"><a href="#cb7-35" tabindex="-1"></a><span class="co">#&gt; Broad-sense heritability   1      NaN  NaN</span></span></code></pre></div>
 </div>
 <div id="polygenic-modelling" class="section level2">
 <h2>Polygenic modelling</h2>
@@ -764,82 +703,80 @@ are the sizes of the genetic component A and the environmental
 component, and we can compare with the results of the unstructed model
 above. Also formally we can test if this submodel is acceptable by a
 likelihood ratio test.</p>
-<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" tabindex="-1"></a>b1 <span class="ot">&lt;-</span> <span class="fu">bptwin</span>(binstut<span class="sc">~</span>sex,<span class="at">data=</span>twinstut,<span class="at">id=</span><span class="st">&quot;tvparnr&quot;</span>,<span class="at">zyg=</span><span class="st">&quot;zyg&quot;</span>,<span class="at">DZ=</span><span class="st">&quot;dz&quot;</span>,<span class="at">type=</span><span class="st">&quot;ace&quot;</span>)</span>
-<span id="cb10-2"><a href="#cb10-2" tabindex="-1"></a><span class="fu">summary</span>(b1)</span>
-<span id="cb10-3"><a href="#cb10-3" tabindex="-1"></a><span class="co">#&gt; Warning in sqrt(diag(vcovACDE)): NaNs produced</span></span>
-<span id="cb10-4"><a href="#cb10-4" tabindex="-1"></a><span class="co">#&gt; Warning in sqrt(diag(vcovACDE)): NaNs produced</span></span>
-<span id="cb10-5"><a href="#cb10-5" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb10-6"><a href="#cb10-6" tabindex="-1"></a><span class="co">#&gt;              Estimate   Std.Err       Z p-value    </span></span>
-<span id="cb10-7"><a href="#cb10-7" tabindex="-1"></a><span class="co">#&gt; (Intercept)  -4.20958   1.55369 -2.7094 0.00674 ** </span></span>
-<span id="cb10-8"><a href="#cb10-8" tabindex="-1"></a><span class="co">#&gt; sexmale       0.85990   0.36387  2.3632 0.01812 *  </span></span>
-<span id="cb10-9"><a href="#cb10-9" tabindex="-1"></a><span class="co">#&gt; log(var(A))   1.17018   0.99695  1.1738 0.24049    </span></span>
-<span id="cb10-10"><a href="#cb10-10" tabindex="-1"></a><span class="co">#&gt; log(var(C)) -23.53038   2.85820 -8.2326 &lt; 2e-16 ***</span></span>
-<span id="cb10-11"><a href="#cb10-11" tabindex="-1"></a><span class="co">#&gt; ---</span></span>
-<span id="cb10-12"><a href="#cb10-12" tabindex="-1"></a><span class="co">#&gt; Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1</span></span>
-<span id="cb10-13"><a href="#cb10-13" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb10-14"><a href="#cb10-14" tabindex="-1"></a><span class="co">#&gt;  Total MZ/DZ Complete pairs MZ/DZ</span></span>
-<span id="cb10-15"><a href="#cb10-15" tabindex="-1"></a><span class="co">#&gt;  583/1192    212/354             </span></span>
-<span id="cb10-16"><a href="#cb10-16" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb10-17"><a href="#cb10-17" tabindex="-1"></a><span class="co">#&gt;                    Estimate 2.5%     97.5%   </span></span>
-<span id="cb10-18"><a href="#cb10-18" tabindex="-1"></a><span class="co">#&gt; A                   0.76318  0.41002  1.11633</span></span>
-<span id="cb10-19"><a href="#cb10-19" tabindex="-1"></a><span class="co">#&gt; C                   0.00000      NaN      NaN</span></span>
-<span id="cb10-20"><a href="#cb10-20" tabindex="-1"></a><span class="co">#&gt; E                   0.23682 -0.11633  0.58998</span></span>
-<span id="cb10-21"><a href="#cb10-21" tabindex="-1"></a><span class="co">#&gt; MZ Tetrachoric Cor  0.76318  0.15672  0.95170</span></span>
-<span id="cb10-22"><a href="#cb10-22" tabindex="-1"></a><span class="co">#&gt; DZ Tetrachoric Cor  0.38159  0.19280  0.54313</span></span>
-<span id="cb10-23"><a href="#cb10-23" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb10-24"><a href="#cb10-24" tabindex="-1"></a><span class="co">#&gt; MZ:</span></span>
-<span id="cb10-25"><a href="#cb10-25" tabindex="-1"></a><span class="co">#&gt;                      Estimate 2.5%     97.5%   </span></span>
-<span id="cb10-26"><a href="#cb10-26" tabindex="-1"></a><span class="co">#&gt; Concordance           0.00768  0.00201  0.02893</span></span>
-<span id="cb10-27"><a href="#cb10-27" tabindex="-1"></a><span class="co">#&gt; Casewise Concordance  0.37943  0.09711  0.77658</span></span>
-<span id="cb10-28"><a href="#cb10-28" tabindex="-1"></a><span class="co">#&gt; Marginal              0.02025  0.01241  0.03289</span></span>
-<span id="cb10-29"><a href="#cb10-29" tabindex="-1"></a><span class="co">#&gt; Rel.Recur.Risk       18.73516 -0.13385 37.60417</span></span>
-<span id="cb10-30"><a href="#cb10-30" tabindex="-1"></a><span class="co">#&gt; log(OR)               3.85127  1.58182  6.12072</span></span>
-<span id="cb10-31"><a href="#cb10-31" tabindex="-1"></a><span class="co">#&gt; DZ:</span></span>
-<span id="cb10-32"><a href="#cb10-32" tabindex="-1"></a><span class="co">#&gt;                      Estimate 2.5%    97.5%  </span></span>
-<span id="cb10-33"><a href="#cb10-33" tabindex="-1"></a><span class="co">#&gt; Concordance          0.00230  0.00077 0.00688</span></span>
-<span id="cb10-34"><a href="#cb10-34" tabindex="-1"></a><span class="co">#&gt; Casewise Concordance 0.11369  0.05266 0.22841</span></span>
-<span id="cb10-35"><a href="#cb10-35" tabindex="-1"></a><span class="co">#&gt; Marginal             0.02025  0.01241 0.03289</span></span>
-<span id="cb10-36"><a href="#cb10-36" tabindex="-1"></a><span class="co">#&gt; Rel.Recur.Risk       5.61371  2.19257 9.03484</span></span>
-<span id="cb10-37"><a href="#cb10-37" tabindex="-1"></a><span class="co">#&gt; log(OR)              1.92764  1.16374 2.69154</span></span>
-<span id="cb10-38"><a href="#cb10-38" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb10-39"><a href="#cb10-39" tabindex="-1"></a><span class="co">#&gt;                          Estimate 2.5%    97.5%  </span></span>
-<span id="cb10-40"><a href="#cb10-40" tabindex="-1"></a><span class="co">#&gt; Broad-sense heritability 0.76318  0.41002 1.11633</span></span></code></pre></div>
-<div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" tabindex="-1"></a>b0 <span class="ot">&lt;-</span> <span class="fu">bptwin</span>(binstut<span class="sc">~</span>sex,<span class="at">data=</span>twinstut,<span class="at">id=</span><span class="st">&quot;tvparnr&quot;</span>,<span class="at">zyg=</span><span class="st">&quot;zyg&quot;</span>,<span class="at">DZ=</span><span class="st">&quot;dz&quot;</span>,<span class="at">type=</span><span class="st">&quot;ae&quot;</span>)</span>
-<span id="cb11-2"><a href="#cb11-2" tabindex="-1"></a><span class="fu">summary</span>(b0)</span>
-<span id="cb11-3"><a href="#cb11-3" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb11-4"><a href="#cb11-4" tabindex="-1"></a><span class="co">#&gt;             Estimate  Std.Err       Z p-value   </span></span>
-<span id="cb11-5"><a href="#cb11-5" tabindex="-1"></a><span class="co">#&gt; (Intercept) -4.20958  1.55369 -2.7094 0.00674 **</span></span>
-<span id="cb11-6"><a href="#cb11-6" tabindex="-1"></a><span class="co">#&gt; sexmale      0.85990  0.36387  2.3632 0.01812 * </span></span>
-<span id="cb11-7"><a href="#cb11-7" tabindex="-1"></a><span class="co">#&gt; log(var(A))  1.17018  0.99695  1.1738 0.24049   </span></span>
-<span id="cb11-8"><a href="#cb11-8" tabindex="-1"></a><span class="co">#&gt; ---</span></span>
-<span id="cb11-9"><a href="#cb11-9" tabindex="-1"></a><span class="co">#&gt; Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1</span></span>
-<span id="cb11-10"><a href="#cb11-10" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb11-11"><a href="#cb11-11" tabindex="-1"></a><span class="co">#&gt;  Total MZ/DZ Complete pairs MZ/DZ</span></span>
-<span id="cb11-12"><a href="#cb11-12" tabindex="-1"></a><span class="co">#&gt;  583/1192    212/354             </span></span>
-<span id="cb11-13"><a href="#cb11-13" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb11-14"><a href="#cb11-14" tabindex="-1"></a><span class="co">#&gt;                    Estimate 2.5%     97.5%   </span></span>
-<span id="cb11-15"><a href="#cb11-15" tabindex="-1"></a><span class="co">#&gt; A                   0.76318  0.41002  1.11634</span></span>
-<span id="cb11-16"><a href="#cb11-16" tabindex="-1"></a><span class="co">#&gt; E                   0.23682 -0.11634  0.58998</span></span>
-<span id="cb11-17"><a href="#cb11-17" tabindex="-1"></a><span class="co">#&gt; MZ Tetrachoric Cor  0.76318  0.15671  0.95170</span></span>
-<span id="cb11-18"><a href="#cb11-18" tabindex="-1"></a><span class="co">#&gt; DZ Tetrachoric Cor  0.38159  0.19280  0.54313</span></span>
-<span id="cb11-19"><a href="#cb11-19" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb11-20"><a href="#cb11-20" tabindex="-1"></a><span class="co">#&gt; MZ:</span></span>
-<span id="cb11-21"><a href="#cb11-21" tabindex="-1"></a><span class="co">#&gt;                      Estimate 2.5%     97.5%   </span></span>
-<span id="cb11-22"><a href="#cb11-22" tabindex="-1"></a><span class="co">#&gt; Concordance           0.00768  0.00201  0.02893</span></span>
-<span id="cb11-23"><a href="#cb11-23" tabindex="-1"></a><span class="co">#&gt; Casewise Concordance  0.37943  0.09711  0.77658</span></span>
-<span id="cb11-24"><a href="#cb11-24" tabindex="-1"></a><span class="co">#&gt; Marginal              0.02025  0.01241  0.03289</span></span>
-<span id="cb11-25"><a href="#cb11-25" tabindex="-1"></a><span class="co">#&gt; Rel.Recur.Risk       18.73517 -0.13387 37.60421</span></span>
-<span id="cb11-26"><a href="#cb11-26" tabindex="-1"></a><span class="co">#&gt; log(OR)               3.85127  1.58182  6.12072</span></span>
-<span id="cb11-27"><a href="#cb11-27" tabindex="-1"></a><span class="co">#&gt; DZ:</span></span>
-<span id="cb11-28"><a href="#cb11-28" tabindex="-1"></a><span class="co">#&gt;                      Estimate 2.5%    97.5%  </span></span>
-<span id="cb11-29"><a href="#cb11-29" tabindex="-1"></a><span class="co">#&gt; Concordance          0.00230  0.00077 0.00688</span></span>
-<span id="cb11-30"><a href="#cb11-30" tabindex="-1"></a><span class="co">#&gt; Casewise Concordance 0.11369  0.05266 0.22841</span></span>
-<span id="cb11-31"><a href="#cb11-31" tabindex="-1"></a><span class="co">#&gt; Marginal             0.02025  0.01241 0.03289</span></span>
-<span id="cb11-32"><a href="#cb11-32" tabindex="-1"></a><span class="co">#&gt; Rel.Recur.Risk       5.61371  2.19257 9.03485</span></span>
-<span id="cb11-33"><a href="#cb11-33" tabindex="-1"></a><span class="co">#&gt; log(OR)              1.92764  1.16374 2.69154</span></span>
-<span id="cb11-34"><a href="#cb11-34" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb11-35"><a href="#cb11-35" tabindex="-1"></a><span class="co">#&gt;                          Estimate 2.5%    97.5%  </span></span>
-<span id="cb11-36"><a href="#cb11-36" tabindex="-1"></a><span class="co">#&gt; Broad-sense heritability 0.76318  0.41002 1.11634</span></span></code></pre></div>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a>b1 <span class="ot">&lt;-</span> <span class="fu">bptwin</span>(binstut<span class="sc">~</span>sex,<span class="at">data=</span>twinstut,<span class="at">id=</span><span class="st">&quot;tvparnr&quot;</span>,<span class="at">zyg=</span><span class="st">&quot;zyg&quot;</span>,<span class="at">DZ=</span><span class="st">&quot;dz&quot;</span>,<span class="at">type=</span><span class="st">&quot;ace&quot;</span>)</span>
+<span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a><span class="fu">summary</span>(b1)</span>
+<span id="cb8-3"><a href="#cb8-3" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb8-4"><a href="#cb8-4" tabindex="-1"></a><span class="co">#&gt;              Estimate   Std.Err        Z p-value    </span></span>
+<span id="cb8-5"><a href="#cb8-5" tabindex="-1"></a><span class="co">#&gt; (Intercept)  -4.20958   1.55369  -2.7094 0.00674 ** </span></span>
+<span id="cb8-6"><a href="#cb8-6" tabindex="-1"></a><span class="co">#&gt; sexmale       0.85990   0.36387   2.3632 0.01812 *  </span></span>
+<span id="cb8-7"><a href="#cb8-7" tabindex="-1"></a><span class="co">#&gt; log(var(A))   1.17018   0.99695   1.1738 0.24049    </span></span>
+<span id="cb8-8"><a href="#cb8-8" tabindex="-1"></a><span class="co">#&gt; log(var(C)) -23.53038   1.87673 -12.5380 &lt; 2e-16 ***</span></span>
+<span id="cb8-9"><a href="#cb8-9" tabindex="-1"></a><span class="co">#&gt; ---</span></span>
+<span id="cb8-10"><a href="#cb8-10" tabindex="-1"></a><span class="co">#&gt; Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1</span></span>
+<span id="cb8-11"><a href="#cb8-11" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb8-12"><a href="#cb8-12" tabindex="-1"></a><span class="co">#&gt;  Total MZ/DZ Complete pairs MZ/DZ</span></span>
+<span id="cb8-13"><a href="#cb8-13" tabindex="-1"></a><span class="co">#&gt;  583/1192    212/354             </span></span>
+<span id="cb8-14"><a href="#cb8-14" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb8-15"><a href="#cb8-15" tabindex="-1"></a><span class="co">#&gt;                    Estimate 2.5%     97.5%   </span></span>
+<span id="cb8-16"><a href="#cb8-16" tabindex="-1"></a><span class="co">#&gt; A                   0.76318  0.41002  1.11633</span></span>
+<span id="cb8-17"><a href="#cb8-17" tabindex="-1"></a><span class="co">#&gt; C                   0.00000  0.00000  0.00000</span></span>
+<span id="cb8-18"><a href="#cb8-18" tabindex="-1"></a><span class="co">#&gt; E                   0.23682 -0.11633  0.58998</span></span>
+<span id="cb8-19"><a href="#cb8-19" tabindex="-1"></a><span class="co">#&gt; MZ Tetrachoric Cor  0.76318  0.15672  0.95170</span></span>
+<span id="cb8-20"><a href="#cb8-20" tabindex="-1"></a><span class="co">#&gt; DZ Tetrachoric Cor  0.38159  0.19280  0.54313</span></span>
+<span id="cb8-21"><a href="#cb8-21" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb8-22"><a href="#cb8-22" tabindex="-1"></a><span class="co">#&gt; MZ:</span></span>
+<span id="cb8-23"><a href="#cb8-23" tabindex="-1"></a><span class="co">#&gt;                      Estimate 2.5%     97.5%   </span></span>
+<span id="cb8-24"><a href="#cb8-24" tabindex="-1"></a><span class="co">#&gt; Concordance           0.00768  0.00201  0.02893</span></span>
+<span id="cb8-25"><a href="#cb8-25" tabindex="-1"></a><span class="co">#&gt; Casewise Concordance  0.37943  0.09711  0.77658</span></span>
+<span id="cb8-26"><a href="#cb8-26" tabindex="-1"></a><span class="co">#&gt; Marginal              0.02025  0.01241  0.03289</span></span>
+<span id="cb8-27"><a href="#cb8-27" tabindex="-1"></a><span class="co">#&gt; Rel.Recur.Risk       18.73516 -0.13385 37.60417</span></span>
+<span id="cb8-28"><a href="#cb8-28" tabindex="-1"></a><span class="co">#&gt; log(OR)               3.85127  1.58182  6.12072</span></span>
+<span id="cb8-29"><a href="#cb8-29" tabindex="-1"></a><span class="co">#&gt; DZ:</span></span>
+<span id="cb8-30"><a href="#cb8-30" tabindex="-1"></a><span class="co">#&gt;                      Estimate 2.5%    97.5%  </span></span>
+<span id="cb8-31"><a href="#cb8-31" tabindex="-1"></a><span class="co">#&gt; Concordance          0.00230  0.00077 0.00688</span></span>
+<span id="cb8-32"><a href="#cb8-32" tabindex="-1"></a><span class="co">#&gt; Casewise Concordance 0.11369  0.05266 0.22841</span></span>
+<span id="cb8-33"><a href="#cb8-33" tabindex="-1"></a><span class="co">#&gt; Marginal             0.02025  0.01241 0.03289</span></span>
+<span id="cb8-34"><a href="#cb8-34" tabindex="-1"></a><span class="co">#&gt; Rel.Recur.Risk       5.61371  2.19257 9.03484</span></span>
+<span id="cb8-35"><a href="#cb8-35" tabindex="-1"></a><span class="co">#&gt; log(OR)              1.92764  1.16374 2.69154</span></span>
+<span id="cb8-36"><a href="#cb8-36" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb8-37"><a href="#cb8-37" tabindex="-1"></a><span class="co">#&gt;                          Estimate 2.5%    97.5%  </span></span>
+<span id="cb8-38"><a href="#cb8-38" tabindex="-1"></a><span class="co">#&gt; Broad-sense heritability 0.76318  0.41002 1.11633</span></span></code></pre></div>
+<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" tabindex="-1"></a>b0 <span class="ot">&lt;-</span> <span class="fu">bptwin</span>(binstut<span class="sc">~</span>sex,<span class="at">data=</span>twinstut,<span class="at">id=</span><span class="st">&quot;tvparnr&quot;</span>,<span class="at">zyg=</span><span class="st">&quot;zyg&quot;</span>,<span class="at">DZ=</span><span class="st">&quot;dz&quot;</span>,<span class="at">type=</span><span class="st">&quot;ae&quot;</span>)</span>
+<span id="cb9-2"><a href="#cb9-2" tabindex="-1"></a><span class="fu">summary</span>(b0)</span>
+<span id="cb9-3"><a href="#cb9-3" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb9-4"><a href="#cb9-4" tabindex="-1"></a><span class="co">#&gt;             Estimate  Std.Err       Z p-value   </span></span>
+<span id="cb9-5"><a href="#cb9-5" tabindex="-1"></a><span class="co">#&gt; (Intercept) -4.20958  1.55369 -2.7094 0.00674 **</span></span>
+<span id="cb9-6"><a href="#cb9-6" tabindex="-1"></a><span class="co">#&gt; sexmale      0.85990  0.36387  2.3632 0.01812 * </span></span>
+<span id="cb9-7"><a href="#cb9-7" tabindex="-1"></a><span class="co">#&gt; log(var(A))  1.17018  0.99695  1.1738 0.24049   </span></span>
+<span id="cb9-8"><a href="#cb9-8" tabindex="-1"></a><span class="co">#&gt; ---</span></span>
+<span id="cb9-9"><a href="#cb9-9" tabindex="-1"></a><span class="co">#&gt; Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1</span></span>
+<span id="cb9-10"><a href="#cb9-10" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb9-11"><a href="#cb9-11" tabindex="-1"></a><span class="co">#&gt;  Total MZ/DZ Complete pairs MZ/DZ</span></span>
+<span id="cb9-12"><a href="#cb9-12" tabindex="-1"></a><span class="co">#&gt;  583/1192    212/354             </span></span>
+<span id="cb9-13"><a href="#cb9-13" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb9-14"><a href="#cb9-14" tabindex="-1"></a><span class="co">#&gt;                    Estimate 2.5%     97.5%   </span></span>
+<span id="cb9-15"><a href="#cb9-15" tabindex="-1"></a><span class="co">#&gt; A                   0.76318  0.41002  1.11633</span></span>
+<span id="cb9-16"><a href="#cb9-16" tabindex="-1"></a><span class="co">#&gt; E                   0.23682 -0.11633  0.58998</span></span>
+<span id="cb9-17"><a href="#cb9-17" tabindex="-1"></a><span class="co">#&gt; MZ Tetrachoric Cor  0.76318  0.15672  0.95170</span></span>
+<span id="cb9-18"><a href="#cb9-18" tabindex="-1"></a><span class="co">#&gt; DZ Tetrachoric Cor  0.38159  0.19280  0.54313</span></span>
+<span id="cb9-19"><a href="#cb9-19" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb9-20"><a href="#cb9-20" tabindex="-1"></a><span class="co">#&gt; MZ:</span></span>
+<span id="cb9-21"><a href="#cb9-21" tabindex="-1"></a><span class="co">#&gt;                      Estimate 2.5%     97.5%   </span></span>
+<span id="cb9-22"><a href="#cb9-22" tabindex="-1"></a><span class="co">#&gt; Concordance           0.00768  0.00201  0.02893</span></span>
+<span id="cb9-23"><a href="#cb9-23" tabindex="-1"></a><span class="co">#&gt; Casewise Concordance  0.37943  0.09711  0.77658</span></span>
+<span id="cb9-24"><a href="#cb9-24" tabindex="-1"></a><span class="co">#&gt; Marginal              0.02025  0.01241  0.03289</span></span>
+<span id="cb9-25"><a href="#cb9-25" tabindex="-1"></a><span class="co">#&gt; Rel.Recur.Risk       18.73517 -0.13386 37.60419</span></span>
+<span id="cb9-26"><a href="#cb9-26" tabindex="-1"></a><span class="co">#&gt; log(OR)               3.85127  1.58182  6.12072</span></span>
+<span id="cb9-27"><a href="#cb9-27" tabindex="-1"></a><span class="co">#&gt; DZ:</span></span>
+<span id="cb9-28"><a href="#cb9-28" tabindex="-1"></a><span class="co">#&gt;                      Estimate 2.5%    97.5%  </span></span>
+<span id="cb9-29"><a href="#cb9-29" tabindex="-1"></a><span class="co">#&gt; Concordance          0.00230  0.00077 0.00688</span></span>
+<span id="cb9-30"><a href="#cb9-30" tabindex="-1"></a><span class="co">#&gt; Casewise Concordance 0.11369  0.05266 0.22841</span></span>
+<span id="cb9-31"><a href="#cb9-31" tabindex="-1"></a><span class="co">#&gt; Marginal             0.02025  0.01241 0.03289</span></span>
+<span id="cb9-32"><a href="#cb9-32" tabindex="-1"></a><span class="co">#&gt; Rel.Recur.Risk       5.61371  2.19257 9.03484</span></span>
+<span id="cb9-33"><a href="#cb9-33" tabindex="-1"></a><span class="co">#&gt; log(OR)              1.92764  1.16374 2.69154</span></span>
+<span id="cb9-34"><a href="#cb9-34" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb9-35"><a href="#cb9-35" tabindex="-1"></a><span class="co">#&gt;                          Estimate 2.5%    97.5%  </span></span>
+<span id="cb9-36"><a href="#cb9-36" tabindex="-1"></a><span class="co">#&gt; Broad-sense heritability 0.76318  0.41002 1.11633</span></span></code></pre></div>
 </div>
 <div id="additive-gamma-random-effects" class="section level2">
 <h2>Additive gamma random effects</h2>
@@ -848,214 +785,219 @@ DZ. We note that as before in the OR and biprobit model the dependence
 is much stronger for MZ twins. We also test if these are the same by
 parametrizing the OR model with an intercept. This clearly shows a
 significant difference.</p>
-<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" tabindex="-1"></a>theta.des <span class="ot">&lt;-</span> <span class="fu">model.matrix</span>( <span class="sc">~-</span><span class="dv">1</span><span class="sc">+</span><span class="fu">factor</span>(zyg),<span class="at">data=</span>twinstut)</span>
-<span id="cb12-2"><a href="#cb12-2" tabindex="-1"></a>margbin <span class="ot">&lt;-</span> <span class="fu">glm</span>(binstut<span class="sc">~</span>sex,<span class="at">data=</span>twinstut,<span class="at">family=</span><span class="fu">binomial</span>())</span>
-<span id="cb12-3"><a href="#cb12-3" tabindex="-1"></a>bintwin <span class="ot">&lt;-</span> <span class="fu">binomial.twostage</span>(margbin,<span class="at">data=</span>twinstut,<span class="at">model=</span><span class="st">&quot;gamma&quot;</span>,</span>
-<span id="cb12-4"><a href="#cb12-4" tabindex="-1"></a>     <span class="at">clusters=</span>twinstut<span class="sc">$</span>tvparnr,<span class="at">detail=</span><span class="dv">0</span>,<span class="at">theta=</span><span class="fu">c</span>(<span class="fl">0.1</span>)<span class="sc">/</span><span class="dv">1</span>,<span class="at">var.link=</span><span class="dv">1</span>,</span>
-<span id="cb12-5"><a href="#cb12-5" tabindex="-1"></a>     <span class="at">theta.des=</span>theta.des)</span>
-<span id="cb12-6"><a href="#cb12-6" tabindex="-1"></a><span class="fu">summary</span>(bintwin)</span>
-<span id="cb12-7"><a href="#cb12-7" tabindex="-1"></a><span class="co">#&gt; Dependence parameter for Clayton-Oakes model</span></span>
-<span id="cb12-8"><a href="#cb12-8" tabindex="-1"></a><span class="co">#&gt; Variance of Gamma distributed random effects </span></span>
-<span id="cb12-9"><a href="#cb12-9" tabindex="-1"></a><span class="co">#&gt; With log-link</span></span>
-<span id="cb12-10"><a href="#cb12-10" tabindex="-1"></a><span class="co">#&gt; $estimates</span></span>
-<span id="cb12-11"><a href="#cb12-11" tabindex="-1"></a><span class="co">#&gt;                     theta        se</span></span>
-<span id="cb12-12"><a href="#cb12-12" tabindex="-1"></a><span class="co">#&gt; factor(zyg)dz -2.13348460 1.0821489</span></span>
-<span id="cb12-13"><a href="#cb12-13" tabindex="-1"></a><span class="co">#&gt; factor(zyg)mz -0.07740026 0.5790839</span></span>
-<span id="cb12-14"><a href="#cb12-14" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb12-15"><a href="#cb12-15" tabindex="-1"></a><span class="co">#&gt; $vargam</span></span>
-<span id="cb12-16"><a href="#cb12-16" tabindex="-1"></a><span class="co">#&gt;               Estimate Std.Err    2.5%  97.5% P-value</span></span>
-<span id="cb12-17"><a href="#cb12-17" tabindex="-1"></a><span class="co">#&gt; factor(zyg)dz   0.1184  0.1282 -0.1327 0.3696 0.35544</span></span>
-<span id="cb12-18"><a href="#cb12-18" tabindex="-1"></a><span class="co">#&gt; factor(zyg)mz   0.9255  0.5360 -0.1249 1.9760 0.08419</span></span>
-<span id="cb12-19"><a href="#cb12-19" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb12-20"><a href="#cb12-20" tabindex="-1"></a><span class="co">#&gt; $type</span></span>
-<span id="cb12-21"><a href="#cb12-21" tabindex="-1"></a><span class="co">#&gt; [1] &quot;gamma&quot;</span></span>
-<span id="cb12-22"><a href="#cb12-22" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb12-23"><a href="#cb12-23" tabindex="-1"></a><span class="co">#&gt; attr(,&quot;class&quot;)</span></span>
-<span id="cb12-24"><a href="#cb12-24" tabindex="-1"></a><span class="co">#&gt; [1] &quot;summary.mets.twostage&quot;</span></span>
-<span id="cb12-25"><a href="#cb12-25" tabindex="-1"></a></span>
-<span id="cb12-26"><a href="#cb12-26" tabindex="-1"></a><span class="co"># test for same dependence in MZ and DZ </span></span>
-<span id="cb12-27"><a href="#cb12-27" tabindex="-1"></a>theta.des <span class="ot">&lt;-</span> <span class="fu">model.matrix</span>( <span class="sc">~</span><span class="fu">factor</span>(zyg),<span class="at">data=</span>twinstut)</span>
-<span id="cb12-28"><a href="#cb12-28" tabindex="-1"></a>margbin <span class="ot">&lt;-</span> <span class="fu">glm</span>(binstut<span class="sc">~</span>sex,<span class="at">data=</span>twinstut,<span class="at">family=</span><span class="fu">binomial</span>())</span>
-<span id="cb12-29"><a href="#cb12-29" tabindex="-1"></a>bintwin <span class="ot">&lt;-</span> <span class="fu">binomial.twostage</span>(margbin,<span class="at">data=</span>twinstut,<span class="at">model=</span><span class="st">&quot;gamma&quot;</span>,</span>
-<span id="cb12-30"><a href="#cb12-30" tabindex="-1"></a>     <span class="at">clusters=</span>twinstut<span class="sc">$</span>tvparnr,<span class="at">detail=</span><span class="dv">0</span>,<span class="at">theta=</span><span class="fu">c</span>(<span class="fl">0.1</span>)<span class="sc">/</span><span class="dv">1</span>,<span class="at">var.link=</span><span class="dv">1</span>,</span>
-<span id="cb12-31"><a href="#cb12-31" tabindex="-1"></a>     <span class="at">theta.des=</span>theta.des)</span>
-<span id="cb12-32"><a href="#cb12-32" tabindex="-1"></a><span class="fu">summary</span>(bintwin)</span>
-<span id="cb12-33"><a href="#cb12-33" tabindex="-1"></a><span class="co">#&gt; Dependence parameter for Clayton-Oakes model</span></span>
-<span id="cb12-34"><a href="#cb12-34" tabindex="-1"></a><span class="co">#&gt; Variance of Gamma distributed random effects </span></span>
-<span id="cb12-35"><a href="#cb12-35" tabindex="-1"></a><span class="co">#&gt; With log-link</span></span>
-<span id="cb12-36"><a href="#cb12-36" tabindex="-1"></a><span class="co">#&gt; $estimates</span></span>
-<span id="cb12-37"><a href="#cb12-37" tabindex="-1"></a><span class="co">#&gt;                   theta       se</span></span>
-<span id="cb12-38"><a href="#cb12-38" tabindex="-1"></a><span class="co">#&gt; (Intercept)   -2.133485 1.082149</span></span>
-<span id="cb12-39"><a href="#cb12-39" tabindex="-1"></a><span class="co">#&gt; factor(zyg)mz  2.056084 1.227348</span></span>
-<span id="cb12-40"><a href="#cb12-40" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb12-41"><a href="#cb12-41" tabindex="-1"></a><span class="co">#&gt; $vargam</span></span>
-<span id="cb12-42"><a href="#cb12-42" tabindex="-1"></a><span class="co">#&gt;               Estimate Std.Err     2.5%   97.5% P-value</span></span>
-<span id="cb12-43"><a href="#cb12-43" tabindex="-1"></a><span class="co">#&gt; (Intercept)     0.1184  0.1282  -0.1327  0.3696  0.3554</span></span>
-<span id="cb12-44"><a href="#cb12-44" tabindex="-1"></a><span class="co">#&gt; factor(zyg)mz   7.8153  9.5921 -10.9849 26.6155  0.4152</span></span>
-<span id="cb12-45"><a href="#cb12-45" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb12-46"><a href="#cb12-46" tabindex="-1"></a><span class="co">#&gt; $type</span></span>
-<span id="cb12-47"><a href="#cb12-47" tabindex="-1"></a><span class="co">#&gt; [1] &quot;gamma&quot;</span></span>
-<span id="cb12-48"><a href="#cb12-48" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb12-49"><a href="#cb12-49" tabindex="-1"></a><span class="co">#&gt; attr(,&quot;class&quot;)</span></span>
-<span id="cb12-50"><a href="#cb12-50" tabindex="-1"></a><span class="co">#&gt; [1] &quot;summary.mets.twostage&quot;</span></span></code></pre></div>
+<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" tabindex="-1"></a>theta.des <span class="ot">&lt;-</span> <span class="fu">model.matrix</span>( <span class="sc">~-</span><span class="dv">1</span><span class="sc">+</span><span class="fu">factor</span>(zyg),<span class="at">data=</span>twinstut)</span>
+<span id="cb10-2"><a href="#cb10-2" tabindex="-1"></a>margbin <span class="ot">&lt;-</span> <span class="fu">glm</span>(binstut<span class="sc">~</span>sex,<span class="at">data=</span>twinstut,<span class="at">family=</span><span class="fu">binomial</span>())</span>
+<span id="cb10-3"><a href="#cb10-3" tabindex="-1"></a>bintwin <span class="ot">&lt;-</span> <span class="fu">binomial_twostage</span>(margbin,<span class="at">data=</span>twinstut,<span class="at">model=</span><span class="st">&quot;gamma&quot;</span>,</span>
+<span id="cb10-4"><a href="#cb10-4" tabindex="-1"></a>     <span class="at">clusters=</span>twinstut<span class="sc">$</span>tvparnr,<span class="at">detail=</span><span class="dv">0</span>,<span class="at">theta=</span><span class="fu">c</span>(<span class="fl">0.1</span>)<span class="sc">/</span><span class="dv">1</span>,<span class="at">var.link=</span><span class="dv">1</span>,</span>
+<span id="cb10-5"><a href="#cb10-5" tabindex="-1"></a>     <span class="at">theta.des=</span>theta.des)</span>
+<span id="cb10-6"><a href="#cb10-6" tabindex="-1"></a><span class="fu">summary</span>(bintwin)</span>
+<span id="cb10-7"><a href="#cb10-7" tabindex="-1"></a><span class="co">#&gt; Dependence parameter for Clayton-Oakes model</span></span>
+<span id="cb10-8"><a href="#cb10-8" tabindex="-1"></a><span class="co">#&gt; Variance of Gamma distributed random effects </span></span>
+<span id="cb10-9"><a href="#cb10-9" tabindex="-1"></a><span class="co">#&gt; With log-link</span></span>
+<span id="cb10-10"><a href="#cb10-10" tabindex="-1"></a><span class="co">#&gt; $estimates</span></span>
+<span id="cb10-11"><a href="#cb10-11" tabindex="-1"></a><span class="co">#&gt;                     theta        se</span></span>
+<span id="cb10-12"><a href="#cb10-12" tabindex="-1"></a><span class="co">#&gt; factor(zyg)dz -2.13348460 1.0821489</span></span>
+<span id="cb10-13"><a href="#cb10-13" tabindex="-1"></a><span class="co">#&gt; factor(zyg)mz -0.07740026 0.5790839</span></span>
+<span id="cb10-14"><a href="#cb10-14" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb10-15"><a href="#cb10-15" tabindex="-1"></a><span class="co">#&gt; $vargam</span></span>
+<span id="cb10-16"><a href="#cb10-16" tabindex="-1"></a><span class="co">#&gt;               Estimate Std.Err    2.5%  97.5% P-value</span></span>
+<span id="cb10-17"><a href="#cb10-17" tabindex="-1"></a><span class="co">#&gt; factor(zyg)dz   0.1184  0.1282 -0.1327 0.3696 0.35544</span></span>
+<span id="cb10-18"><a href="#cb10-18" tabindex="-1"></a><span class="co">#&gt; factor(zyg)mz   0.9255  0.5360 -0.1249 1.9760 0.08419</span></span>
+<span id="cb10-19"><a href="#cb10-19" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb10-20"><a href="#cb10-20" tabindex="-1"></a><span class="co">#&gt; $type</span></span>
+<span id="cb10-21"><a href="#cb10-21" tabindex="-1"></a><span class="co">#&gt; [1] &quot;gamma&quot;</span></span>
+<span id="cb10-22"><a href="#cb10-22" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb10-23"><a href="#cb10-23" tabindex="-1"></a><span class="co">#&gt; attr(,&quot;class&quot;)</span></span>
+<span id="cb10-24"><a href="#cb10-24" tabindex="-1"></a><span class="co">#&gt; [1] &quot;summary.mets.twostage&quot;</span></span>
+<span id="cb10-25"><a href="#cb10-25" tabindex="-1"></a></span>
+<span id="cb10-26"><a href="#cb10-26" tabindex="-1"></a><span class="co"># test for same dependence in MZ and DZ </span></span>
+<span id="cb10-27"><a href="#cb10-27" tabindex="-1"></a>theta.des <span class="ot">&lt;-</span> <span class="fu">model.matrix</span>( <span class="sc">~</span><span class="fu">factor</span>(zyg),<span class="at">data=</span>twinstut)</span>
+<span id="cb10-28"><a href="#cb10-28" tabindex="-1"></a>margbin <span class="ot">&lt;-</span> <span class="fu">glm</span>(binstut<span class="sc">~</span>sex,<span class="at">data=</span>twinstut,<span class="at">family=</span><span class="fu">binomial</span>())</span>
+<span id="cb10-29"><a href="#cb10-29" tabindex="-1"></a>bintwin <span class="ot">&lt;-</span> <span class="fu">binomial_twostage</span>(margbin,<span class="at">data=</span>twinstut,<span class="at">model=</span><span class="st">&quot;gamma&quot;</span>,</span>
+<span id="cb10-30"><a href="#cb10-30" tabindex="-1"></a>     <span class="at">clusters=</span>twinstut<span class="sc">$</span>tvparnr,<span class="at">detail=</span><span class="dv">0</span>,<span class="at">theta=</span><span class="fu">c</span>(<span class="fl">0.1</span>)<span class="sc">/</span><span class="dv">1</span>,<span class="at">var.link=</span><span class="dv">1</span>,</span>
+<span id="cb10-31"><a href="#cb10-31" tabindex="-1"></a>     <span class="at">theta.des=</span>theta.des)</span>
+<span id="cb10-32"><a href="#cb10-32" tabindex="-1"></a><span class="fu">summary</span>(bintwin)</span>
+<span id="cb10-33"><a href="#cb10-33" tabindex="-1"></a><span class="co">#&gt; Dependence parameter for Clayton-Oakes model</span></span>
+<span id="cb10-34"><a href="#cb10-34" tabindex="-1"></a><span class="co">#&gt; Variance of Gamma distributed random effects </span></span>
+<span id="cb10-35"><a href="#cb10-35" tabindex="-1"></a><span class="co">#&gt; With log-link</span></span>
+<span id="cb10-36"><a href="#cb10-36" tabindex="-1"></a><span class="co">#&gt; $estimates</span></span>
+<span id="cb10-37"><a href="#cb10-37" tabindex="-1"></a><span class="co">#&gt;                   theta       se</span></span>
+<span id="cb10-38"><a href="#cb10-38" tabindex="-1"></a><span class="co">#&gt; (Intercept)   -2.133485 1.082149</span></span>
+<span id="cb10-39"><a href="#cb10-39" tabindex="-1"></a><span class="co">#&gt; factor(zyg)mz  2.056084 1.227348</span></span>
+<span id="cb10-40"><a href="#cb10-40" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb10-41"><a href="#cb10-41" tabindex="-1"></a><span class="co">#&gt; $vargam</span></span>
+<span id="cb10-42"><a href="#cb10-42" tabindex="-1"></a><span class="co">#&gt;               Estimate Std.Err     2.5%   97.5% P-value</span></span>
+<span id="cb10-43"><a href="#cb10-43" tabindex="-1"></a><span class="co">#&gt; (Intercept)     0.1184  0.1282  -0.1327  0.3696  0.3554</span></span>
+<span id="cb10-44"><a href="#cb10-44" tabindex="-1"></a><span class="co">#&gt; factor(zyg)mz   7.8153  9.5921 -10.9849 26.6155  0.4152</span></span>
+<span id="cb10-45"><a href="#cb10-45" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb10-46"><a href="#cb10-46" tabindex="-1"></a><span class="co">#&gt; $type</span></span>
+<span id="cb10-47"><a href="#cb10-47" tabindex="-1"></a><span class="co">#&gt; [1] &quot;gamma&quot;</span></span>
+<span id="cb10-48"><a href="#cb10-48" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb10-49"><a href="#cb10-49" tabindex="-1"></a><span class="co">#&gt; attr(,&quot;class&quot;)</span></span>
+<span id="cb10-50"><a href="#cb10-50" tabindex="-1"></a><span class="co">#&gt; [1] &quot;summary.mets.twostage&quot;</span></span></code></pre></div>
 </div>
 <div id="polygenic-modelling-1" class="section level2">
 <h2>Polygenic modelling</h2>
-<p>First setting up the random effects design for the random effects and
-the the relationship between variance parameters. We see that the
-genetic random effect has size one for MZ and 0.5 for DZ subjects, that
-have shared and non-shared genetic components with variance 0.5 such
-that the total genetic variance is the same for all subjects. The shared
-environmental effect is the samme for all. Thus two parameters with
-these bands.</p>
-<div class="sourceCode" id="cb13"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" tabindex="-1"></a>out <span class="ot">&lt;-</span> <span class="fu">twin.polygen.design</span>(twinstut,<span class="at">id=</span><span class="st">&quot;tvparnr&quot;</span>,<span class="at">zygname=</span><span class="st">&quot;zyg&quot;</span>,<span class="at">zyg=</span><span class="st">&quot;dz&quot;</span>,<span class="at">type=</span><span class="st">&quot;ace&quot;</span>)</span>
-<span id="cb13-2"><a href="#cb13-2" tabindex="-1"></a><span class="fu">head</span>(<span class="fu">cbind</span>(out<span class="sc">$</span>des.rv,twinstut<span class="sc">$</span>tvparnr),<span class="dv">10</span>)</span>
-<span id="cb13-3"><a href="#cb13-3" tabindex="-1"></a><span class="co">#&gt;    MZ DZ DZns1 DZns2 env   </span></span>
-<span id="cb13-4"><a href="#cb13-4" tabindex="-1"></a><span class="co">#&gt; 1   1  0     0     0   1  1</span></span>
-<span id="cb13-5"><a href="#cb13-5" tabindex="-1"></a><span class="co">#&gt; 2   1  0     0     0   1  1</span></span>
-<span id="cb13-6"><a href="#cb13-6" tabindex="-1"></a><span class="co">#&gt; 3   0  1     1     0   1  2</span></span>
-<span id="cb13-7"><a href="#cb13-7" tabindex="-1"></a><span class="co">#&gt; 8   1  0     0     0   1  5</span></span>
-<span id="cb13-8"><a href="#cb13-8" tabindex="-1"></a><span class="co">#&gt; 9   1  0     0     0   1  5</span></span>
-<span id="cb13-9"><a href="#cb13-9" tabindex="-1"></a><span class="co">#&gt; 11  0  1     1     0   1  7</span></span>
-<span id="cb13-10"><a href="#cb13-10" tabindex="-1"></a><span class="co">#&gt; 12  0  1     1     0   1  8</span></span>
-<span id="cb13-11"><a href="#cb13-11" tabindex="-1"></a><span class="co">#&gt; 13  0  1     0     1   1  8</span></span>
-<span id="cb13-12"><a href="#cb13-12" tabindex="-1"></a><span class="co">#&gt; 15  0  1     1     0   1 10</span></span>
-<span id="cb13-13"><a href="#cb13-13" tabindex="-1"></a><span class="co">#&gt; 18  0  1     1     0   1 12</span></span>
-<span id="cb13-14"><a href="#cb13-14" tabindex="-1"></a>out<span class="sc">$</span>pardes</span>
-<span id="cb13-15"><a href="#cb13-15" tabindex="-1"></a><span class="co">#&gt;      [,1] [,2]</span></span>
-<span id="cb13-16"><a href="#cb13-16" tabindex="-1"></a><span class="co">#&gt; [1,]  1.0    0</span></span>
-<span id="cb13-17"><a href="#cb13-17" tabindex="-1"></a><span class="co">#&gt; [2,]  0.5    0</span></span>
-<span id="cb13-18"><a href="#cb13-18" tabindex="-1"></a><span class="co">#&gt; [3,]  0.5    0</span></span>
-<span id="cb13-19"><a href="#cb13-19" tabindex="-1"></a><span class="co">#&gt; [4,]  0.5    0</span></span>
-<span id="cb13-20"><a href="#cb13-20" tabindex="-1"></a><span class="co">#&gt; [5,]  0.0    1</span></span></code></pre></div>
+<p>First setting up the random effects design and the relationship
+between variance parameters. We see that the genetic random effect has
+size 1 for MZ and 0.5 for DZ subjects, who have shared and non-shared
+genetic components with variance 0.5 such that the total genetic
+variance is the same for all subjects. The shared environmental effect
+is the same for all. Thus two parameters with these constraints.</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" tabindex="-1"></a>out <span class="ot">&lt;-</span> <span class="fu">twin_polygen_design</span>(twinstut,<span class="at">id=</span><span class="st">&quot;tvparnr&quot;</span>,<span class="at">zygname=</span><span class="st">&quot;zyg&quot;</span>,<span class="at">zyg=</span><span class="st">&quot;dz&quot;</span>,<span class="at">type=</span><span class="st">&quot;ace&quot;</span>)</span>
+<span id="cb11-2"><a href="#cb11-2" tabindex="-1"></a><span class="fu">head</span>(<span class="fu">cbind</span>(out<span class="sc">$</span>des.rv,twinstut<span class="sc">$</span>tvparnr),<span class="dv">10</span>)</span>
+<span id="cb11-3"><a href="#cb11-3" tabindex="-1"></a><span class="co">#&gt;    MZ DZ DZns1 DZns2 env   </span></span>
+<span id="cb11-4"><a href="#cb11-4" tabindex="-1"></a><span class="co">#&gt; 1   1  0     0     0   1  1</span></span>
+<span id="cb11-5"><a href="#cb11-5" tabindex="-1"></a><span class="co">#&gt; 2   1  0     0     0   1  1</span></span>
+<span id="cb11-6"><a href="#cb11-6" tabindex="-1"></a><span class="co">#&gt; 3   0  1     1     0   1  2</span></span>
+<span id="cb11-7"><a href="#cb11-7" tabindex="-1"></a><span class="co">#&gt; 8   1  0     0     0   1  5</span></span>
+<span id="cb11-8"><a href="#cb11-8" tabindex="-1"></a><span class="co">#&gt; 9   1  0     0     0   1  5</span></span>
+<span id="cb11-9"><a href="#cb11-9" tabindex="-1"></a><span class="co">#&gt; 11  0  1     1     0   1  7</span></span>
+<span id="cb11-10"><a href="#cb11-10" tabindex="-1"></a><span class="co">#&gt; 12  0  1     1     0   1  8</span></span>
+<span id="cb11-11"><a href="#cb11-11" tabindex="-1"></a><span class="co">#&gt; 13  0  1     0     1   1  8</span></span>
+<span id="cb11-12"><a href="#cb11-12" tabindex="-1"></a><span class="co">#&gt; 15  0  1     1     0   1 10</span></span>
+<span id="cb11-13"><a href="#cb11-13" tabindex="-1"></a><span class="co">#&gt; 18  0  1     1     0   1 12</span></span>
+<span id="cb11-14"><a href="#cb11-14" tabindex="-1"></a>out<span class="sc">$</span>pardes</span>
+<span id="cb11-15"><a href="#cb11-15" tabindex="-1"></a><span class="co">#&gt;      [,1] [,2]</span></span>
+<span id="cb11-16"><a href="#cb11-16" tabindex="-1"></a><span class="co">#&gt; [1,]  1.0    0</span></span>
+<span id="cb11-17"><a href="#cb11-17" tabindex="-1"></a><span class="co">#&gt; [2,]  0.5    0</span></span>
+<span id="cb11-18"><a href="#cb11-18" tabindex="-1"></a><span class="co">#&gt; [3,]  0.5    0</span></span>
+<span id="cb11-19"><a href="#cb11-19" tabindex="-1"></a><span class="co">#&gt; [4,]  0.5    0</span></span>
+<span id="cb11-20"><a href="#cb11-20" tabindex="-1"></a><span class="co">#&gt; [5,]  0.0    1</span></span></code></pre></div>
 <p>Now, fitting the ACE model, we see that the variance of the genetic,
 component, is 1.5 and the environmental variance is -0.5. Thus
 suggesting that the ACE model does not fit the data. When the random
 design is given we automatically use the gamma fralty model.</p>
-<div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" tabindex="-1"></a>margbin <span class="ot">&lt;-</span> <span class="fu">glm</span>(binstut<span class="sc">~</span>sex,<span class="at">data=</span>twinstut,<span class="at">family=</span><span class="fu">binomial</span>())</span>
-<span id="cb14-2"><a href="#cb14-2" tabindex="-1"></a>bintwin1 <span class="ot">&lt;-</span> <span class="fu">binomial.twostage</span>(margbin,<span class="at">data=</span>twinstut,</span>
-<span id="cb14-3"><a href="#cb14-3" tabindex="-1"></a>     <span class="at">clusters=</span>twinstut<span class="sc">$</span>tvparnr,<span class="at">detail=</span><span class="dv">0</span>,<span class="at">theta=</span><span class="fu">c</span>(<span class="fl">0.1</span>)<span class="sc">/</span><span class="dv">1</span>,<span class="at">var.link=</span><span class="dv">0</span>,</span>
-<span id="cb14-4"><a href="#cb14-4" tabindex="-1"></a>     <span class="at">random.design=</span>out<span class="sc">$</span>des.rv,<span class="at">theta.des=</span>out<span class="sc">$</span>pardes)</span>
-<span id="cb14-5"><a href="#cb14-5" tabindex="-1"></a><span class="fu">summary</span>(bintwin1)</span>
-<span id="cb14-6"><a href="#cb14-6" tabindex="-1"></a><span class="co">#&gt; Dependence parameter for Clayton-Oakes model</span></span>
-<span id="cb14-7"><a href="#cb14-7" tabindex="-1"></a><span class="co">#&gt; Variance of Gamma distributed random effects</span></span>
-<span id="cb14-8"><a href="#cb14-8" tabindex="-1"></a><span class="co">#&gt; $estimates</span></span>
-<span id="cb14-9"><a href="#cb14-9" tabindex="-1"></a><span class="co">#&gt;                  theta        se</span></span>
-<span id="cb14-10"><a href="#cb14-10" tabindex="-1"></a><span class="co">#&gt; dependence1  1.1700713 0.9350041</span></span>
-<span id="cb14-11"><a href="#cb14-11" tabindex="-1"></a><span class="co">#&gt; dependence2 -0.2552978 0.5910697</span></span>
+<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" tabindex="-1"></a>margbin <span class="ot">&lt;-</span> <span class="fu">glm</span>(binstut<span class="sc">~</span>sex,<span class="at">data=</span>twinstut,<span class="at">family=</span><span class="fu">binomial</span>())</span>
+<span id="cb12-2"><a href="#cb12-2" tabindex="-1"></a>bintwin1 <span class="ot">&lt;-</span> <span class="fu">binomial_twostage</span>(margbin,<span class="at">data=</span>twinstut,</span>
+<span id="cb12-3"><a href="#cb12-3" tabindex="-1"></a>     <span class="at">clusters=</span>twinstut<span class="sc">$</span>tvparnr,<span class="at">detail=</span><span class="dv">0</span>,<span class="at">theta=</span><span class="fu">c</span>(<span class="fl">0.1</span>)<span class="sc">/</span><span class="dv">1</span>,<span class="at">var.link=</span><span class="dv">0</span>,</span>
+<span id="cb12-4"><a href="#cb12-4" tabindex="-1"></a>     <span class="at">random.design=</span>out<span class="sc">$</span>des.rv,<span class="at">theta.des=</span>out<span class="sc">$</span>pardes)</span>
+<span id="cb12-5"><a href="#cb12-5" tabindex="-1"></a><span class="fu">summary</span>(bintwin1)</span>
+<span id="cb12-6"><a href="#cb12-6" tabindex="-1"></a><span class="co">#&gt; Dependence parameter for Clayton-Oakes model</span></span>
+<span id="cb12-7"><a href="#cb12-7" tabindex="-1"></a><span class="co">#&gt; Variance of Gamma distributed random effects</span></span>
+<span id="cb12-8"><a href="#cb12-8" tabindex="-1"></a><span class="co">#&gt; $estimates</span></span>
+<span id="cb12-9"><a href="#cb12-9" tabindex="-1"></a><span class="co">#&gt;                  theta        se</span></span>
+<span id="cb12-10"><a href="#cb12-10" tabindex="-1"></a><span class="co">#&gt; dependence1  1.1700713 0.9350041</span></span>
+<span id="cb12-11"><a href="#cb12-11" tabindex="-1"></a><span class="co">#&gt; dependence2 -0.2552978 0.5910697</span></span>
+<span id="cb12-12"><a href="#cb12-12" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb12-13"><a href="#cb12-13" tabindex="-1"></a><span class="co">#&gt; $type</span></span>
+<span id="cb12-14"><a href="#cb12-14" tabindex="-1"></a><span class="co">#&gt; [1] &quot;clayton.oakes&quot;</span></span>
+<span id="cb12-15"><a href="#cb12-15" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb12-16"><a href="#cb12-16" tabindex="-1"></a><span class="co">#&gt; $h</span></span>
+<span id="cb12-17"><a href="#cb12-17" tabindex="-1"></a><span class="co">#&gt;             Estimate Std.Err     2.5%  97.5% P-value</span></span>
+<span id="cb12-18"><a href="#cb12-18" tabindex="-1"></a><span class="co">#&gt; dependence1   1.2791  0.6039  0.09552 2.4626 0.03416</span></span>
+<span id="cb12-19"><a href="#cb12-19" tabindex="-1"></a><span class="co">#&gt; dependence2  -0.2791  0.6039 -1.46265 0.9045 0.64397</span></span>
+<span id="cb12-20"><a href="#cb12-20" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb12-21"><a href="#cb12-21" tabindex="-1"></a><span class="co">#&gt; $vare</span></span>
+<span id="cb12-22"><a href="#cb12-22" tabindex="-1"></a><span class="co">#&gt; NULL</span></span>
+<span id="cb12-23"><a href="#cb12-23" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb12-24"><a href="#cb12-24" tabindex="-1"></a><span class="co">#&gt; $vartot</span></span>
+<span id="cb12-25"><a href="#cb12-25" tabindex="-1"></a><span class="co">#&gt;    Estimate Std.Err    2.5% 97.5% P-value</span></span>
+<span id="cb12-26"><a href="#cb12-26" tabindex="-1"></a><span class="co">#&gt; p1   0.9148  0.5352 -0.1343 1.964 0.08744</span></span>
+<span id="cb12-27"><a href="#cb12-27" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb12-28"><a href="#cb12-28" tabindex="-1"></a><span class="co">#&gt; attr(,&quot;class&quot;)</span></span>
+<span id="cb12-29"><a href="#cb12-29" tabindex="-1"></a><span class="co">#&gt; [1] &quot;summary.mets.twostage&quot;</span></span></code></pre></div>
+<p>For this model we estimate the concordance and casewise concordance
+as well as the marginal rates of stuttering for females.</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" tabindex="-1"></a><span class="fu">concordanceTwinACE</span>(bintwin1,<span class="at">type=</span><span class="st">&quot;ace&quot;</span>)</span>
+<span id="cb13-2"><a href="#cb13-2" tabindex="-1"></a><span class="co">#&gt; $MZ</span></span>
+<span id="cb13-3"><a href="#cb13-3" tabindex="-1"></a><span class="co">#&gt;                      Estimate  Std.Err     2.5%   97.5%   P-value</span></span>
+<span id="cb13-4"><a href="#cb13-4" tabindex="-1"></a><span class="co">#&gt; concordance          0.009738 0.004010 0.001878 0.01760 1.517e-02</span></span>
+<span id="cb13-5"><a href="#cb13-5" tabindex="-1"></a><span class="co">#&gt; casewise concordance 0.476141 0.190613 0.102547 0.84974 1.249e-02</span></span>
+<span id="cb13-6"><a href="#cb13-6" tabindex="-1"></a><span class="co">#&gt; marginal             0.020452 0.005083 0.010489 0.03041 5.733e-05</span></span>
+<span id="cb13-7"><a href="#cb13-7" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb13-8"><a href="#cb13-8" tabindex="-1"></a><span class="co">#&gt; $DZ</span></span>
+<span id="cb13-9"><a href="#cb13-9" tabindex="-1"></a><span class="co">#&gt;                      Estimate  Std.Err       2.5%   97.5%   P-value</span></span>
+<span id="cb13-10"><a href="#cb13-10" tabindex="-1"></a><span class="co">#&gt; concordance          0.001301 0.001158 -0.0009681 0.00357 2.611e-01</span></span>
+<span id="cb13-11"><a href="#cb13-11" tabindex="-1"></a><span class="co">#&gt; casewise concordance 0.063604 0.057255 -0.0486137 0.17582 2.666e-01</span></span>
+<span id="cb13-12"><a href="#cb13-12" tabindex="-1"></a><span class="co">#&gt; marginal             0.020452 0.005083  0.0104894 0.03041 5.733e-05</span></span></code></pre></div>
+<p>The E component was not consistent with the fit of the data and we
+now consider instead the AE model.</p>
+<div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" tabindex="-1"></a>out <span class="ot">&lt;-</span> <span class="fu">twin.polygen.design</span>(twinstut,<span class="at">id=</span><span class="st">&quot;tvparnr&quot;</span>,<span class="at">zygname=</span><span class="st">&quot;zyg&quot;</span>,<span class="at">zyg=</span><span class="st">&quot;dz&quot;</span>,<span class="at">type=</span><span class="st">&quot;ae&quot;</span>)</span>
+<span id="cb14-2"><a href="#cb14-2" tabindex="-1"></a></span>
+<span id="cb14-3"><a href="#cb14-3" tabindex="-1"></a>bintwin <span class="ot">&lt;-</span> <span class="fu">binomial_twostage</span>(margbin,<span class="at">data=</span>twinstut,</span>
+<span id="cb14-4"><a href="#cb14-4" tabindex="-1"></a>     <span class="at">clusters=</span>twinstut<span class="sc">$</span>tvparnr,<span class="at">detail=</span><span class="dv">0</span>,<span class="at">theta=</span><span class="fu">c</span>(<span class="fl">0.1</span>)<span class="sc">/</span><span class="dv">1</span>,<span class="at">var.link=</span><span class="dv">0</span>,</span>
+<span id="cb14-5"><a href="#cb14-5" tabindex="-1"></a>     <span class="at">random.design=</span>out<span class="sc">$</span>des.rv,<span class="at">theta.des=</span>out<span class="sc">$</span>pardes)</span>
+<span id="cb14-6"><a href="#cb14-6" tabindex="-1"></a><span class="fu">summary</span>(bintwin)</span>
+<span id="cb14-7"><a href="#cb14-7" tabindex="-1"></a><span class="co">#&gt; Dependence parameter for Clayton-Oakes model</span></span>
+<span id="cb14-8"><a href="#cb14-8" tabindex="-1"></a><span class="co">#&gt; Variance of Gamma distributed random effects</span></span>
+<span id="cb14-9"><a href="#cb14-9" tabindex="-1"></a><span class="co">#&gt; $estimates</span></span>
+<span id="cb14-10"><a href="#cb14-10" tabindex="-1"></a><span class="co">#&gt;                 theta        se</span></span>
+<span id="cb14-11"><a href="#cb14-11" tabindex="-1"></a><span class="co">#&gt; dependence1 0.8485392 0.4941264</span></span>
 <span id="cb14-12"><a href="#cb14-12" tabindex="-1"></a><span class="co">#&gt; </span></span>
 <span id="cb14-13"><a href="#cb14-13" tabindex="-1"></a><span class="co">#&gt; $type</span></span>
 <span id="cb14-14"><a href="#cb14-14" tabindex="-1"></a><span class="co">#&gt; [1] &quot;clayton.oakes&quot;</span></span>
 <span id="cb14-15"><a href="#cb14-15" tabindex="-1"></a><span class="co">#&gt; </span></span>
 <span id="cb14-16"><a href="#cb14-16" tabindex="-1"></a><span class="co">#&gt; $h</span></span>
-<span id="cb14-17"><a href="#cb14-17" tabindex="-1"></a><span class="co">#&gt;             Estimate Std.Err     2.5%  97.5% P-value</span></span>
-<span id="cb14-18"><a href="#cb14-18" tabindex="-1"></a><span class="co">#&gt; dependence1   1.2791  0.6039  0.09552 2.4626 0.03416</span></span>
-<span id="cb14-19"><a href="#cb14-19" tabindex="-1"></a><span class="co">#&gt; dependence2  -0.2791  0.6039 -1.46265 0.9045 0.64397</span></span>
-<span id="cb14-20"><a href="#cb14-20" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb14-21"><a href="#cb14-21" tabindex="-1"></a><span class="co">#&gt; $vare</span></span>
-<span id="cb14-22"><a href="#cb14-22" tabindex="-1"></a><span class="co">#&gt; NULL</span></span>
-<span id="cb14-23"><a href="#cb14-23" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb14-24"><a href="#cb14-24" tabindex="-1"></a><span class="co">#&gt; $vartot</span></span>
-<span id="cb14-25"><a href="#cb14-25" tabindex="-1"></a><span class="co">#&gt;    Estimate Std.Err    2.5% 97.5% P-value</span></span>
-<span id="cb14-26"><a href="#cb14-26" tabindex="-1"></a><span class="co">#&gt; p1   0.9148  0.5352 -0.1343 1.964 0.08744</span></span>
-<span id="cb14-27"><a href="#cb14-27" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb14-28"><a href="#cb14-28" tabindex="-1"></a><span class="co">#&gt; attr(,&quot;class&quot;)</span></span>
-<span id="cb14-29"><a href="#cb14-29" tabindex="-1"></a><span class="co">#&gt; [1] &quot;summary.mets.twostage&quot;</span></span></code></pre></div>
-<p>For this model we estimate the concordance and casewise concordance
-as well as the marginal rates of stuttering for females.</p>
-<div class="sourceCode" id="cb15"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" tabindex="-1"></a><span class="fu">concordanceTwinACE</span>(bintwin1,<span class="at">type=</span><span class="st">&quot;ace&quot;</span>)</span>
+<span id="cb14-17"><a href="#cb14-17" tabindex="-1"></a><span class="co">#&gt;             Estimate Std.Err 2.5% 97.5% P-value</span></span>
+<span id="cb14-18"><a href="#cb14-18" tabindex="-1"></a><span class="co">#&gt; dependence1        1       0    1     1       0</span></span>
+<span id="cb14-19"><a href="#cb14-19" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb14-20"><a href="#cb14-20" tabindex="-1"></a><span class="co">#&gt; $vare</span></span>
+<span id="cb14-21"><a href="#cb14-21" tabindex="-1"></a><span class="co">#&gt; NULL</span></span>
+<span id="cb14-22"><a href="#cb14-22" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb14-23"><a href="#cb14-23" tabindex="-1"></a><span class="co">#&gt; $vartot</span></span>
+<span id="cb14-24"><a href="#cb14-24" tabindex="-1"></a><span class="co">#&gt;    Estimate Std.Err    2.5% 97.5% P-value</span></span>
+<span id="cb14-25"><a href="#cb14-25" tabindex="-1"></a><span class="co">#&gt; p1   0.8485  0.4941 -0.1199 1.817 0.08593</span></span>
+<span id="cb14-26"><a href="#cb14-26" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb14-27"><a href="#cb14-27" tabindex="-1"></a><span class="co">#&gt; attr(,&quot;class&quot;)</span></span>
+<span id="cb14-28"><a href="#cb14-28" tabindex="-1"></a><span class="co">#&gt; [1] &quot;summary.mets.twostage&quot;</span></span></code></pre></div>
+<p>Again, the concordance can be computed:</p>
+<div class="sourceCode" id="cb15"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" tabindex="-1"></a><span class="fu">concordanceTwinACE</span>(bintwin,<span class="at">type=</span><span class="st">&quot;ae&quot;</span>)</span>
 <span id="cb15-2"><a href="#cb15-2" tabindex="-1"></a><span class="co">#&gt; $MZ</span></span>
 <span id="cb15-3"><a href="#cb15-3" tabindex="-1"></a><span class="co">#&gt;                      Estimate  Std.Err     2.5%   97.5%   P-value</span></span>
-<span id="cb15-4"><a href="#cb15-4" tabindex="-1"></a><span class="co">#&gt; concordance          0.009738 0.004010 0.001878 0.01760 1.517e-02</span></span>
-<span id="cb15-5"><a href="#cb15-5" tabindex="-1"></a><span class="co">#&gt; casewise concordance 0.476141 0.190613 0.102547 0.84974 1.249e-02</span></span>
+<span id="cb15-4"><a href="#cb15-4" tabindex="-1"></a><span class="co">#&gt; concordance          0.009236 0.003778 0.001831 0.01664 1.450e-02</span></span>
+<span id="cb15-5"><a href="#cb15-5" tabindex="-1"></a><span class="co">#&gt; casewise concordance 0.451605 0.189131 0.080916 0.82229 1.695e-02</span></span>
 <span id="cb15-6"><a href="#cb15-6" tabindex="-1"></a><span class="co">#&gt; marginal             0.020452 0.005083 0.010489 0.03041 5.733e-05</span></span>
 <span id="cb15-7"><a href="#cb15-7" tabindex="-1"></a><span class="co">#&gt; </span></span>
 <span id="cb15-8"><a href="#cb15-8" tabindex="-1"></a><span class="co">#&gt; $DZ</span></span>
-<span id="cb15-9"><a href="#cb15-9" tabindex="-1"></a><span class="co">#&gt;                      Estimate  Std.Err       2.5%   97.5%   P-value</span></span>
-<span id="cb15-10"><a href="#cb15-10" tabindex="-1"></a><span class="co">#&gt; concordance          0.001301 0.001158 -0.0009681 0.00357 2.611e-01</span></span>
-<span id="cb15-11"><a href="#cb15-11" tabindex="-1"></a><span class="co">#&gt; casewise concordance 0.063604 0.057255 -0.0486137 0.17582 2.666e-01</span></span>
-<span id="cb15-12"><a href="#cb15-12" tabindex="-1"></a><span class="co">#&gt; marginal             0.020452 0.005083  0.0104894 0.03041 5.733e-05</span></span></code></pre></div>
-<p>The E component was not consistent with the fit of the data and we
-now consider instead the AE model.</p>
-<div class="sourceCode" id="cb16"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" tabindex="-1"></a>out <span class="ot">&lt;-</span> <span class="fu">twin.polygen.design</span>(twinstut,<span class="at">id=</span><span class="st">&quot;tvparnr&quot;</span>,<span class="at">zygname=</span><span class="st">&quot;zyg&quot;</span>,<span class="at">zyg=</span><span class="st">&quot;dz&quot;</span>,<span class="at">type=</span><span class="st">&quot;ae&quot;</span>)</span>
-<span id="cb16-2"><a href="#cb16-2" tabindex="-1"></a></span>
-<span id="cb16-3"><a href="#cb16-3" tabindex="-1"></a>bintwin <span class="ot">&lt;-</span> <span class="fu">binomial.twostage</span>(margbin,<span class="at">data=</span>twinstut,</span>
-<span id="cb16-4"><a href="#cb16-4" tabindex="-1"></a>     <span class="at">clusters=</span>twinstut<span class="sc">$</span>tvparnr,<span class="at">detail=</span><span class="dv">0</span>,<span class="at">theta=</span><span class="fu">c</span>(<span class="fl">0.1</span>)<span class="sc">/</span><span class="dv">1</span>,<span class="at">var.link=</span><span class="dv">0</span>,</span>
-<span id="cb16-5"><a href="#cb16-5" tabindex="-1"></a>     <span class="at">random.design=</span>out<span class="sc">$</span>des.rv,<span class="at">theta.des=</span>out<span class="sc">$</span>pardes)</span>
-<span id="cb16-6"><a href="#cb16-6" tabindex="-1"></a><span class="fu">summary</span>(bintwin)</span>
-<span id="cb16-7"><a href="#cb16-7" tabindex="-1"></a><span class="co">#&gt; Dependence parameter for Clayton-Oakes model</span></span>
-<span id="cb16-8"><a href="#cb16-8" tabindex="-1"></a><span class="co">#&gt; Variance of Gamma distributed random effects</span></span>
-<span id="cb16-9"><a href="#cb16-9" tabindex="-1"></a><span class="co">#&gt; $estimates</span></span>
-<span id="cb16-10"><a href="#cb16-10" tabindex="-1"></a><span class="co">#&gt;                 theta        se</span></span>
-<span id="cb16-11"><a href="#cb16-11" tabindex="-1"></a><span class="co">#&gt; dependence1 0.8485392 0.4941264</span></span>
-<span id="cb16-12"><a href="#cb16-12" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb16-13"><a href="#cb16-13" tabindex="-1"></a><span class="co">#&gt; $type</span></span>
-<span id="cb16-14"><a href="#cb16-14" tabindex="-1"></a><span class="co">#&gt; [1] &quot;clayton.oakes&quot;</span></span>
-<span id="cb16-15"><a href="#cb16-15" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb16-16"><a href="#cb16-16" tabindex="-1"></a><span class="co">#&gt; $h</span></span>
-<span id="cb16-17"><a href="#cb16-17" tabindex="-1"></a><span class="co">#&gt;             Estimate Std.Err 2.5% 97.5% P-value</span></span>
-<span id="cb16-18"><a href="#cb16-18" tabindex="-1"></a><span class="co">#&gt; dependence1        1       0    1     1       0</span></span>
-<span id="cb16-19"><a href="#cb16-19" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb16-20"><a href="#cb16-20" tabindex="-1"></a><span class="co">#&gt; $vare</span></span>
-<span id="cb16-21"><a href="#cb16-21" tabindex="-1"></a><span class="co">#&gt; NULL</span></span>
-<span id="cb16-22"><a href="#cb16-22" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb16-23"><a href="#cb16-23" tabindex="-1"></a><span class="co">#&gt; $vartot</span></span>
-<span id="cb16-24"><a href="#cb16-24" tabindex="-1"></a><span class="co">#&gt;    Estimate Std.Err    2.5% 97.5% P-value</span></span>
-<span id="cb16-25"><a href="#cb16-25" tabindex="-1"></a><span class="co">#&gt; p1   0.8485  0.4941 -0.1199 1.817 0.08593</span></span>
-<span id="cb16-26"><a href="#cb16-26" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb16-27"><a href="#cb16-27" tabindex="-1"></a><span class="co">#&gt; attr(,&quot;class&quot;)</span></span>
-<span id="cb16-28"><a href="#cb16-28" tabindex="-1"></a><span class="co">#&gt; [1] &quot;summary.mets.twostage&quot;</span></span></code></pre></div>
-<p>Again, the concordance can be computed:</p>
-<div class="sourceCode" id="cb17"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" tabindex="-1"></a><span class="fu">concordanceTwinACE</span>(bintwin,<span class="at">type=</span><span class="st">&quot;ae&quot;</span>)</span>
-<span id="cb17-2"><a href="#cb17-2" tabindex="-1"></a><span class="co">#&gt; $MZ</span></span>
-<span id="cb17-3"><a href="#cb17-3" tabindex="-1"></a><span class="co">#&gt;                      Estimate  Std.Err     2.5%   97.5%   P-value</span></span>
-<span id="cb17-4"><a href="#cb17-4" tabindex="-1"></a><span class="co">#&gt; concordance          0.009236 0.003778 0.001831 0.01664 1.450e-02</span></span>
-<span id="cb17-5"><a href="#cb17-5" tabindex="-1"></a><span class="co">#&gt; casewise concordance 0.451605 0.189131 0.080916 0.82229 1.695e-02</span></span>
-<span id="cb17-6"><a href="#cb17-6" tabindex="-1"></a><span class="co">#&gt; marginal             0.020452 0.005083 0.010489 0.03041 5.733e-05</span></span>
-<span id="cb17-7"><a href="#cb17-7" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb17-8"><a href="#cb17-8" tabindex="-1"></a><span class="co">#&gt; $DZ</span></span>
-<span id="cb17-9"><a href="#cb17-9" tabindex="-1"></a><span class="co">#&gt;                      Estimate   Std.Err      2.5%    97.5%   P-value</span></span>
-<span id="cb17-10"><a href="#cb17-10" tabindex="-1"></a><span class="co">#&gt; concordance          0.001966 0.0007099 0.0005741 0.003357 5.628e-03</span></span>
-<span id="cb17-11"><a href="#cb17-11" tabindex="-1"></a><span class="co">#&gt; casewise concordance 0.096106 0.0196561 0.0575803 0.134631 1.012e-06</span></span>
-<span id="cb17-12"><a href="#cb17-12" tabindex="-1"></a><span class="co">#&gt; marginal             0.020452 0.0050831 0.0104894 0.030415 5.733e-05</span></span></code></pre></div>
+<span id="cb15-9"><a href="#cb15-9" tabindex="-1"></a><span class="co">#&gt;                      Estimate   Std.Err      2.5%    97.5%   P-value</span></span>
+<span id="cb15-10"><a href="#cb15-10" tabindex="-1"></a><span class="co">#&gt; concordance          0.001966 0.0007099 0.0005741 0.003357 5.628e-03</span></span>
+<span id="cb15-11"><a href="#cb15-11" tabindex="-1"></a><span class="co">#&gt; casewise concordance 0.096106 0.0196561 0.0575803 0.134631 1.012e-06</span></span>
+<span id="cb15-12"><a href="#cb15-12" tabindex="-1"></a><span class="co">#&gt; marginal             0.020452 0.0050831 0.0104894 0.030415 5.733e-05</span></span></code></pre></div>
 </div>
 </div>
 <div id="sessioninfo" class="section level1">
 <h1>SessionInfo</h1>
-<div class="sourceCode" id="cb18"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" tabindex="-1"></a><span class="fu">sessionInfo</span>()</span>
-<span id="cb18-2"><a href="#cb18-2" tabindex="-1"></a><span class="co">#&gt; R version 4.5.2 (2025-10-31)</span></span>
-<span id="cb18-3"><a href="#cb18-3" tabindex="-1"></a><span class="co">#&gt; Platform: aarch64-apple-darwin25.1.0</span></span>
-<span id="cb18-4"><a href="#cb18-4" tabindex="-1"></a><span class="co">#&gt; Running under: macOS Tahoe 26.2</span></span>
-<span id="cb18-5"><a href="#cb18-5" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb18-6"><a href="#cb18-6" tabindex="-1"></a><span class="co">#&gt; Matrix products: default</span></span>
-<span id="cb18-7"><a href="#cb18-7" tabindex="-1"></a><span class="co">#&gt; BLAS:   /Users/kkzh/.asdf/installs/r/4.5.2/lib/R/lib/libRblas.dylib </span></span>
-<span id="cb18-8"><a href="#cb18-8" tabindex="-1"></a><span class="co">#&gt; LAPACK: /Users/kkzh/.asdf/installs/r/4.5.2/lib/R/lib/libRlapack.dylib;  LAPACK version 3.12.1</span></span>
-<span id="cb18-9"><a href="#cb18-9" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb18-10"><a href="#cb18-10" tabindex="-1"></a><span class="co">#&gt; locale:</span></span>
-<span id="cb18-11"><a href="#cb18-11" tabindex="-1"></a><span class="co">#&gt; [1] en_US.UTF-8/en_US.UTF-8/en_US.UTF-8/C/en_US.UTF-8/en_US.UTF-8</span></span>
-<span id="cb18-12"><a href="#cb18-12" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb18-13"><a href="#cb18-13" tabindex="-1"></a><span class="co">#&gt; time zone: Europe/Copenhagen</span></span>
-<span id="cb18-14"><a href="#cb18-14" tabindex="-1"></a><span class="co">#&gt; tzcode source: internal</span></span>
-<span id="cb18-15"><a href="#cb18-15" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb18-16"><a href="#cb18-16" tabindex="-1"></a><span class="co">#&gt; attached base packages:</span></span>
-<span id="cb18-17"><a href="#cb18-17" tabindex="-1"></a><span class="co">#&gt; [1] stats     graphics  grDevices utils     datasets  methods   base     </span></span>
-<span id="cb18-18"><a href="#cb18-18" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb18-19"><a href="#cb18-19" tabindex="-1"></a><span class="co">#&gt; other attached packages:</span></span>
-<span id="cb18-20"><a href="#cb18-20" tabindex="-1"></a><span class="co">#&gt; [1] timereg_2.0.7  survival_3.8-3 mets_1.3.9    </span></span>
-<span id="cb18-21"><a href="#cb18-21" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb18-22"><a href="#cb18-22" tabindex="-1"></a><span class="co">#&gt; loaded via a namespace (and not attached):</span></span>
-<span id="cb18-23"><a href="#cb18-23" tabindex="-1"></a><span class="co">#&gt;  [1] cli_3.6.5              knitr_1.50             rlang_1.1.6           </span></span>
-<span id="cb18-24"><a href="#cb18-24" tabindex="-1"></a><span class="co">#&gt;  [4] xfun_0.54              jsonlite_2.0.0         future.apply_1.20.1   </span></span>
-<span id="cb18-25"><a href="#cb18-25" tabindex="-1"></a><span class="co">#&gt;  [7] listenv_0.10.0         lava_1.8.3             htmltools_0.5.8.1     </span></span>
-<span id="cb18-26"><a href="#cb18-26" tabindex="-1"></a><span class="co">#&gt; [10] sass_0.4.10            rmarkdown_2.30         grid_4.5.2            </span></span>
-<span id="cb18-27"><a href="#cb18-27" tabindex="-1"></a><span class="co">#&gt; [13] evaluate_1.0.5         jquerylib_0.1.4        fastmap_1.2.0         </span></span>
-<span id="cb18-28"><a href="#cb18-28" tabindex="-1"></a><span class="co">#&gt; [16] numDeriv_2016.8-1.1    yaml_2.3.10            mvtnorm_1.3-3         </span></span>
-<span id="cb18-29"><a href="#cb18-29" tabindex="-1"></a><span class="co">#&gt; [19] lifecycle_1.0.4        compiler_4.5.2         codetools_0.2-20      </span></span>
-<span id="cb18-30"><a href="#cb18-30" tabindex="-1"></a><span class="co">#&gt; [22] ucminf_1.2.2           Rcpp_1.1.1             future_1.68.0         </span></span>
-<span id="cb18-31"><a href="#cb18-31" tabindex="-1"></a><span class="co">#&gt; [25] lattice_0.22-7         digest_0.6.39          R6_2.6.1              </span></span>
-<span id="cb18-32"><a href="#cb18-32" tabindex="-1"></a><span class="co">#&gt; [28] parallelly_1.46.1      parallel_4.5.2         splines_4.5.2         </span></span>
-<span id="cb18-33"><a href="#cb18-33" tabindex="-1"></a><span class="co">#&gt; [31] Matrix_1.7-4           bslib_0.9.0            tools_4.5.2           </span></span>
-<span id="cb18-34"><a href="#cb18-34" tabindex="-1"></a><span class="co">#&gt; [34] RcppArmadillo_15.2.3-1 globals_0.18.0         cachem_1.1.0</span></span></code></pre></div>
+<div class="sourceCode" id="cb16"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" tabindex="-1"></a><span class="fu">sessionInfo</span>()</span>
+<span id="cb16-2"><a href="#cb16-2" tabindex="-1"></a><span class="co">#&gt; R version 4.6.0 (2026-04-24)</span></span>
+<span id="cb16-3"><a href="#cb16-3" tabindex="-1"></a><span class="co">#&gt; Platform: x86_64-pc-linux-gnu</span></span>
+<span id="cb16-4"><a href="#cb16-4" tabindex="-1"></a><span class="co">#&gt; Running under: Ubuntu 24.04.4 LTS</span></span>
+<span id="cb16-5"><a href="#cb16-5" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb16-6"><a href="#cb16-6" tabindex="-1"></a><span class="co">#&gt; Matrix products: default</span></span>
+<span id="cb16-7"><a href="#cb16-7" tabindex="-1"></a><span class="co">#&gt; BLAS:   /home/kkzh/.asdf/installs/r/4.6.0/lib/R/lib/libRblas.so </span></span>
+<span id="cb16-8"><a href="#cb16-8" tabindex="-1"></a><span class="co">#&gt; LAPACK: /usr/lib/x86_64-linux-gnu/lapack/liblapack.so.3.12.0  LAPACK version 3.12.0</span></span>
+<span id="cb16-9"><a href="#cb16-9" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb16-10"><a href="#cb16-10" tabindex="-1"></a><span class="co">#&gt; locale:</span></span>
+<span id="cb16-11"><a href="#cb16-11" tabindex="-1"></a><span class="co">#&gt;  [1] LC_CTYPE=en_US.UTF-8       LC_NUMERIC=C              </span></span>
+<span id="cb16-12"><a href="#cb16-12" tabindex="-1"></a><span class="co">#&gt;  [3] LC_TIME=en_US.UTF-8        LC_COLLATE=en_US.UTF-8    </span></span>
+<span id="cb16-13"><a href="#cb16-13" tabindex="-1"></a><span class="co">#&gt;  [5] LC_MONETARY=en_US.UTF-8    LC_MESSAGES=en_US.UTF-8   </span></span>
+<span id="cb16-14"><a href="#cb16-14" tabindex="-1"></a><span class="co">#&gt;  [7] LC_PAPER=en_US.UTF-8       LC_NAME=C                 </span></span>
+<span id="cb16-15"><a href="#cb16-15" tabindex="-1"></a><span class="co">#&gt;  [9] LC_ADDRESS=C               LC_TELEPHONE=C            </span></span>
+<span id="cb16-16"><a href="#cb16-16" tabindex="-1"></a><span class="co">#&gt; [11] LC_MEASUREMENT=en_US.UTF-8 LC_IDENTIFICATION=C       </span></span>
+<span id="cb16-17"><a href="#cb16-17" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb16-18"><a href="#cb16-18" tabindex="-1"></a><span class="co">#&gt; time zone: Europe/Copenhagen</span></span>
+<span id="cb16-19"><a href="#cb16-19" tabindex="-1"></a><span class="co">#&gt; tzcode source: system (glibc)</span></span>
+<span id="cb16-20"><a href="#cb16-20" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb16-21"><a href="#cb16-21" tabindex="-1"></a><span class="co">#&gt; attached base packages:</span></span>
+<span id="cb16-22"><a href="#cb16-22" tabindex="-1"></a><span class="co">#&gt; [1] stats     graphics  grDevices utils     datasets  methods   base     </span></span>
+<span id="cb16-23"><a href="#cb16-23" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb16-24"><a href="#cb16-24" tabindex="-1"></a><span class="co">#&gt; other attached packages:</span></span>
+<span id="cb16-25"><a href="#cb16-25" tabindex="-1"></a><span class="co">#&gt; [1] timereg_2.0.7  survival_3.8-6 mets_1.3.10   </span></span>
+<span id="cb16-26"><a href="#cb16-26" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb16-27"><a href="#cb16-27" tabindex="-1"></a><span class="co">#&gt; loaded via a namespace (and not attached):</span></span>
+<span id="cb16-28"><a href="#cb16-28" tabindex="-1"></a><span class="co">#&gt;  [1] cli_3.6.6              knitr_1.51             rlang_1.2.0           </span></span>
+<span id="cb16-29"><a href="#cb16-29" tabindex="-1"></a><span class="co">#&gt;  [4] xfun_0.57              otel_0.2.0             jsonlite_2.0.0        </span></span>
+<span id="cb16-30"><a href="#cb16-30" tabindex="-1"></a><span class="co">#&gt;  [7] listenv_0.10.1         future.apply_1.20.2    lava_1.9.1            </span></span>
+<span id="cb16-31"><a href="#cb16-31" tabindex="-1"></a><span class="co">#&gt; [10] htmltools_0.5.9        stats4_4.6.0           sass_0.4.10           </span></span>
+<span id="cb16-32"><a href="#cb16-32" tabindex="-1"></a><span class="co">#&gt; [13] rmarkdown_2.31         grid_4.6.0             evaluate_1.0.5        </span></span>
+<span id="cb16-33"><a href="#cb16-33" tabindex="-1"></a><span class="co">#&gt; [16] jquerylib_0.1.4        fastmap_1.2.0          numDeriv_2016.8-1.1   </span></span>
+<span id="cb16-34"><a href="#cb16-34" tabindex="-1"></a><span class="co">#&gt; [19] yaml_2.3.12            mvtnorm_1.3-7          lifecycle_1.0.5       </span></span>
+<span id="cb16-35"><a href="#cb16-35" tabindex="-1"></a><span class="co">#&gt; [22] compiler_4.6.0         codetools_0.2-20       ucminf_1.2.3          </span></span>
+<span id="cb16-36"><a href="#cb16-36" tabindex="-1"></a><span class="co">#&gt; [25] Rcpp_1.1.1-1.1         future_1.70.0          lattice_0.22-9        </span></span>
+<span id="cb16-37"><a href="#cb16-37" tabindex="-1"></a><span class="co">#&gt; [28] digest_0.6.39          R6_2.6.1               parallelly_1.47.0     </span></span>
+<span id="cb16-38"><a href="#cb16-38" tabindex="-1"></a><span class="co">#&gt; [31] parallel_4.6.0         splines_4.6.0          Matrix_1.7-5          </span></span>
+<span id="cb16-39"><a href="#cb16-39" tabindex="-1"></a><span class="co">#&gt; [34] bslib_0.11.0           tools_4.6.0            RcppArmadillo_15.2.6-1</span></span>
+<span id="cb16-40"><a href="#cb16-40" tabindex="-1"></a><span class="co">#&gt; [37] globals_0.19.1         cachem_1.1.0</span></span></code></pre></div>
 </div>
 
 

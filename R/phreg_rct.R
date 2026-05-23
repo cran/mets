@@ -1,45 +1,60 @@
-##' Lu-Tsiatis More Efficient Log-Rank for Randomized studies with baseline covariates
+
+##' Lu-Tsiatis More Efficient Log-Rank for Randomized Studies with Baseline Covariates
 ##'
-##' Efficient implementation of the Lu-Tsiatis improvement using baseline covariates, extended to competing risks and recurrent events. Results
-##' almost equivalent with the speffSurv function of the speff2trial function in the survival case. A dynamic 
-##' censoring augmentation regression is also computed to gain even more from the censoring augmentation. Furhter, we also deal with twostage
-##' randomizations. The function was implemented to deal with recurrent events (start,stop) + cluster, and  more examples in vignette. 
+##' Efficient implementation of the Lu-Tsiatis improvement using baseline covariates, 
+##' extended to competing risks and recurrent events. The results are almost equivalent 
+##' to the \code{speffSurv} function of the \code{speff2trial} package in the survival case. 
+##' A dynamic censoring augmentation regression is also computed to gain additional 
+##' efficiency from the censoring augmentation. The function handles two-stage 
+##' randomizations and recurrent events (start,stop) with cluster structure.
+##' 
+##' The method improves the efficiency of the log-rank test by utilizing auxiliary 
+##' baseline covariates to reduce variance, particularly useful in randomized clinical 
+##' trials (RCTs) where covariate adjustment can increase power.
 ##'
-##' @param formula formula with 'Surv' or 'Event' outcome (see \code{coxph}) and
-##'   treatment (randomization 0/1)
-##' @param data data frame
-##' @param cause to use for competing risks, recurrent events data
-##' @param cens.code to use for competing risks, recurrent events data
-##' @param weights to be used for phreg
-##' @param typesR augmentations used for randomization
-##' @param typesC augmentations used for censoring
-##' @param weights weights for score equation
-##' @param augmentR0 formula for the randomization augmentation (~age+sex)
-##' @param augmentR1 formula for the randomization augmentation (~age+sex)
-##' @param augmentC formula for the censoring augmentation (~age+sex)
-##' @param treat.model propensity score model, default is ~+1, assuming an RCT study
-##' @param RCT if false will use propensity score adjustment for marginal model
-##' @param treat.var in case of twostage randomization, this variable is 1 for
-##'   the treatment times, if start,stop then default assumes that only one
-##'   treatment at first record
-##' @param km use Kaplan-Meier for the censoring weights (stratified on
-##'   treatment)
-##' @param level of confidence intervals
-##' @param cens.model default is censoring model ~strata(treatment) but any
-##'   model can be used to make censoring martingales
-##' @param estpr estimates propensity scores
-##' @param pi0 possible fixed propensity scores for randomizations
-##' @param base.augment TRUE to covariate augment baselines (only for R0
-##'   augmentation)
-##' @param return.augmentR0 to return augmentation data
-##' @param mlogit if TRUE then forces use of this function for propensity
-##'   scores, default for binary treatment is glm
-##' @param ... Additional arguments to phreg function
+##' @param formula Formula with \code{Surv} or \code{Event} outcome (see \code{coxph}) and 
+##'   treatment variable (randomization 0/1). The treatment variable must be the first 
+##'   covariate on the right-hand side.
+##' @param data Data frame containing all variables referenced in the formula.
+##' @param cause Numeric code for the event of interest in competing risks or recurrent events.
+##' @param cens.code Numeric code for censoring in competing risks or recurrent events.
+##' @param weights Weights to be used for \code{phreg}.
+##' @param typesR Character vector specifying augmentation types for randomization 
+##'   (options: "R0" for baseline, "R1" for post-baseline, "R01" for both).
+##' @param typesC Character vector specifying augmentation types for censoring 
+##'   (options: "C" for static, "dynC" for dynamic).
+##' @param augmentR0 Formula for the first randomization augmentation (e.g., \code{~age+sex}).
+##' @param augmentR1 Formula for the second randomization augmentation (e.g., \code{~age+sex}).
+##' @param augmentC Formula for the censoring augmentation (e.g., \code{~age+sex}).
+##' @param treat.model Propensity score model formula (default is \code{~+1}, assuming RCT).
+##' @param RCT Logical; if FALSE, uses propensity score adjustment for marginal model.
+##' @param treat.var Variable indicating treatment times in two-stage randomization.
+##' @param km Logical; use Kaplan-Meier for censoring weights (stratified on treatment).
+##' @param level Confidence level for intervals (default 0.95).
+##' @param cens.model Censoring model formula (default is \code{~strata(treatment)}).
+##' @param estpr Numeric code (1/0); estimate propensity scores or not (default TRUE).
+##' @param pi0 Fixed propensity scores for randomizations (if not estimating).
+##' @param base.augment Logical; covariate augment baselines (only for R0 augmentation).
+##' @param return.augmentR0 Logical; return augmentation data.
+##' @param mlogit Logical; use multinomial logistic regression for propensity scores.
+##' @param ... Additional arguments passed to \code{phreg} function.
+##' @return An object of class \code{"phreg_rct"} containing:
+##'   \item{coefs}{Coefficient estimates for the treatment effect.}
+##'   \item{iid}{Influence function (IID) decomposition for variance estimation.}
+##'   \item{AugR0, AugR1, AugCdyn, AugClt}{Augmentation terms for different strategies.}
+##'   \item{cumhaz}{Cumulative hazards.}
+##'   \item{var}{Variance-covariance matrix.}
+##'   \item{se}{Standard errors.}
+##'   \item{call}{Original function call.}
+##'   \item{formula}{Formula used.}
+##'   \item{data}{The data used (if requested).}
+##'   
+##'   The object includes results for different augmentation combinations (R0, R1, R01, C, dynC).
 ##' @author Thomas Scheike
 ##' @references 
-##' Lu, Tsiatis (2008), Improving the efficiency of the log-rank test using auxiliary covariates, Biometrika, 679--694
+##' Lu, T. and Tsiatis, A. A. (2008), Improving the efficiency of the log-rank test using auxiliary covariates, Biometrika, 95, 679--694.
 ##' 
-##' Scheike, Nerstroem and Martinussen (2025), Randomized clinical trials and the proportional hazards model for recurrent events.
+##' Scheike, T. H., Nerstroem, C. and Martinussen, T. (2026), Randomized clinical trials and the proportional hazards model for recurrent events, TEST.
 ##' @examples
 ##' ## Lu, Tsiatis simulation
 ##' data <- mets:::simLT(0.7,100)
@@ -95,7 +110,7 @@ lhs <- update(formula,.~+1)
 rhs <- update(formula,-1~.)
 if (all.vars(lhs)[1]==".") 
    formula <- update.formula(formula,as.formula(paste(vars,"~.")))
-res <- list(formula=formula,lhs=lhs,rhs=rhs)
+return(list(formula=formula,lhs=lhs,rhs=rhs))
 }
 # }}}
 
@@ -148,8 +163,10 @@ if (nlev==2 & !mlogit) {
    pA <- c(mdi(pal, 1:length(ntreatvar), ntreatvar))
    pppy <- c(mdi(ppp,1:length(ntreatvar), ntreatvar))
    Dppy <-  (spp*tvg2-pppy) 
-   DpA <- c()
-   for (i in seq(nlev-1)) DpA <- cbind(DpA,Xtreat*ppp[,i+1]*Dppy/spp^2);  
+   DpA <- matrix(0, nrow(Xtreat), (nlev - 1) * ncol(Xtreat))
+   for (i in seq(nlev - 1))
+   DpA[, ((i-1)*ncol(Xtreat) + 1):(i*ncol(Xtreat))] <- Xtreat * ppp[,i+1] * Dppy / spp^2
+###   for (i in seq(nlev-1)) DpA <- cbind(DpA,Xtreat*ppp[,i+1]*Dppy/spp^2);  
    DPai <- -1*DpA/pA^2
 
    ## Dp binomial
@@ -330,7 +347,7 @@ if (!is.null(augmentR1)) {# {{{
 if (!is.null(augmentR0) & !is.null(augmentR1)) {# {{{
    XRbpi <- cbind(XRpi,XR1pi)
    XRb <- cbind(XR,XR1)
-   xxi <- solve(crossprod(XRbpi)) 
+   xxi <- pinv(crossprod(XRbpi))
 
    augR01fit <- lm(ea~-1+XRbpi)
    XRgamma <- XRb %*%  coef(augR01fit)
@@ -471,7 +488,7 @@ pXXA <- ncol(XXA)
 gammat <-  -.Call("CubeMattime",hesst,covXsYs,pXXA,pXXA,pXXA,p,1,0,0,PACKAGE="mets")$XXX
 ### solve(matrix(hesst[1,],3,3)) %*% matrix(covXsYs[1,],3,2)
 gammat[is.na(gammat)] <- 0
-gammat[gammat==Inf] <- 0
+gammat[!is.finite(gammat)] <- 0
 augmentt <- .Call("CubeMattime",gammat,UA,pXXA,p,pXXA,1,0,1,0,PACKAGE="mets")$XXX
 AugCdyn <-  apply(augmentt,2,sum)
 gain.times <- .Call("CubeMattime",covXsYs,gammat,pXXA,p,pXXA,p,0,1,0,PACKAGE="mets")$XXX
@@ -483,7 +500,7 @@ vardynC.improve  <- matrix(apply(gain.times,2,sum),p,p)
   ## Lu-Tsiatis augmentation 
   out1 <- iidBaseline(Cfit0,ft=1/St,time=0,fixbeta=0)
   Hiid <- (out1$beta.iid %*% Cfit0$hessian)
-  xxi <- solve(crossprod(Hiid))
+  xxi <- pinv(crossprod(Hiid))
   ###
   for (i in 1:ncol(ea)) {
      gamma <- xxi %*% crossprod(Hiid, eaM[,i])
@@ -496,7 +513,8 @@ varZdN <- matrix(apply(hesst/c(Gcj^2),2,sum),pXXA,pXXA)
 covXYdN <- matrix(apply(covXsYs/c(Gcj),2,sum),p,pXXA,byrow=TRUE) 
 gamma <- -1*.Call("CubeMattime",matrix(varZdN,nrow=1),matrix(covXYdN,nrow=1),pXXA,pXXA,p,pXXA,1,0,1,PACKAGE="mets")$XXX
 gamma <- matrix(gamma,p,pXXA,byrow=TRUE)
-gamma[is.na(gamma)] <- 0; gamma[gamma==Inf] <- 0
+gamma[is.na(gamma)] <- 0; 
+gamma[!is.finite(gamma)] <- 0
 augment <- c(gamma %*% apply(UA/c(Gcj),2,sum))
 var.Clt.improve <-  gamma %*% t(covXYdN) ###  /(nid^2)
 
@@ -558,7 +576,7 @@ if (length(typesRR)==0) { typesRR <- "none" }
 
 baselinecox <- cumhazR0 <- cumhaz <-  se.cumhaz <- se.R0cumhaz <- NULL
 iidn <- c()
-varbeta <- iid <- fitt <- list(); j <- 0
+varbeta <- iid <- fitt_list <- list(); j <- 0
 for (typeR in typesRR) 
 for (typeC in typesCC) {# {{{
 if (typeR!=typeC) {
@@ -584,10 +602,10 @@ if (typeR!=typeC) {
    else fitts <- fit0
 
    ## only baseline augment with R0 augmentation
-   if (base.augment & typeR=="R0" & (typeC!="dync" | typeC!="C")) { ## {{{
+   if (base.augment & typeR == "R0" & (typeC != "dynC" & typeC != "C")) { ## {{{
       xxx <- fitts$cox.prep
       xx <- crossprod(XR0pi)
-      xxi <- solve(xx)
+      xxi <- pinv(xx)
       XRpit <- XR0pi[xxx$id+1,]
       if (fit0$p>0) rr <- c(exp(xxx$X %*% coef(fitts)+ xxx$offset)*xxx$weights)
       else rr <- c(exp(xxx$offset)*xxx$weights)
@@ -596,23 +614,24 @@ if (typeR!=typeC) {
       S0i2 <- S0i <- rep(0,nrow(xxx$X))
       jumps <- xxx$jumps+1
       S0i[jumps] <- 1/fitts$S0
-      ww <- xxx$caseweights*xxx$weights
-      S0i2[jumps] <- 1/(fitts$S0^2*ww[xxx$jumps+1])
+      ww_base <- xxx$caseweights*xxx$weights
+      S0i2[jumps] <- 1/(fitts$S0^2*ww_base[xxx$jumps+1])
       ###
       U <- matrix(0,nrow(XRE),ncol(XRE))
       U[jumps,] <- XRpit[jumps,]*S0i[jumps]
       NXRE <- apply(U,2,cumsumstrata,xxx$strata,xxx$nstrata)[jumps,]
       XREdLam0 <- apply(XRE*S0i2,2,cumsumstrata,xxx$strata,xxx$nstrata)[jumps,]
       ns <- c(sumstrata(rep(1,nid),xxx$strata[headstrata(xxx$id,nid)],xxx$nstrata))[xxx$strata[jumps,]+1]
-      if (RCT) covBase <- (NXRE-XREdLam0) else covBase <- (NXRE-XREdLam0)
+###      if (RCT) covBase <- (NXRE-XREdLam0) else covBase <- (NXRE-XREdLam0)
+      covBase <- (NXRE-XREdLam0) 
 
       gamR0Base <- (covBase) %*% xxi
       XRs <- apply(XR0pi,2,sum)
       R0baseline.augment <-  c(XRs %*% t(gamR0Base))
       R0baseline.reduction<- apply(covBase*gamR0Base,1,sum)
       ## using augmented estimator of beta 
-      if (fit0$p>0) fitr0 <- robust.phreg(fitts,beta.iid=iid[[j]])
-      else fitr0 <- robust.phreg(fit0)
+      if (fit0$p>0) fitr0 <- robust_phreg(fitts,beta.iid=iid[[j]])
+      else fitr0 <- robust_phreg(fit0)
       cumhazR0 <- cumhaz <- fitts$cumhaz
       cumhazR0[,2] <- cumhaz[,2]-R0baseline.augment
       se.R0cumhaz <- se.cumhaz <- fitr0$robse.cumhaz
@@ -626,22 +645,12 @@ if (typeR!=typeC) {
      iidn <- c(iidn,nnn)
      rownames(coeffitt) <- paste(nnn,var.names,sep=":")
      coefs <- rbind(coefs,coeffitt)
-     if (!is.null(augmentC)) iid[[j]] <- iid[[j]] - AugC.iid%*% fit0$ihessian
+     if (!is.null(augmentC)) iid[[j]] <- iid[[j]] + AugC.iid%*% fit0$ihessian
    }
    } 
 }
 names(iid) <- iidn
 # }}}
-
-namesortme <- function(iid,name.id) { ## {{{
-if (is.matrix(iid))  
-	if (nrow(iid)==length(name.id)) {
-		rownames(iid) <- name.id
-		oid <- order(name.id)
-		iid <- iid[oid,]
-}
-return(iid)
-} ## }}}
 
 ### sort iid after name.id and put as rownames
 if (!is.null(call.id)) {
@@ -736,7 +745,7 @@ c <- exp(z0*betac)*rexp(n)*ce
 status <- (tt<c)
 time <- pmin(tt,c)
 data <- data.frame(time=time,status=status,X=x,X1=x1,Z0=z0,Z1=z1,TR=tr)
-data <- event.split(data,cuts="TR")
+data <- event_split(data,cuts="TR")
 ###data <- EventSplit(data,cuts="TR")
 data <- dtransform(data,status=2,TR==time)
 data <- dtransform(data,Z1=0,start<TR)

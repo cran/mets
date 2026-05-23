@@ -21,10 +21,10 @@ library(mets)
  summary(fitco1)
  
  # Clayton-Oakes
- fitco2 <- survival.twostage(margph,data=diabetes,theta=0.0,
+ fitco2 <- survival_twostage(margph,data=diabetes,theta=0.0,
                   clusters=diabetes$id,var.link=1,model="clayton.oakes")
  summary(fitco2)
- fitco3 <- survival.twostage(margph,data=diabetes,theta=1.0,
+ fitco3 <- survival_twostage(margph,data=diabetes,theta=1.0,
                   clusters=diabetes$id,var.link=0,model="clayton.oakes")
  summary(fitco3)
 
@@ -34,25 +34,25 @@ library(mets)
  fitco<-twostageMLE(marg,data=diabetes,theta=1.0)
  summary(fitco)
 
-  fitcoa <- survival.twostage(marg,data=diabetes,theta=1.0,clusters=diabetes$id,
+  fitcoa <- survival_twostage(marg,data=diabetes,theta=1.0,clusters=diabetes$id,
 		   model="clayton.oakes",var.link=0)
   summary(fitcoa)
 
 ## -----------------------------------------------------------------------------
- d <- simClaytonOakes(200,2,0.5,0,3)
+ d <- sim_ClaytonOakes(200,2,0.5,0,3)
   margph <- phreg(Surv(time,status)~x+cluster(cluster),data=d)
  # Clayton-Oakes, MLE 
  fitco1<-twostageMLE(margph,data=d)
  summary(fitco1)
 
 ## -----------------------------------------------------------------------------
- udp <- piecewise.twostage(c(0,0.5,2),data=d,id="cluster",timevar="time",status="status",model="clayton.oakes",silent=0)
+ udp <- piecewise_twostage(c(0,0.5,2),data=d,id="cluster",timevar="time",status="status",model="clayton.oakes",silent=0)
  summary(udp)
 
 ## -----------------------------------------------------------------------------
- data <- simClaytonOakes.twin.ace(200,2,1,0,3)
+ data <- sim_ClaytonOakes_twin_ace(200,2,1,0,3)
 
- out <- twin.polygen.design(data,id="cluster",zyg="DZ",zygname="zyg",type="ace")
+ out <- twin_polygen_design(data,id="cluster",zyg="DZ",zygname="zyg",type="ace")
  pardes <- out$pardes
  pardes 
 
@@ -64,8 +64,8 @@ library(mets)
  tail(des.rv,2)
 
 ## -----------------------------------------------------------------------------
-### data <- simClaytonOakes.twin.ace(2000,2,1,0,3)
-### out <- twin.polygen.design(data,id="cluster",zyg="DZ",zygname="zyg",type="ace")
+### data <- sim_ClaytonOakes_twin_ace(2000,2,1,0,3)
+### out <- twin_polygen_design(data,id="cluster",zyg="DZ",zygname="zyg",type="ace")
  aa <- phreg(Surv(time,status)~x+cluster(cluster),data=data)
  ts <- twostage(aa,data=data,clusters=data$cluster,
       theta=c(2,1),var.link=0,random.design=out$des.rv,theta.des=out$pardes)
@@ -74,9 +74,9 @@ library(mets)
 ## -----------------------------------------------------------------------------
 run <- 0
 if (run==1) {
- data <- simClaytonOakes.twin.ace(1000000,2,1,0,3)
+ data <- sim_ClaytonOakes_twin_ace(1000000,2,1,0,3)
 
- out <- twin.polygen.design(data,id="cluster",zyg="DZ",zygname="zyg",type="ace")
+ out <- twin_polygen_design(data,id="cluster",zyg="DZ",zygname="zyg",type="ace")
  pardes <- out$pardes
  aa <- phreg(Surv(time,status)~x+cluster(cluster),data=data)
  system.time(
@@ -87,18 +87,18 @@ if (run==1) {
 }
 
 ## -----------------------------------------------------------------------------
-kendall.ClaytonOakes.twin.ace(ts$theta[1],ts$theta[2],K=10000) 
+kendall_ClaytonOakes_twin_ace(ts$theta[1],ts$theta[2],K=10000) 
 
 ## -----------------------------------------------------------------------------
 library(mets)
 set.seed(1000)
-data <- simClaytonOakes.family.ace(200,2,1,0,3)
+data <- sim_ClaytonOakes_family_ace(200,2,1,0,3)
 head(data)
 data$number <- c(1,2,3,4)
 data$child <- 1*(data$number==3)
 
 ## -----------------------------------------------------------------------------
-out <- ace.family.design(data,member="type",id="cluster")
+out <- ace_family_design(data,member="type",id="cluster")
 out$pardes
 head(out$des.rv,4)
 
@@ -113,7 +113,7 @@ summary(ts)
 ## -----------------------------------------------------------------------------
 # now specify fitting via specific pairs 
 # first all pairs 
-mm <- familycluster.index(data$cluster)
+mm <- familycluster_index(data$cluster)
 head(mm$familypairindex,n=12)
 pairs <- matrix(mm$familypairindex,ncol=2,byrow=TRUE)
 head(pairs,n=6)
@@ -140,7 +140,7 @@ head(pair.new)
 # this requires that pair.new refers to id's in dataid (survival, status and so forth)
 # random.design and theta.des are constructed to be the array 3 dims via individual specfication from ace.family.design
 dataid <- dsort(data[ids,],"cluster")
-outid <- ace.family.design(dataid,member="type",id="cluster")
+outid <- ace_family_design(dataid,member="type",id="cluster")
 outid$pardes
 head(outid$des.rv)
 
@@ -198,7 +198,7 @@ kinship  <- rep(0.5,nrow(pair.types))
 kinship[pair.types[,1]=="mother" & pair.types[,2]=="father"] <- 0
 head(kinship,n=10)
 
-out <- make.pairwise.design(pair.new,kinship,type="ace") 
+out <- make_pairwise_design(pair.new,kinship,type="ace") 
 
 ## -----------------------------------------------------------------------------
 tsdid3 <- twostage(pa,data=dataid,clusters=dataid$cluster,
@@ -209,7 +209,7 @@ tsdid2$theta
 tsdid$theta
 
 ## -----------------------------------------------------------------------------
-outae <- make.pairwise.design(pair.new,kinship,type="ae") 
+outae <- make_pairwise_design(pair.new,kinship,type="ae") 
 tsdid4 <- twostage(pa,data=dataid,clusters=dataid$cluster,
    theta=c(2,1)/10,var.link=0,random.design=outae$random.design,
    baseline.iid=0,theta.des=outae$theta.des,pairs=outae$new.pairs,dim.theta=1)
@@ -218,12 +218,12 @@ summary(tsdid4)
 ## -----------------------------------------------------------------------------
 library(mets)
 set.seed(1000)
-data <- simClaytonOakes.family.ace(200,2,1,0,3)
+data <- sim_ClaytonOakes_family_ace(200,2,1,0,3)
 head(data)
 data$number <- c(1,2,3,4)
 data$child <- 1*(data$number==3)
 
-mm <- familycluster.index(data$cluster)
+mm <- familycluster_index(data$cluster)
 head(mm$familypairindex,n=20)
 pairs <- mm$pairs
 dim(pairs)
@@ -254,23 +254,23 @@ summary(tsp)
  
  # Plackett model
  mph <- phreg(Surv(time,status)~treat+cluster(id),data=diabetes)
- fitp <- survival.twostage(mph,data=diabetes,theta=3.0,
+ fitp <- survival_twostage(mph,data=diabetes,theta=3.0,
                 clusters=diabetes$id,var.link=1,model="plackett")
  summary(fitp)
  
  # without covariates but with stratafied 
  marg <- phreg(Surv(time,status)~+strata(treat)+cluster(id),data=diabetes)
- fitpa <- survival.twostage(marg,data=diabetes,theta=1.0,
+ fitpa <- survival_twostage(marg,data=diabetes,theta=1.0,
                  clusters=diabetes$id)
  summary(fitpa)
  
- fitcoa <- survival.twostage(marg,data=diabetes,theta=1.0,clusters=diabetes$id,
+ fitcoa <- survival_twostage(marg,data=diabetes,theta=1.0,clusters=diabetes$id,
                   model="clayton.oakes")
  summary(fitcoa)
 
 ## -----------------------------------------------------------------------------
  mm <- model.matrix(~-1+factor(adult),diabetes)
- fitp <- survival.twostage(mph,data=diabetes,theta=3.0,Nit=40,
+ fitp <- survival_twostage(mph,data=diabetes,theta=3.0,Nit=40,
                 clusters=diabetes$id,var.link=1,model="plackett",
 		theta.des=mm)
  summary(fitp)
@@ -278,8 +278,8 @@ summary(tsp)
 ## -----------------------------------------------------------------------------
  # Piecewise constant cross hazards ratio modelling
 
- d <- subset(simClaytonOakes(1000,2,0.5,0,stoptime=2,left=0),!truncated)
- udp <- piecewise.twostage(c(0,0.5,2),data=d,id="cluster",timevar="time",
+ d <- subset(sim_ClaytonOakes(1000,2,0.5,0,stoptime=2,left=0),!truncated)
+ udp <- piecewise_twostage(c(0,0.5,2),data=d,id="cluster",timevar="time",
                            status="status",model="plackett",silent=0)
  summary(udp)
 

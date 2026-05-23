@@ -11,7 +11,7 @@ library(mets)
  library(mets)
  runb <- 0
  options(warn=-1)
- set.seed(1000) # to control output in simulatins for p-values below.
+ set.seed(1000) # to control output in simulations for p-values below.
 
 n <- 200; k.boot <- 10; 
 

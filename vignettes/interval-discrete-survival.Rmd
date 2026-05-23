@@ -21,7 +21,7 @@ knitr::opts_chunk$set(
 library(mets)
 ```
 
-Discrete Inteval Censored survival times 
+Discrete Interval Censored survival times 
 ========================================
 
 We consider the cumulative odds model for the probability of dying before time t: 
@@ -34,7 +34,7 @@ We consider the cumulative odds model for the probability of dying before time t
 Input are intervals given by $]t_l,t_r]$ where t_r can be infinity
 for right-censored intervals. When the data is discrete,
 in contrast to grouping of continuous data, $]0,1]$ then
-the intervals $]j,j+1]$ will be equvilant to an observation at j+1 (see below example).
+the intervals $]j,j+1]$ will be equivalent to an observation at j+1 (see below example).
 
 Likelihood is maximized:
 \begin{align*}
@@ -45,7 +45,7 @@ This model is also called the cumulative odds model
 \begin{align*}
      P(T \leq t | x)  & =  \frac{ G(t) exp( x^T \beta) }{1 + G(t) exp( x^T \beta) }.
 \end{align*}
-and $\beta$ says something about the OR of probability of being before $t$. 
+and $\beta$ captures the odds ratio for the probability of being before $t$.
 
 The baseline is parametrized as 
 \begin{align*}
@@ -67,7 +67,7 @@ library(mets)
 
 data(ttpd) 
 dtable(ttpd,~entry+time2)
-out <- interval.logitsurv.discrete(Interval(entry,time2)~X1+X2+X3+X4,ttpd)
+out <- interval_logitsurv_discrete(Interval(entry,time2)~X1+X2+X3+X4,ttpd)
 summary(out)
 
 dfactor(ttpd) <- entry.f~entry
@@ -75,18 +75,18 @@ out <- cumoddsreg(entry.f~X1+X2+X3+X4,ttpd)
 summary(out)
 ```
 
-We note that the probability of dying is increased considerably for all covariates. 
+We note that the probability of an event (pregnancy) is considerably higher for all covariates.
 
 Now using this discrete survival model we simulate some data from this model 
 
 ```{r}
-set.seed(1000) # to control output in simulatins for p-values below.
+set.seed(1000) # to control output in simulations for p-values below.
 n <- 200
 Z <- matrix(rbinom(n*4,1,0.5),n,4)
 outsim <- simlogitSurvd(out$coef,Z)
 outsim <- transform(outsim,left=time,right=time+1)
 outsim <- dtransform(outsim,right=Inf,status==0)
-outss <- interval.logitsurv.discrete(Interval(left,right)~+X1+X2+X3+X4,outsim)
+outss <- interval_logitsurv_discrete(Interval(left,right)~+X1+X2+X3+X4,outsim)
 summary(outss)
 
 pred <- predictlogitSurvd(out,se=TRUE)
@@ -94,12 +94,12 @@ plotSurvd(pred,se=TRUE)
 ```
 
 Finally, we look at some data and compare with the icenReg package that can also fit 
-the proportional odds model for continous or discrete data. 
+the proportional odds model for continuous or discrete data.
 We make the data fully interval censored/discrete by
-letting also exact obsevations be only observed to be in an interval.
+letting also exact observations be only observed to be in an interval.
 
 We consider the interval censored survival times for time from onset 
-of diabetes to to diabetic nephronpathy, then modify it to 
+of diabetes to diabetic nephropathy, then modify it to
 observe only that the event times are in certain intervals. 
 
 
@@ -168,14 +168,14 @@ fit <- ic_sp(cbind(Ileft, Iright) ~ gender, data = IRdia, model = "po")
 summary(fit)
 
 ## sometimes NR-algorithm needs modifications of stepsize to run 
-## outss <- interval.logitsurv.discrete(Interval(Ileft,Iright)~+gender,IRdia,control=list(trace=TRUE,stepsize=1.0))
+## outss <- interval_logitsurv_discrete(Interval(Ileft,Iright)~+gender,IRdia,control=list(trace=TRUE,stepsize=1.0))
 }
 
 ```
 
-Also agrees with the cumulative link regression of the ordinal package,
-although the baseline is parametrized differently. In additon the clm is
-describing the probability of surviving rather than the probabibility of 
+This also agrees with the cumulative link regression of the `ordinal` package,
+although the baseline is parametrised differently. Note that `clm` models the
+probability of surviving rather than the probability of
 dying. 
 
 ```{r}

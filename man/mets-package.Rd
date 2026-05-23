@@ -14,15 +14,11 @@ Implementation of various statistical models for multivariate
 event history data. Including multivariate cumulative incidence models,
 and bivariate random effects probit models (Liability models)
 }
-\examples{
-
-## To appear
-
-}
 \seealso{
 Useful links:
 \itemize{
   \item \url{https://kkholst.github.io/mets/}
+  \item \url{https://github.com/kkholst/mets}
   \item Report bugs at \url{https://github.com/kkholst/mets/issues}
 }
 
@@ -32,6 +28,7 @@ Useful links:
 
 Authors:
 \itemize{
+  \item Klaus K. Holst \email{klaus@holst.it}
   \item Thomas Scheike
 }
 

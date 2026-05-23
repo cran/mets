@@ -1,37 +1,57 @@
-##' GOF for Cox PH regression
+##' Goodness-of-Fit for Cox PH Regression (Proportionality)
 ##'
-##' Cumulative score process residuals for Cox PH regression
-##' p-values based on Lin, Wei, Ying resampling.
-##' @param object is phreg object 
-##' @param n.sim number of simulations for score processes
-##' @param silent to show timing estimate will be produced for longer jobs
-##' @param robust to control wether robust dM_i(t) or dN_i  are used for simulations
-##' @param ... Additional arguments to lower level funtions
+##' Performs cumulative score process residual tests for the proportional hazards (PH) 
+##' assumption in Cox regression. The test statistics are based on the cumulative 
+##' score process:
+##' \deqn{ U(t) = \int_0^t (X_i - E(t) ) d \hat M_i(s) }
+##' where \eqn{\hat M_i(s)} are the martingale residuals.
+##' 
+##' P-values are computed using the Lin, Wei, and Ying (1993) resampling method, which 
+##' simulates the asymptotic distribution of the supremum of the score process under 
+##' the null hypothesis of proportional hazards.
+##'
+##' The function supports two types of simulation:
+##' \itemize{
+##'   \item \strong{Standard}: Uses \eqn{dN_i} (counting process increments) for simulation.
+##'   \item \strong{Robust}: Uses \eqn{\hat M_i(t)} (martingale residuals) adjusted for clustering 
+##'     if a \code{cluster()} term is present in the model.
+##' }
+##'
+##' @param object A fitted \code{phreg} object (from \code{mets} or \code{survival}).
+##' @param n.sim Number of simulations for the resampling procedure (default 1000).
+##' @param silent Logical; if TRUE, suppresses timing estimates for long jobs.
+##' @param robust Logical; if TRUE, uses robust martingale-based simulations. 
+##'   If NULL, defaults to TRUE if a cluster term is detected in the model call.
+##' @param ... Additional arguments passed to lower-level functions.
+##' @return An object of class \code{"gof.phreg"} containing:
+##'   \item{jumptimes}{Event times used in the process.}
+##'   \item{supUsim}{Matrix of simulated supremum values for each covariate.}
+##'   \item{res}{Matrix with observed supremum (\code{Sup|U(t)|}) and p-values.}
+##'   \item{supU}{Observed supremum values.}
+##'   \item{pvals}{Vector of p-values for each covariate.}
+##'   \item{score}{Cumulative score process values over time.}
+##'   \item{simUt}{Simulated score processes.}
+##'   \item{type}{Type of test performed ("prop").}
+##'   \item{robust}{Logical flag indicating if robust simulation was used.}
 ##' @author Thomas Scheike and Klaus K. Holst
-##' @export
-##' @aliases gof.phreg 
+##' @references 
+##' Lin, D. Y., Wei, L. J., & Ying, Z. (1993). Checking the Cox model with cumulative sums of martingale-based residuals. Biometrika, 80(3), 557-572.
+##' @seealso \code{\link{gofM_phreg}}, \code{\link{gofZ_phreg}}
 ##' @examples
-##' library(mets)
 ##' data(sTRACE)
 ##' 
-##' m1 <- phreg(Surv(time,status==9)~vf+chf+diabetes,data=sTRACE) 
+##' m1 <- phreg(Surv(time,status==9)~vf+chf+diabetes, data=sTRACE) 
 ##' gg <- gof(m1)
 ##' gg
 ##' par(mfrow=c(1,3))
 ##' plot(gg)
 ##' 
-##' m1 <- phreg(Surv(time,status==9)~strata(vf)+chf+diabetes,data=sTRACE) 
-##' ## to get Martingale ~ dN based simulations
+##' m1 <- phreg(Surv(time,status==9)~strata(vf)+chf+diabetes, data=sTRACE) 
 ##' gg <- gof(m1)
-##' gg
 ##' 
-##' ## to get Martingale robust simulations, specify cluster in  call 
+##' ## Robust simulations with cluster
 ##' sTRACE$id <- 1:500
-##' m1 <- phreg(Surv(time,status==9)~vf+chf+diabetes+cluster(id),data=sTRACE) 
-##' gg <- gof(m1)
-##' gg
-##' 
-##' m1 <- phreg(Surv(time,status==9)~strata(vf)+chf+diabetes+cluster(id),data=sTRACE) 
+##' m1 <- phreg(Surv(time,status==9)~vf+chf+diabetes+cluster(id), data=sTRACE) 
 ##' gg <- gof(m1)
 ##' gg
 ##' @export
@@ -40,8 +60,9 @@ gof.phreg  <- function(object,n.sim=1000,silent=1,robust=NULL,...)
 
 ### test for proportionality 
 p <- length(object$coef)
+if (p==0) stop("Goodness of fit for proportionality, must contain regression effects\n");
 nnames <- names(object$coef)
-ii <- solve(object$hessian)
+ii <- pinv(object$hessian)
 jumptimes <- object$jumptimes
 Pt <- object$hessianttime
 U <-  object$U
@@ -106,63 +127,69 @@ class(out) <- "gof.phreg"
 return(out)
 }# }}}
 
-##' GOF for Cox covariates in  PH regression
+##' Goodness-of-Fit for Cox Covariates (Model Matrix)
 ##'
-##' Cumulative residuals after model matrix for Cox PH regression
-##' p-values based on Lin, Wei, Ying resampling.
+##' Tests the functional form of covariates in a Cox PH model by computing cumulative 
+##' residuals against a user-specified model matrix. This helps detect non-linear effects 
+##' or time-varying coefficients (interaction with time).
 ##'
-##' That is, computes 
-##' \deqn{
-##'  U(t) = \int_0^t M^t d \hat M 
-##' }
-##' and resamples its asymptotic distribution. 
+##' The test statistic is:
+##' \deqn{ U(t) = \int_0^t K^T d \hat M }
+##' where \eqn{K} is the model matrix (e.g., a set of basis functions for a continuous covariate) 
+##' and \eqn{\hat M} are the martingale residuals.
 ##'
-##' This will show if the residuals are consistent with the model. Typically,
-##' M will be a design matrix for the continous covariates that gives for example
-##' the quartiles, and then the plot will show if for the different quartiles of the covariate the risk
-##' prediction is consistent over time  (time x covariate interaction).
+##' P-values are based on the Lin, Wei, and Ying (1993) resampling method. The plot shows 
+##' whether the residuals are consistent with the model across the range of the covariate.
 ##'
-##' @param formula formula for cox regression 
-##' @param data data for model
-##' @param offset offset 
-##' @param weights weights 
-##' @param modelmatrix  matrix for cumulating residuals
-##' @param n.sim number of simulations for score processes
-##' @param silent to keep it absolutely silent, otherwise timing estimate will be prduced for longer jobs.
-##' @param ... Additional arguments to lower level funtions
+##' @param formula Formula for the Cox regression model.
+##' @param data Data frame.
+##' @param offset Offset vector.
+##' @param weights Weights vector.
+##' @param modelmatrix Matrix for cumulating residuals. Typically constructed using 
+##'   \code{cumContr()} or manually (e.g., quartiles of a continuous covariate).
+##' @param n.sim Number of simulations (default 1000).
+##' @param silent Logical; suppresses timing estimates if TRUE.
+##' @param ... Additional arguments passed to \code{phreg}.
+##' @return An object of class \code{"gof.phreg"} containing:
+##'   \item{jumptimes}{Event times.}
+##'   \item{supUsim}{Simulated supremum values.}
+##'   \item{res}{Matrix with observed supremum and p-values for each column of \code{modelmatrix}.}
+##'   \item{score}{Cumulative score process.}
+##'   \item{simUt}{Simulated processes.}
+##'   \item{Utlast, pval.last}{Supremum and p-value for the final time point (covariate direction).}
+##'   \item{type}{Type of test ("modelmatrix").}
 ##' @author Thomas Scheike and Klaus K. Holst
-##' @export
+##' @references 
+##' Lin, D. Y., Wei, L. J., & Ying, Z. (1993). Checking the Cox model with cumulative sums of martingale-based residuals. Biometrika, 80(3), 557-572.
+##' @seealso \code{\link{gof.phreg}}, \code{\link{gofZ_phreg}}, \code{\link{cumContr}}
 ##' @examples
-##' library(mets)
 ##' data(TRACE)
 ##' set.seed(1)
-##' TRACEsam <- blocksample(TRACE,idvar="id",replace=FALSE,100)
-##' dcut(TRACEsam)  <- ~. 
-##' mm <- model.matrix(~-1+factor(wmicat.4),data=TRACEsam)
-##' m1 <- gofM.phreg(Surv(time,status==9)~vf+chf+wmi,data=TRACEsam,modelmatrix=mm)
+##' TRACEsam <- blocksample(TRACE, idvar="id", replace=FALSE, 100)
+##' dcut(TRACEsam) <- ~. 
+##' mm <- model.matrix(~-1+factor(wmicat.4), data=TRACEsam)
+##' m1 <- gofM_phreg(Surv(time,status==9)~vf+chf+wmi, data=TRACEsam, modelmatrix=mm)
 ##' summary(m1)
 ##' if (interactive()) {
 ##' par(mfrow=c(2,2))
 ##' plot(m1)
 ##' }
 ##' 
-##' m1 <- gofM.phreg(Surv(time,status==9)~strata(vf)+chf+wmi,data=TRACEsam,modelmatrix=mm) 
+##' ## Cumulative sums in covariates via design matrix
+##' mm <- mets:::cumContr(TRACEsam$wmi, breaks=10, equi=TRUE)
+##' m1 <- gofM_phreg(Surv(time,status==9)~strata(vf)+chf+wmi, data=TRACEsam,
+##'          modelmatrix=mm, silent=0)
 ##' summary(m1)
-##' 
-##' ## cumulative sums in covariates, via design matrix mm 
-##' mm <- cumContr(TRACEsam$wmi,breaks=10,equi=TRUE)
-##' m1 <- gofM.phreg(Surv(time,status==9)~strata(vf)+chf+wmi,data=TRACEsam,
-##' 		  modelmatrix=mm,silent=0)
-##' summary(m1)
-##' 
 ##' @export
-gofM.phreg  <- function(formula,data,offset=NULL,weights=NULL,modelmatrix=NULL,
+gofM_phreg  <- function(formula,data,offset=NULL,weights=NULL,modelmatrix=NULL,
 			n.sim=1000,silent=1,...)
 {# {{{
 
 if (is.null(modelmatrix)) stop(" must give matrix for cumulating residuals\n"); 
 
 cox1 <- phreg(formula,data,offset=NULL,weights=NULL,Z=modelmatrix,cumhaz=FALSE,...) 
+p <- length(cox1$coef)
+if (p==0) stop("Goodness of fit, must contain regression effects\n");
 
 ## put modelmatrix on data, and take y, strata from design
 datl <- as.data.frame(modelmatrix)
@@ -186,7 +213,7 @@ Ut <- apply(coxM$U,2,cumsum)
 jumptimes <- coxM$jumptimes
 U <- coxM$U
 Ubeta <- cox1$U
-ii <- -solve(cox1$hessian)
+ii <- -pinv(cox1$hessian)
 EE <- .Call("vecMatMat",coxM$E,cox1$E,PACKAGE="mets")$vXZ; 
 Pt <- cox1$ZX - EE
 Pt <- apply(Pt,2,cumsum)
@@ -221,51 +248,50 @@ class(out) <- "gof.phreg"
 return(out)
 }# }}}
 
-##' GOF for Cox covariates in  PH regression
+##' Goodness-of-Fit for Cox Covariates (Linearity)
 ##'
-##' That is, computes 
-##' \deqn{
-##'  U(z,\tau) = \int_0^\tau M(z)^t d \hat M 
-##' }
-##' and resamples its asymptotic distribution. 
+##' Tests the functional form of continuous covariates in a Cox PH model to check for 
+##' linearity. It computes cumulative residuals evaluated at a grid of covariate values \eqn{z}.
+##' 
+##' The test statistic is:
+##' \deqn{ U(z, \tau) = \int_0^\tau K(z)^T d \hat M }
+##' where \eqn{K(z)} is a design matrix based on indicator functions \eqn{I(Z_i \leq z_l)} 
+##' for a grid of points \eqn{z_l}.
 ##'
-##' This will show if the residuals are consistent with the model evaulated in the z covariate. 
-##' M is here chosen based on a grid (z_1, ..., z_m) and the different columns are \eqn{I(Z_i \leq z_l)}.
-##' for \eqn{l=1,...,m}. 
-##' The process in z is resampled to find extreme values.  The time-points of evuluation is by default
-##' 50 points, chosen as 2%,4%,..., percentiles of the covariates.
+##' The p-value is valid but depends on the chosen grid. As the number of break points increases, 
+##' this test converges to the original Lin, Wei, and Ying test for linearity.
 ##'
-##' The p-value is valid but depends on the chosen grid. When the number of break points are high
-##' this will give the orginal test of Lin, Wei and Ying for linearity, that is also computed in 
-##' the timereg package. 
-##'
-##' @param formula formula for cox regression 
-##' @param data data for model
-##' @param vars which variables to test for linearity 
-##' @param offset offset 
-##' @param weights weights 
-##' @param breaks number of breaks for cumulatives in covarirate direction
-##' @param equi equidistant breaks  or not 
-##' @param n.sim number of simulations for score processes
-##' @param silent to keep it absolutely silent, otherwise timing estimate will be prduced for longer jobs.
-##' @param ... Additional arguments to lower level funtions
+##' @param formula Formula for the Cox regression.
+##' @param data Data frame.
+##' @param vars Vector of variable names to test. If NULL, automatically detects continuous 
+##'   covariates with more than 2 levels.
+##' @param offset Offset vector.
+##' @param weights Weights vector.
+##' @param breaks Number of break points for the grid (default 50).
+##' @param equi Logical; if TRUE, uses equidistant breaks; if FALSE, uses quantiles.
+##' @param n.sim Number of simulations (default 1000).
+##' @param silent Logical; suppresses timing estimates.
+##' @param ... Additional arguments passed to \code{gofM_phreg}.
+##' @return An object of class \code{"gof.phreg"} with type "Zmodelmatrix" containing:
+##'   \item{res}{Matrix of p-values for each tested variable.}
+##'   \item{Zres}{List of \code{gof.phreg} objects, one for each variable.}
+##'   \item{type}{Type of test ("Zmodelmatrix").}
 ##' @author Thomas Scheike and Klaus K. Holst
-##' @export
+##' @seealso \code{\link{gofM_phreg}}, \code{\link{cumContr}}
 ##' @examples
-##' library(mets)
 ##' data(TRACE)
 ##' set.seed(1)
-##' TRACEsam <- blocksample(TRACE,idvar="id",replace=FALSE,100)
+##' TRACEsam <- blocksample(TRACE, idvar="id", replace=FALSE, 100)
 ##' 
-##' ## cumulative sums in covariates, via design matrix mm
+##' ## Test linearity of continuous covariates
 ##' \donttest{ ## Reduce Ex.Timings
-##' m1 <- gofZ.phreg(Surv(time,status==9)~strata(vf)+chf+wmi+age,data=TRACEsam)
+##' m1 <- gofZ_phreg(Surv(time,status==9)~strata(vf)+chf+wmi+age, data=TRACEsam)
 ##' summary(m1) 
-##' plot(m1,type="z")
+##' plot(m1, type="z")
 ##' }
 ##' @aliases cumContr 
 ##' @export
-gofZ.phreg  <- function(formula,data,vars=NULL,offset=NULL,weights=NULL,breaks=50,equi=FALSE,
+gofZ_phreg  <- function(formula,data,vars=NULL,offset=NULL,weights=NULL,breaks=50,equi=FALSE,
 			n.sim=1000,silent=1,...)
 {# {{{
 if (is.null(vars)) {
@@ -284,6 +310,7 @@ if (is.null(vars)) {
      }
  }
 
+ if (length(vars)==0) stop("Checking functional form of covariates, must contain regression effects of continous covariates\n")
  gres <- list()
  res <- matrix(0,length(vars),2)
  colnames(res) <- c("Sup_z |U(tau,z)|","pval")
@@ -292,7 +319,7 @@ if (is.null(vars)) {
 i <- 1
 for (vv in vars) {
  modelmatrix <- cumContr(data[,vv],breaks=breaks,equi=equi)
- lres <- gofM.phreg(formula,data,modelmatrix=modelmatrix) 
+ lres <- gofM_phreg(formula,data,modelmatrix=modelmatrix) 
  lres$xaxs <- attr(modelmatrix,"breaks")
 
  res[i,] <- c(lres$Utlast,lres$pval.last)
@@ -309,8 +336,6 @@ class(out) <- c("gof.phreg")
 return(out)
 }# }}}
 
-
-##' @export
 cumContr <- function(data,breaks=4,probs=NULL,equi=TRUE,na.rm=TRUE,unique.breaks=TRUE,...)
  {# {{{
  if (is.vector(data)) {
@@ -358,84 +383,6 @@ cumContr <- function(data,breaks=4,probs=NULL,equi=TRUE,na.rm=TRUE,unique.breaks
         return(gm)
     }
  }# }}}
-
-##' Stratified baseline graphical GOF test for Cox covariates in PH regression
-##'
-##' Looks at stratified baseline in Cox model and plots all baselines versus each
-##' other to see if lines are straight, with 50 resample versions under the 
-##' assumptiosn that the stratified Cox is correct 
-##'
-##' @param x phreg object
-##' @param sim to simulate som variation from cox model to put on graph
-##' @param silent to keep it absolutely silent 
-##' @param lm addd line to plot, regressing the cumulatives on each other  
-##' @param ... Additional arguments to lower level funtions
-##' @author Thomas Scheike and Klaus K. Holst
-##' @export
-##' @examples
-##' data(tTRACE)
-##' 
-##' m1 <- phreg(Surv(time,status==9)~strata(vf)+chf+wmi,data=tTRACE) 
-##' m2 <- phreg(Surv(time,status==9)~vf+strata(chf)+wmi,data=tTRACE) 
-##' par(mfrow=c(2,2))
-##' 
-##' gofG.phreg(m1)
-##' gofG.phreg(m2)
-##' 
-##' @export
-gofG.phreg  <- function(x,sim=0,silent=1,lm=TRUE,...)
-{# {{{
-
-p <- length(x$coef)
-nnames <- names(x$coef)
-strata <- x$strata[x$jumps]
-nstrata <- x$nstrata
-jumptimes <- x$jumptimes
-cumhaz <- x$cumhaz
-
-lstrata <- as.numeric(x$design$strata)-1
-stratn <-  substring(x$strata.name,8,nchar(x$strata.name)-1)
-stratnames <- paste(stratn,lstrata,sep=":")
-
-if (is.null(cumhaz)) stop("Must run phreg with cumhaz=TRUE (default)"); 
-if (nstrata==1) stop("Stratified Cox to look at baselines");
-
-if ((x$no.opt) | is.null(x$coef)) fixbeta<- 1 else fixbeta <- 0
-
-
-for (i in 0:(nstrata-2))
-for (j in (i+1):(nstrata-1)) { 
-      iij <- which(strata %in% c(i,j))
-      ii <- which(strata %in% i)
-      ij <- which(strata %in% j)
-      dijjumps  <- jumptimes[iij] 
-      cumhazi <- predictCumhaz(rbind(0,cumhaz[ii,]),dijjumps)
-      cumhazj <- predictCumhaz(rbind(0,cumhaz[ij,]),dijjumps)
-
-      plot(cumhazj[,2],cumhazi[,2],type="s",lwd=2,xlab=stratnames[j+1],ylab=stratnames[i+1])
-      graphics::title(paste("Stratified baselines for",stratn))
-      if ((fixbeta==0 | sim==0) & lm ) 
-      graphics::legend("topleft",c("Nonparametric","lm"),lty=1,col=1:2)
-###      ab <- lm(cumhazi[,2]~-1+cumhazj[,2])
-      ## TODO: simBandCumHazCox
-      ## if (sim==1 & fixbeta==0) {
-      ##   Pt <- DLambeta.t <- apply(x$E/c(x$S0),2,cumsumstrata,strata,nstrata)
-      ##   II <- -solve(x$hessian)
-      ##   betaiid <- t(II %*% t(x$U))
-      ##   simband <-  .Call("simBandCumHazCox",1/x$S0,Pt,betaiid,50,rep(1,nrow(Pt)),PACKAGE="mets")
-      ##   simU <-simband$simUt
-      ##   for (k in 1:50)
-      ##   {
-	  ##     di <- cpred(cbind(jumptimes[ii],simU[ii,k]),dijjumps)[,2]
-	  ##     dj <- cpred(cbind(jumptimes[ij],simU[ij,k]),dijjumps)[,2]
-	  ##     lines(cumhazj[,2]+dj,cumhazi[,2]+di,type="s",lwd=0.1,col=3)
-      ##   }
-      ## }
-###      lines(cumhazj[,2],cumhazi[,2],type="s",lwd=2,col=1)
-###      if (lm==TRUE) abline(c(0,coef(ab)),col=2,lwd=2)
-}
-
-}# }}}
 
 ##' @export
 plot.gof.phreg <-  function(x,col=3,type=NULL,...)

@@ -141,7 +141,7 @@ score_weibull <- function(p, entry, exit, status,
 ##' @description Fits a Cox-Weibull with cumulative hazard given by \deqn{
 ##'   \Lambda(t) = \lambda \cdot t^s } where \eqn{s} is the shape parameter, and
 ##'   \eqn{\lambda} the rate parameter. We here allow a regression model for
-##'   both parameters \deqn{\lambda := \exp(\beta^\top X)} \deqn{s :=e
+##'   both parameters \deqn{\lambda := \exp(\beta^\top X)} \deqn{s :=
 ##'   \exp(\gamma^\top Z)} as defined by `formula` and `shape.formula`
 ##'   respectively.
 ##' @details The parametrization
@@ -223,7 +223,7 @@ phreg_weibull <- function(formula,
         df = length(p), nobs = n, nall = n,
         class = "logLik"
         )
-    ic <- t(solve(H) %*% t(U)) * n
+    ic <- t(pinv(H) %*% t(U)) * n
     names(p) <- c(
       colnames(X),
       paste0("s:", colnames(Z))

@@ -2,7 +2,7 @@
 % Please edit documentation in R/phreg.R
 \name{iidBaseline}
 \alias{iidBaseline}
-\title{Influence functions or IID decomposition of baseline for recrec/phreg/cifregFG}
+\title{Influence Functions or IID Decomposition of Baseline}
 \usage{
 iidBaseline(
   object,
@@ -15,22 +15,39 @@ iidBaseline(
 )
 }
 \arguments{
-\item{object}{phreg/recreg/cifregFG object}
+\item{object}{Object of class \code{"phreg"}, \code{"recreg"}, or \code{"cifregFG"}.}
 
-\item{time}{for baseline IID}
+\item{time}{Time point for baseline IID (required).}
 
-\item{ft}{function to compute IID of baseline integrated against f(t)}
+\item{ft}{Function to compute IID of baseline integrated against \eqn{f(t)}.}
 
-\item{fixbeta}{to fix the coefficients}
+\item{fixbeta}{Logical; if \code{TRUE}, fixes the coefficients (useful for specific tests).}
 
-\item{beta.iid}{to use these iid of beta}
+\item{beta.iid}{Optional matrix of beta influence functions to use.}
 
-\item{tminus}{to get predictions in t-}
+\item{tminus}{Logical; if \code{TRUE}, computes predictions at \eqn{t-} (strictly before \eqn{t}), useful for IPCW techniques.}
 
-\item{...}{additional arguments to lower level functions}
+\item{...}{Additional arguments passed to lower-level functions.}
+}
+\value{
+An object of class \code{"iidBaseline"} containing:
+\item{time}{Time point.}
+\item{base.iid}{Influence functions for the baseline.}
+\item{beta.iid}{Influence functions for the regression coefficients.}
+\item{cumhaz.time}{Cumulative hazard at the specified time.}
+\item{strata}{Strata indices.}
 }
 \description{
-Influence functions or IID decomposition of baseline for recrec/phreg/cifregFG
+Computes the influence functions for the baseline cumulative hazard (and optionally
+regression coefficients) for \code{phreg}, \code{recreg}, or \code{cifregFG} objects.
+}
+\details{
+The decomposition is based on the formula:
+\deqn{ \sum_i \int_0^t \frac{f(s)}{S_0(s)} dM_{ki}(s) - P(t) \beta_k }
+where \eqn{k} denotes the stratum and \eqn{i} the cluster.
+}
+\seealso{
+\code{\link{phreg}}, \code{\link{recreg}}, \code{\link{cifreg}}
 }
 \author{
 Thomas Scheike

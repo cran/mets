@@ -9,7 +9,7 @@ library(mets)
  library(mets)
  library(timereg)
  set.seed(100)
- data <- simbinClaytonOakes.family.ace(500,2,1,beta=NULL,alpha=NULL)
+ data <- sim_binClaytonOakes_family_ace(500,2,1,beta=NULL,alpha=NULL)
  data$number <- c(1,2,3,4)
  data$child <- 1*(data$number==3)
  head(data)
@@ -20,13 +20,13 @@ library(mets)
 
 ## -----------------------------------------------------------------------------
 # make ace random effects design
-out <- ace.family.design(data,member="type",id="cluster")
+out <- ace_family_design(data,member="type",id="cluster")
 out$pardes
 head(out$des.rv,4)
 
 ## -----------------------------------------------------------------------------
 # fitting ace model for family structure
-ts <- binomial.twostage(margbin,data=data,clusters=data$cluster,
+ts <- binomial_twostage(margbin,data=data,clusters=data$cluster,
 theta=c(2,1),random.design=out$des.rv,theta.des=out$pardes)
 summary(ts)
 # true variance parameters
@@ -35,21 +35,21 @@ c(2,1)
 3
 
 ## -----------------------------------------------------------------------------
-mm <- familycluster.index(data$cluster)
+mm <- familycluster_index(data$cluster)
 head(mm$familypairindex,n=20)
 pairs <- mm$pairs
 dim(pairs)
 head(pairs,12)
 
 ## -----------------------------------------------------------------------------
-tsp <- binomial.twostage(margbin,data=data,clusters=data$cluster,theta=c(2,1),detail=0,
+tsp <- binomial_twostage(margbin,data=data,clusters=data$cluster,theta=c(2,1),detail=0,
         random.design=out$des.rv,theta.des=out$pardes,pairs=pairs)
 summary(tsp)
 
 ## -----------------------------------------------------------------------------
 set.seed(100)
 ssid <- sort(sample(1:nrow(pairs),nrow(pairs)/2))
-tsd <- binomial.twostage(aa,data=data,clusters=data$cluster,
+tsd <- binomial_twostage(aa,data=data,clusters=data$cluster,
                theta=c(2,1),step=1.0,
                random.design=out$des.rv,iid=1,Nit=10,
   	           theta.des=out$pardes,pairs=pairs[ssid,])
@@ -64,13 +64,13 @@ pair.new <- matrix(fast.approx(ids,c(pairs[ssid,])),ncol=2)
 head(pair.new)
 
 dataid <- dsort(data[ids,],"cluster")
-outid <- ace.family.design(dataid,member="type",id="cluster")
+outid <- ace_family_design(dataid,member="type",id="cluster")
 outid$pardes
 head(outid$des.rv)
 
 ## -----------------------------------------------------------------------------
 aa <- glm(ybin~x,data=dataid,family=binomial())
-tsdid <- binomial.twostage(aa,data=dataid,clusters=dataid$cluster,
+tsdid <- binomial_twostage(aa,data=dataid,clusters=dataid$cluster,
          theta=c(2,1),random.design=outid$des.rv,theta.des=outid$pardes,pairs=pair.new)
 summary(tsdid)
 
@@ -96,7 +96,7 @@ theta.des
 head(pairs.new)
 
 ## -----------------------------------------------------------------------------
-tsdid2 <- binomial.twostage(aa,data=dataid,clusters=dataid$cluster, theta=c(2,1),
+tsdid2 <- binomial_twostage(aa,data=dataid,clusters=dataid$cluster, theta=c(2,1),
            random.design=random.des,theta.des=theta.des,pairs=pairs.new,dim.theta=2)
 summary(tsdid2)
 
@@ -105,10 +105,10 @@ kinship  <- rep(0.5,nrow(pair.types))
 kinship[pair.types[,1]=="mother" & pair.types[,2]=="father"] <- 0
 head(kinship,n=10)
 
-out <- make.pairwise.design(pair.new,kinship,type="ace") 
+out <- make_pairwise_design(pair.new,kinship,type="ace") 
 
 ## -----------------------------------------------------------------------------
-tsdid3 <- binomial.twostage(aa,data=dataid,clusters=dataid$cluster,
+tsdid3 <- binomial_twostage(aa,data=dataid,clusters=dataid$cluster,
              theta=c(2,1)/9,random.design=out$random.design,
              theta.des=out$theta.des,pairs=out$new.pairs,dim.theta=2)
 summary(tsdid3)
@@ -116,12 +116,12 @@ summary(tsdid3)
 ## -----------------------------------------------------------------------------
 library(mets)
 set.seed(1000)
-data <- simbinClaytonOakes.family.ace(500,2,1,beta=NULL,alpha=NULL)
+data <- sim_binClaytonOakes_family_ace(500,2,1,beta=NULL,alpha=NULL)
 head(data)
 data$number <- c(1,2,3,4)
 data$child <- 1*(data$number==3)
 
-mm <- familycluster.index(data$cluster)
+mm <- familycluster_index(data$cluster)
 head(mm$familypairindex,n=20)
 pairs <- mm$pairs
 dim(pairs)
@@ -136,7 +136,7 @@ head(pairs,12)
 ## -----------------------------------------------------------------------------
 aa <- glm(ybin~x,data=data,family=binomial())
 
-tsp <- binomial.twostage(aa,data=data, clusters=data$cluster,
+tsp <- binomial_twostage(aa,data=data, clusters=data$cluster,
 		 theta.des=dm,pairs=cbind(pairs,1:nrow(dm)))
 summary(tsp)
 

@@ -13,17 +13,17 @@ library(mets)
 ## -----------------------------------------------------------------------------
  library(mets)
  options(warn=-1)
- set.seed(1000) # to control output in simulatins for p-values below.
+ set.seed(1000) # to control output in simulations for p-values below.
  n <- 1000
  k <- 5
  theta <- 2
- data <- simClaytonOakes(n,k,theta,0.3,3)
+ data <- sim_ClaytonOakes(n,k,theta,0.3,3)
 
 ## -----------------------------------------------------------------------------
    out <- phreg(Surv(time,status)~x+cluster(cluster),data=data)
    summary(out)
    # robust standard errors attached to output
-   rob <- robust.phreg(out)
+   rob <- robust_phreg(out)
 
 ## -----------------------------------------------------------------------------
    # making iid decomposition of regression parameters

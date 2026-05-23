@@ -68,7 +68,7 @@ library(mets)
  summary(fitco1)
 
 ## ----label=survival-pairwise2, eval=fullVignette------------------------------
-# fitco2 <- survival.twostage(margph,data=prt,theta=2.7,clusters=prt$id,var.link=0)
+# fitco2 <- survival_twostage(margph,data=prt,theta=2.7,clusters=prt$id,var.link=0)
 
 ## -----------------------------------------------------------------------------
  summary(fitco2)
@@ -81,23 +81,23 @@ library(mets)
  summary(fitco3)
 
 ## ----label=survival-pairwise4, eval=fullVignette------------------------------
-# fitco4 <- survival.twostage(margph,data=prt,theta=1,clusters=prt$id,var.link=0,theta.des=mm)
+# fitco4 <- survival_twostage(margph,data=prt,theta=1,clusters=prt$id,var.link=0,theta.des=mm)
 
 ## -----------------------------------------------------------------------------
  summary(fitco4)
  round(estimate(coef=fitco4$coef,vcov=fitco4$var.theta)$coefmat[,c(1,3:4)],2)
 
  ## mz kendalls tau
- kendall.ClaytonOakes.twin.ace(fitco4$theta[2],0,K=1000)$mz.kendall
+ kendall_ClaytonOakes_twin_ace(fitco4$theta[2],0,K=1000)$mz.kendall
  ## dz kendalls tau
- kendall.ClaytonOakes.twin.ace(fitco4$theta[1],0,K=1000)$mz.kendall
+ kendall_ClaytonOakes_twin_ace(fitco4$theta[1],0,K=1000)$mz.kendall
 
 ## ----label=survival-polygenic1, eval=fullVignette-----------------------------
 #  ### setting up design for random effects and parameters of random effects
-#  desace <- twin.polygen.design(prt,type="ace")
+#  desace <- twin_polygen_design(prt,type="ace")
 # 
 #  ### ace model
-#  fitace <- survival.twostage(margph,data=prt,theta=1,
+#  fitace <- survival_twostage(margph,data=prt,theta=1,
 #        clusters=prt$id,var.link=0,model="clayton.oakes",
 #        numDeriv=1,random.design=desace$des.rv,theta.des=desace$pardes)
 
@@ -112,14 +112,14 @@ library(mets)
 #  #summary(fitacee)
 # 
 #  ### ae model
-#  #desae <- twin.polygen.design(prt,type="ae")
+#  #desae <- twin_polygen_design(prt,type="ae")
 #  #fitae <- survival.twostage(margph,data=prt,theta=1,
 #  #      clusters=prt$id,var.link=0,model="clayton.oakes",
 #  #      numDeriv=1,random.design=desae$des.rv,theta.des=desae$pardes)
 #  #summary(fitae)
 # 
 #  ### de model
-#  desde <- twin.polygen.design(prt,type="de")
+#  desde <- twin_polygen_design(prt,type="de")
 #  fitde <- survival.twostage(margph,data=prt,theta=1,clusters=prt$id,var.link=0,model="clayton.oakes",
 # numDeriv=1,random.design=desde$des.rv,theta.des=desde$pardes)
 # 

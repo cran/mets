@@ -1,5 +1,5 @@
 
-##' IPTW GLM, Inverse Probaibilty of Treatment Weighted GLM  
+##' IPTW GLM, Inverse Probabibilty of Treatment Weighted GLM  
 ##'
 ##' Fits GLM model with treatment weights \deqn{ w(A)= \sum_a I(A=a)/P(A=a|X) }, computes
 ##' standard errors via influence functions that are returned as the IID argument. 
@@ -91,7 +91,7 @@ if (estpr[1]==1) {
    iidalpha0 <- fitt$iidalpha
 } else {
    ## assumes constant fixed prob over groups
-   pi0 <- rep(pi0,treats$nlev)
+   wPA <- ifelse(treats$ntreatvar==2,pi0[1],1-pi0[1])         
 }
 
 wPA <- c(1/fitt$pA)
@@ -109,7 +109,6 @@ if (check.derivative==1) {
 ###fpar <- glm(treat.model,data,family=binomial)
 ###mm <- as.matrix(model.matrix(treat.model,data))
 ###cpar <- coef(fpar)
-###library(numDeriv)
 ###X <- model.matrix(formula,data)
 ###formulaS <- Event(tt,status)~tcell+platelet+age.f
 ###ff <- function(par) {
@@ -158,11 +157,10 @@ return(glmw)
 predictGLM <- function(object,newdata,id=NULL,fun=NULL,link.conf=TRUE,...) {# {{{
     tt <- terms(object)
     if (missing(newdata) || is.null(newdata)) {
-        mm <- X <- model.matrix(object)
+        m <- X <- model.matrix(object)
         mmDone <- TRUE
         offset <- object$offset
-    }
-    else {
+    } else {
         Terms <- delete.response(tt)
         m <- model.frame(Terms, newdata, xlev = object$xlevels)
         X <- model.matrix(Terms, m, contrasts.arg = object$contrasts)
@@ -212,19 +210,18 @@ return(list(coef=coef,pred=res))
 ##' @aliases predictGLM 
 summaryGLM <- function(object,id=NULL,fun=NULL,...) {# {{{
 
-f <- function(p) { pp <- exp(pp); return(pp); }
+f <- function(p) exp(p)
 
-if (!is.null(id)) coef <- estimate(object,id=id,...) else coef <- estimate(object,...)
-
-if (!is.null(id)) resl <- estimate(object,id=id,...) else resl <- estimate(object,...)
-res <- exp(resl$coefmat[,c(1,3,4)]) 
+est <- if (!is.null(id)) estimate(object, id=id, ...) else estimate(object, ...)
+coef <- est
+res  <- exp(est$coefmat[, c(1, 3, 4)])
 
 if (!is.null(fun))  {
 if (!is.null(id)) resl <- estimate(object,id=id,f=fun,...) else resl <- estimate(object,f=fun,...)
 fout <- resl$coefmat
 } else fout <- NULL
 
-return(list(coef=coef,or=res,fout=NULL))
+return(list(coef=coef,or=res,fout=fout))
 }
 # }}}
 

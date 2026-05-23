@@ -1,105 +1,127 @@
-##' @title Twostage survival model for multivariate survival data
+##' Twostage Survival Model for Multivariate Survival Data
 ##'
-##' @description
 ##' Fits Clayton-Oakes or bivariate Plackett models for bivariate survival data
-##' using marginals that are on Cox form. The dependence can be modelled via
+##' using marginals that are on Cox form. The dependence can be modelled via:
 ##' \enumerate{
-##' \item  Regression design on dependence parameter.
-##' \item  Random effects, additive gamma model.
+##' \item Regression design on dependence parameter.
+##' \item Random effects, additive gamma model.
 ##' }
 ##'
-##' If clusters contain more than two subjects, we use a composite likelihood
-##' based on the pairwise bivariate models, for full MLE see twostageMLE.
+##' If clusters contain more than two subjects, a composite likelihood based on
+##' pairwise bivariate models is used (for full MLE see \code{twostageMLE}).
 ##'
-##' The two-stage model is constructed such that
-##' given the gamma distributed random effects it is assumed that the survival functions
-##' are indpendent, and that the marginal survival functions are on Cox form (or additive form)
-##' \deqn{
-##' P(T > t| x) = S(t|x)= exp( -exp(x^T \beta) A_0(t) )
-##' }
+##' The two-stage model is constructed such that, given gamma distributed random effects,
+##' the survival functions are assumed independent, and the marginal survival functions
+##' are on Cox form:
+##' \deqn{ P(T > t| x) = S(t|x)= \exp( -\exp(x^T \beta) A_0(t) ) }
 ##'
-##' One possibility is to model the variance within clusters via a regression design, and
-##' then one can specify a regression structure for the independent gamma distributed
-##' random effect for each cluster, such that the variance is given by
-##' \deqn{
-##'  \theta = h( z_j^T \alpha)
-##' }
-##' where \eqn{z} is specified by theta.des, and a possible link function var.link=1 will
-##' will use the exponential link \eqn{h(x)=exp(x)}, and var.link=0 the identity link \eqn{h(x)=x}.
+##' One possibility is to model the variance within clusters via a regression design,
+##' specifying a regression structure for the independent gamma distributed random
+##' effect for each cluster, such that the variance is given by:
+##' \deqn{ \theta = h( z_j^T \alpha) }
+##' where \eqn{z} is specified by \code{theta.des}, and a possible link function
+##' \code{var.link=1} will use the exponential link \eqn{h(x)=\exp(x)}, and
+##' \code{var.link=0} the identity link \eqn{h(x)=x}.
+##'
 ##' The reported standard errors are based on the estimated information from the
-##' likelihood assuming that the marginals are known (unlike the twostageMLE and for the
-##' additive gamma model below).
+##' likelihood assuming that the marginals are known (unlike \code{twostageMLE}
+##' and for the additive gamma model below).
 ##'
-##' Can also fit a structured additive gamma random effects model, such
-##' as the ACE, ADE model for survival data.  In this case the
-##' random.design specificies the random effects for each subject within a cluster. This is
-##' a matrix of 1's and 0's with dimension n x d.  With d random effects.
-##' For a cluster with two subjects, we let the random.design rows be
-##'  \eqn{v_1} and \eqn{v_2}.
-##' Such that the random effects for subject
-##' 1 is \deqn{v_1^T (Z_1,...,Z_d)}, for d random effects. Each random effect
-##' has an associated parameter \eqn{(\lambda_1,...,\lambda_d)}.
-##' By construction subjects 1's random effect are Gamma distributed with
-##' mean \eqn{\lambda_j/v_1^T \lambda}
-##' and variance \eqn{\lambda_j/(v_1^T \lambda)^2}. Note that the random effect
-##' \eqn{v_1^T (Z_1,...,Z_d)} has mean 1 and variance \eqn{1/(v_1^T \lambda)}.
-##' It is here asssumed that  \eqn{lamtot=v_1^T \lambda} is fixed within clusters
-##' as it would be for the ACE model below.
+##' Can also fit a structured additive gamma random effects model, such as the
+##' ACE, ADE model for survival data. In this case, the \code{random.design}
+##' specifies the random effects for each subject within a cluster. This is a
+##' matrix of 1's and 0's with dimension \eqn{n \times d} (for \eqn{d} random effects).
 ##'
-##' Based on these parameters the relative contribution (the heritability, h) is
-##' equivalent to  the expected values of the random effects: \eqn{\lambda_j/v_1^T \lambda}
+##' For a cluster with two subjects, the \code{random.design} rows are \eqn{v_1}
+##' and \eqn{v_2}. Such that the random effect for subject 1 is \deqn{v_1^T
+##' (Z_1,...,Z_d)}, for \eqn{d} random effects. Each random effect has an
+##' associated parameter \eqn{(\lambda_1,...,\lambda_d)}. By construction,
+##' subject 1's random effect is Gamma distributed with mean
+##' \eqn{\lambda_j/v_1^T \lambda} and variance \eqn{\lambda_j/(v_1^T
+##' \lambda)^2}. Note that the random effect \eqn{v_1^T (Z_1,...,Z_d)} has mean
+##' 1 and variance \eqn{1/(v_1^T \lambda)}. It is assumed that \eqn{lamtot=v_1^T
+##' \lambda} is fixed within clusters as it would be for the ACE model.
 ##'
-##' The DEFAULT parametrization (var.par=1) uses the variances of the random effecs
-##' \deqn{
-##' \theta_j  = \lambda_j/(v_1^T \lambda)^2
-##' }
-##' For alternative parametrizations one can specify how the parameters relate to \eqn{\lambda_j}
-##' with the argument var.par=0.
+##' Based on these parameters, the relative contribution (the heritability, \eqn{h}) is
+##' equivalent to the expected values of the random effects: \eqn{\lambda_j/v_1^T \lambda}.
 ##'
-##' For both types of models the basic model assumptions are that
-##' given the random effects of the clusters the survival distributions within a cluster
-##' are independent and ' on the form
-##' \deqn{
-##' P(T > t| x,z) = exp( -Z \cdot Laplace^{-1}(lamtot,lamtot,S(t|x)) )
-##' }
-##' with the inverse laplace of the gamma distribution with mean 1 and variance 1/lamtot.
+##' The DEFAULT parametrization (\code{var.par=1}) uses the variances of the random effects:
+##' \deqn{ \theta_j  = \lambda_j/(v_1^T \lambda)^2 }
+##' For alternative parametrizations, specify how the parameters relate to \eqn{\lambda_j}
+##' with the argument \code{var.par=0}.
+##'
+##' For both types of models, the basic model assumptions are that given the
+##' random effects of the clusters, the survival distributions within a cluster
+##' are independent and on the form: \deqn{ P(T > t| x,z) = \exp( -Z \cdot
+##' \text{Laplace}^{-1}(lamtot,lamtot,S(t|x)) ) } with the inverse Laplace of
+##' the gamma distribution with mean 1 and variance \eqn{1/lamtot}.
 ##'
 ##' The parameters \eqn{(\lambda_1,...,\lambda_d)} are related to the parameters of the model
-##' by a regression construction \eqn{pard} (d x k), that links the \eqn{d}
-##' \eqn{\lambda} parameters
-##' with the (k) underlying \eqn{\theta} parameters
-##' \deqn{
-##' \lambda = theta.des  \theta
-##' }
-##' here using theta.des to specify these low-dimension association. Default is a diagonal matrix.
+##' by a regression construction \code{pard} (\eqn{d \times k}), that links the \eqn{d}
+##' \eqn{\lambda} parameters with the \eqn{k} underlying \eqn{\theta} parameters:
+##' \deqn{ \lambda = theta.des \times \theta }
+##' here using \code{theta.des} to specify these low-dimension associations. Default is a diagonal matrix.
 ##' This can be used to make structural assumptions about the variances of the random-effects
 ##' as is needed for the ACE model for example.
 ##'
-##' The case.control option that can be used with the pair specification of the pairwise parts
+##' The \code{case.control} option can be used with the pair specification of the pairwise parts
 ##' of the estimating equations. Here it is assumed that the second subject of each pair is the proband.
 ##'
+##' @param margsurv Marginal model object.
+##' @param data Data frame (must be given).
+##' @param method Scoring method: \code{"nr"} for lava NR optimizer.
+##' @param detail Detail level for output.
+##' @param clusters Cluster variable.
+##' @param silent Debug information level.
+##' @param weights Weights for score equations.
+##' @param theta Starting values for variance components.
+##' @param theta.des Design for dependence parameters; when pairs are given, the indices of the
+##' theta-design for this pair are given in pairs as column 5.
+##' @param var.link Link function for variance: 1 for exponential link.
+##' @param baseline.iid To adjust for baseline estimation, using \code{phreg} function on same data.
+##' @param model Model type: \code{"clayton.oakes"} or \code{"plackett"}.
+##' @param marginal.trunc Marginal left truncation probabilities.
+##' @param marginal.survival Optional vector of marginal survival probabilities.
+##' @param strata Strata for fitting (see examples).
+##' @param se.clusters Clusters for SE calculation with IID.
+##' @param numDeriv To get numDeriv version of second derivative; otherwise uses sum of squared scores for each pair.
+##' @param random.design Random effect design for additive gamma model; when pairs are given, the indices of the
+##' pairs' random.design rows are given as columns 3:4.
+##' @param pairs Matrix with rows of indices (two-columns) for the pairs considered in the pairwise
+##' composite score; useful for case-control sampling when marginal is known.
+##' @param dim.theta Dimension of the theta parameter for pairs situation.
+##' @param numDeriv.method Method for numerical derivative (e.g., \code{"simple"} to speed up things).
+##' @param additive.gamma.sum For \code{two.stage=0}, this is specification of the \code{lamtot} in the models via
+##' a matrix that is multiplied onto the parameters theta (dimensions = number of random effects \eqn{\times} number of theta parameters);
+##' when \code{NULL}, sums all parameters.
+##' @param var.par Is 1 for the default parametrization with the variances of the random effects;
+##' \code{var.par=0} specifies that the \eqn{\lambda_j}'s are used as parameters.
+##' @param no.opt For not optimizing.
+##' @param ... Additional arguments to maximizer NR of lava.
+##'
+##' @return An object of class \code{"mets.twostage"} containing:
+##' \item{theta}{Estimated dependence parameters.}
+##' \item{coef}{Coefficients.}
+##' \item{score}{Score vector.}
+##' \item{hess}{Hessian matrix.}
+##' \item{hessi}{Inverse Hessian matrix.}
+##' \item{var.theta}{Variance of theta parameters.}
+##' \item{robvar.theta}{Robust variance of theta parameters.}
+##' \item{loglike}{Log-likelihood value.}
+##' \item{theta.iid}{Influence functions for theta.}
+##' \item{model}{Model type used.}
+##'
+##' @author Thomas Scheike
 ##' @references
-##'
-##' Twostage estimation of additive gamma frailty models for survival data.
-##' Scheike (2019), work in progress
-##'
-##' Shih and Louis (1995) Inference on the association parameter in copula models for bivariate
-##' survival data, Biometrics, (1995).
-##'
-##' Glidden (2000), A Two-Stage estimator of the dependence
-##' parameter for the Clayton Oakes model, LIDA, (2000).
-##'
-##' Measuring early or late dependence for bivariate twin data
-##' Scheike, Holst, Hjelmborg (2015), LIDA
-##'
-##' Estimating heritability for cause specific mortality based on twins studies
-##' Scheike, Holst, Hjelmborg (2014), LIDA
-##'
-##' Additive Gamma frailty models for competing risks data, Biometrics (2015)
-##' Eriksson and Scheike (2015),
-##'
+##' \itemize{
+##' \item Twostage estimation of additive gamma frailty models for survival data. Scheike (2019), work in progress.
+##' \item Shih and Louis (1995) Inference on the association parameter in copula models for bivariate survival data, \emph{Biometrics}.
+##' \item Glidden (2000), A Two-Stage estimator of the dependence parameter for the Clayton Oakes model, LIDA.
+##' \item Measuring early or late dependence for bivariate twin data. Scheike, Holst, Hjelmborg (2015), LIDA.
+##' \item Estimating heritability for cause specific mortality based on twins studies. Scheike, Holst, Hjelmborg (2014), LIDA.
+##' \item Additive Gamma frailty models for competing risks data. Eriksson and Scheike (2015), \emph{Biometrics}.
+##' }
 ##' @examples
-##' library(mets)
 ##' data(diabetes)
 ##'
 ##' # Marginal Cox model  with treat as covariate
@@ -108,50 +130,49 @@
 ##' fitco1<-twostageMLE(margph,data=diabetes,theta=1.0)
 ##' summary(fitco1)
 ##'
+##' \donttest{ ## Reduce Ex.Timings
 ##' ### Plackett model
 ##' mph <- phreg(Surv(time,status)~treat+cluster(id),data=diabetes)
-##' fitp <- survival.twostage(mph,data=diabetes,theta=3.0,Nit=40,
+##' fitp <- survival_twostage(mph,data=diabetes,theta=3.0,Nit=40,
 ##'                clusters=diabetes$id,var.link=1,model="plackett")
 ##' summary(fitp)
 ##'
 ##' ### Clayton-Oakes
-##' fitco2 <- survival.twostage(mph,data=diabetes,theta=0.0,detail=0,
+##' fitco2 <- survival_twostage(mph,data=diabetes,theta=0.0,detail=0,
 ##'                  clusters=diabetes$id,var.link=1,model="clayton.oakes")
 ##' summary(fitco2)
-##' fitco3 <- survival.twostage(margph,data=diabetes,theta=1.0,detail=0,
-##'                  clusters=diabetes$id,var.link=0,model="clayton.oakes")
+##' fitco3 <- survival_twostage(margph,data=diabetes,theta=1.0,detail=0,
+##'              clusters=diabetes$id,var.link=0,model="clayton.oakes")
 ##' summary(fitco3)
 ##'
 ##' ### without covariates but with stratafied
 ##' marg <- phreg(Surv(time,status)~+strata(treat)+cluster(id),data=diabetes)
-##' fitpa <- survival.twostage(marg,data=diabetes,theta=1.0,
+##' fitpa <- survival_twostage(marg,data=diabetes,theta=1.0,
 ##'                 clusters=diabetes$id,model="clayton.oakes")
 ##' summary(fitpa)
 ##'
-##' fitcoa <- survival.twostage(marg,data=diabetes,theta=1.0,clusters=diabetes$id,
-##'                  model="clayton.oakes")
-##' summary(fitcoa)
 ##'
 ##' ### Piecewise constant cross hazards ratio modelling
 ##' ########################################################
 ##'
-##' d <- subset(simClaytonOakes(2000,2,0.5,0,stoptime=2,left=0),!truncated)
-##' udp <- piecewise.twostage(c(0,0.5,2),data=d,method="optimize",
+##' d <- subset(sim_ClaytonOakes(1000,2,0.5,0,stoptime=2,left=0),!truncated)
+##' udp <- piecewise_twostage(c(0,0.5,2),data=d,method="optimize",
 ##'                           id="cluster",timevar="time",
 ##'                           status="status",model="clayton.oakes",silent=0)
 ##' summary(udp)
+##' }
 ##'
 ##' \donttest{ ## Reduce Ex.Timings
 ##' ### Same model using the strata option, a bit slower
 ##' ########################################################
 ##' ## makes the survival pieces for different areas in the plane
-##' ##ud1=surv.boxarea(c(0,0),c(0.5,0.5),data=d,id="cluster",timevar="time",status="status")
-##' ##ud2=surv.boxarea(c(0,0.5),c(0.5,2),data=d,id="cluster",timevar="time",status="status")
-##' ##ud3=surv.boxarea(c(0.5,0),c(2,0.5),data=d,id="cluster",timevar="time",status="status")
-##' ##ud4=surv.boxarea(c(0.5,0.5),c(2,2),data=d,id="cluster",timevar="time",status="status")
+##' ##ud1=surv_boxarea(c(0,0),c(0.5,0.5),data=d,id="cluster",timevar="time",status="status")
+##' ##ud2=surv_boxarea(c(0,0.5),c(0.5,2),data=d,id="cluster",timevar="time",status="status")
+##' ##ud3=surv_boxarea(c(0.5,0),c(2,0.5),data=d,id="cluster",timevar="time",status="status")
+##' ##ud4=surv_boxarea(c(0.5,0.5),c(2,2),data=d,id="cluster",timevar="time",status="status")
 ##'
 ##' ## everything done in one call
-##' ud <- piecewise.data(c(0,0.5,2),data=d,timevar="time",status="status",id="cluster")
+##' ud <- piecewise_data(c(0,0.5,2),data=d,timevar="time",status="status",id="cluster")
 ##' ud$strata <- factor(ud$strata);
 ##' ud$intstrata <- factor(ud$intstrata)
 ##'
@@ -162,7 +183,7 @@
 ##' marg2 <- timereg::aalen(Surv(boxtime,status)~-1+factor(num):factor(intstrata),
 ##'                data=ud,n.sim=0,robust=0)
 ##' tdes <- model.matrix(~-1+factor(strata),data=ud)
-##' fitp2 <- survival.twostage(marg2,data=ud,se.clusters=ud$cluster,clusters=ud$idstrata,
+##' fitp2 <- survival_twostage(marg2,data=ud,se.clusters=ud$cluster,clusters=ud$idstrata,
 ##'                 model="clayton.oakes",theta.des=tdes,step=0.5)
 ##' summary(fitp2)
 ##'
@@ -170,12 +191,12 @@
 ##' ud$stratas <- ud$strata;
 ##' ud$stratas[ud$strata=="0.5-2,0-0.5"] <- "0-0.5,0.5-2"
 ##' tdes2 <- model.matrix(~-1+factor(stratas),data=ud)
-##' fitp3 <- survival.twostage(marg2,data=ud,clusters=ud$idstrata,se.cluster=ud$cluster,
+##' fitp3 <- survival_twostage(marg2,data=ud,clusters=ud$idstrata,se.cluster=ud$cluster,
 ##'                 model="clayton.oakes",theta.des=tdes2,step=0.5)
 ##' summary(fitp3)
 ##'
 ##' ### same model using strata option, a bit slower
-##' fitp4 <- survival.twostage(marg2,data=ud,clusters=ud$cluster,se.cluster=ud$cluster,
+##' fitp4 <- survival_twostage(marg2,data=ud,clusters=ud$cluster,se.cluster=ud$cluster,
 ##'                 model="clayton.oakes",theta.des=tdes2,step=0.5,strata=ud$strata)
 ##' summary(fitp4)
 ##' }
@@ -183,56 +204,23 @@
 ##' \donttest{ ## Reduce Ex.Timings
 ##' ### structured random effects model additive gamma ACE
 ##' ### simulate structured two-stage additive gamma ACE model
-##' data <- simClaytonOakes.twin.ace(4000,2,1,0,3)
-##' out <- twin.polygen.design(data,id="cluster")
+##' data <- sim_ClaytonOakes_twin_ace(2000,2,1,0,3)
+##' out <- twin_polygen_design(data,id="cluster")
 ##' pardes <- out$pardes
 ##' pardes
 ##' des.rv <- out$des.rv
 ##' head(des.rv)
 ##' aa <- phreg(Surv(time,status)~x+cluster(cluster),data=data,robust=0)
-##' ts <- survival.twostage(aa,data=data,clusters=data$cluster,detail=0,
+##' ts <- survival_twostage(aa,data=data,clusters=data$cluster,detail=0,
 ##' 	       theta=c(2,1),var.link=0,step=0.5,
 ##' 	       random.design=des.rv,theta.des=pardes)
 ##' summary(ts)
 ##' }
-##'
 ##' @keywords survival
 ##' @author Thomas Scheike
-##' @param margsurv Marginal model
-##' @param data data frame
-##' @param method Scoring method "nr", for lava NR optimizer
-##' @param detail Detail
-##' @param clusters Cluster variable
-##' @param silent Debug information
-##' @param weights Weights
-##' @param theta Starting values for variance components
-##' @param theta.des design for dependence parameters, when pairs are given the indeces of the
-##' theta-design for this pair, is given in pairs as column 5
-##' @param var.link Link function for variance:  exp-link.
-##' @param baseline.iid to adjust for baseline estimation, using phreg function on same data.
-##' @param model model
-##' @param marginal.trunc marginal left truncation probabilities
-##' @param marginal.survival optional vector of marginal survival probabilities
-##' @param strata strata for fitting, see example
-##' @param se.clusters for clusters for se calculation with iid
-##' @param numDeriv to get numDeriv version of second derivative, otherwise uses sum of squared scores for each pair
-##' @param random.design random effect design for additive gamma model, when pairs are given the
-##' indeces of the pairs random.design rows are given as columns 3:4
-##' @param pairs matrix with rows of indeces (two-columns) for the pairs considered in the pairwise
-##' composite score, useful for case-control sampling when marginal is known.
-##' @param dim.theta dimension of the theta parameter for pairs situation.
-##' @param numDeriv.method uses simple to speed up things and second derivative not so important.
-##' @param additive.gamma.sum for two.stage=0, this is specification of the lamtot in the models via
-##' a matrix that is multiplied onto the parameters theta (dimensions=(number random effects x number
-##' of theta parameters), when null then sums all parameters.
-##' @param var.par is 1 for the default parametrization with the variances of the random effects,
-##' var.par=0 specifies that the \eqn{\lambda_j}'s are used as parameters.
-##' @param no.opt for not optimizng
-##' @param ... Additional arguments to maximizer NR of lava.
-##' and ascertained sampling
-##' @aliases survival.twostage twostage.aalen twostage.cox.aalen twostage.coxph twostage.phreg randomDes readmargsurv 
-##' @export survival.twostage
-survival.twostage <- function(margsurv,data=parent.frame(),
+##' @aliases survival_twostage twostage_aalen twostage_cox.aalen twostage_coxph twostage_phreg randomDes readmargsurv 
+##' @export survival_twostage
+survival_twostage <- function(margsurv,data=NULL,
     method="nr",detail=0,clusters=NULL,
     silent=1,weights=NULL,theta=NULL,theta.des=NULL,
     var.link=1,baseline.iid=1,model="clayton.oakes",
@@ -250,13 +238,14 @@ else stop("Model must by either clayton.oakes or plackett \n");
 start.time <- NULL; ptrunc <- NULL; psurvmarg <- NULL; status <- NULL; score.iid <- NULL
 fix.baseline <- 0; convergence.bp <- 1;  ### to control if baseline profiler converges
 
+if (is.null(data)) stop("Must give data \n"); 
+
   if ((!is.null(margsurv)) | (!is.null(marginal.survival))) fix.baseline <- 1
   antpers <- nrow(data); RR <-  rep(1,antpers);
 
 
   if (!is.null(margsurv)) {
      rrr <-  readmargsurv(margsurv,data,clusters)
-
      psurvmarg <- rrr$psurvmarg; ptrunc <- rrr$ptrunc; start.time <- rrr$entry;
      time2 <- rrr$exit; status <- rrr$status; clusters <- rrr$clusters
   }
@@ -269,9 +258,11 @@ fix.baseline <- 0; convergence.bp <- 1;  ### to control if baseline profiler con
   if (is.null(strata)==TRUE) strata<- rep(1,antpers);
   if (length(strata)!=antpers) stop("Strata must have length equal to number of data points \n");
 
+  if (is.null(clusters)) stop("Clusters must be specified \n"); 
+
   # cluster set up
   cluster.call <- clusters
-  out.clust <- cluster.index(clusters);
+  out.clust <- cluster_index(clusters);
   clusters <- out.clust$clusters
   maxclust <- out.clust$maxclust
   antclust <- out.clust$cluster.size
@@ -451,7 +442,7 @@ fix.baseline <- 0; convergence.bp <- 1;  ### to control if baseline profiler con
 		     U <- E <- matrix(0,nrow(xx$X),margsurv$p)
 		     E[xx$jumps+1,] <- margsurv$E
 		     U[xx$jumps+1,] <- margsurv$U
-		     invhess <- -solve(margsurv$hessian)
+		     invhess <- -pinv(margsurv$hessian)
 		     S0i <- rep(0,length(xx$strata))
 		     S0i[xx$jumps+1] <- 1/margsurv$S0
 		     cumhaz <- c(cumsumstrata(S0i,xx$strata,xx$nstrata))
@@ -487,7 +478,7 @@ fix.baseline <- 0; convergence.bp <- 1;  ### to control if baseline profiler con
    }
 
   hess <- val$hessian
-  if (!is.na(sum(hess))) hessi <- lava::Inverse(val$hessian) else hessi <- diag(nrow(val$hessian))
+  if (!is.na(sum(hess))) hessi <- pinv(val$hessian) else hessi <- diag(nrow(val$hessian))
 
 # handling output
   loglikeiid <- NULL; robvar.theta <- NULL; likepairs <- NULL; marginal.surv <- psurvmarg; 
@@ -560,9 +551,60 @@ if (dep.model==3 & pair.structure==0) {
 
 } # }}}
 
+##' Survival Twostage Helpers
+##'
+##' Helper functions for the twostage survival dependence models.
+##'
+##' \code{survival.twostage} is an alias for \code{survival_twostage}.
+##'
+##' \code{alpha2kendall} converts the Clayton-Oakes alpha parameter to Kendall's tau.
+##'
+##' \code{alpha2spear} converts the Clayton-Oakes alpha parameter to Spearman's rho.
+##'
+##' \code{piecewise_twostage} fits twostage models on piecewise time intervals.
+##'
+##' \code{piecewise_data} prepares data for piecewise twostage analysis.
+##'
+##' \code{matplot.mets.twostage} produces matplot of twostage baseline estimates.
+##'
+##' @name survival-helpers
+##' @param object a twostage model object (for matplot method).
+##' @param data a data.frame with the survival data.
+##' @param id name of the cluster identifier column.
+##' @param cut1 vector of cut points for the first time axis.
+##' @param cut2 vector of cut points for the second time axis.
+##' @param timevar character name of the time variable.
+##' @param status character name of the status variable.
+##' @param covars optional character vector of covariate names.
+##' @param covars.pairs optional covariates at the pair level.
+##' @param num character name of the within-cluster number variable.
+##' @param method optimization method.
+##' @param Nit maximum number of iterations.
+##' @param detail level of detail in output.
+##' @param silent level of verbosity (1=silent).
+##' @param weights optional weights.
+##' @param control optimization control list.
+##' @param theta initial dependence parameter values.
+##' @param theta.des theta design matrix.
+##' @param var.link if 1, log-link for variance parameters.
+##' @param link if 1, parameters are on log scale (for alpha2kendall/alpha2spear).
+##' @param step step size for optimization.
+##' @param model dependence model: \code{"plackett"} or \code{"clayton.oakes"}.
+##' @param data.return if 1, return data with model fits.
+##' @param x a marginal model object (for \code{survival.twostage}).
+##' @param ... additional arguments.
+##' @author Klaus K. Holst, Thomas Scheike
+##' @aliases survival.twostage alpha2kendall alpha2spear
+##' @aliases piecewise_twostage piecewise_data matplot.mets.twostage
+NULL
+
+##' @rdname survival-helpers
+##' @export 
+survival.twostage <- function(x,...) survival_twostage(x,...)
+
 ##' @export
 randomDes <- function(dep.model,random.design,theta.des,theta,antpers,ags,pairs,var.link,clusterindex,dim.theta)
-{
+{ ## {{{ 
    additive.gamma.sum <- ags
 
   if (!is.null(random.design)) { ### different parameters for Additive random effects 
@@ -626,13 +668,10 @@ randomDes <- function(dep.model,random.design,theta.des,theta,antpers,ags,pairs,
 	 dep.model=dep.model,dim.rv=dim.rv, additive.gamma.sum=additive.gamma.sum,
          theta=theta,ptheta=ptheta,theta.des=theta.des))
 
-}
+} ## }}} 
 
-
-
-##' @export
 readmargsurv <- function(margsurv,data,clusters)
-{
+{ ## {{{ 
 start.time <- 0
 
 if (inherits(margsurv,c("aalen","cox.aalen"))) {
@@ -739,70 +778,70 @@ if (is.null(clusters) &  (!inherits(margsurv,"phreg"))) stop("must give clusters
 return(list(psurvmarg=psurvmarg,ptrunc=ptrunc,entry=start.time,exit=time2,
 	    status=status,clusters=clusters,cum=cum,RR=RR))
 
-} #
+}  ## }}} 
 
-##' @title Twostage survival model fitted by pseudo MLE
+##' Twostage Survival Model Fitted by Pseudo MLE
 ##'
-##' @description
-##' Fits Clayton-Oakes clustered  survival data
-##' using marginals that are on Cox form in the likelihood for the dependence parameter
-##' as in Glidden (2000). The dependence can be modelled via  a
-##' \enumerate{
-##' \item  Regression design on dependence parameter.
-##' }
+##' Fits Clayton-Oakes clustered survival data using marginals that are on Cox form
+##' in the likelihood for the dependence parameter as in Glidden (2000).
 ##'
-##' We allow a regression structure for the indenpendent gamma distributed
-##' random effects  and their variances that may depend on cluster covariates. So
-##' \deqn{
-##'  \theta = h( z_j^T \alpha)
-##' }
-##' where \eqn{z} is specified by theta.des . The link function can be the exp when var.link=1
+##' The dependence can be modelled via a regression structure for the independent
+##' gamma distributed random effects and their variances that may depend on cluster covariates.
+##' So:
+##' \deqn{ \theta = h( z_j^T \alpha) }
+##' where \eqn{z} is specified by \code{theta.des}. The link function can be the exponential
+##' when \code{var.link=1}.
+##'
+##' @param margsurv Marginal model from \code{phreg}.
+##' @param data Data frame.
+##' @param theta Starting values for variance components.
+##' @param theta.des Design for dependence parameters; when pairs are given, this could be a
+##' (pairs) \eqn{\times} (number of parameters) \eqn{\times} (max number random effects) matrix.
+##' @param var.link Link function for variance; if 1 then uses exponential link.
+##' @param method Type of optimizer; default is Newton-Raphson \code{"NR"}.
+##' @param no.opt To not optimize, for example to get score and IID for specific theta.
+##' @param weights Cluster-specific weights, but given with length equivalent to data-set; weights for score equations.
+##' @param se.cluster Specifies how the influence functions are summed before squared when computing the variance.
+##' Note that the id from the marginal model is used to construct MLE, and then these scores can be summed with the \code{se.cluster} argument.
+##' @param ... Arguments to be passed to optimizer.
+##'
+##' @return An object of class \code{"mets.twostage"} containing:
+##' \item{theta}{Estimated dependence parameters.}
+##' \item{coef}{Coefficients.}
+##' \item{var.theta}{Variance of theta parameters.}
+##' \item{robvar.theta}{Robust variance of theta parameters.}
+##' \item{theta.iid}{Influence functions for theta.}
+##' \item{theta.iid.naive}{Naive influence functions for theta.}
+##' \item{loglike}{Log-likelihood value.}
+##'
+##' @author Thomas Scheike
 ##' @references
-##'
-##' Measuring early or late dependence for bivariate twin data
-##' Scheike, Holst, Hjelmborg (2015), LIDA
-##'
-##' Twostage modelling of additive gamma frailty models for survival data.
-##' Scheike and Holst, working paper
-##'
-##' Shih and Louis (1995) Inference on the association parameter in copula models for bivariate
-##' survival data, Biometrics, (1995).
-##'
-##' Glidden (2000), A Two-Stage estimator of the dependence
-##' parameter for the Clayton Oakes model, LIDA, (2000).
-##'
+##' \itemize{
+##' \item Measuring early or late dependence for bivariate twin data. Scheike, Holst, Hjelmborg (2015), LIDA.
+##' \item Twostage modelling of additive gamma frailty models for survival data. Scheike and Holst, working paper.
+##' \item Shih and Louis (1995) Inference on the association parameter in copula models for bivariate survival data, \emph{Biometrics}.
+##' \item Glidden (2000), A Two-Stage estimator of the dependence parameter for the Clayton Oakes model, LIDA.
+##' }
 ##' @examples
 ##' data(diabetes)
-##' dd <- phreg(Surv(time,status==1)~treat+cluster(id),diabetes)
-##' oo <- twostageMLE(dd,data=diabetes)
+##' dd <- phreg(Surv(time, status == 1) ~ treat + cluster(id), diabetes)
+##' oo <- twostageMLE(dd, data = diabetes)
 ##' summary(oo)
 ##'
-##' theta.des <- model.matrix(~-1+factor(adult),diabetes)
-##'
-##' oo <-twostageMLE(dd,data=diabetes,theta.des=theta.des)
+##' theta.des <- model.matrix(~ -1 + factor(adult), diabetes)
+##' oo <- twostageMLE(dd, data = diabetes, theta.des = theta.des)
 ##' summary(oo)
 ##' @keywords survival
 ##' @author Thomas Scheike
-##' @param margsurv Marginal model from phreg
-##' @param data data frame
-##' @param theta Starting values for variance components
-##' @param theta.des design for dependence parameters, when pairs are given this is could be a
-##' (pairs) x (numer of parameters)  x (max number random effects) matrix
-##' @param var.link Link function for variance  if 1 then uses exp link
-##' @param method type of opitmizer, default is Newton-Raphson "NR"
-##' @param no.opt to not optimize, for example to get score and iid for specific theta
-##' @param weights cluster specific weights, but given with length equivalent to data-set, weights for score equations
-##' @param se.cluster specifies how the influence functions are summed before squared when computing the variance. Note that the id from the marginal model is used to construct MLE, and then these scores can be summed with the se.cluster argument. 
-##' @param ... arguments to be passed to  optimizer
 ##' @export
 twostageMLE <-function(margsurv,data=parent.frame(),
 theta=NULL,theta.des=NULL,var.link=0,method="NR",no.opt=FALSE,weights=NULL,se.cluster=NULL,...)
-{
+{ ## {{{ 
  if (!inherits(margsurv,"phreg"))  stop("Must use phreg for this \n");
+ if (is.null(margsurv$call.id))  stop("Must be called with cluster(id) \n");
 
  clusters <- margsurv$cox.prep$id
  n <- nrow(margsurv$cox.prep$X)
-
 
  if (is.null(theta.des)==TRUE) ptheta<-1;
  if (is.null(theta.des)==TRUE) theta.des<-matrix(1,n,ptheta) else theta.des<-as.matrix(theta.des);
@@ -841,7 +880,7 @@ theta=NULL,theta.des=NULL,var.link=0,method="NR",no.opt=FALSE,weights=NULL,se.cl
   if (!is.null(margsurv$coef)) RR <- exp(xx$X %*% margsurv$coef) else RR  <-  rep(1,nn)
   H <- c(cumhazD * RR)
 
-  cc <- cluster.index(xx$id)
+  cc <- cluster_index(xx$id)
   firstid <- cc$firstclustid+1
   if (max(cc$cluster.size)==1) stop("No clusters !, maxclust size=1\n");
 
@@ -921,7 +960,7 @@ with(val, structure(-ploglik,gradient=-gradient,hessian=hessian))
   if (!is.null(colnames(theta.des))) thetanames <- colnames(theta.des) else thetanames <- paste("dependence",1:length(c(theta)),sep="")
   if (length(thetanames)==length(c(theta))) { rownames(theta) <- thetanames; rownames(var.theta) <- colnames(var.theta) <- thetanames; }
 
-  hessianI <- solve(val$hessian)
+  hessianI <- pinv(val$hessian)
   val$theta.iid.naive  <-  val$score.iid %*% hessianI
 
   ### iid due to Marginal model
@@ -956,7 +995,7 @@ with(val, structure(-ploglik,gradient=-gradient,hessian=hessian))
 	  U <- E <- matrix(0,nrow(xx$X),margsurv$p)
 	  E[xx$jumps+1,] <- margsurv$E
 	  U[xx$jumps+1,] <- margsurv$U
-          invhess <- -solve(margsurv$hessian)
+          invhess <- -pinv(margsurv$hessian)
 	  S0i <- rep(0,length(xx$strata))
 	  S0i[xx$jumps+1] <- 1/margsurv$S0
 	  cumhaz <- c(cumsumstrata(S0i,xx$strata,xx$nstrata))
@@ -1027,11 +1066,12 @@ with(val, structure(-ploglik,gradient=-gradient,hessian=hessian))
   attr(val,"twostage") <- "two.stage"
 
   return(val)
-}
+} ## }}}
+
 
 ##' @export
 summary.mets.twostage <- function(object,digits = 3,silent=0,theta.des=NULL,...)
-{ #
+{ ## {{{ 
   if (!(inherits(object,"mets.twostage"))) stop("Must be a Two-Stage object")
 
   var.link<-attr(object,"var.link");
@@ -1131,7 +1171,8 @@ summary.mets.twostage <- function(object,digits = 3,silent=0,theta.des=NULL,...)
 
   class(res) <- "summary.mets.twostage"
   res
-} #
+} ## }}}
+
 
 ##' @export
 coef.mets.twostage <- function(object,var.link=NULL,response="survival",...)
@@ -1222,6 +1263,7 @@ plot.mets.twostage<-function(x,pointwise.ci=1,robust=0,specific.comps=FALSE,
   }
 }  #
 
+##' @rdname survival-helpers
 ##' @export
 matplot.mets.twostage <- function(object,...)
 { #
@@ -1272,8 +1314,11 @@ out=list(St1t2=St1t2,S1=S1,S2=S2,times=times,times2=times2,theta=theta)
 return(out)
 } #
 
-##' @export ascertained.pairs
-ascertained.pairs <-function (pairs,data,cr.models,bin=FALSE)
+##' @rdname twin-design
+##' @param cr.models formula specifying time and status variables.
+##' @param bin logical; if TRUE uses binary (prevalence) ordering rather than time ordering.
+##' @export ascertained_pairs
+ascertained_pairs <-function (pairs,data,cr.models,bin=FALSE)
 {
       timestatus <- all.vars(cr.models)
       ### let first event by second column and only
@@ -1294,6 +1339,7 @@ ascertained.pairs <-function (pairs,data,cr.models,bin=FALSE)
       return(pairs)
 } 
 
+##' @rdname survival-helpers
 ##' @export
 alpha2spear <- function(theta,link=1) { #
    if (link==1) theta <- exp(theta)
@@ -1308,14 +1354,16 @@ if (length(theta)>1) {
 return(out)
 } #
 
+##' @rdname survival-helpers
 ##' @export
 alpha2kendall <- function(theta,link=0) {  #
    if (link==1) theta <- exp(theta)
    return(1/(1+2/theta))
 } #
 
-##' @export piecewise.twostage
-piecewise.twostage <- function(cut1,cut2,data=parent.frame(),timevar="time",status="status",id="id",covars=NULL,covars.pairs=NULL,num=NULL,
+##' @rdname survival-helpers
+##' @export piecewise_twostage
+piecewise_twostage <- function(cut1,cut2,data=parent.frame(),timevar="time",status="status",id="id",covars=NULL,covars.pairs=NULL,num=NULL,
             method="optimize",Nit=100,detail=0,silent=1,weights=NULL,
             control=list(),theta=NULL,theta.des=NULL,var.link=1,
 	    step=0.5,model="plackett",data.return=0)
@@ -1341,7 +1389,7 @@ for (i2 in 2:nc2)
 {
 k <-(i1-2)*(nc2-1)+(i2-1)
 if (silent<=0) cat(paste("Data-set ",k,"out of ",(nc1-1)*(nc2-1)),"\n");
-datalr <- surv.boxarea(c(cut1[i1-1],cut2[i2-1]),c(cut1[i1],cut2[i2]),data,timevar=timevar,
+datalr <- surv_boxarea(c(cut1[i1-1],cut2[i2-1]),c(cut1[i1],cut2[i2]),data,timevar=timevar,
 status=status,id=id,covars=covars,covars.pairs=covars.pairs,num=num,silent=silent)
 if (silent<=-1) print("back in piecewise.twostage");
 if (silent<=-1) print(summary(datalr));
@@ -1358,10 +1406,10 @@ f <- as.formula(with(attributes(datalr),paste("Surv(",time,",",status,")~-1+fact
 else f <- as.formula(with(attributes(datalr),paste("Surv(",time,",",status,")~-1+factor(",num,"):",covars)))
 marg1 <- timereg::aalen(f,data=datalr,n.sim=0,robust=0)
 
-fitlr<-  survival.twostage(marg1,data=datalr,clusters=datalr$tsid,
+fitlr<-  survival_twostage(marg1,data=datalr,clusters=datalr$tsid,
 ,model=model, Nit=Nit,detail=detail,silent=silent,weights=weights,
 theta=theta,theta.des=theta.des,var.link=var.link,step=step)
-###fitlr<-  survival.twostageCC(marg1,data=datalr,clusters=datalr$tsid,model=model,method=method,
+###fitlr<-  survival_twostageCC(marg1,data=datalr,clusters=datalr$tsid,model=model,method=method,
 ###Nit=Nit,detail=detail,silent=silent,weights=weights,
 ###baseline.iid=0,control=control,
 ###theta=theta,theta.des=theta.des,var.link=var.link,step=step)
@@ -1407,8 +1455,9 @@ attr(ud, "Type") <- model
 return(ud);
 } #}}}
 
-##' @export piecewise.data
-piecewise.data <- function(cut1,cut2,data=parent.frame(),timevar="time",status="status",id="id",covars=NULL,covars.pairs=NULL,num=NULL,silent=1)
+##' @rdname survival-helpers
+##' @export piecewise_data
+piecewise_data <- function(cut1,cut2,data=parent.frame(),timevar="time",status="status",id="id",covars=NULL,covars.pairs=NULL,num=NULL,silent=1)
 { #
 ud <- list()
 if (missing(cut2)) cut2 <- cut1;
@@ -1421,7 +1470,7 @@ for (i2 in 2:nc2)
 {
 k <-(i1-2)*(nc2-1)+(i2-1)
 if (silent<=0) cat(paste("Data-set ",k,"out of ",(nc1-1)*(nc2-1)),"\n");
- datalr <- surv.boxarea(c(cut1[i1-1],cut2[i2-1]),c(cut1[i1],cut2[i2]),data,timevar=timevar,
+ datalr <- surv_boxarea(c(cut1[i1-1],cut2[i2-1]),c(cut1[i1],cut2[i2]),data,timevar=timevar,
 			status=status,id=id,covars=covars,covars.pairs=covars.pairs,num=num,silent=silent)
 if (silent<=-1) print(summary(datalr));
 if (silent<=-1) print(head(datalr));
@@ -1482,7 +1531,6 @@ print.summary.pc.twostage <- function(x,var.link=NULL, digits=3,...)
   cat("\n")
 } #
 
-##' @export
 coefmat <- function(est,stderr,digits=3,...) { #
   myest <- round(10^digits*(est))/10^digits;
   myest <- paste(ifelse(myest<0,""," "),myest,sep="")
@@ -1495,7 +1543,7 @@ coefmat <- function(est,stderr,digits=3,...) { #
 
 
 ##' @export
-simSurvFam <- function(n,beta=0.0,theta=1,lam0=0.5,lam1=1,lam2=1,ctime=10,...) { #
+sim_SurvFam <- function(n,beta=0.0,theta=1,lam0=0.5,lam1=1,lam2=1,ctime=10,...) { #
 xm <- rbinom(n,1,0.5); xf <- rbinom(n,1,0.5);
 xb1 <- rbinom(n,1,0.5); xb2 <- rbinom(n,1,0.5);
 ###
@@ -1513,14 +1561,63 @@ data.frame(xm=xm,xf=xf,xb1=xb1,xb2=xb2,timem=tm,timef=tf,timeb1=tb1,timeb2=tb2,s
 	   statusb1=cb1,statusb2=cb2,id=1:n)
 } #
 
-##' @export
-object.defined <- function(object)
-{
-   exists(as.character(substitute(object)))
-}
+###object.defined <- function(object)
+###{
+###   exists(as.character(substitute(object)))
+###}
+
+##' Twin and Family Random-Effects Design
+##'
+##' Functions for constructing random-effects design matrices for twin and
+##' family models. These designs specify the genetic (A), dominance (D),
+##' common environment (C), and unique environment (E) variance components.
+##'
+##' \code{twin_polygen_design} creates a polygenic random-effects design for
+##' twin pairs, distinguishing MZ and DZ twins.
+##'
+##' \code{twin.polygen.design} is an alias for \code{twin_polygen_design}.
+##'
+##' \code{ace_family_design} creates designs for nuclear families (mother,
+##' father, children).
+##'
+##' \code{make_pairwise_design} creates pairwise random-effects designs for
+##' arbitrary kinship structures.
+##'
+##' \code{concordanceTwostage} computes concordance probabilities from a
+##' twostage model.
+##'
+##' \code{concordanceTwinACE} computes concordance from a twin ACE model.
+##'
+##' \code{kendall_ClaytonOakes_twin_ace} and \code{kendall_normal_twin_ace}
+##' compute Kendall's tau for Clayton-Oakes and normal-frailty twin ACE models
+##' respectively.
+##'
+##' \code{ascertained_pairs} identifies ascertained (affected) pairs in
+##' clustered survival data.
+##'
+##' \code{p11_binomial_twostage_RV} computes the joint probability P(T1<=t, T2<=t)
+##' for the additive gamma binary random effects model.
+##'
+##' @name twin-design
+##' @param data a data.frame with twin/family data.
+##' @param id character name of the cluster (pair) identifier column.
+##' @param type model type: \code{"ace"}, \code{"ade"}, \code{"ae"}, \code{"de"},
+##'   \code{"dce"}, or \code{"un"}.
+##' @param ... additional arguments.
+##' @return A list with components:
+##'   \item{pardes}{parameter design matrix linking random effects to variance parameters.}
+##'   \item{des.rv}{random-effects design matrix for subjects.}
+##' @author Klaus K. Holst, Thomas Scheike
+##' @aliases twin_polygen_design twin.polygen.design ace_family_design
+##' @aliases make_pairwise_design ascertained_pairs
+##' @aliases concordanceTwostage concordanceTwinACE
+##' @aliases p11_binomial_twostage_RV p11.binomial.twostage.RV
+##' @aliases kendall_ClaytonOakes_twin_ace kendall.ClaytonOakes.twin.ace
+##' @aliases kendall_normal_twin_ace
+NULL
 
 ##' @export
-twin.polygen.design <-function (data,id="id",zyg="DZ",zygname="zyg",type="ace",tv=NULL,...) { #
+twin_polygen_design <-function (data,id="id",zyg="DZ",zygname="zyg",type="ace",tv=NULL,...) { #
   ### twin case
   id <- data[,id]
   tv <- diff(c(NA,id))
@@ -1588,8 +1685,19 @@ res <- list(pardes=pard,des.rv=des.rv)
 return(res)
 } #
 
+
+##' @rdname twin-design
 ##' @export
-ace.family.design <-function (data,id="id",member="type",mother="mother",father="father",child="child",child1="child",type="ace",...) {
+twin.polygen.design <-function (x,...) twin_polygen_design(x,...) 
+
+##' @rdname twin-design
+##' @param member character name of the family member type column.
+##' @param mother value identifying mothers in the member column.
+##' @param father value identifying fathers in the member column.
+##' @param child value identifying children in the member column.
+##' @param child1 column name distinguishing first child from second.
+##' @export
+ace_family_design <-function (data,id="id",member="type",mother="mother",father="father",child="child",child1="child",type="ace",...) {
 #
   ### standard family case
 ###  nid <- table(data[,id])
@@ -1672,8 +1780,11 @@ res <- list(pardes=pard,des.rv=des.rv)
 return(res)
 } #
 
+##' @rdname twin-design
+##' @param pairs matrix of pair indices (n x 2).
+##' @param kinship vector of kinship coefficients for each pair.
 ##' @export
-make.pairwise.design  <- function(pairs,kinship,type="ace")
+make_pairwise_design  <- function(pairs,kinship,type="ace")
 { #
 ### makes pairwise random effects design for shared and non-shared random effects
 ### kinship gives shared genes for each pair
@@ -1735,59 +1846,6 @@ return(list(new.pairs=new.pairs,theta.des=theta.des,random.design=random.des))
 } #
 
 
-##' Relative risk for additive gamma model
-##'
-##' Computes the relative risk for additive gamma model at time 0
-##'
-##' @references
-##'
-##' Eriksson and Scheike (2015), Additive Gamma frailty models for competing risks data, Biometrics (2015)
-##'
-##' @examples
-##' lam0 <- c(0.5,0.3)
-##' pars <- c(1,1,1,1,0,1)
-##' ## genetic random effects, cause1, cause2 and overall
-##' parg <- pars[c(1,3,5)]
-##' ## environmental random effects, cause1, cause2 and overall
-##' parc <- pars[c(2,4,6)]
-##'
-##' ## simulate competing risks with two causes with hazards 0.5 and 0.3
-##' ## ace for each cause, and overall ace
-##' out <- simCompete.twin.ace(10000,parg,parc,0,2,lam0=lam0,overall=1,all.sum=1)
-##'
-##' ## setting up design for running the model
-##' mm <- familycluster.index(out$cluster)
-##' head(mm$familypairindex,n=10)
-##' pairs <- matrix(mm$familypairindex,ncol=2,byrow=TRUE)
-##' tail(pairs,n=12)
-##' #
-##' kinship <- (out[pairs[,1],"zyg"]=="MZ")+ (out[pairs[,1],"zyg"]=="DZ")*0.5
-##'
-##' # dout <- make.pairwise.design.competing(pairs,kinship,
-##' #          type="ace",compete=length(lam0),overall=1)
-##' # head(dout$ant.rvs)
-##' ## MZ
-##' # dim(dout$theta.des)
-##' # dout$random.design[,,1]
-##' ## DZ
-##' # dout$theta.des[,,nrow(pairs)]
-##' # dout$random.design[,,nrow(pairs)]
-##' #
-##' # thetades <- dout$theta.des[,,1]
-##' # x <- dout$random.design[,,1]
-##' # x
-##' ##EVaddGam(rep(1,6),x[1,],x[3,],thetades,matrix(1,18,6))
-##'
-##' # thetades <- dout$theta.des[,,nrow(out)/2]
-##' # x <- dout$random.design[,,nrow(out)/2]
-##' ##EVaddGam(rep(1,6),x[1,],x[4,],thetades,matrix(1,18,6))
-##' @author Thomas Scheike
-##' @export
-##' @param theta theta
-##' @param x1 x1
-##' @param x2 x2
-##' @param thetades thetades
-##' @param ags ags
 EVaddGam <- function(theta,x1,x2,thetades,ags)
 { #
 	pars <- thetades %*% theta
@@ -1804,15 +1862,14 @@ EVaddGam <- function(theta,x1,x2,thetades,ags)
 	     dN=x1x2vvar/x2mvar)
 } #
 
+##' @export
+twostage.aalen <- function(object,...) survival_twostage(object,...)
 
 ##' @export
-twostage.aalen <- function(object,...) survival.twostage(object,...)
+twostage.cox.aalen <- function(object,...) survival_twostage(object,...)
 
 ##' @export
-twostage.cox.aalen <- function(object,...) survival.twostage(object,...)
+twostage.coxph <- function(object,...) survival_twostage(object,...)
 
 ##' @export
-twostage.coxph <- function(object,...) survival.twostage(object,...)
-
-##' @export
-twostage.phreg <- function(object,...) survival.twostage(object,...)
+twostage.phreg <- function(object,...) survival_twostage(object,...)

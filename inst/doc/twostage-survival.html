@@ -12,7 +12,7 @@
 
 <meta name="author" content="Klaus Holst &amp; Thomas Scheike" />
 
-<meta name="date" content="2026-01-11" />
+<meta name="date" content="2026-05-23" />
 
 <title>Analysis of multivariate survival data</title>
 
@@ -50,9 +50,8 @@ overflow: visible;
 }
 </style>
 <style type="text/css" data-origin="pandoc">
-html { -webkit-text-size-adjust: 100%; }
 pre > code.sourceCode { white-space: pre; position: relative; }
-pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span { line-height: 1.25; }
 pre > code.sourceCode > span:empty { height: 1.2em; }
 .sourceCode { overflow: visible; }
 code.sourceCode > span { color: inherit; text-decoration: inherit; }
@@ -341,29 +340,29 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 
 <h1 class="title toc-ignore">Analysis of multivariate survival data</h1>
 <h4 class="author">Klaus Holst &amp; Thomas Scheike</h4>
-<h4 class="date">2026-01-11</h4>
+<h4 class="date">2026-05-23</h4>
 
 
 
 <div id="overview" class="section level1">
 <h1>Overview</h1>
-<p>When looking at multivariate survival data with the aim of learning
-about the dependence that is present, possibly after correcting for some
-covariates different approaches are available in the mets package</p>
+<p>When analysing multivariate survival data with the aim of learning
+about the dependence present, possibly after adjusting for covariates,
+several approaches are available in the mets package:</p>
 <ul>
 <li>Binary models and adjust for censoring with inverse probabilty of
 censoring weighting
 <ul>
 <li>biprobit model</li>
 </ul></li>
-<li>Bivariate surival models of Clayton-Oakes type
+<li>Bivariate survival models of Clayton-Oakes type
 <ul>
 <li>With regression structure on dependence parameter</li>
 <li>With additive gamma distributed random effects</li>
 <li>Special functionality for polygenic random effects modelling such as
 ACE, ADE ,AE and so forth.</li>
 </ul></li>
-<li>Plackett OR model model
+<li>Plackett OR model
 <ul>
 <li>With regression structure on OR dependence parameter</li>
 </ul></li>
@@ -374,45 +373,43 @@ models with special structure among the parameters of the random
 effects. This is possible for our specification of the random effects
 models.</p>
 <p>To be concrete about the model structure assume that we have paired
-survival data <span class="math inline">\((T_1, \delta_1, T_2,
-\delta_2,  X_1, X_2)\)</span> where the censored survival responses are
-<span class="math inline">\((T_1, \delta_1, T_2, \delta_2)\)</span> and
-the covariates are <span class="math inline">\((X_1, X_2)\)</span>.</p>
-<p>The basic models assumes that each subject has a marginal on Cox-form
+survival data <span class="math inline">\((T_1, \delta_1, T_2, \delta_2,
+X_1, X_2)\)</span> where the censored survival responses are <span class="math inline">\((T_1, \delta_1, T_2, \delta_2)\)</span> and the
+covariates are <span class="math inline">\((X_1, X_2)\)</span>.</p>
+<p>The basic model assumes that each subject has a marginal on Cox form
 <span class="math display">\[
 \lambda_{s(k,i)}(t) \exp( X_{ki}^T \beta)
 \]</span> where <span class="math inline">\(s(k,i)\)</span> is a strata
 variable.</p>
-<p>The constructed likelihood is a composite likehood based on</p>
+<p>The constructed likelihood is a composite likelihood based on</p>
 <ul>
 <li><p>all pairs within each cluster (when the pairs argument is not
 used)</p></li>
 <li><p>the specified pairs when the pairs argument is used.</p></li>
 </ul>
-<p>In addition to the clusters specified for the construction of the
-composite likelihood these can be added further summed using the
-se.clusters argument that sums the influence functions over the
-se.clusters. When se.clusters are not specified it is the same as the
-cluster argument.</p>
-<p>When the clusters of the dependence parametaters are the same as
-those of the marginal model and the phreg function is used then the
+<p>In addition to the clusters specified for constructing the composite
+likelihood, these can be further summed using the
+<code>se.clusters</code> argument, which sums the influence functions
+over the <code>se.clusters</code>. When <code>se.clusters</code> is not
+specified it defaults to the <code>cluster</code> argument.</p>
+<p>When the clusters of the dependence parameters are the same as those
+of the marginal model and the <code>phreg</code> function is used, the
 standard errors are corrected for the uncertainty from the marginal
-models, otherwise the returned standard errors are computed as if the
+models; otherwise the returned standard errors are computed as if the
 marginals are known.</p>
 </div>
 <div id="gamma-distributed-frailties" class="section level1">
 <h1>Gamma distributed frailties</h1>
-<p>The focus of this vignette is describe how to work on bivariate
-survival data using the addtive gamma-random effects models. We present
-two different ways of specifying different dependence structures.</p>
+<p>The focus of this vignette is to describe how to work with bivariate
+survival data using additive gamma random effects models. We present two
+different ways of specifying different dependence structures.</p>
 <ul>
 <li><p>Univariate models with a single random effect for each cluster
 and with a regression design on the variance.</p></li>
 <li><p>Multivariate models with multiple random effects for each
 cluster.</p></li>
 </ul>
-<p>The univariate models are then given a given cluster random effects
-<span class="math inline">\(Z_k\)</span> with parameter <span class="math inline">\(\theta\)</span> the joint survival function is
+<p>The univariate models are given a cluster random effect <span class="math inline">\(Z_k\)</span> with parameter <span class="math inline">\(\theta\)</span> the joint survival function is
 given by the Clayton copula and on the form <span class="math display">\[
   \psi(\theta, \psi^{-1}(\theta,S_1(t,X_{k1}) ) + \psi^{-1}(\theta,
 S_1(t,X_{k1}) )
@@ -440,15 +437,16 @@ the gamma distribution with mean 1 and variance <span class="math inline">\(1/\n
 </div>
 <div id="additive-gamma-frailties" class="section level1">
 <h1>Additive Gamma frailties</h1>
-<p>For the multivariate models we are given a multivarite random effect
-each cluster <span class="math inline">\(Z=(Z_1,...,Z_d)\)</span> with d
-random effects. The total random effect for each subject <span class="math inline">\(j\)</span> in a cluster is then specified using a
-regression design on these random effects, with a regression vector
-<span class="math inline">\(V_j\)</span> such that the total random
-effect is <span class="math inline">\(V_j^T (Z_1,...,Z_d)\)</span>. The
-elements of <span class="math inline">\(V_J\)</span> are 1/0. The random
-effects <span class="math inline">\((Z_1,...,Z_d)\)</span> has
-associated parameters <span class="math inline">\((\lambda_1,...,\lambda_d)\)</span> and <span class="math inline">\(Z_j\)</span> is Gamma distributed with</p>
+<p>For the multivariate models we are given a multivariate random effect
+for each cluster, <span class="math inline">\(Z=(Z_1,...,Z_d)\)</span>
+with <span class="math inline">\(d\)</span> random effects. The total
+random effect for each subject <span class="math inline">\(j\)</span> in
+a cluster is specified using a regression design on these random
+effects, with a regression vector <span class="math inline">\(V_j\)</span> such that the total random effect is
+<span class="math inline">\(V_j^T (Z_1,...,Z_d)\)</span>. The elements
+of <span class="math inline">\(V_j\)</span> are 1/0. The random effects
+<span class="math inline">\((Z_1,...,Z_d)\)</span> have associated
+parameters <span class="math inline">\((\lambda_1,...,\lambda_d)\)</span> and <span class="math inline">\(Z_j\)</span> is Gamma distributed with</p>
 <ul>
 <li><p>mean <span class="math inline">\(\lambda_j/V_1^T
 \lambda\)</span></p></li>
@@ -463,7 +461,7 @@ this is that the total random effect for each subject within a cluster,
 <span class="math inline">\(V_j^T (Z_1,...,Z_d)\)</span>, is gamma
 distributed with variance <span class="math inline">\(1/\nu\)</span>.</p>
 <p>The DEFAULT parametrization (var.par=1) uses the variances of the
-random effecs <span class="math display">\[\begin{align*}
+random effects <span class="math display">\[\begin{align*}
 \theta_j  = \lambda_j/\nu^2
 \end{align*}\]</span> For alternative parametrizations one can specify
 that the parameters are <span class="math inline">\(\theta_j=\lambda_j\)</span> with the argument
@@ -475,7 +473,7 @@ the parameters of the model by a regression construction <span class="math inlin
 assumptions about the variances of the random-effects as is needed for
 the ACE model for example. In the software $ M $ is called theta.des</p>
 <p>Assume that the marginal survival distribution for subject <span class="math inline">\(i\)</span> within cluster <span class="math inline">\(k\)</span> is given by <span class="math inline">\(S_{X_{k,i}}(t)\)</span> given covariates <span class="math inline">\(X_{k,i}\)</span>.</p>
-<p>Now given the random effects of the cluster <span class="math inline">\(Z_k\)</span> and the covariates<span class="math inline">\(X_{k,i}\)</span> <span class="math inline">\(i=1,\dots,n_k\)</span> we assume that subjects
+<p>Now given the random effects of the cluster <span class="math inline">\(Z_k\)</span> and the covariates <span class="math inline">\(X_{k,i}\)</span> <span class="math inline">\(i=1,\dots,n_k\)</span> we assume that subjects
 within the cluster are independent with survival distributions <span class="math display">\[\begin{align*}
   \exp(-  ( V_{k,i} Z_k)  \Psi^{-1} (\nu,S_{X_{k,i}}(t)) ).
 \end{align*}\]</span></p>
@@ -497,15 +495,15 @@ argument, respectively.</p>
 \end{align}\]</span> In the case of considering just pairs, we write
 this function as <span class="math inline">\(C(S_{k,i}(t),S_{k,j}(t))\)</span>.</p>
 <p>In addition to survival times from this model, we assume that we
-independent right censoring present <span class="math inline">\(U_{k,i}\)</span> such that the given <span class="math inline">\(V_k\)</span> and the covariates<span class="math inline">\(X_{k,i}\)</span> <span class="math inline">\(i=1,\dots,n_k\)</span> <span class="math inline">\((U_{k,1},\dots,U_{k,n_k})\)</span> of <span class="math inline">\((T_{k,1},\dots,T_{k,n_k})\)</span>, and the
+independent right censoring present <span class="math inline">\(U_{k,i}\)</span> such that the given <span class="math inline">\(V_k\)</span> and the covariates <span class="math inline">\(X_{k,i}\)</span> <span class="math inline">\(i=1,\dots,n_k\)</span> <span class="math inline">\((U_{k,1},\dots,U_{k,n_k})\)</span> of <span class="math inline">\((T_{k,1},\dots,T_{k,n_k})\)</span>, and the
 conditional censoring distribution do not depend on <span class="math inline">\(V_k\)</span>.</p>
-<p>One consequence of the model strucure is that the Kendall’s can be
+<p>One consequence of the model structure is that Kendall’s tau can be
 computed for two-subjects <span class="math inline">\((i,j)\)</span>
 across two clusters <code>1&#39;&#39; and</code>2’’ as <span class="math display">\[\begin{align}
 E( \frac{( V_{1i} Z_1-  V_{1j}Z_2)( V_{2i}Z_1 -  V_{2j}Z_2 )}{(
 V_{1i}Z_1 + V_{2i}Z_2 ) ( V_{1j}Z_1 + V_{2j}Z_2 )} )
-\end{align}\]</span> under the assumption that that we compare pairs
-with equivalent marginals, <span class="math inline">\(S_{X_{1,i}}(t)=
+\end{align}\]</span> under the assumption that we compare pairs with
+equivalent marginals, <span class="math inline">\(S_{X_{1,i}}(t)=
 S_{X_{2,i}}(t)\)</span> and <span class="math inline">\(S_{X_{1,j}}(t)=
 S_{X_{2,j}}(t)\)</span>, and that <span class="math inline">\(S_{X_{1,i}}(\infty)=
 S_{X_{1,j}}(\infty)=0\)</span>. Here we also use that <span class="math inline">\(\eta\)</span> is the same across clusters. The
@@ -516,12 +514,12 @@ have the same interpretation in terms of Kendall’s tau.</p>
 <div id="univariate-gamma-clayton-oakes-model-twostage-models" class="section level1">
 <h1>Univariate gamma (clayton-oakes) model twostage models</h1>
 <p>We start by fitting simple Clayton-Oakes models for the data, that is
-with an overall random effect that is Gamma distrubuted with variance
+with an overall random effect that is Gamma distributed with variance
 <span class="math inline">\(\theta\)</span>. We can fit the model by a
 pseudo-MLE (twostageMLE) and a pairwise composite likelihood approach
 (twostage).</p>
-<p>The pseudo-liklihood and the composite pairwise likelhood should give
-the same for this model since we have paired data. In addition the
+<p>The pseudo-likelihood and the composite pairwise likelihood should
+give the same for this model since we have paired data. In addition the
 log-parametrization is illustrated with the var.link=1 option. In
 addition it is specified that we want a “clayton.oakes” model. We note
 that the standard errors differs because the twostage does not include
@@ -549,7 +547,7 @@ so here it is better to use the twostageMLE.</p>
 <span id="cb1-20"><a href="#cb1-20" tabindex="-1"></a><span class="co">#&gt; [1] &quot;summary.mets.twostage&quot;</span></span>
 <span id="cb1-21"><a href="#cb1-21" tabindex="-1"></a> </span>
 <span id="cb1-22"><a href="#cb1-22" tabindex="-1"></a> <span class="co"># Clayton-Oakes</span></span>
-<span id="cb1-23"><a href="#cb1-23" tabindex="-1"></a> fitco2 <span class="ot">&lt;-</span> <span class="fu">survival.twostage</span>(margph,<span class="at">data=</span>diabetes,<span class="at">theta=</span><span class="fl">0.0</span>,</span>
+<span id="cb1-23"><a href="#cb1-23" tabindex="-1"></a> fitco2 <span class="ot">&lt;-</span> <span class="fu">survival_twostage</span>(margph,<span class="at">data=</span>diabetes,<span class="at">theta=</span><span class="fl">0.0</span>,</span>
 <span id="cb1-24"><a href="#cb1-24" tabindex="-1"></a>                  <span class="at">clusters=</span>diabetes<span class="sc">$</span>id,<span class="at">var.link=</span><span class="dv">1</span>,<span class="at">model=</span><span class="st">&quot;clayton.oakes&quot;</span>)</span>
 <span id="cb1-25"><a href="#cb1-25" tabindex="-1"></a> <span class="fu">summary</span>(fitco2)</span>
 <span id="cb1-26"><a href="#cb1-26" tabindex="-1"></a><span class="co">#&gt; Dependence parameter for Clayton-Oakes model</span></span>
@@ -568,7 +566,7 @@ so here it is better to use the twostageMLE.</p>
 <span id="cb1-39"><a href="#cb1-39" tabindex="-1"></a><span class="co">#&gt; </span></span>
 <span id="cb1-40"><a href="#cb1-40" tabindex="-1"></a><span class="co">#&gt; attr(,&quot;class&quot;)</span></span>
 <span id="cb1-41"><a href="#cb1-41" tabindex="-1"></a><span class="co">#&gt; [1] &quot;summary.mets.twostage&quot;</span></span>
-<span id="cb1-42"><a href="#cb1-42" tabindex="-1"></a> fitco3 <span class="ot">&lt;-</span> <span class="fu">survival.twostage</span>(margph,<span class="at">data=</span>diabetes,<span class="at">theta=</span><span class="fl">1.0</span>,</span>
+<span id="cb1-42"><a href="#cb1-42" tabindex="-1"></a> fitco3 <span class="ot">&lt;-</span> <span class="fu">survival_twostage</span>(margph,<span class="at">data=</span>diabetes,<span class="at">theta=</span><span class="fl">1.0</span>,</span>
 <span id="cb1-43"><a href="#cb1-43" tabindex="-1"></a>                  <span class="at">clusters=</span>diabetes<span class="sc">$</span>id,<span class="at">var.link=</span><span class="dv">0</span>,<span class="at">model=</span><span class="st">&quot;clayton.oakes&quot;</span>)</span>
 <span id="cb1-44"><a href="#cb1-44" tabindex="-1"></a> <span class="fu">summary</span>(fitco3)</span>
 <span id="cb1-45"><a href="#cb1-45" tabindex="-1"></a><span class="co">#&gt; Dependence parameter for Clayton-Oakes model</span></span>
@@ -583,7 +581,7 @@ so here it is better to use the twostageMLE.</p>
 <span id="cb1-54"><a href="#cb1-54" tabindex="-1"></a><span class="co">#&gt; attr(,&quot;class&quot;)</span></span>
 <span id="cb1-55"><a href="#cb1-55" tabindex="-1"></a><span class="co">#&gt; [1] &quot;summary.mets.twostage&quot;</span></span></code></pre></div>
 <p>Note, the standard errors are slightly different when comparing
-fitco1 with fitco3 since the survival.twostage uses numerical
+fitco1 with fitco3 since the survival_twostage uses numerical
 derivatives for the hessian and the derivative in the direction of the
 marginal model.</p>
 <p>The marginal models can be either structured Cox model or as here
@@ -605,7 +603,7 @@ those before.</p>
 <span id="cb2-14"><a href="#cb2-14" tabindex="-1"></a><span class="co">#&gt; attr(,&quot;class&quot;)</span></span>
 <span id="cb2-15"><a href="#cb2-15" tabindex="-1"></a><span class="co">#&gt; [1] &quot;summary.mets.twostage&quot;</span></span>
 <span id="cb2-16"><a href="#cb2-16" tabindex="-1"></a></span>
-<span id="cb2-17"><a href="#cb2-17" tabindex="-1"></a>  fitcoa <span class="ot">&lt;-</span> <span class="fu">survival.twostage</span>(marg,<span class="at">data=</span>diabetes,<span class="at">theta=</span><span class="fl">1.0</span>,<span class="at">clusters=</span>diabetes<span class="sc">$</span>id,</span>
+<span id="cb2-17"><a href="#cb2-17" tabindex="-1"></a>  fitcoa <span class="ot">&lt;-</span> <span class="fu">survival_twostage</span>(marg,<span class="at">data=</span>diabetes,<span class="at">theta=</span><span class="fl">1.0</span>,<span class="at">clusters=</span>diabetes<span class="sc">$</span>id,</span>
 <span id="cb2-18"><a href="#cb2-18" tabindex="-1"></a>           <span class="at">model=</span><span class="st">&quot;clayton.oakes&quot;</span>,<span class="at">var.link=</span><span class="dv">0</span>)</span>
 <span id="cb2-19"><a href="#cb2-19" tabindex="-1"></a>  <span class="fu">summary</span>(fitcoa)</span>
 <span id="cb2-20"><a href="#cb2-20" tabindex="-1"></a><span class="co">#&gt; Dependence parameter for Clayton-Oakes model</span></span>
@@ -634,23 +632,24 @@ increase our risk assessment on the hazard scale with the constant <span class="
 also has the nice property that Kendall’s tau is linked directly to the
 dependence parameter <span class="math inline">\(\theta\)</span> and is
 <span class="math inline">\(1/(1+2/\theta)\)</span>.</p>
-<p>A very useful extension of the model the constant cross-hazard ratio
-(CHR) model is the piecewise constant cross-hazard ratio (CHR) for
-bivariate survival data , and this model was extended to competing risks
-in .</p>
+<p>A very useful extension of the constant cross-hazard ratio (CHR)
+model is the piecewise constant cross-hazard ratio (PCHR) model for
+bivariate survival data (Nan et al., 2006), extended to competing risks
+by Shih and Lu (2010).</p>
 <p>In the survival setting we let the CHR <span class="math display">\[\begin{align}
   \eta(t_1,t_2) &amp; = \sum \eta_{i,j} I(t_1 \in I_i, t_2 \in I_j)
 \end{align}\]</span></p>
-<p>The model lets the CHR by constant in different part of the plane.
-This can be thought of also as having a separate Clayton-Oakes model for
-each of the regions specified in the plane here by the cut-points <span class="math inline">\(c(0,0.5,2)\)</span> thus defining 9 regions.</p>
-<p>This provides a constructive goodness of fit test for the whether the
-Clayton-Oakes model is valid. Indeed if valid the parameter should be
-the same in all regions.</p>
+<p>The model allows the CHR to be constant in different regions of the
+plane, specified here by the cut-points <span class="math inline">\(c(0,0.5,2)\)</span> thus defining 9 regions. This
+can also be thought of as fitting a separate Clayton-Oakes model for
+each region.</p>
+<p>This provides a constructive goodness-of-fit test for whether the
+Clayton-Oakes model is valid: if valid, the parameter should be the same
+across all regions.</p>
 <p>First we generate some data from the Clayton-Oakes model with
 variance <span class="math inline">\(0.5\)</span> and 2000 pairs. And
 fit the related model.</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a> d <span class="ot">&lt;-</span> <span class="fu">simClaytonOakes</span>(<span class="dv">200</span>,<span class="dv">2</span>,<span class="fl">0.5</span>,<span class="dv">0</span>,<span class="dv">3</span>)</span>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a> d <span class="ot">&lt;-</span> <span class="fu">sim_ClaytonOakes</span>(<span class="dv">200</span>,<span class="dv">2</span>,<span class="fl">0.5</span>,<span class="dv">0</span>,<span class="dv">3</span>)</span>
 <span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a>  margph <span class="ot">&lt;-</span> <span class="fu">phreg</span>(<span class="fu">Surv</span>(time,status)<span class="sc">~</span>x<span class="sc">+</span><span class="fu">cluster</span>(cluster),<span class="at">data=</span>d)</span>
 <span id="cb3-3"><a href="#cb3-3" tabindex="-1"></a> <span class="co"># Clayton-Oakes, MLE </span></span>
 <span id="cb3-4"><a href="#cb3-4" tabindex="-1"></a> fitco1<span class="ot">&lt;-</span><span class="fu">twostageMLE</span>(margph,<span class="at">data=</span>d)</span>
@@ -670,7 +669,7 @@ fit the related model.</p>
 fit a separate model for each region.<br />
 We see that the parameter is indeed rather constant over the 9 regions.
 A formal test can be constructed.</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a> udp <span class="ot">&lt;-</span> <span class="fu">piecewise.twostage</span>(<span class="fu">c</span>(<span class="dv">0</span>,<span class="fl">0.5</span>,<span class="dv">2</span>),<span class="at">data=</span>d,<span class="at">id=</span><span class="st">&quot;cluster&quot;</span>,<span class="at">timevar=</span><span class="st">&quot;time&quot;</span>,<span class="at">status=</span><span class="st">&quot;status&quot;</span>,<span class="at">model=</span><span class="st">&quot;clayton.oakes&quot;</span>,<span class="at">silent=</span><span class="dv">0</span>)</span>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a> udp <span class="ot">&lt;-</span> <span class="fu">piecewise_twostage</span>(<span class="fu">c</span>(<span class="dv">0</span>,<span class="fl">0.5</span>,<span class="dv">2</span>),<span class="at">data=</span>d,<span class="at">id=</span><span class="st">&quot;cluster&quot;</span>,<span class="at">timevar=</span><span class="st">&quot;time&quot;</span>,<span class="at">status=</span><span class="st">&quot;status&quot;</span>,<span class="at">model=</span><span class="st">&quot;clayton.oakes&quot;</span>,<span class="at">silent=</span><span class="dv">0</span>)</span>
 <span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a><span class="co">#&gt; Data-set  1 out of  4</span></span>
 <span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a><span class="co">#&gt;   Number of joint events: 55 of  200</span></span>
 <span id="cb4-4"><a href="#cb4-4" tabindex="-1"></a><span class="co">#&gt; Data-set  2 out of  4</span></span>
@@ -708,9 +707,9 @@ effects have parameters <span class="math inline">\(0.5
 \theta_1\)</span> (here <span class="math inline">\(0.5
 \sigma_g^2\)</span> ), and the last random effect that is given by its
 own parameter <span class="math inline">\(\theta_2\)</span> (here <span class="math inline">\(\sigma_e^2\)</span> ).</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a> data <span class="ot">&lt;-</span> <span class="fu">simClaytonOakes.twin.ace</span>(<span class="dv">200</span>,<span class="dv">2</span>,<span class="dv">1</span>,<span class="dv">0</span>,<span class="dv">3</span>)</span>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a> data <span class="ot">&lt;-</span> <span class="fu">sim_ClaytonOakes_twin_ace</span>(<span class="dv">200</span>,<span class="dv">2</span>,<span class="dv">1</span>,<span class="dv">0</span>,<span class="dv">3</span>)</span>
 <span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a></span>
-<span id="cb5-3"><a href="#cb5-3" tabindex="-1"></a> out <span class="ot">&lt;-</span> <span class="fu">twin.polygen.design</span>(data,<span class="at">id=</span><span class="st">&quot;cluster&quot;</span>,<span class="at">zyg=</span><span class="st">&quot;DZ&quot;</span>,<span class="at">zygname=</span><span class="st">&quot;zyg&quot;</span>,<span class="at">type=</span><span class="st">&quot;ace&quot;</span>)</span>
+<span id="cb5-3"><a href="#cb5-3" tabindex="-1"></a> out <span class="ot">&lt;-</span> <span class="fu">twin_polygen_design</span>(data,<span class="at">id=</span><span class="st">&quot;cluster&quot;</span>,<span class="at">zyg=</span><span class="st">&quot;DZ&quot;</span>,<span class="at">zygname=</span><span class="st">&quot;zyg&quot;</span>,<span class="at">type=</span><span class="st">&quot;ace&quot;</span>)</span>
 <span id="cb5-4"><a href="#cb5-4" tabindex="-1"></a> pardes <span class="ot">&lt;-</span> out<span class="sc">$</span>pardes</span>
 <span id="cb5-5"><a href="#cb5-5" tabindex="-1"></a> pardes </span>
 <span id="cb5-6"><a href="#cb5-6" tabindex="-1"></a><span class="co">#&gt;      [,1] [,2]</span></span>
@@ -720,11 +719,10 @@ own parameter <span class="math inline">\(\theta_2\)</span> (here <span class="m
 <span id="cb5-10"><a href="#cb5-10" tabindex="-1"></a><span class="co">#&gt; [4,]  0.5    0</span></span>
 <span id="cb5-11"><a href="#cb5-11" tabindex="-1"></a><span class="co">#&gt; [5,]  0.0    1</span></span></code></pre></div>
 <p>The last part of the model structure is to decide how the random
-effects are shared for the different pairs (MZ and DZ), this is specfied
-by the random effects design (<span class="math inline">\(V_1\)</span>
-and <span class="math inline">\(V_2\)</span>) for each pair. This is
-here specified by an overall designmatrix for each subject (since they
-enter all pairs with the same random effects design).</p>
+effects are shared for the different pairs (MZ and DZ), this is
+specified by the random effects design (<span class="math inline">\(V_1\)</span> and <span class="math inline">\(V_2\)</span>) for each pair. This is here
+specified by an overall designmatrix for each subject (since they enter
+all pairs with the same random effects design).</p>
 <p>For an MZ pair the two share the full gene random effect and the full
 environmental random effect. In contrast the DZ pairs share the 2nd
 random effect with half the gene-variance and have both a non-shared
@@ -747,8 +745,8 @@ genetic and environmental random effect. This number is sometimes called
 the heritability. In addition the total variance for each subject is
 also computed and is here around <span class="math inline">\(3\)</span>,
 as we indeed constructed.</p>
-<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a><span class="do">### data &lt;- simClaytonOakes.twin.ace(2000,2,1,0,3)</span></span>
-<span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a><span class="do">### out &lt;- twin.polygen.design(data,id=&quot;cluster&quot;,zyg=&quot;DZ&quot;,zygname=&quot;zyg&quot;,type=&quot;ace&quot;)</span></span>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a><span class="do">### data &lt;- sim_ClaytonOakes_twin_ace(2000,2,1,0,3)</span></span>
+<span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a><span class="do">### out &lt;- twin_polygen_design(data,id=&quot;cluster&quot;,zyg=&quot;DZ&quot;,zygname=&quot;zyg&quot;,type=&quot;ace&quot;)</span></span>
 <span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a> aa <span class="ot">&lt;-</span> <span class="fu">phreg</span>(<span class="fu">Surv</span>(time,status)<span class="sc">~</span>x<span class="sc">+</span><span class="fu">cluster</span>(cluster),<span class="at">data=</span>data)</span>
 <span id="cb7-4"><a href="#cb7-4" tabindex="-1"></a> ts <span class="ot">&lt;-</span> <span class="fu">twostage</span>(aa,<span class="at">data=</span>data,<span class="at">clusters=</span>data<span class="sc">$</span>cluster,</span>
 <span id="cb7-5"><a href="#cb7-5" tabindex="-1"></a>      <span class="at">theta=</span><span class="fu">c</span>(<span class="dv">2</span>,<span class="dv">1</span>),<span class="at">var.link=</span><span class="dv">0</span>,<span class="at">random.design=</span>out<span class="sc">$</span>des.rv,<span class="at">theta.des=</span>out<span class="sc">$</span>pardes)</span>
@@ -778,7 +776,7 @@ as we indeed constructed.</p>
 <span id="cb7-29"><a href="#cb7-29" tabindex="-1"></a><span class="co">#&gt; attr(,&quot;class&quot;)</span></span>
 <span id="cb7-30"><a href="#cb7-30" tabindex="-1"></a><span class="co">#&gt; [1] &quot;summary.mets.twostage&quot;</span></span></code></pre></div>
 <ul>
-<li>A nice feature of the procdure is that it scales linearly in the
+<li>A nice feature of the procedure is that it scales linearly in the
 number of observations
 <ul>
 <li>1 mill pairs had a running time of around 100 seconds.</li>
@@ -786,9 +784,9 @@ number of observations
 </ul>
 <div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a>run <span class="ot">&lt;-</span> <span class="dv">0</span></span>
 <span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a><span class="cf">if</span> (run<span class="sc">==</span><span class="dv">1</span>) {</span>
-<span id="cb8-3"><a href="#cb8-3" tabindex="-1"></a> data <span class="ot">&lt;-</span> <span class="fu">simClaytonOakes.twin.ace</span>(<span class="dv">1000000</span>,<span class="dv">2</span>,<span class="dv">1</span>,<span class="dv">0</span>,<span class="dv">3</span>)</span>
+<span id="cb8-3"><a href="#cb8-3" tabindex="-1"></a> data <span class="ot">&lt;-</span> <span class="fu">sim_ClaytonOakes_twin_ace</span>(<span class="dv">1000000</span>,<span class="dv">2</span>,<span class="dv">1</span>,<span class="dv">0</span>,<span class="dv">3</span>)</span>
 <span id="cb8-4"><a href="#cb8-4" tabindex="-1"></a></span>
-<span id="cb8-5"><a href="#cb8-5" tabindex="-1"></a> out <span class="ot">&lt;-</span> <span class="fu">twin.polygen.design</span>(data,<span class="at">id=</span><span class="st">&quot;cluster&quot;</span>,<span class="at">zyg=</span><span class="st">&quot;DZ&quot;</span>,<span class="at">zygname=</span><span class="st">&quot;zyg&quot;</span>,<span class="at">type=</span><span class="st">&quot;ace&quot;</span>)</span>
+<span id="cb8-5"><a href="#cb8-5" tabindex="-1"></a> out <span class="ot">&lt;-</span> <span class="fu">twin_polygen_design</span>(data,<span class="at">id=</span><span class="st">&quot;cluster&quot;</span>,<span class="at">zyg=</span><span class="st">&quot;DZ&quot;</span>,<span class="at">zygname=</span><span class="st">&quot;zyg&quot;</span>,<span class="at">type=</span><span class="st">&quot;ace&quot;</span>)</span>
 <span id="cb8-6"><a href="#cb8-6" tabindex="-1"></a> pardes <span class="ot">&lt;-</span> out<span class="sc">$</span>pardes</span>
 <span id="cb8-7"><a href="#cb8-7" tabindex="-1"></a> aa <span class="ot">&lt;-</span> <span class="fu">phreg</span>(<span class="fu">Surv</span>(time,status)<span class="sc">~</span>x<span class="sc">+</span><span class="fu">cluster</span>(cluster),<span class="at">data=</span>data)</span>
 <span id="cb8-8"><a href="#cb8-8" tabindex="-1"></a> <span class="fu">system.time</span>(</span>
@@ -805,7 +803,7 @@ however, should reflect both random effects.</p>
 <p>We do this based on simulations. The Kendall’s tau of the MZ is
 around 0.60, and for DZ around 0.33. Both are quite high and this is due
 to a large shared environmental effect and large genetic effect.</p>
-<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" tabindex="-1"></a><span class="fu">kendall.ClaytonOakes.twin.ace</span>(ts<span class="sc">$</span>theta[<span class="dv">1</span>],ts<span class="sc">$</span>theta[<span class="dv">2</span>],<span class="at">K=</span><span class="dv">10000</span>) </span>
+<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" tabindex="-1"></a><span class="fu">kendall_ClaytonOakes_twin_ace</span>(ts<span class="sc">$</span>theta[<span class="dv">1</span>],ts<span class="sc">$</span>theta[<span class="dv">2</span>],<span class="at">K=</span><span class="dv">10000</span>) </span>
 <span id="cb9-2"><a href="#cb9-2" tabindex="-1"></a><span class="co">#&gt; $mz.kendall</span></span>
 <span id="cb9-3"><a href="#cb9-3" tabindex="-1"></a><span class="co">#&gt; [1] 0.6186546</span></span>
 <span id="cb9-4"><a href="#cb9-4" tabindex="-1"></a><span class="co">#&gt; </span></span>
@@ -816,12 +814,12 @@ to a large shared environmental effect and large genetic effect.</p>
 <h1>Family data</h1>
 <p>For family data, things are quite similar since we use only the
 pairwise structure. We show how the designs are specified.</p>
-<p>First we simulate data from an ACE model. 2000 families with
-two-parents that share only the environment, and two-children that share
-genes with their parents.</p>
+<p>First we simulate data from an ACE model: 200 families each with two
+parents who share only the environment, and two children who share genes
+with their parents.</p>
 <div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" tabindex="-1"></a><span class="fu">library</span>(mets)</span>
 <span id="cb10-2"><a href="#cb10-2" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">1000</span>)</span>
-<span id="cb10-3"><a href="#cb10-3" tabindex="-1"></a>data <span class="ot">&lt;-</span> <span class="fu">simClaytonOakes.family.ace</span>(<span class="dv">200</span>,<span class="dv">2</span>,<span class="dv">1</span>,<span class="dv">0</span>,<span class="dv">3</span>)</span>
+<span id="cb10-3"><a href="#cb10-3" tabindex="-1"></a>data <span class="ot">&lt;-</span> <span class="fu">sim_ClaytonOakes_family_ace</span>(<span class="dv">200</span>,<span class="dv">2</span>,<span class="dv">1</span>,<span class="dv">0</span>,<span class="dv">3</span>)</span>
 <span id="cb10-4"><a href="#cb10-4" tabindex="-1"></a><span class="fu">head</span>(data)</span>
 <span id="cb10-5"><a href="#cb10-5" tabindex="-1"></a><span class="co">#&gt;        time status x cluster   type   mintime lefttime truncated</span></span>
 <span id="cb10-6"><a href="#cb10-6" tabindex="-1"></a><span class="co">#&gt; 1 0.4139376      1 0       1 mother 0.4139376        0         0</span></span>
@@ -842,7 +840,7 @@ family members. We below demonstrate how the model can be specified in
 various other ways.</p>
 <p>Each child share 2 genetic random effects with each parent, and also
 share 2 genetic random effects with his/her sibling.</p>
-<div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" tabindex="-1"></a>out <span class="ot">&lt;-</span> <span class="fu">ace.family.design</span>(data,<span class="at">member=</span><span class="st">&quot;type&quot;</span>,<span class="at">id=</span><span class="st">&quot;cluster&quot;</span>)</span>
+<div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" tabindex="-1"></a>out <span class="ot">&lt;-</span> <span class="fu">ace_family_design</span>(data,<span class="at">member=</span><span class="st">&quot;type&quot;</span>,<span class="at">id=</span><span class="st">&quot;cluster&quot;</span>)</span>
 <span id="cb11-2"><a href="#cb11-2" tabindex="-1"></a>out<span class="sc">$</span>pardes</span>
 <span id="cb11-3"><a href="#cb11-3" tabindex="-1"></a><span class="co">#&gt;       [,1] [,2]</span></span>
 <span id="cb11-4"><a href="#cb11-4" tabindex="-1"></a><span class="co">#&gt;  [1,] 0.25    0</span></span>
@@ -892,15 +890,15 @@ share 2 genetic random effects with his/her sibling.</p>
 <span id="cb12-29"><a href="#cb12-29" tabindex="-1"></a><span class="co">#&gt; attr(,&quot;class&quot;)</span></span>
 <span id="cb12-30"><a href="#cb12-30" tabindex="-1"></a><span class="co">#&gt; [1] &quot;summary.mets.twostage&quot;</span></span></code></pre></div>
 <p>The model can also be fitted by specifying the pairs that one wants
-for the pairwise likelhood. This is done by specifying the pairs
+for the pairwise likelihood. This is done by specifying the pairs
 argument. We start by considering all pairs as we also did before.</p>
-<p>All pairs can be written up by calling the familycluster.index
+<p>All pairs can be written up by calling the familycluster_index
 function.</p>
-<p>There are xx pairs to consider, and the first 6 pairs for the first
-family is written out here.</p>
+<p>There are <!-- TODO: insert pair count --> pairs to consider, and the
+first 6 pairs for the first family is written out here.</p>
 <div class="sourceCode" id="cb13"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" tabindex="-1"></a><span class="co"># now specify fitting via specific pairs </span></span>
 <span id="cb13-2"><a href="#cb13-2" tabindex="-1"></a><span class="co"># first all pairs </span></span>
-<span id="cb13-3"><a href="#cb13-3" tabindex="-1"></a>mm <span class="ot">&lt;-</span> <span class="fu">familycluster.index</span>(data<span class="sc">$</span>cluster)</span>
+<span id="cb13-3"><a href="#cb13-3" tabindex="-1"></a>mm <span class="ot">&lt;-</span> <span class="fu">familycluster_index</span>(data<span class="sc">$</span>cluster)</span>
 <span id="cb13-4"><a href="#cb13-4" tabindex="-1"></a><span class="fu">head</span>(mm<span class="sc">$</span>familypairindex,<span class="at">n=</span><span class="dv">12</span>)</span>
 <span id="cb13-5"><a href="#cb13-5" tabindex="-1"></a><span class="co">#&gt;  [1] 1 2 1 3 1 4 2 3 2 4 3 4</span></span>
 <span id="cb13-6"><a href="#cb13-6" tabindex="-1"></a>pairs <span class="ot">&lt;-</span> <span class="fu">matrix</span>(mm<span class="sc">$</span>familypairindex,<span class="at">ncol=</span><span class="dv">2</span>,<span class="at">byrow=</span><span class="cn">TRUE</span>)</span>
@@ -972,17 +970,16 @@ clusters (families) are also specified as before.</p>
 <span id="cb15-27"><a href="#cb15-27" tabindex="-1"></a><span class="co">#&gt; </span></span>
 <span id="cb15-28"><a href="#cb15-28" tabindex="-1"></a><span class="co">#&gt; attr(,&quot;class&quot;)</span></span>
 <span id="cb15-29"><a href="#cb15-29" tabindex="-1"></a><span class="co">#&gt; [1] &quot;summary.mets.twostage&quot;</span></span></code></pre></div>
-<p>Sometimes one only has the data from the pairs in addition to for
-example a cohort estimate of the marginal surival models. We now
-demonstrate how this is dealt with. Everything is essentially as before
-but need to organize the design differently compared to before we
-specified the design<br />
-for everybody in the cohort. In addition we do not here bring in the
-uncertainty from the baseline in the estimates, even though this is
-formally possible, but when the data of the marginal model and twostage
-data are not the same, we have to specify that we do not want the
-decomposition for the uncertainty due to the baseline
-(baseline.iid=0).</p>
+<p>Sometimes one only has data from the pairs in addition to, for
+example, a cohort estimate of the marginal survival models. We now
+demonstrate how this is handled. Everything is essentially as before,
+except we need to organise the design differently compared to before,
+when we specified the design for everybody in the cohort. In addition,
+we do not bring in the uncertainty from the baseline in the estimates
+here; even though this is formally possible, when the data for the
+marginal model and the twostage model are not the same, we must specify
+that we do not want the decomposition for uncertainty due to the
+baseline (<code>baseline.iid=0</code>).</p>
 <div class="sourceCode" id="cb16"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" tabindex="-1"></a>ids <span class="ot">&lt;-</span> <span class="fu">sort</span>(<span class="fu">unique</span>(<span class="fu">c</span>(pairs[ssid,])))</span>
 <span id="cb16-2"><a href="#cb16-2" tabindex="-1"></a></span>
 <span id="cb16-3"><a href="#cb16-3" tabindex="-1"></a>pairsids <span class="ot">&lt;-</span> <span class="fu">c</span>(pairs[ssid,])</span>
@@ -999,7 +996,7 @@ decomposition for the uncertainty due to the baseline
 <span id="cb16-14"><a href="#cb16-14" tabindex="-1"></a><span class="co"># this requires that pair.new refers to id&#39;s in dataid (survival, status and so forth)</span></span>
 <span id="cb16-15"><a href="#cb16-15" tabindex="-1"></a><span class="co"># random.design and theta.des are constructed to be the array 3 dims via individual specfication from ace.family.design</span></span>
 <span id="cb16-16"><a href="#cb16-16" tabindex="-1"></a>dataid <span class="ot">&lt;-</span> <span class="fu">dsort</span>(data[ids,],<span class="st">&quot;cluster&quot;</span>)</span>
-<span id="cb16-17"><a href="#cb16-17" tabindex="-1"></a>outid <span class="ot">&lt;-</span> <span class="fu">ace.family.design</span>(dataid,<span class="at">member=</span><span class="st">&quot;type&quot;</span>,<span class="at">id=</span><span class="st">&quot;cluster&quot;</span>)</span>
+<span id="cb16-17"><a href="#cb16-17" tabindex="-1"></a>outid <span class="ot">&lt;-</span> <span class="fu">ace_family_design</span>(dataid,<span class="at">member=</span><span class="st">&quot;type&quot;</span>,<span class="at">id=</span><span class="st">&quot;cluster&quot;</span>)</span>
 <span id="cb16-18"><a href="#cb16-18" tabindex="-1"></a>outid<span class="sc">$</span>pardes</span>
 <span id="cb16-19"><a href="#cb16-19" tabindex="-1"></a><span class="co">#&gt;       [,1] [,2]</span></span>
 <span id="cb16-20"><a href="#cb16-20" tabindex="-1"></a><span class="co">#&gt;  [1,] 0.25    0</span></span>
@@ -1117,12 +1114,12 @@ situations.</p>
 <span id="cb18-24"><a href="#cb18-24" tabindex="-1"></a>mf <span class="ot">&lt;-</span> <span class="dv">1</span><span class="sc">*</span>(pair.types[,<span class="dv">1</span>]<span class="sc">==</span><span class="st">&quot;mother&quot;</span> <span class="sc">&amp;</span> pair.types[,<span class="dv">2</span>]<span class="sc">==</span><span class="st">&quot;father&quot;</span>)</span>
 <span id="cb18-25"><a href="#cb18-25" tabindex="-1"></a><span class="do">##          pair, rv related to pairs,  theta.des related to pair </span></span>
 <span id="cb18-26"><a href="#cb18-26" tabindex="-1"></a>pairs.new <span class="ot">&lt;-</span> <span class="fu">cbind</span>(pair.new,(mf<span class="sc">==</span><span class="dv">1</span>)<span class="sc">*</span><span class="dv">1</span><span class="sc">+</span>(mf<span class="sc">==</span><span class="dv">0</span>)<span class="sc">*</span><span class="dv">3</span>,(mf<span class="sc">==</span><span class="dv">1</span>)<span class="sc">*</span><span class="dv">2</span><span class="sc">+</span>(mf<span class="sc">==</span><span class="dv">0</span>)<span class="sc">*</span><span class="dv">4</span>,(mf<span class="sc">==</span><span class="dv">1</span>)<span class="sc">*</span><span class="dv">1</span><span class="sc">+</span>(mf<span class="sc">==</span><span class="dv">0</span>)<span class="sc">*</span><span class="dv">2</span>,(mf<span class="sc">==</span><span class="dv">1</span>)<span class="sc">*</span><span class="dv">3</span><span class="sc">+</span>(mf<span class="sc">==</span><span class="dv">0</span>)<span class="sc">*</span><span class="dv">4</span>)</span></code></pre></div>
-<p>pairs.new is matix with</p>
+<p>pairs.new is a matrix with</p>
 <ul>
-<li><p>columns 1:2 giving the indeces of the data points</p></li>
-<li><p>columns 3:4 giving the indeces of the random.design for the
+<li><p>columns 1:2 giving the indices of the data points</p></li>
+<li><p>columns 3:4 giving the indices of the random.design for the
 different pairs</p></li>
-<li><p>columns 5 giving the indeces of the theta.des written as
+<li><p>columns 5 giving the indices of the theta.des written as
 rows</p></li>
 <li><p>columns 6 giving the number of random variables for this
 pair</p></li>
@@ -1145,8 +1142,8 @@ father), (mother, child), and (father, child), respectively.</p>
 <span id="cb19-13"><a href="#cb19-13" tabindex="-1"></a><span class="co">#&gt; 8 1.763022      1 1       2  child 1.6718726        0         0      4     0</span></span></code></pre></div>
 <p>The random effects for these are specified from random effects with
 design read from the random.design, using the rows (1,2), (3,4) and
-(3,4), respecively, and with random effects that have variances given by
-theta.des rows, 1,2, and 2 respectively in the three cases. For the
+(3,4), respectively, and with random effects that have variances given
+by theta.des rows, 1,2, and 2 respectively in the three cases. For the
 first pair (1,2), the random vectors and their variances are given by,
 (mother, father) pair,</p>
 <div class="sourceCode" id="cb20"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" tabindex="-1"></a>random.des[<span class="dv">1</span>,]</span>
@@ -1241,7 +1238,7 @@ coefficient.</p>
 <span id="cb23-3"><a href="#cb23-3" tabindex="-1"></a><span class="fu">head</span>(kinship,<span class="at">n=</span><span class="dv">10</span>)</span>
 <span id="cb23-4"><a href="#cb23-4" tabindex="-1"></a><span class="co">#&gt;  [1] 0.5 0.0 0.5 0.5 0.5 0.5 0.5 0.0 0.5 0.0</span></span>
 <span id="cb23-5"><a href="#cb23-5" tabindex="-1"></a></span>
-<span id="cb23-6"><a href="#cb23-6" tabindex="-1"></a>out <span class="ot">&lt;-</span> <span class="fu">make.pairwise.design</span>(pair.new,kinship,<span class="at">type=</span><span class="st">&quot;ace&quot;</span>) </span></code></pre></div>
+<span id="cb23-6"><a href="#cb23-6" tabindex="-1"></a>out <span class="ot">&lt;-</span> <span class="fu">make_pairwise_design</span>(pair.new,kinship,<span class="at">type=</span><span class="st">&quot;ace&quot;</span>) </span></code></pre></div>
 <p>Same output as before</p>
 <div class="sourceCode" id="cb24"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" tabindex="-1"></a>tsdid3 <span class="ot">&lt;-</span> <span class="fu">twostage</span>(pa,<span class="at">data=</span>dataid,<span class="at">clusters=</span>dataid<span class="sc">$</span>cluster,</span>
 <span id="cb24-2"><a href="#cb24-2" tabindex="-1"></a>   <span class="at">theta=</span><span class="fu">c</span>(<span class="dv">2</span>,<span class="dv">1</span>)<span class="sc">/</span><span class="dv">10</span>,<span class="at">var.link=</span><span class="dv">0</span>,<span class="at">step=</span><span class="fl">1.0</span>,<span class="at">random.design=</span>out<span class="sc">$</span>random.design,</span>
@@ -1281,7 +1278,7 @@ coefficient.</p>
 <span id="cb24-36"><a href="#cb24-36" tabindex="-1"></a><span class="co">#&gt; [2,] 0.4087673</span></span></code></pre></div>
 <p>Now fitting the AE model without the “C” component for shared
 environment:</p>
-<div class="sourceCode" id="cb25"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1" tabindex="-1"></a>outae <span class="ot">&lt;-</span> <span class="fu">make.pairwise.design</span>(pair.new,kinship,<span class="at">type=</span><span class="st">&quot;ae&quot;</span>) </span>
+<div class="sourceCode" id="cb25"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1" tabindex="-1"></a>outae <span class="ot">&lt;-</span> <span class="fu">make_pairwise_design</span>(pair.new,kinship,<span class="at">type=</span><span class="st">&quot;ae&quot;</span>) </span>
 <span id="cb25-2"><a href="#cb25-2" tabindex="-1"></a>tsdid4 <span class="ot">&lt;-</span> <span class="fu">twostage</span>(pa,<span class="at">data=</span>dataid,<span class="at">clusters=</span>dataid<span class="sc">$</span>cluster,</span>
 <span id="cb25-3"><a href="#cb25-3" tabindex="-1"></a>   <span class="at">theta=</span><span class="fu">c</span>(<span class="dv">2</span>,<span class="dv">1</span>)<span class="sc">/</span><span class="dv">10</span>,<span class="at">var.link=</span><span class="dv">0</span>,<span class="at">random.design=</span>outae<span class="sc">$</span>random.design,</span>
 <span id="cb25-4"><a href="#cb25-4" tabindex="-1"></a>   <span class="at">baseline.iid=</span><span class="dv">0</span>,<span class="at">theta.des=</span>outae<span class="sc">$</span>theta.des,<span class="at">pairs=</span>outae<span class="sc">$</span>new.pairs,<span class="at">dim.theta=</span><span class="dv">1</span>)</span>
@@ -1311,17 +1308,16 @@ environment:</p>
 </div>
 <div id="pairwise-dependence-modelling" class="section level2">
 <h2>Pairwise dependence modelling</h2>
-<p>We now illustate how to estimate all pairwise associations between
+<p>We now illustrate how to estimate all pairwise associations between
 different family-members using the twostage function. They key is
 specify the pairs for the composite likelihood directly and then the
-associated design-matrix directly. This needs to be done looking at both
-subjects in the pairs, and the design therefore follows the pairs and is
-a matrix where its row is given as the third column in the pairs
+associated design-matrix design therefore follows the pairs and is a
+matrix where its row is given as the third column in the pairs
 argument.</p>
 <p>First we get the pairs to be considered</p>
 <div class="sourceCode" id="cb26"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1" tabindex="-1"></a><span class="fu">library</span>(mets)</span>
 <span id="cb26-2"><a href="#cb26-2" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">1000</span>)</span>
-<span id="cb26-3"><a href="#cb26-3" tabindex="-1"></a>data <span class="ot">&lt;-</span> <span class="fu">simClaytonOakes.family.ace</span>(<span class="dv">200</span>,<span class="dv">2</span>,<span class="dv">1</span>,<span class="dv">0</span>,<span class="dv">3</span>)</span>
+<span id="cb26-3"><a href="#cb26-3" tabindex="-1"></a>data <span class="ot">&lt;-</span> <span class="fu">sim_ClaytonOakes_family_ace</span>(<span class="dv">200</span>,<span class="dv">2</span>,<span class="dv">1</span>,<span class="dv">0</span>,<span class="dv">3</span>)</span>
 <span id="cb26-4"><a href="#cb26-4" tabindex="-1"></a><span class="fu">head</span>(data)</span>
 <span id="cb26-5"><a href="#cb26-5" tabindex="-1"></a><span class="co">#&gt;        time status x cluster   type   mintime lefttime truncated</span></span>
 <span id="cb26-6"><a href="#cb26-6" tabindex="-1"></a><span class="co">#&gt; 1 0.4139376      1 0       1 mother 0.4139376        0         0</span></span>
@@ -1333,7 +1329,7 @@ argument.</p>
 <span id="cb26-12"><a href="#cb26-12" tabindex="-1"></a>data<span class="sc">$</span>number <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="dv">1</span>,<span class="dv">2</span>,<span class="dv">3</span>,<span class="dv">4</span>)</span>
 <span id="cb26-13"><a href="#cb26-13" tabindex="-1"></a>data<span class="sc">$</span>child <span class="ot">&lt;-</span> <span class="dv">1</span><span class="sc">*</span>(data<span class="sc">$</span>number<span class="sc">==</span><span class="dv">3</span>)</span>
 <span id="cb26-14"><a href="#cb26-14" tabindex="-1"></a></span>
-<span id="cb26-15"><a href="#cb26-15" tabindex="-1"></a>mm <span class="ot">&lt;-</span> <span class="fu">familycluster.index</span>(data<span class="sc">$</span>cluster)</span>
+<span id="cb26-15"><a href="#cb26-15" tabindex="-1"></a>mm <span class="ot">&lt;-</span> <span class="fu">familycluster_index</span>(data<span class="sc">$</span>cluster)</span>
 <span id="cb26-16"><a href="#cb26-16" tabindex="-1"></a><span class="fu">head</span>(mm<span class="sc">$</span>familypairindex,<span class="at">n=</span><span class="dv">20</span>)</span>
 <span id="cb26-17"><a href="#cb26-17" tabindex="-1"></a><span class="co">#&gt;  [1] 1 2 1 3 1 4 2 3 2 4 3 4 5 6 5 7 5 8 6 7</span></span>
 <span id="cb26-18"><a href="#cb26-18" tabindex="-1"></a>pairs <span class="ot">&lt;-</span> mm<span class="sc">$</span>pairs</span>
@@ -1408,17 +1404,17 @@ argument.</p>
 <span id="cb28-29"><a href="#cb28-29" tabindex="-1"></a><span class="co">#&gt; </span></span>
 <span id="cb28-30"><a href="#cb28-30" tabindex="-1"></a><span class="co">#&gt; attr(,&quot;class&quot;)</span></span>
 <span id="cb28-31"><a href="#cb28-31" tabindex="-1"></a><span class="co">#&gt; [1] &quot;summary.mets.twostage&quot;</span></span></code></pre></div>
-<p>We note that mother-father have the smallest correlation since they
-only share the environmental random effect, whereas other pairs have a
-similar correlation (in fact the same due to the way the data was
-simulated) consisting of half the genetic effect and the environmental
-effect that was also shared.</p>
+<p>We note that mother-father pairs have the smallest correlation since
+they share only the environmental random effect, whereas other pairs
+have a similar correlation (in fact the same, due to how the data were
+simulated), consisting of half the genetic effect plus the shared
+environmental effect.</p>
 </div>
 </div>
 <div id="univariate-plackett-model-twostage-models" class="section level1">
 <h1>Univariate plackett model twostage models</h1>
-<p>The copula known as the Plackett distribution, see , is on the form
-<span class="math display">\[\begin{align}
+<p>The copula known as the Plackett distribution (Plackett, 1965;
+Anderson et al., 1992; Ghosh et al., 2006), is on the form <span class="math display">\[\begin{align}
   C(u,v; \theta) =
   \begin{cases}
     \frac{ S - (S^2 - 4 u v \theta (\theta-a))}{2 (\theta -1)} &amp;
@@ -1443,7 +1439,7 @@ directly linked to the Spearman correlation, <span class="math inline">\(\rho\)<
 \log(\theta)
 \end{align}\]</span> when <span class="math inline">\(\theta \ne
 1\)</span>, if <span class="math inline">\(\theta=1\)</span> then <span class="math inline">\(\rho=0\)</span>.</p>
-<p>This model has a more free parameter than the Clayton-Oakes
+<p>This model has one more free parameter than the Clayton-Oakes
 model.</p>
 <div class="sourceCode" id="cb29"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb29-1"><a href="#cb29-1" tabindex="-1"></a> <span class="fu">library</span>(mets)</span>
 <span id="cb29-2"><a href="#cb29-2" tabindex="-1"></a> <span class="fu">data</span>(diabetes)</span>
@@ -1467,7 +1463,7 @@ model.</p>
 <span id="cb29-20"><a href="#cb29-20" tabindex="-1"></a> </span>
 <span id="cb29-21"><a href="#cb29-21" tabindex="-1"></a> <span class="co"># Plackett model</span></span>
 <span id="cb29-22"><a href="#cb29-22" tabindex="-1"></a> mph <span class="ot">&lt;-</span> <span class="fu">phreg</span>(<span class="fu">Surv</span>(time,status)<span class="sc">~</span>treat<span class="sc">+</span><span class="fu">cluster</span>(id),<span class="at">data=</span>diabetes)</span>
-<span id="cb29-23"><a href="#cb29-23" tabindex="-1"></a> fitp <span class="ot">&lt;-</span> <span class="fu">survival.twostage</span>(mph,<span class="at">data=</span>diabetes,<span class="at">theta=</span><span class="fl">3.0</span>,</span>
+<span id="cb29-23"><a href="#cb29-23" tabindex="-1"></a> fitp <span class="ot">&lt;-</span> <span class="fu">survival_twostage</span>(mph,<span class="at">data=</span>diabetes,<span class="at">theta=</span><span class="fl">3.0</span>,</span>
 <span id="cb29-24"><a href="#cb29-24" tabindex="-1"></a>                <span class="at">clusters=</span>diabetes<span class="sc">$</span>id,<span class="at">var.link=</span><span class="dv">1</span>,<span class="at">model=</span><span class="st">&quot;plackett&quot;</span>)</span>
 <span id="cb29-25"><a href="#cb29-25" tabindex="-1"></a> <span class="fu">summary</span>(fitp)</span>
 <span id="cb29-26"><a href="#cb29-26" tabindex="-1"></a><span class="co">#&gt; Dependence parameter for Odds-Ratio (Plackett) model </span></span>
@@ -1488,7 +1484,7 @@ model.</p>
 <span id="cb29-41"><a href="#cb29-41" tabindex="-1"></a> </span>
 <span id="cb29-42"><a href="#cb29-42" tabindex="-1"></a> <span class="co"># without covariates but with stratafied </span></span>
 <span id="cb29-43"><a href="#cb29-43" tabindex="-1"></a> marg <span class="ot">&lt;-</span> <span class="fu">phreg</span>(<span class="fu">Surv</span>(time,status)<span class="sc">~+</span><span class="fu">strata</span>(treat)<span class="sc">+</span><span class="fu">cluster</span>(id),<span class="at">data=</span>diabetes)</span>
-<span id="cb29-44"><a href="#cb29-44" tabindex="-1"></a> fitpa <span class="ot">&lt;-</span> <span class="fu">survival.twostage</span>(marg,<span class="at">data=</span>diabetes,<span class="at">theta=</span><span class="fl">1.0</span>,</span>
+<span id="cb29-44"><a href="#cb29-44" tabindex="-1"></a> fitpa <span class="ot">&lt;-</span> <span class="fu">survival_twostage</span>(marg,<span class="at">data=</span>diabetes,<span class="at">theta=</span><span class="fl">1.0</span>,</span>
 <span id="cb29-45"><a href="#cb29-45" tabindex="-1"></a>                 <span class="at">clusters=</span>diabetes<span class="sc">$</span>id)</span>
 <span id="cb29-46"><a href="#cb29-46" tabindex="-1"></a> <span class="fu">summary</span>(fitpa)</span>
 <span id="cb29-47"><a href="#cb29-47" tabindex="-1"></a><span class="co">#&gt; Dependence parameter for Clayton-Oakes model</span></span>
@@ -1508,7 +1504,7 @@ model.</p>
 <span id="cb29-61"><a href="#cb29-61" tabindex="-1"></a><span class="co">#&gt; attr(,&quot;class&quot;)</span></span>
 <span id="cb29-62"><a href="#cb29-62" tabindex="-1"></a><span class="co">#&gt; [1] &quot;summary.mets.twostage&quot;</span></span>
 <span id="cb29-63"><a href="#cb29-63" tabindex="-1"></a> </span>
-<span id="cb29-64"><a href="#cb29-64" tabindex="-1"></a> fitcoa <span class="ot">&lt;-</span> <span class="fu">survival.twostage</span>(marg,<span class="at">data=</span>diabetes,<span class="at">theta=</span><span class="fl">1.0</span>,<span class="at">clusters=</span>diabetes<span class="sc">$</span>id,</span>
+<span id="cb29-64"><a href="#cb29-64" tabindex="-1"></a> fitcoa <span class="ot">&lt;-</span> <span class="fu">survival_twostage</span>(marg,<span class="at">data=</span>diabetes,<span class="at">theta=</span><span class="fl">1.0</span>,<span class="at">clusters=</span>diabetes<span class="sc">$</span>id,</span>
 <span id="cb29-65"><a href="#cb29-65" tabindex="-1"></a>                  <span class="at">model=</span><span class="st">&quot;clayton.oakes&quot;</span>)</span>
 <span id="cb29-66"><a href="#cb29-66" tabindex="-1"></a> <span class="fu">summary</span>(fitcoa)</span>
 <span id="cb29-67"><a href="#cb29-67" tabindex="-1"></a><span class="co">#&gt; Dependence parameter for Clayton-Oakes model</span></span>
@@ -1529,7 +1525,7 @@ model.</p>
 <span id="cb29-82"><a href="#cb29-82" tabindex="-1"></a><span class="co">#&gt; [1] &quot;summary.mets.twostage&quot;</span></span></code></pre></div>
 <p>With a regression design</p>
 <div class="sourceCode" id="cb30"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb30-1"><a href="#cb30-1" tabindex="-1"></a> mm <span class="ot">&lt;-</span> <span class="fu">model.matrix</span>(<span class="sc">~-</span><span class="dv">1</span><span class="sc">+</span><span class="fu">factor</span>(adult),diabetes)</span>
-<span id="cb30-2"><a href="#cb30-2" tabindex="-1"></a> fitp <span class="ot">&lt;-</span> <span class="fu">survival.twostage</span>(mph,<span class="at">data=</span>diabetes,<span class="at">theta=</span><span class="fl">3.0</span>,<span class="at">Nit=</span><span class="dv">40</span>,</span>
+<span id="cb30-2"><a href="#cb30-2" tabindex="-1"></a> fitp <span class="ot">&lt;-</span> <span class="fu">survival_twostage</span>(mph,<span class="at">data=</span>diabetes,<span class="at">theta=</span><span class="fl">3.0</span>,<span class="at">Nit=</span><span class="dv">40</span>,</span>
 <span id="cb30-3"><a href="#cb30-3" tabindex="-1"></a>                <span class="at">clusters=</span>diabetes<span class="sc">$</span>id,<span class="at">var.link=</span><span class="dv">1</span>,<span class="at">model=</span><span class="st">&quot;plackett&quot;</span>,</span>
 <span id="cb30-4"><a href="#cb30-4" tabindex="-1"></a>        <span class="at">theta.des=</span>mm)</span>
 <span id="cb30-5"><a href="#cb30-5" tabindex="-1"></a> <span class="fu">summary</span>(fitp)</span>
@@ -1555,8 +1551,8 @@ model.</p>
 <span id="cb30-25"><a href="#cb30-25" tabindex="-1"></a><span class="co">#&gt; [1] &quot;summary.mets.twostage&quot;</span></span></code></pre></div>
 <div class="sourceCode" id="cb31"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb31-1"><a href="#cb31-1" tabindex="-1"></a> <span class="co"># Piecewise constant cross hazards ratio modelling</span></span>
 <span id="cb31-2"><a href="#cb31-2" tabindex="-1"></a></span>
-<span id="cb31-3"><a href="#cb31-3" tabindex="-1"></a> d <span class="ot">&lt;-</span> <span class="fu">subset</span>(<span class="fu">simClaytonOakes</span>(<span class="dv">1000</span>,<span class="dv">2</span>,<span class="fl">0.5</span>,<span class="dv">0</span>,<span class="at">stoptime=</span><span class="dv">2</span>,<span class="at">left=</span><span class="dv">0</span>),<span class="sc">!</span>truncated)</span>
-<span id="cb31-4"><a href="#cb31-4" tabindex="-1"></a> udp <span class="ot">&lt;-</span> <span class="fu">piecewise.twostage</span>(<span class="fu">c</span>(<span class="dv">0</span>,<span class="fl">0.5</span>,<span class="dv">2</span>),<span class="at">data=</span>d,<span class="at">id=</span><span class="st">&quot;cluster&quot;</span>,<span class="at">timevar=</span><span class="st">&quot;time&quot;</span>,</span>
+<span id="cb31-3"><a href="#cb31-3" tabindex="-1"></a> d <span class="ot">&lt;-</span> <span class="fu">subset</span>(<span class="fu">sim_ClaytonOakes</span>(<span class="dv">1000</span>,<span class="dv">2</span>,<span class="fl">0.5</span>,<span class="dv">0</span>,<span class="at">stoptime=</span><span class="dv">2</span>,<span class="at">left=</span><span class="dv">0</span>),<span class="sc">!</span>truncated)</span>
+<span id="cb31-4"><a href="#cb31-4" tabindex="-1"></a> udp <span class="ot">&lt;-</span> <span class="fu">piecewise_twostage</span>(<span class="fu">c</span>(<span class="dv">0</span>,<span class="fl">0.5</span>,<span class="dv">2</span>),<span class="at">data=</span>d,<span class="at">id=</span><span class="st">&quot;cluster&quot;</span>,<span class="at">timevar=</span><span class="st">&quot;time&quot;</span>,</span>
 <span id="cb31-5"><a href="#cb31-5" tabindex="-1"></a>                           <span class="at">status=</span><span class="st">&quot;status&quot;</span>,<span class="at">model=</span><span class="st">&quot;plackett&quot;</span>,<span class="at">silent=</span><span class="dv">0</span>)</span>
 <span id="cb31-6"><a href="#cb31-6" tabindex="-1"></a><span class="co">#&gt; Data-set  1 out of  4</span></span>
 <span id="cb31-7"><a href="#cb31-7" tabindex="-1"></a><span class="co">#&gt;   Number of joint events: 254 of  1000</span></span>
@@ -1582,41 +1578,46 @@ model.</p>
 <div id="sessioninfo" class="section level1">
 <h1>SessionInfo</h1>
 <div class="sourceCode" id="cb32"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb32-1"><a href="#cb32-1" tabindex="-1"></a><span class="fu">sessionInfo</span>()</span>
-<span id="cb32-2"><a href="#cb32-2" tabindex="-1"></a><span class="co">#&gt; R version 4.5.2 (2025-10-31)</span></span>
-<span id="cb32-3"><a href="#cb32-3" tabindex="-1"></a><span class="co">#&gt; Platform: aarch64-apple-darwin25.1.0</span></span>
-<span id="cb32-4"><a href="#cb32-4" tabindex="-1"></a><span class="co">#&gt; Running under: macOS Tahoe 26.2</span></span>
+<span id="cb32-2"><a href="#cb32-2" tabindex="-1"></a><span class="co">#&gt; R version 4.6.0 (2026-04-24)</span></span>
+<span id="cb32-3"><a href="#cb32-3" tabindex="-1"></a><span class="co">#&gt; Platform: x86_64-pc-linux-gnu</span></span>
+<span id="cb32-4"><a href="#cb32-4" tabindex="-1"></a><span class="co">#&gt; Running under: Ubuntu 24.04.4 LTS</span></span>
 <span id="cb32-5"><a href="#cb32-5" tabindex="-1"></a><span class="co">#&gt; </span></span>
 <span id="cb32-6"><a href="#cb32-6" tabindex="-1"></a><span class="co">#&gt; Matrix products: default</span></span>
-<span id="cb32-7"><a href="#cb32-7" tabindex="-1"></a><span class="co">#&gt; BLAS:   /Users/kkzh/.asdf/installs/r/4.5.2/lib/R/lib/libRblas.dylib </span></span>
-<span id="cb32-8"><a href="#cb32-8" tabindex="-1"></a><span class="co">#&gt; LAPACK: /Users/kkzh/.asdf/installs/r/4.5.2/lib/R/lib/libRlapack.dylib;  LAPACK version 3.12.1</span></span>
+<span id="cb32-7"><a href="#cb32-7" tabindex="-1"></a><span class="co">#&gt; BLAS:   /home/kkzh/.asdf/installs/r/4.6.0/lib/R/lib/libRblas.so </span></span>
+<span id="cb32-8"><a href="#cb32-8" tabindex="-1"></a><span class="co">#&gt; LAPACK: /usr/lib/x86_64-linux-gnu/lapack/liblapack.so.3.12.0  LAPACK version 3.12.0</span></span>
 <span id="cb32-9"><a href="#cb32-9" tabindex="-1"></a><span class="co">#&gt; </span></span>
 <span id="cb32-10"><a href="#cb32-10" tabindex="-1"></a><span class="co">#&gt; locale:</span></span>
-<span id="cb32-11"><a href="#cb32-11" tabindex="-1"></a><span class="co">#&gt; [1] en_US.UTF-8/en_US.UTF-8/en_US.UTF-8/C/en_US.UTF-8/en_US.UTF-8</span></span>
-<span id="cb32-12"><a href="#cb32-12" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb32-13"><a href="#cb32-13" tabindex="-1"></a><span class="co">#&gt; time zone: Europe/Copenhagen</span></span>
-<span id="cb32-14"><a href="#cb32-14" tabindex="-1"></a><span class="co">#&gt; tzcode source: internal</span></span>
-<span id="cb32-15"><a href="#cb32-15" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb32-16"><a href="#cb32-16" tabindex="-1"></a><span class="co">#&gt; attached base packages:</span></span>
-<span id="cb32-17"><a href="#cb32-17" tabindex="-1"></a><span class="co">#&gt; [1] splines   stats     graphics  grDevices utils     datasets  methods  </span></span>
-<span id="cb32-18"><a href="#cb32-18" tabindex="-1"></a><span class="co">#&gt; [8] base     </span></span>
-<span id="cb32-19"><a href="#cb32-19" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb32-20"><a href="#cb32-20" tabindex="-1"></a><span class="co">#&gt; other attached packages:</span></span>
-<span id="cb32-21"><a href="#cb32-21" tabindex="-1"></a><span class="co">#&gt; [1] prodlim_2025.04.28 timereg_2.0.7      survival_3.8-3     mets_1.3.9        </span></span>
-<span id="cb32-22"><a href="#cb32-22" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb32-23"><a href="#cb32-23" tabindex="-1"></a><span class="co">#&gt; loaded via a namespace (and not attached):</span></span>
-<span id="cb32-24"><a href="#cb32-24" tabindex="-1"></a><span class="co">#&gt;  [1] cli_3.6.5              knitr_1.50             rlang_1.1.6           </span></span>
-<span id="cb32-25"><a href="#cb32-25" tabindex="-1"></a><span class="co">#&gt;  [4] xfun_0.54              KernSmooth_2.23-26     data.table_1.17.8     </span></span>
-<span id="cb32-26"><a href="#cb32-26" tabindex="-1"></a><span class="co">#&gt;  [7] jsonlite_2.0.0         future.apply_1.20.1    listenv_0.10.0        </span></span>
-<span id="cb32-27"><a href="#cb32-27" tabindex="-1"></a><span class="co">#&gt; [10] lava_1.8.3             htmltools_0.5.8.1      sass_0.4.10           </span></span>
-<span id="cb32-28"><a href="#cb32-28" tabindex="-1"></a><span class="co">#&gt; [13] rmarkdown_2.30         grid_4.5.2             evaluate_1.0.5        </span></span>
-<span id="cb32-29"><a href="#cb32-29" tabindex="-1"></a><span class="co">#&gt; [16] jquerylib_0.1.4        fastmap_1.2.0          numDeriv_2016.8-1.1   </span></span>
-<span id="cb32-30"><a href="#cb32-30" tabindex="-1"></a><span class="co">#&gt; [19] yaml_2.3.10            mvtnorm_1.3-3          lifecycle_1.0.4       </span></span>
-<span id="cb32-31"><a href="#cb32-31" tabindex="-1"></a><span class="co">#&gt; [22] compiler_4.5.2         codetools_0.2-20       ucminf_1.2.2          </span></span>
-<span id="cb32-32"><a href="#cb32-32" tabindex="-1"></a><span class="co">#&gt; [25] Rcpp_1.1.1             future_1.68.0          lattice_0.22-7        </span></span>
-<span id="cb32-33"><a href="#cb32-33" tabindex="-1"></a><span class="co">#&gt; [28] digest_0.6.39          R6_2.6.1               parallelly_1.46.1     </span></span>
-<span id="cb32-34"><a href="#cb32-34" tabindex="-1"></a><span class="co">#&gt; [31] parallel_4.5.2         Matrix_1.7-4           bslib_0.9.0           </span></span>
-<span id="cb32-35"><a href="#cb32-35" tabindex="-1"></a><span class="co">#&gt; [34] tools_4.5.2            RcppArmadillo_15.2.3-1 globals_0.18.0        </span></span>
-<span id="cb32-36"><a href="#cb32-36" tabindex="-1"></a><span class="co">#&gt; [37] cachem_1.1.0</span></span></code></pre></div>
+<span id="cb32-11"><a href="#cb32-11" tabindex="-1"></a><span class="co">#&gt;  [1] LC_CTYPE=en_US.UTF-8       LC_NUMERIC=C              </span></span>
+<span id="cb32-12"><a href="#cb32-12" tabindex="-1"></a><span class="co">#&gt;  [3] LC_TIME=en_US.UTF-8        LC_COLLATE=en_US.UTF-8    </span></span>
+<span id="cb32-13"><a href="#cb32-13" tabindex="-1"></a><span class="co">#&gt;  [5] LC_MONETARY=en_US.UTF-8    LC_MESSAGES=en_US.UTF-8   </span></span>
+<span id="cb32-14"><a href="#cb32-14" tabindex="-1"></a><span class="co">#&gt;  [7] LC_PAPER=en_US.UTF-8       LC_NAME=C                 </span></span>
+<span id="cb32-15"><a href="#cb32-15" tabindex="-1"></a><span class="co">#&gt;  [9] LC_ADDRESS=C               LC_TELEPHONE=C            </span></span>
+<span id="cb32-16"><a href="#cb32-16" tabindex="-1"></a><span class="co">#&gt; [11] LC_MEASUREMENT=en_US.UTF-8 LC_IDENTIFICATION=C       </span></span>
+<span id="cb32-17"><a href="#cb32-17" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb32-18"><a href="#cb32-18" tabindex="-1"></a><span class="co">#&gt; time zone: Europe/Copenhagen</span></span>
+<span id="cb32-19"><a href="#cb32-19" tabindex="-1"></a><span class="co">#&gt; tzcode source: system (glibc)</span></span>
+<span id="cb32-20"><a href="#cb32-20" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb32-21"><a href="#cb32-21" tabindex="-1"></a><span class="co">#&gt; attached base packages:</span></span>
+<span id="cb32-22"><a href="#cb32-22" tabindex="-1"></a><span class="co">#&gt; [1] splines   stats     graphics  grDevices utils     datasets  methods  </span></span>
+<span id="cb32-23"><a href="#cb32-23" tabindex="-1"></a><span class="co">#&gt; [8] base     </span></span>
+<span id="cb32-24"><a href="#cb32-24" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb32-25"><a href="#cb32-25" tabindex="-1"></a><span class="co">#&gt; other attached packages:</span></span>
+<span id="cb32-26"><a href="#cb32-26" tabindex="-1"></a><span class="co">#&gt; [1] prodlim_2026.03.11 timereg_2.0.7      survival_3.8-6     mets_1.3.10       </span></span>
+<span id="cb32-27"><a href="#cb32-27" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb32-28"><a href="#cb32-28" tabindex="-1"></a><span class="co">#&gt; loaded via a namespace (and not attached):</span></span>
+<span id="cb32-29"><a href="#cb32-29" tabindex="-1"></a><span class="co">#&gt;  [1] Matrix_1.7-5           future.apply_1.20.2    jsonlite_2.0.0        </span></span>
+<span id="cb32-30"><a href="#cb32-30" tabindex="-1"></a><span class="co">#&gt;  [4] ucminf_1.2.3           compiler_4.6.0         Rcpp_1.1.1-1.1        </span></span>
+<span id="cb32-31"><a href="#cb32-31" tabindex="-1"></a><span class="co">#&gt;  [7] parallel_4.6.0         jquerylib_0.1.4        globals_0.19.1        </span></span>
+<span id="cb32-32"><a href="#cb32-32" tabindex="-1"></a><span class="co">#&gt; [10] yaml_2.3.12            fastmap_1.2.0          lattice_0.22-9        </span></span>
+<span id="cb32-33"><a href="#cb32-33" tabindex="-1"></a><span class="co">#&gt; [13] R6_2.6.1               knitr_1.51             future_1.70.0         </span></span>
+<span id="cb32-34"><a href="#cb32-34" tabindex="-1"></a><span class="co">#&gt; [16] bslib_0.11.0           rlang_1.2.0            cachem_1.1.0          </span></span>
+<span id="cb32-35"><a href="#cb32-35" tabindex="-1"></a><span class="co">#&gt; [19] xfun_0.57              sass_0.4.10            otel_0.2.0            </span></span>
+<span id="cb32-36"><a href="#cb32-36" tabindex="-1"></a><span class="co">#&gt; [22] cli_3.6.6              digest_0.6.39          grid_4.6.0            </span></span>
+<span id="cb32-37"><a href="#cb32-37" tabindex="-1"></a><span class="co">#&gt; [25] mvtnorm_1.3-7          lifecycle_1.0.5        lava_1.9.1            </span></span>
+<span id="cb32-38"><a href="#cb32-38" tabindex="-1"></a><span class="co">#&gt; [28] RcppArmadillo_15.2.6-1 KernSmooth_2.23-26     evaluate_1.0.5        </span></span>
+<span id="cb32-39"><a href="#cb32-39" tabindex="-1"></a><span class="co">#&gt; [31] data.table_1.18.4      numDeriv_2016.8-1.1    listenv_0.10.1        </span></span>
+<span id="cb32-40"><a href="#cb32-40" tabindex="-1"></a><span class="co">#&gt; [34] codetools_0.2-20       stats4_4.6.0           parallelly_1.47.0     </span></span>
+<span id="cb32-41"><a href="#cb32-41" tabindex="-1"></a><span class="co">#&gt; [37] rmarkdown_2.31         tools_4.6.0            htmltools_0.5.9</span></span></code></pre></div>
 </div>
 
 

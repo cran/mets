@@ -13,7 +13,7 @@ library(mets)
  bmt$time <- bmt$time+runif(nrow(bmt))*0.01
  bmt$id <- 1:408
 
- # logistic regresion with IPCW binomial regression 
+ # logistic regression with IPCW binomial regression 
  out <- binreg(Event(time,cause)~tcell+platelet,bmt,time=50)
  summary(out)
 
@@ -56,17 +56,6 @@ pl <- prodlim(Hist(time,cause)~tcell,bmt)
 spl <- summary(pl,times=50,asMatrix=TRUE)
 spl
 }
-
-## -----------------------------------------------------------------------------
- data(bmt)
- dcut(bmt,breaks=2) <- ~age 
- out1<-BinAugmentCifstrata(Event(time,cause)~platelet+agecat.2+
-			  strata(platelet,agecat.2),data=bmt,cause=1,time=40)
- summary(out1)
-
- out2<-BinAugmentCifstrata(Event(time,cause)~platelet+agecat.2+
-     strata(platelet,agecat.2)+strataC(platelet),data=bmt,cause=1,time=40)
- summary(out2)
 
 ## -----------------------------------------------------------------------------
 sessionInfo()

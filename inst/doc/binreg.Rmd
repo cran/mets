@@ -24,19 +24,17 @@ library(mets)
 Binomial Regression for censored data 
 =====================================
 
-The binreg function can fit a logistic link model with IPCW adjustment for a specific time-point, 
-and can thus be used for describing survival or competing risks data.
-The function can be used for large data and is completely scalable, that is, linear in the data. 
-A nice feature is that influcence functions are computed and are available, and can thus be
-used for all other settings based on these parameters. 
+The `binreg` function fits a logistic link model with IPCW adjustment for a specific time-point,
+and can thus be used for both survival and competing risks data.
+Computation is linear in data size, and influence functions are computed and available
+for downstream calculations.
 
-In addition and to summarize
+Key features:
 
-  - the censoring weights can be strata dependent
-  - predictions can be computed with standard errors 
-  - computation time linear in data
-     - including standard errors
-  - clusters can be given and then cluster corrected standard errors are computed
+  - the censoring weights can be stratum-dependent
+  - predictions can be computed with standard errors
+  - computation time is linear in data size, including standard errors
+  - cluster-corrected standard errors are available via the `clusters` argument
 
 
 Details
@@ -46,17 +44,18 @@ The binreg function does direct binomial regression for one time-point, $t$, fit
 \begin{align*}
 P(T \leq t, \epsilon=1 | X )  & = \mbox{expit}( X^T \beta)  = F_1(t,X,\beta)
 \end{align*}
-to an IPCW adjusted estmating equation (EE) with response  $Y(t)=I(T \leq t, \epsilon=1 )$
+based on an IPCW adjusted estimating equation (EE) with response  $Y(t)=I(T \leq t, \epsilon=1 )$
 \begin{align*}
  U(\beta,\hat G_c) = &  X ( Y(t) \frac{ \Delta(t) }{\hat G_c(T_i \wedge t)} - \mbox{expit}( X^T \beta)) = 0,
 \end{align*}
-with $G_c(t)=P(C>t)$, the  censoring survival distribution, and  with $\Delta(t) = I( C_i > T_i \wedge t)$
+with $G_c(t)=P(C>t)$, the  censoring survival distribution, and with $\Delta(t) = I( C_i > T_i \wedge t)$
 the indicator of being uncensored at time $t$ (type="I"). 
+
 The default type="II" is to augment with a censoring term, that is solve 
 \begin{align*}
   &  U(\beta,\hat G_c) + \int_0^t X \frac{\hat E(Y(t)| T>u)}{\hat G_c(u)} d\hat M_c(u) =0 
 \end{align*}
-where $M_c(u)$ is the censoring martingale, this typically improves the performance. This is equivlent to the 
+where $M_c(u)$ is the censoring martingale, this typically improves the performance. This is equivalent to the 
 pseudo-value approach (see Overgaard (2025)).
 
 The influence function for the type="II" estimator is 
@@ -83,17 +82,17 @@ The logitIPCW has influence function
 \end{align*}
 
 Which estimator performs the best depends on the censoring distribution and it seems that the binreg with type="II" performs 
-overall quite nicely (see Blanche et al (2023) and Overgaard (2024)).  For the full estimated censoring model all estimators have the
+overall quite nicely (see Blanche et al (2023) and Overgaard (2025)).  For the full estimated censoring model all estimators have the
 same influence function (see Blanche et al (2023)).
 
-Additional functions logitATE, and binregATE computes the average treatment effect. 
+Additional functions logitATE, and binregATE computes the average treatment effect based on propensity and outcome modelling. 
 We demonstrate this in another vignette. 
 
-The functions logitATE/binregATE can be used there is no censoring and we thus have simple binary outcome. 
+The functions logitATE/binregATE can be used when there is no censoring and we thus have simple binary outcome. 
 
-The variance is based on sandwich formula with IPCW adjustment (using the influence functions), 
-and naive.var is the variance under known censoring model. The influence functions are stored in the output. 
-Clusters can be specified to get cluster corrected standard errors. 
+The variance is based on a sandwich formula with IPCW adjustment (using the influence functions),
+and `naive.var` is the variance under a known censoring model. The influence functions are stored in the output.
+Clusters can be specified to obtain cluster-corrected standard errors.
 
 Examples
 ========
@@ -107,7 +106,7 @@ Examples
  bmt$time <- bmt$time+runif(nrow(bmt))*0.01
  bmt$id <- 1:408
 
- # logistic regresion with IPCW binomial regression 
+ # logistic regression with IPCW binomial regression 
  out <- binreg(Event(time,cause)~tcell+platelet,bmt,time=50)
  summary(out)
 ```
@@ -127,8 +126,7 @@ Further the censoring model can depend on strata
 Absolute risk differences and ratio
 ===================================
 
-Now for illustrations I wish to consider the absolute risk difference
-depending on tcell 
+Now for illustrations we consider the absolute risk difference depending on tcell 
 
 ```{r}
  outs <- binreg(Event(time,cause)~tcell,bmt,time=50,cens.model=~strata(tcell))
@@ -143,9 +141,9 @@ ps
 sum( c(1,-1) * ps[,1])
 ```
 
-Getting the standard errors are easy enough since the two-groups are
-independent. In the case where we in addition had adjusted for other covariates, however, we would need 
-the to apply the delta-theorem thus using the relevant covariances along the lines of 
+Getting the standard errors is straightforward since the two groups are
+independent. If we had additionally adjusted for other covariates, however, we would need
+to apply the delta theorem using the relevant covariances, along the lines of:
 
 ```{r}
 dd <- data.frame(tcell=c(0,1))
@@ -175,39 +173,6 @@ spl
 }
 ```
 
-
-Augmenting the Binomial Regression 
-===================================
-
-Rather than using a larger censoring model we can also compute an  augmentation term and
-then fit the binomial regression model based on this augmentation term. 
-Here we compute the augmentation based on stratified non-parametric estimates of $F_1(t,S(X))$, 
-where $S(X)$ gives strata based on $X$ as a working model. 
-
- Computes  the augmentation term for each individual as well as the sum
-\begin{align*}
- A & = \int_0^t H(u,X) \frac{1}{S^*(u,s)} \frac{1}{G_c(u)} dM_c(u)
-\end{align*}
- with 
-\begin{align*}
- H(u,X) & = F_1^*(t,S(X)) - F_1^*(u,S(X))
-\end{align*}
-using a KM for $G_c(t)$ and a working model for cumulative baseline
-related to $F_1^*(t,s)$ and $s$ is strata, $S^*(t,s) = 1 - F_1^*(t,s) - F_2^*(t,s)$. 
-
-Standard errors computed under assumption of correct but estimated $G_c(s)$ model.
-
-```{r}
- data(bmt)
- dcut(bmt,breaks=2) <- ~age 
- out1<-BinAugmentCifstrata(Event(time,cause)~platelet+agecat.2+
-			  strata(platelet,agecat.2),data=bmt,cause=1,time=40)
- summary(out1)
-
- out2<-BinAugmentCifstrata(Event(time,cause)~platelet+agecat.2+
-     strata(platelet,agecat.2)+strataC(platelet),data=bmt,cause=1,time=40)
- summary(out2)
-```
 
 
 SessionInfo

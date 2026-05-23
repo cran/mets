@@ -21,6 +21,14 @@ S0FGN <- function(ia, itype2, istatus, istrata, instrata, istrata2, instrata2, i
     .Call(`_mets_S0_FGRN`, ia, itype2, istatus, istrata, instrata, istrata2, instrata2, iGcjumps)
 }
 
+riskstrataR <- function(ia, istrata, instrata) {
+    .Call(`_mets_riskstrataR`, ia, istrata, instrata)
+}
+
+cumsumstratasumR <- function(ia, istrata, instrata, iallstrata) {
+    .Call(`_mets_cumsumstratasumR`, ia, istrata, instrata, iallstrata)
+}
+
 .scoreMVN <- function(Y, Mu, dMu, S, dS, itol = 0.0) {
     .Call(`_mets_scoreMVN`, Y, Mu, dMu, S, dS, itol)
 }

@@ -8,13 +8,13 @@ library(mets)
 ## -----------------------------------------------------------------------------
  library(mets)
  options(warn=-1)
- set.seed(1000) # to control output in simulatins for p-values below.
+ set.seed(1000) # to control output in simulations for p-values below.
 
  rho1 <- 0.2; rho2 <- 10
  n <- 400
  beta=c(0.0,-0.1,-0.5,0.3)
  ## beta1=c(0.0,-0.1); beta2=c(-0.5,0.3)
- dats <- simul.cifs(n,rho1,rho2,beta,rc=0.5,rate=7)
+ dats <- simul_cifs(n,rho1,rho2,beta,rc=0.5,rate=7)
  dtable(dats,~status)
  dsort(dats) <- ~time
 
@@ -117,20 +117,10 @@ if (run==1) {
  summary(fg)
 
 ## -----------------------------------------------------------------------------
-  fgaugS <- FG_AugmentCifstrata(Event(time,status)~Z1+Z2+strata(Z1,Z2),data=dats,cause=1,E=fg$E)
-  summary(fgaugS)
-
-  fgaugS2 <- FG_AugmentCifstrata(Event(time,status)~Z1+Z2+strata(Z1,Z2),data=dats,cause=1,E=fgaugS$E)
-  summary(fgaugS2)
-
-  fgaugS3 <- FG_AugmentCifstrata(Event(time,status)~Z1+Z2+strata(Z1,Z2),data=dats,cause=1,E=fgaugS2$E)
-  summary(fgaugS3)
-
-## -----------------------------------------------------------------------------
  rho1 <- 0.2; rho2 <- 10
  n <- 400
  beta=c(0.0,-0.1,-0.5,0.3)
- dats <- simul.cifs(n,rho1,rho2,beta,rc=0.5,rate=7,type="logistic")
+ dats <- simul_cifs(n,rho1,rho2,beta,rc=0.5,rate=7,type="logistic")
  dtable(dats,~status)
  dsort(dats) <- ~time
 
@@ -144,17 +134,28 @@ rho1 <- 0.3; rho2 <- 5.9
 set.seed(100)
 n <- 100
 beta=c(0.3,-0.3,-0.5,0.3)
-rc <- 0.9
+rc <- 0.5
 ###
-dats <- mets:::simul.cifsRA(n,rho1,rho2,beta,bin=1,rc=rc,rate=c(3,7))
+dats <- mets:::simul_cifsRA(n,rho1,rho2,beta,bin=1,rc=rc,rate=c(3,7))
 dats$status07 <- dats$status
 dats$status07[dats$status %in% c(0,7)] <- 0
 tt <- seq(0,6,by=0.1)
 base1 <- rho1*(1-exp(-tt/3))
+dtable(dats,~status+statusA,level=1)
 
+## only admin censoring 
 ccA  <-  cifregFG(Event(timeA,statusA)~Z1+Z2,dats,
-		  adm.cens.time=dats$censorA,no.codes=7)
+		  adm.cens.time=dats$censorA,death.code=2)
 estimate(ccA)
+
+## admin and random censoring  via IPCW for C=min(C_A,C_R) 
+ccAR_ipcw1  <-  cifregFG(Event(time,status)~Z1+Z2,dats,cens.code=c(0,7))
+estimate(ccAR_ipcw1)
+
+## admin and random censoring  via IPCW for C_R 
+ccAR_ipcw2  <-  cifregFG(Event(time,status)~Z1+Z2,dats,cens.code=0,
+		  adm.cens.time=dats$censorA,no.codes=7)
+estimate(ccAR_ipcw2)
 
 ## -----------------------------------------------------------------------------
 dats$entry <- 0

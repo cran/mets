@@ -17,14 +17,13 @@ data(hfactioncpx12)
 hf <- hfactioncpx12
 hf$severity <- abs((5+rnorm(741)*2))[hf$id]
 
-proc_design <- mets:::proc_design
 ## marginal mean using formula  
-outNZ <- recurrentMarginal(Event(entry,time,status)~strata(treatment)+cluster(id)
+outNZ <- recurrent_marginal(Event(entry,time,status)~strata(treatment)+cluster(id)
 			 +marks(severity),hf,cause=1,death.code=2)
 plot(outNZ,se=TRUE)
 summary(outNZ,times=3) 
 
-outN <- recurrentMarginal(Event(entry,time,status)~strata(treatment)+cluster(id),data=hf,
+outN <- recurrent_marginal(Event(entry,time,status)~strata(treatment)+cluster(id),data=hf,
 		       cause=1,death.code=2)
 plot(outN,se=TRUE,add=TRUE)
 summary(outN,times=3) 
@@ -50,7 +49,7 @@ summary(GL)
 plot(GL,add=TRUE,col=2)
 
 ## -----------------------------------------------------------------------------
-ooNZ <- prob.exceed.recurrent(Event(entry,time,status)~strata(treatment)+cluster(id)+marks(severity),data=hf,
+ooNZ <- prob_exceed_recurrent(Event(entry,time,status)~strata(treatment)+cluster(id)+marks(severity),data=hf,
 			      cause=1,death.code=2,exceed=c(1,5,10,20))
 plot(ooNZ,strata=1)
 plot(ooNZ,strata=2,add=TRUE)

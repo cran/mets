@@ -12,7 +12,7 @@
 
 <meta name="author" content="Klaus Holst &amp; Thomas Scheike" />
 
-<meta name="date" content="2026-01-11" />
+<meta name="date" content="2026-05-23" />
 
 <title>Binomial Regression for Survival and Competing Risks Data</title>
 
@@ -50,9 +50,8 @@ overflow: visible;
 }
 </style>
 <style type="text/css" data-origin="pandoc">
-html { -webkit-text-size-adjust: 100%; }
 pre > code.sourceCode { white-space: pre; position: relative; }
-pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span { line-height: 1.25; }
 pre > code.sourceCode > span:empty { height: 1.2em; }
 .sourceCode { overflow: visible; }
 code.sourceCode > span { color: inherit; text-decoration: inherit; }
@@ -342,29 +341,25 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 <h1 class="title toc-ignore">Binomial Regression for Survival and
 Competing Risks Data</h1>
 <h4 class="author">Klaus Holst &amp; Thomas Scheike</h4>
-<h4 class="date">2026-01-11</h4>
+<h4 class="date">2026-05-23</h4>
 
 
 
 <div id="binomial-regression-for-censored-data" class="section level1">
 <h1>Binomial Regression for censored data</h1>
-<p>The binreg function can fit a logistic link model with IPCW
-adjustment for a specific time-point, and can thus be used for
-describing survival or competing risks data. The function can be used
-for large data and is completely scalable, that is, linear in the data.
-A nice feature is that influcence functions are computed and are
-available, and can thus be used for all other settings based on these
-parameters.</p>
-<p>In addition and to summarize</p>
+<p>The <code>binreg</code> function fits a logistic link model with IPCW
+adjustment for a specific time-point, and can thus be used for both
+survival and competing risks data. Computation is linear in data size,
+and influence functions are computed and available for downstream
+calculations.</p>
+<p>Key features:</p>
 <ul>
-<li>the censoring weights can be strata dependent</li>
+<li>the censoring weights can be stratum-dependent</li>
 <li>predictions can be computed with standard errors</li>
-<li>computation time linear in data
-<ul>
-<li>including standard errors</li>
-</ul></li>
-<li>clusters can be given and then cluster corrected standard errors are
-computed</li>
+<li>computation time is linear in data size, including standard
+errors</li>
+<li>cluster-corrected standard errors are available via the
+<code>clusters</code> argument</li>
 </ul>
 </div>
 <div id="details" class="section level1">
@@ -374,21 +369,22 @@ time-point, <span class="math inline">\(t\)</span>, fitting the model
 <span class="math display">\[\begin{align*}
 P(T \leq t, \epsilon=1 | X )  &amp; = \mbox{expit}( X^T \beta)  =
 F_1(t,X,\beta)
-\end{align*}\]</span> to an IPCW adjusted estmating equation (EE) with
-response <span class="math inline">\(Y(t)=I(T \leq t, \epsilon=1
+\end{align*}\]</span> based on an IPCW adjusted estimating equation (EE)
+with response <span class="math inline">\(Y(t)=I(T \leq t, \epsilon=1
 )\)</span> <span class="math display">\[\begin{align*}
 U(\beta,\hat G_c) = &amp;  X ( Y(t) \frac{ \Delta(t) }{\hat G_c(T_i
 \wedge t)} - \mbox{expit}( X^T \beta)) = 0,
 \end{align*}\]</span> with <span class="math inline">\(G_c(t)=P(C&gt;t)\)</span>, the censoring survival
 distribution, and with <span class="math inline">\(\Delta(t) = I( C_i
 &gt; T_i \wedge t)\)</span> the indicator of being uncensored at time
-<span class="math inline">\(t\)</span> (type=“I”). The default type=“II”
-is to augment with a censoring term, that is solve <span class="math display">\[\begin{align*}
+<span class="math inline">\(t\)</span> (type=“I”).</p>
+<p>The default type=“II” is to augment with a censoring term, that is
+solve <span class="math display">\[\begin{align*}
   &amp;  U(\beta,\hat G_c) + \int_0^t X \frac{\hat E(Y(t)| T&gt;u)}{\hat
 G_c(u)} d\hat M_c(u) =0
 \end{align*}\]</span> where <span class="math inline">\(M_c(u)\)</span>
 is the censoring martingale, this typically improves the performance.
-This is equivlent to the pseudo-value approach (see Overgaard
+This is equivalent to the pseudo-value approach (see Overgaard
 (2025)).</p>
 <p>The influence function for the type=“II” estimator is <span class="math display">\[\begin{align*}
     U(\beta,G_c) + \int_0^t X \frac{E(Y| T&gt;u)}{G_c(u)} d M_c(u)  
@@ -412,17 +408,19 @@ T&gt;u)}{G_c(u)} d M_c(u)
 \end{align*}\]</span></p>
 <p>Which estimator performs the best depends on the censoring
 distribution and it seems that the binreg with type=“II” performs
-overall quite nicely (see Blanche et al (2023) and Overgaard (2024)).
+overall quite nicely (see Blanche et al (2023) and Overgaard (2025)).
 For the full estimated censoring model all estimators have the same
 influence function (see Blanche et al (2023)).</p>
 <p>Additional functions logitATE, and binregATE computes the average
-treatment effect. We demonstrate this in another vignette.</p>
-<p>The functions logitATE/binregATE can be used there is no censoring
-and we thus have simple binary outcome.</p>
-<p>The variance is based on sandwich formula with IPCW adjustment (using
-the influence functions), and naive.var is the variance under known
-censoring model. The influence functions are stored in the output.
-Clusters can be specified to get cluster corrected standard errors.</p>
+treatment effect based on propensity and outcome modelling. We
+demonstrate this in another vignette.</p>
+<p>The functions logitATE/binregATE can be used when there is no
+censoring and we thus have simple binary outcome.</p>
+<p>The variance is based on a sandwich formula with IPCW adjustment
+(using the influence functions), and <code>naive.var</code> is the
+variance under a known censoring model. The influence functions are
+stored in the output. Clusters can be specified to obtain
+cluster-corrected standard errors.</p>
 </div>
 <div id="examples" class="section level1">
 <h1>Examples</h1>
@@ -433,7 +431,7 @@ Clusters can be specified to get cluster corrected standard errors.</p>
 <span id="cb1-5"><a href="#cb1-5" tabindex="-1"></a> bmt<span class="sc">$</span>time <span class="ot">&lt;-</span> bmt<span class="sc">$</span>time<span class="sc">+</span><span class="fu">runif</span>(<span class="fu">nrow</span>(bmt))<span class="sc">*</span><span class="fl">0.01</span></span>
 <span id="cb1-6"><a href="#cb1-6" tabindex="-1"></a> bmt<span class="sc">$</span>id <span class="ot">&lt;-</span> <span class="dv">1</span><span class="sc">:</span><span class="dv">408</span></span>
 <span id="cb1-7"><a href="#cb1-7" tabindex="-1"></a></span>
-<span id="cb1-8"><a href="#cb1-8" tabindex="-1"></a> <span class="co"># logistic regresion with IPCW binomial regression </span></span>
+<span id="cb1-8"><a href="#cb1-8" tabindex="-1"></a> <span class="co"># logistic regression with IPCW binomial regression </span></span>
 <span id="cb1-9"><a href="#cb1-9" tabindex="-1"></a> out <span class="ot">&lt;-</span> <span class="fu">binreg</span>(<span class="fu">Event</span>(time,cause)<span class="sc">~</span>tcell<span class="sc">+</span>platelet,bmt,<span class="at">time=</span><span class="dv">50</span>)</span>
 <span id="cb1-10"><a href="#cb1-10" tabindex="-1"></a> <span class="fu">summary</span>(out)</span>
 <span id="cb1-11"><a href="#cb1-11" tabindex="-1"></a><span class="co">#&gt;    n events</span></span>
@@ -477,7 +475,7 @@ Clusters can be specified to get cluster corrected standard errors.</p>
 </div>
 <div id="absolute-risk-differences-and-ratio" class="section level1">
 <h1>Absolute risk differences and ratio</h1>
-<p>Now for illustrations I wish to consider the absolute risk difference
+<p>Now for illustrations we consider the absolute risk difference
 depending on tcell</p>
 <div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a> outs <span class="ot">&lt;-</span> <span class="fu">binreg</span>(<span class="fu">Event</span>(time,cause)<span class="sc">~</span>tcell,bmt,<span class="at">time=</span><span class="dv">50</span>,<span class="at">cens.model=</span><span class="sc">~</span><span class="fu">strata</span>(tcell))</span>
 <span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a> <span class="fu">summary</span>(outs)</span>
@@ -502,10 +500,10 @@ depending on tcell</p>
 <span id="cb5-5"><a href="#cb5-5" tabindex="-1"></a><span class="co">#&gt; 2 0.3061988 0.06819019 0.1725461 0.4398516</span></span>
 <span id="cb5-6"><a href="#cb5-6" tabindex="-1"></a><span class="fu">sum</span>( <span class="fu">c</span>(<span class="dv">1</span>,<span class="sc">-</span><span class="dv">1</span>) <span class="sc">*</span> ps[,<span class="dv">1</span>])</span>
 <span id="cb5-7"><a href="#cb5-7" tabindex="-1"></a><span class="co">#&gt; [1] 0.1192264</span></span></code></pre></div>
-<p>Getting the standard errors are easy enough since the two-groups are
-independent. In the case where we in addition had adjusted for other
-covariates, however, we would need the to apply the delta-theorem thus
-using the relevant covariances along the lines of</p>
+<p>Getting the standard errors is straightforward since the two groups
+are independent. If we had additionally adjusted for other covariates,
+however, we would need to apply the delta theorem using the relevant
+covariances, along the lines of:</p>
 <div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a>dd <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">tcell=</span><span class="fu">c</span>(<span class="dv">0</span>,<span class="dv">1</span>))</span>
 <span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a>p <span class="ot">&lt;-</span> <span class="fu">predict</span>(outs,dd)</span>
 <span id="cb6-3"><a href="#cb6-3" tabindex="-1"></a></span>
@@ -519,17 +517,17 @@ using the relevant covariances along the lines of</p>
 <span id="cb6-11"><a href="#cb6-11" tabindex="-1"></a>}</span>
 <span id="cb6-12"><a href="#cb6-12" tabindex="-1"></a>     </span>
 <span id="cb6-13"><a href="#cb6-13" tabindex="-1"></a><span class="fu">estimate</span>(outs,<span class="at">f=</span>riskdifratio,dd,<span class="at">null=</span><span class="fu">c</span>(<span class="dv">0</span>,<span class="dv">1</span>,<span class="dv">1</span>))</span>
-<span id="cb6-14"><a href="#cb6-14" tabindex="-1"></a><span class="co">#&gt;      Estimate Std.Err     2.5%  97.5% P-value</span></span>
-<span id="cb6-15"><a href="#cb6-15" tabindex="-1"></a><span class="co">#&gt; [p1]   0.1192 0.07344 -0.02471 0.2632 0.10448</span></span>
-<span id="cb6-16"><a href="#cb6-16" tabindex="-1"></a><span class="co">#&gt; [p2]   1.3894 0.32197  0.75833 2.0204 0.22652</span></span>
-<span id="cb6-17"><a href="#cb6-17" tabindex="-1"></a><span class="co">#&gt; [p3]   0.7197 0.16679  0.39284 1.0467 0.09291</span></span>
-<span id="cb6-18"><a href="#cb6-18" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-19"><a href="#cb6-19" tabindex="-1"></a><span class="co">#&gt;  Null Hypothesis: </span></span>
+<span id="cb6-14"><a href="#cb6-14" tabindex="-1"></a><span class="co">#&gt;    Estimate Std.Err     2.5%  97.5% P-value</span></span>
+<span id="cb6-15"><a href="#cb6-15" tabindex="-1"></a><span class="co">#&gt; p1   0.1192 0.07344 -0.02471 0.2632 0.10448</span></span>
+<span id="cb6-16"><a href="#cb6-16" tabindex="-1"></a><span class="co">#&gt; p2   1.3894 0.32197  0.75833 2.0204 0.22652</span></span>
+<span id="cb6-17"><a href="#cb6-17" tabindex="-1"></a><span class="co">#&gt; p3   0.7197 0.16679  0.39284 1.0467 0.09291</span></span>
+<span id="cb6-18"><a href="#cb6-18" tabindex="-1"></a><span class="co">#&gt; ────────────────────────────────────────────────────────────</span></span>
+<span id="cb6-19"><a href="#cb6-19" tabindex="-1"></a><span class="co">#&gt; Null Hypothesis: </span></span>
 <span id="cb6-20"><a href="#cb6-20" tabindex="-1"></a><span class="co">#&gt;   [p1] = 0</span></span>
 <span id="cb6-21"><a href="#cb6-21" tabindex="-1"></a><span class="co">#&gt;   [p2] = 1</span></span>
 <span id="cb6-22"><a href="#cb6-22" tabindex="-1"></a><span class="co">#&gt;   [p3] = 1 </span></span>
 <span id="cb6-23"><a href="#cb6-23" tabindex="-1"></a><span class="co">#&gt;  </span></span>
-<span id="cb6-24"><a href="#cb6-24" tabindex="-1"></a><span class="co">#&gt; chisq = 12.0249, df = 3, p-value = 0.007298</span></span></code></pre></div>
+<span id="cb6-24"><a href="#cb6-24" tabindex="-1"></a><span class="co">#&gt; chisq = 12.0249, df = 2, p-value = 0.002448</span></span></code></pre></div>
 <p>same as</p>
 <div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a>run <span class="ot">&lt;-</span> <span class="dv">0</span></span>
 <span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a><span class="cf">if</span> (run<span class="sc">==</span><span class="dv">1</span>) {</span>
@@ -539,99 +537,48 @@ using the relevant covariances along the lines of</p>
 <span id="cb7-6"><a href="#cb7-6" tabindex="-1"></a>spl</span>
 <span id="cb7-7"><a href="#cb7-7" tabindex="-1"></a>}</span></code></pre></div>
 </div>
-<div id="augmenting-the-binomial-regression" class="section level1">
-<h1>Augmenting the Binomial Regression</h1>
-<p>Rather than using a larger censoring model we can also compute an
-augmentation term and then fit the binomial regression model based on
-this augmentation term. Here we compute the augmentation based on
-stratified non-parametric estimates of <span class="math inline">\(F_1(t,S(X))\)</span>, where <span class="math inline">\(S(X)\)</span> gives strata based on <span class="math inline">\(X\)</span> as a working model.</p>
-<p>Computes the augmentation term for each individual as well as the sum
-<span class="math display">\[\begin{align*}
-A &amp; = \int_0^t H(u,X) \frac{1}{S^*(u,s)} \frac{1}{G_c(u)} dM_c(u)
-\end{align*}\]</span> with <span class="math display">\[\begin{align*}
-H(u,X) &amp; = F_1^*(t,S(X)) - F_1^*(u,S(X))
-\end{align*}\]</span> using a KM for <span class="math inline">\(G_c(t)\)</span> and a working model for cumulative
-baseline related to <span class="math inline">\(F_1^*(t,s)\)</span> and
-<span class="math inline">\(s\)</span> is strata, <span class="math inline">\(S^*(t,s) = 1 - F_1^*(t,s) -
-F_2^*(t,s)\)</span>.</p>
-<p>Standard errors computed under assumption of correct but estimated
-<span class="math inline">\(G_c(s)\)</span> model.</p>
-<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a> <span class="fu">data</span>(bmt)</span>
-<span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a> <span class="fu">dcut</span>(bmt,<span class="at">breaks=</span><span class="dv">2</span>) <span class="ot">&lt;-</span> <span class="er">~</span>age </span>
-<span id="cb8-3"><a href="#cb8-3" tabindex="-1"></a> out1<span class="ot">&lt;-</span><span class="fu">BinAugmentCifstrata</span>(<span class="fu">Event</span>(time,cause)<span class="sc">~</span>platelet<span class="sc">+</span>agecat<span class="fl">.2</span><span class="sc">+</span></span>
-<span id="cb8-4"><a href="#cb8-4" tabindex="-1"></a>              <span class="fu">strata</span>(platelet,agecat<span class="fl">.2</span>),<span class="at">data=</span>bmt,<span class="at">cause=</span><span class="dv">1</span>,<span class="at">time=</span><span class="dv">40</span>)</span>
-<span id="cb8-5"><a href="#cb8-5" tabindex="-1"></a> <span class="fu">summary</span>(out1)</span>
-<span id="cb8-6"><a href="#cb8-6" tabindex="-1"></a><span class="co">#&gt;    n events</span></span>
-<span id="cb8-7"><a href="#cb8-7" tabindex="-1"></a><span class="co">#&gt;  408    157</span></span>
-<span id="cb8-8"><a href="#cb8-8" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb8-9"><a href="#cb8-9" tabindex="-1"></a><span class="co">#&gt;  408 clusters</span></span>
-<span id="cb8-10"><a href="#cb8-10" tabindex="-1"></a><span class="co">#&gt; coeffients:</span></span>
-<span id="cb8-11"><a href="#cb8-11" tabindex="-1"></a><span class="co">#&gt;                      Estimate  Std.Err     2.5%    97.5% P-value</span></span>
-<span id="cb8-12"><a href="#cb8-12" tabindex="-1"></a><span class="co">#&gt; (Intercept)          -0.51295  0.17090 -0.84791 -0.17799  0.0027</span></span>
-<span id="cb8-13"><a href="#cb8-13" tabindex="-1"></a><span class="co">#&gt; platelet             -0.63011  0.23585 -1.09237 -0.16785  0.0075</span></span>
-<span id="cb8-14"><a href="#cb8-14" tabindex="-1"></a><span class="co">#&gt; agecat.2(0.203,1.94]  0.55926  0.21211  0.14353  0.97500  0.0084</span></span>
-<span id="cb8-15"><a href="#cb8-15" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb8-16"><a href="#cb8-16" tabindex="-1"></a><span class="co">#&gt; exp(coeffients):</span></span>
-<span id="cb8-17"><a href="#cb8-17" tabindex="-1"></a><span class="co">#&gt;                      Estimate    2.5%  97.5%</span></span>
-<span id="cb8-18"><a href="#cb8-18" tabindex="-1"></a><span class="co">#&gt; (Intercept)           0.59873 0.42831 0.8370</span></span>
-<span id="cb8-19"><a href="#cb8-19" tabindex="-1"></a><span class="co">#&gt; platelet              0.53253 0.33542 0.8455</span></span>
-<span id="cb8-20"><a href="#cb8-20" tabindex="-1"></a><span class="co">#&gt; agecat.2(0.203,1.94]  1.74938 1.15434 2.6512</span></span>
-<span id="cb8-21"><a href="#cb8-21" tabindex="-1"></a></span>
-<span id="cb8-22"><a href="#cb8-22" tabindex="-1"></a> out2<span class="ot">&lt;-</span><span class="fu">BinAugmentCifstrata</span>(<span class="fu">Event</span>(time,cause)<span class="sc">~</span>platelet<span class="sc">+</span>agecat<span class="fl">.2</span><span class="sc">+</span></span>
-<span id="cb8-23"><a href="#cb8-23" tabindex="-1"></a>     <span class="fu">strata</span>(platelet,agecat<span class="fl">.2</span>)<span class="sc">+</span><span class="fu">strataC</span>(platelet),<span class="at">data=</span>bmt,<span class="at">cause=</span><span class="dv">1</span>,<span class="at">time=</span><span class="dv">40</span>)</span>
-<span id="cb8-24"><a href="#cb8-24" tabindex="-1"></a> <span class="fu">summary</span>(out2)</span>
-<span id="cb8-25"><a href="#cb8-25" tabindex="-1"></a><span class="co">#&gt;    n events</span></span>
-<span id="cb8-26"><a href="#cb8-26" tabindex="-1"></a><span class="co">#&gt;  408    157</span></span>
-<span id="cb8-27"><a href="#cb8-27" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb8-28"><a href="#cb8-28" tabindex="-1"></a><span class="co">#&gt;  408 clusters</span></span>
-<span id="cb8-29"><a href="#cb8-29" tabindex="-1"></a><span class="co">#&gt; coeffients:</span></span>
-<span id="cb8-30"><a href="#cb8-30" tabindex="-1"></a><span class="co">#&gt;                      Estimate  Std.Err     2.5%    97.5% P-value</span></span>
-<span id="cb8-31"><a href="#cb8-31" tabindex="-1"></a><span class="co">#&gt; (Intercept)          -0.51346  0.17109 -0.84879 -0.17814  0.0027</span></span>
-<span id="cb8-32"><a href="#cb8-32" tabindex="-1"></a><span class="co">#&gt; platelet             -0.63636  0.23653 -1.09996 -0.17276  0.0071</span></span>
-<span id="cb8-33"><a href="#cb8-33" tabindex="-1"></a><span class="co">#&gt; agecat.2(0.203,1.94]  0.56280  0.21229  0.14672  0.97889  0.0080</span></span>
-<span id="cb8-34"><a href="#cb8-34" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb8-35"><a href="#cb8-35" tabindex="-1"></a><span class="co">#&gt; exp(coeffients):</span></span>
-<span id="cb8-36"><a href="#cb8-36" tabindex="-1"></a><span class="co">#&gt;                      Estimate    2.5%  97.5%</span></span>
-<span id="cb8-37"><a href="#cb8-37" tabindex="-1"></a><span class="co">#&gt; (Intercept)           0.59842 0.42793 0.8368</span></span>
-<span id="cb8-38"><a href="#cb8-38" tabindex="-1"></a><span class="co">#&gt; platelet              0.52922 0.33288 0.8413</span></span>
-<span id="cb8-39"><a href="#cb8-39" tabindex="-1"></a><span class="co">#&gt; agecat.2(0.203,1.94]  1.75559 1.15803 2.6615</span></span></code></pre></div>
-</div>
 <div id="sessioninfo" class="section level1">
 <h1>SessionInfo</h1>
-<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" tabindex="-1"></a><span class="fu">sessionInfo</span>()</span>
-<span id="cb9-2"><a href="#cb9-2" tabindex="-1"></a><span class="co">#&gt; R version 4.5.2 (2025-10-31)</span></span>
-<span id="cb9-3"><a href="#cb9-3" tabindex="-1"></a><span class="co">#&gt; Platform: aarch64-apple-darwin25.1.0</span></span>
-<span id="cb9-4"><a href="#cb9-4" tabindex="-1"></a><span class="co">#&gt; Running under: macOS Tahoe 26.2</span></span>
-<span id="cb9-5"><a href="#cb9-5" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb9-6"><a href="#cb9-6" tabindex="-1"></a><span class="co">#&gt; Matrix products: default</span></span>
-<span id="cb9-7"><a href="#cb9-7" tabindex="-1"></a><span class="co">#&gt; BLAS:   /Users/kkzh/.asdf/installs/r/4.5.2/lib/R/lib/libRblas.dylib </span></span>
-<span id="cb9-8"><a href="#cb9-8" tabindex="-1"></a><span class="co">#&gt; LAPACK: /Users/kkzh/.asdf/installs/r/4.5.2/lib/R/lib/libRlapack.dylib;  LAPACK version 3.12.1</span></span>
-<span id="cb9-9"><a href="#cb9-9" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb9-10"><a href="#cb9-10" tabindex="-1"></a><span class="co">#&gt; locale:</span></span>
-<span id="cb9-11"><a href="#cb9-11" tabindex="-1"></a><span class="co">#&gt; [1] en_US.UTF-8/en_US.UTF-8/en_US.UTF-8/C/en_US.UTF-8/en_US.UTF-8</span></span>
-<span id="cb9-12"><a href="#cb9-12" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb9-13"><a href="#cb9-13" tabindex="-1"></a><span class="co">#&gt; time zone: Europe/Copenhagen</span></span>
-<span id="cb9-14"><a href="#cb9-14" tabindex="-1"></a><span class="co">#&gt; tzcode source: internal</span></span>
-<span id="cb9-15"><a href="#cb9-15" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb9-16"><a href="#cb9-16" tabindex="-1"></a><span class="co">#&gt; attached base packages:</span></span>
-<span id="cb9-17"><a href="#cb9-17" tabindex="-1"></a><span class="co">#&gt; [1] stats     graphics  grDevices utils     datasets  methods   base     </span></span>
-<span id="cb9-18"><a href="#cb9-18" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb9-19"><a href="#cb9-19" tabindex="-1"></a><span class="co">#&gt; other attached packages:</span></span>
-<span id="cb9-20"><a href="#cb9-20" tabindex="-1"></a><span class="co">#&gt; [1] timereg_2.0.7  survival_3.8-3 mets_1.3.9    </span></span>
-<span id="cb9-21"><a href="#cb9-21" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb9-22"><a href="#cb9-22" tabindex="-1"></a><span class="co">#&gt; loaded via a namespace (and not attached):</span></span>
-<span id="cb9-23"><a href="#cb9-23" tabindex="-1"></a><span class="co">#&gt;  [1] cli_3.6.5              knitr_1.50             rlang_1.1.6           </span></span>
-<span id="cb9-24"><a href="#cb9-24" tabindex="-1"></a><span class="co">#&gt;  [4] xfun_0.54              jsonlite_2.0.0         future.apply_1.20.1   </span></span>
-<span id="cb9-25"><a href="#cb9-25" tabindex="-1"></a><span class="co">#&gt;  [7] listenv_0.10.0         lava_1.8.3             htmltools_0.5.8.1     </span></span>
-<span id="cb9-26"><a href="#cb9-26" tabindex="-1"></a><span class="co">#&gt; [10] sass_0.4.10            rmarkdown_2.30         grid_4.5.2            </span></span>
-<span id="cb9-27"><a href="#cb9-27" tabindex="-1"></a><span class="co">#&gt; [13] evaluate_1.0.5         jquerylib_0.1.4        fastmap_1.2.0         </span></span>
-<span id="cb9-28"><a href="#cb9-28" tabindex="-1"></a><span class="co">#&gt; [16] numDeriv_2016.8-1.1    yaml_2.3.10            mvtnorm_1.3-3         </span></span>
-<span id="cb9-29"><a href="#cb9-29" tabindex="-1"></a><span class="co">#&gt; [19] lifecycle_1.0.4        compiler_4.5.2         codetools_0.2-20      </span></span>
-<span id="cb9-30"><a href="#cb9-30" tabindex="-1"></a><span class="co">#&gt; [22] ucminf_1.2.2           Rcpp_1.1.1             future_1.68.0         </span></span>
-<span id="cb9-31"><a href="#cb9-31" tabindex="-1"></a><span class="co">#&gt; [25] lattice_0.22-7         digest_0.6.39          R6_2.6.1              </span></span>
-<span id="cb9-32"><a href="#cb9-32" tabindex="-1"></a><span class="co">#&gt; [28] parallelly_1.46.1      parallel_4.5.2         splines_4.5.2         </span></span>
-<span id="cb9-33"><a href="#cb9-33" tabindex="-1"></a><span class="co">#&gt; [31] Matrix_1.7-4           bslib_0.9.0            tools_4.5.2           </span></span>
-<span id="cb9-34"><a href="#cb9-34" tabindex="-1"></a><span class="co">#&gt; [34] RcppArmadillo_15.2.3-1 globals_0.18.0         cachem_1.1.0</span></span></code></pre></div>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a><span class="fu">sessionInfo</span>()</span>
+<span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a><span class="co">#&gt; R version 4.6.0 (2026-04-24)</span></span>
+<span id="cb8-3"><a href="#cb8-3" tabindex="-1"></a><span class="co">#&gt; Platform: x86_64-pc-linux-gnu</span></span>
+<span id="cb8-4"><a href="#cb8-4" tabindex="-1"></a><span class="co">#&gt; Running under: Ubuntu 24.04.4 LTS</span></span>
+<span id="cb8-5"><a href="#cb8-5" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb8-6"><a href="#cb8-6" tabindex="-1"></a><span class="co">#&gt; Matrix products: default</span></span>
+<span id="cb8-7"><a href="#cb8-7" tabindex="-1"></a><span class="co">#&gt; BLAS:   /home/kkzh/.asdf/installs/r/4.6.0/lib/R/lib/libRblas.so </span></span>
+<span id="cb8-8"><a href="#cb8-8" tabindex="-1"></a><span class="co">#&gt; LAPACK: /usr/lib/x86_64-linux-gnu/lapack/liblapack.so.3.12.0  LAPACK version 3.12.0</span></span>
+<span id="cb8-9"><a href="#cb8-9" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb8-10"><a href="#cb8-10" tabindex="-1"></a><span class="co">#&gt; locale:</span></span>
+<span id="cb8-11"><a href="#cb8-11" tabindex="-1"></a><span class="co">#&gt;  [1] LC_CTYPE=en_US.UTF-8       LC_NUMERIC=C              </span></span>
+<span id="cb8-12"><a href="#cb8-12" tabindex="-1"></a><span class="co">#&gt;  [3] LC_TIME=en_US.UTF-8        LC_COLLATE=en_US.UTF-8    </span></span>
+<span id="cb8-13"><a href="#cb8-13" tabindex="-1"></a><span class="co">#&gt;  [5] LC_MONETARY=en_US.UTF-8    LC_MESSAGES=en_US.UTF-8   </span></span>
+<span id="cb8-14"><a href="#cb8-14" tabindex="-1"></a><span class="co">#&gt;  [7] LC_PAPER=en_US.UTF-8       LC_NAME=C                 </span></span>
+<span id="cb8-15"><a href="#cb8-15" tabindex="-1"></a><span class="co">#&gt;  [9] LC_ADDRESS=C               LC_TELEPHONE=C            </span></span>
+<span id="cb8-16"><a href="#cb8-16" tabindex="-1"></a><span class="co">#&gt; [11] LC_MEASUREMENT=en_US.UTF-8 LC_IDENTIFICATION=C       </span></span>
+<span id="cb8-17"><a href="#cb8-17" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb8-18"><a href="#cb8-18" tabindex="-1"></a><span class="co">#&gt; time zone: Europe/Copenhagen</span></span>
+<span id="cb8-19"><a href="#cb8-19" tabindex="-1"></a><span class="co">#&gt; tzcode source: system (glibc)</span></span>
+<span id="cb8-20"><a href="#cb8-20" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb8-21"><a href="#cb8-21" tabindex="-1"></a><span class="co">#&gt; attached base packages:</span></span>
+<span id="cb8-22"><a href="#cb8-22" tabindex="-1"></a><span class="co">#&gt; [1] stats     graphics  grDevices utils     datasets  methods   base     </span></span>
+<span id="cb8-23"><a href="#cb8-23" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb8-24"><a href="#cb8-24" tabindex="-1"></a><span class="co">#&gt; other attached packages:</span></span>
+<span id="cb8-25"><a href="#cb8-25" tabindex="-1"></a><span class="co">#&gt; [1] timereg_2.0.7  survival_3.8-6 mets_1.3.10   </span></span>
+<span id="cb8-26"><a href="#cb8-26" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb8-27"><a href="#cb8-27" tabindex="-1"></a><span class="co">#&gt; loaded via a namespace (and not attached):</span></span>
+<span id="cb8-28"><a href="#cb8-28" tabindex="-1"></a><span class="co">#&gt;  [1] cli_3.6.6              knitr_1.51             rlang_1.2.0           </span></span>
+<span id="cb8-29"><a href="#cb8-29" tabindex="-1"></a><span class="co">#&gt;  [4] xfun_0.57              otel_0.2.0             jsonlite_2.0.0        </span></span>
+<span id="cb8-30"><a href="#cb8-30" tabindex="-1"></a><span class="co">#&gt;  [7] listenv_0.10.1         future.apply_1.20.2    lava_1.9.1            </span></span>
+<span id="cb8-31"><a href="#cb8-31" tabindex="-1"></a><span class="co">#&gt; [10] htmltools_0.5.9        stats4_4.6.0           sass_0.4.10           </span></span>
+<span id="cb8-32"><a href="#cb8-32" tabindex="-1"></a><span class="co">#&gt; [13] rmarkdown_2.31         grid_4.6.0             evaluate_1.0.5        </span></span>
+<span id="cb8-33"><a href="#cb8-33" tabindex="-1"></a><span class="co">#&gt; [16] jquerylib_0.1.4        fastmap_1.2.0          numDeriv_2016.8-1.1   </span></span>
+<span id="cb8-34"><a href="#cb8-34" tabindex="-1"></a><span class="co">#&gt; [19] yaml_2.3.12            mvtnorm_1.3-7          lifecycle_1.0.5       </span></span>
+<span id="cb8-35"><a href="#cb8-35" tabindex="-1"></a><span class="co">#&gt; [22] compiler_4.6.0         codetools_0.2-20       ucminf_1.2.3          </span></span>
+<span id="cb8-36"><a href="#cb8-36" tabindex="-1"></a><span class="co">#&gt; [25] Rcpp_1.1.1-1.1         future_1.70.0          lattice_0.22-9        </span></span>
+<span id="cb8-37"><a href="#cb8-37" tabindex="-1"></a><span class="co">#&gt; [28] digest_0.6.39          R6_2.6.1               parallelly_1.47.0     </span></span>
+<span id="cb8-38"><a href="#cb8-38" tabindex="-1"></a><span class="co">#&gt; [31] parallel_4.6.0         splines_4.6.0          Matrix_1.7-5          </span></span>
+<span id="cb8-39"><a href="#cb8-39" tabindex="-1"></a><span class="co">#&gt; [34] bslib_0.11.0           tools_4.6.0            RcppArmadillo_15.2.6-1</span></span>
+<span id="cb8-40"><a href="#cb8-40" tabindex="-1"></a><span class="co">#&gt; [37] globals_0.19.1         cachem_1.1.0</span></span></code></pre></div>
 </div>
 
 

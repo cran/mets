@@ -17,6 +17,13 @@ dd <- WA_recurrent(Event(entry,time,status)~treatment+cluster(id),hfactioncpx12,
 summary(dd,type="log")
 
 
+## ----while-alive-reg----------------------------------------------------------
+hfactioncpx12$age <- rnorm(741)[hfactioncpx12$id]
+hfactioncpx12$sex <- rbinom(741,1,0.5)[hfactioncpx12$id]
+
+dd <- WA_reg(Event(entry,time,status)~treatment+age+sex+cluster(id),hfactioncpx12,time=2,death.code=2)
+summary(dd)
+
 ## ----wa-composite-------------------------------------------------------------
 hfactioncpx12$marks <- runif(nrow(hfactioncpx12))
 
