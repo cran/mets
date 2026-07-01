@@ -167,6 +167,7 @@ recregN01 <- function(data,X,entry,exit,status,id=NULL,strata=NULL,offset=NULL,w
 		###	warning("no jumps of cause type\n"); 
 		max.jump <- max(exit)
 		other <- which((status %in% death.code ) )
+		stop(paste("no jumps of cause type",cause)); 
 	}
 
 	n <- length(exit)
@@ -201,11 +202,11 @@ recregN01 <- function(data,X,entry,exit,status,id=NULL,strata=NULL,offset=NULL,w
 	strata.call <- strata
 
 	call.id <- id 
-	conid <- construct_id(id,nrow(X))
+	conid <- construct_id(id,nrow(X),namesX=rownames(X))
 	name.id <- conid$name.id; id <- conid$id; nid <- conid$nid
 	orig.id <- id
-
 	exit.call <- exit
+
 	### censoring weights constructed
 	whereC <- which(status %in% cens.code)
 	time <- exit
@@ -637,7 +638,7 @@ recregN01 <- function(data,X,entry,exit,status,id=NULL,strata=NULL,offset=NULL,w
 	se.cumhaz <- cbind(jumptimes,(var.cumhaz)^.5)
 	colnames(se.cumhaz) <- c("time","se.cumhaz")
 
-	if (!is.null(call.id)) {
+	if (!is.null(name.id)) {
 		MGc <-  nameme(MGc,name.id)
 		Uiid <- nameme(Uiid,name.id)
 		UUiid <- nameme(UUiid,name.id)
@@ -892,7 +893,7 @@ IIDrecreg <- function(coxprep,x,time=NULL,cause=1,cens.code=0,death.code=2,fixbe
 		names(cumhaz.time) <- paste("strata",sus,sep="")
 	} else { sus <- MGAiids <- cumhaz.time <- NULL }
 
-	if (!is.null(x$call.id)) {
+	if (!is.null(x$name.id)) {
 		MGAiids <- nameme(MGAiids,x$name.id)
 		Uiid    <- nameme(Uiid,x$name.id)
 	}
@@ -1100,7 +1101,7 @@ predictrecreg <- function(x,newdata,times=NULL,individual.time=FALSE,tminus=FALS
 ##' \item{var}{Variance-covariance matrix.}
 ##' \item{iid}{Influence functions.}
 ##' \item{times}{Time points.}
-##' \item{Y}{Observed counts.}
+##' \item{Y}{Observed IPCW weighted counts (increment IPCW) \deqn{\int_0^t (1/G_c(s)) dN(s)}.}
 ##'
 ##' @author Thomas Scheike
 ##' @seealso \code{\link{recreg}} 
@@ -1395,7 +1396,8 @@ recregIPCW <- function(formula,data=data,cause=1,cens.code=0,death.code=2,
 	val$formula <- formula
 	val$model <- model[1]
 	val$model.type <- model[1]
-	val$Y <- Ydata
+	val$Y     <- Ydata
+	val$Yipcw <- Ydata
 	val$X <- Xdata
 	val$id <- orig.id
 	val$call.id <- call.id

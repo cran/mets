@@ -24,7 +24,9 @@ construct_id <- function(id,nid,namesX=NULL,as.data=FALSE) { ## {{{
 	   id <- 1:nid-1;
 	   ids <- id+1
 	   order.ids <- ids
-	   name.id <- ids
+	   name.id <- NULL
+	   ## Use rownames of design matrix as labels when id was not provided
+           name.id <- if (!is.null(namesX)) namesX else NULL 
    }
    ## orginal id coding into integers
    ## id from 0,1,...,nid-1
@@ -602,7 +604,7 @@ IC.phreg  <- function(x,type="robust",all=FALSE,time=NULL,baseline=NULL,...) {# 
         }
         res <- structure(UU %*% invhess, invhess = invhess, ncluster = ncluster)
         if (is.null(colnames(res))) colnames(res) <- names(coef(x))
-	if (!is.null(x$call.id)) res <- nameme(res, x$name.id)
+	if (!is.null(x$name.id)) res <- nameme(res, x$name.id)
         res <- res * NROW(res)
         return(res)
     }
@@ -726,7 +728,7 @@ iidBaseline.phreg <- function(object,time=NULL,ft=NULL,fixbeta=NULL,beta.iid=NUL
  MGAiid <- MGAiids
  if (is.matrix(MGAiid)) {
     colnames(MGAiid) <- paste("strata",sus,sep="")
-   if (!is.null(x$call.id)) MGAiid <- nameme(MGAiid,x$name.id)
+   if (!is.null(x$name.id)) MGAiid <- nameme(MGAiid,x$name.id)
     ###    if (length(x$name.id)==nrow(MGAiid)) rownames(MGAiid) <- x$name.id
  }
 
@@ -3771,3 +3773,37 @@ return(res)
 
 
 ## }}}
+
+
+Mcumsumstrata <- function(A, strata, nstrata) {
+    if (!is.matrix(A))
+        stop("A must be a matrix")
+    if (nrow(A) != length(strata))
+        stop("nrow(A) must equal length(strata)")
+    if (min(strata) < 0 || max(strata) >= nstrata)
+        stop("strata values must be in 0:(nstrata-1)")
+    .Call("McumsumstrataR", A, strata, as.integer(nstrata), FALSE)$res
+}
+
+Mrevcumsumstrata <- function(A, strata, nstrata) {
+    if (!is.matrix(A))
+        stop("A must be a matrix")
+    if (nrow(A) != length(strata))
+        stop("nrow(A) must equal length(strata)")
+    if (min(strata) < 0 || max(strata) >= nstrata)
+        stop("strata values must be in 0:(nstrata-1)")
+    .Call("McumsumstrataR", A, strata, as.integer(nstrata), TRUE)$res
+}
+
+
+Msumstrata <- function(A, strata, nstrata) {
+    if (!is.matrix(A))
+        stop("A must be a matrix")
+    if (nrow(A) != length(strata))
+        stop("nrow(A) must equal length(strata)")
+    if (min(strata) < 0 || max(strata) >= nstrata)
+        stop("strata values must be in 0:(nstrata-1)")
+    .Call("MsumstrataR", A, strata, as.integer(nstrata))$res
+}
+
+
