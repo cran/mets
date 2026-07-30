@@ -12,7 +12,7 @@
 
 <meta name="author" content="Klaus Holst &amp; Thomas Scheike" />
 
-<meta name="date" content="2026-05-24" />
+<meta name="date" content="2026-07-29" />
 
 <title>A practical guide to Human Genetics with Lifetime Data</title>
 
@@ -341,7 +341,7 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 <h1 class="title toc-ignore">A practical guide to Human Genetics with
 Lifetime Data</h1>
 <h4 class="author">Klaus Holst &amp; Thomas Scheike</h4>
-<h4 class="date">2026-05-24</h4>
+<h4 class="date">2026-07-29</h4>
 
 
 
@@ -465,9 +465,9 @@ twins.</p>
 <span id="cb10-12"><a href="#cb10-12" tabindex="-1"></a><span class="co">#&gt; attr(,&quot;class&quot;)</span></span>
 <span id="cb10-13"><a href="#cb10-13" tabindex="-1"></a><span class="co">#&gt; [1] &quot;summary.mets.twostage&quot;</span></span>
 <span id="cb10-14"><a href="#cb10-14" tabindex="-1"></a> <span class="fu">round</span>(<span class="fu">estimate</span>(<span class="at">coef=</span>fitco4<span class="sc">$</span>coef,<span class="at">vcov=</span>fitco4<span class="sc">$</span>var.theta)<span class="sc">$</span>coefmat[,<span class="fu">c</span>(<span class="dv">1</span>,<span class="dv">3</span><span class="sc">:</span><span class="dv">4</span>)],<span class="dv">2</span>)</span>
-<span id="cb10-15"><a href="#cb10-15" tabindex="-1"></a><span class="co">#&gt;               Estimate 2.5% 97.5%</span></span>
-<span id="cb10-16"><a href="#cb10-16" tabindex="-1"></a><span class="co">#&gt; factor(zyg)DZ     1.32 0.56  2.08</span></span>
-<span id="cb10-17"><a href="#cb10-17" tabindex="-1"></a><span class="co">#&gt; factor(zyg)MZ     5.42 3.54  7.31</span></span>
+<span id="cb10-15"><a href="#cb10-15" tabindex="-1"></a><span class="co">#&gt;    Estimate 2.5% 97.5%</span></span>
+<span id="cb10-16"><a href="#cb10-16" tabindex="-1"></a><span class="co">#&gt; p1     1.32 0.56  2.08</span></span>
+<span id="cb10-17"><a href="#cb10-17" tabindex="-1"></a><span class="co">#&gt; p2     5.42 3.54  7.31</span></span>
 <span id="cb10-18"><a href="#cb10-18" tabindex="-1"></a></span>
 <span id="cb10-19"><a href="#cb10-19" tabindex="-1"></a> <span class="do">## mz kendalls tau</span></span>
 <span id="cb10-20"><a href="#cb10-20" tabindex="-1"></a> <span class="fu">kendall_ClaytonOakes_twin_ace</span>(fitco4<span class="sc">$</span>theta[<span class="dv">2</span>],<span class="dv">0</span>,<span class="at">K=</span><span class="dv">1000</span>)<span class="sc">$</span>mz.kendall</span>
@@ -818,35 +818,41 @@ incidence of prostate cancer.</p>
 <span id="cb24-17"><a href="#cb24-17" tabindex="-1"></a><span class="co">#&gt;  countrySweden:zygMZ </span></span>
 <span id="cb24-18"><a href="#cb24-18" tabindex="-1"></a><span class="co">#&gt;            -1.325599</span></span>
 <span id="cb24-19"><a href="#cb24-19" tabindex="-1"></a> <span class="do">### interaction test</span></span>
-<span id="cb24-20"><a href="#cb24-20" tabindex="-1"></a> <span class="fu">estimate</span>(regconc, <span class="at">contrast=</span><span class="fu">list</span>(<span class="dv">5</span>,<span class="dv">6</span>,<span class="dv">7</span>))</span>
-<span id="cb24-21"><a href="#cb24-21" tabindex="-1"></a><span class="co">#&gt;                      Estimate Std.Err   2.5%   97.5% P-value</span></span>
-<span id="cb24-22"><a href="#cb24-22" tabindex="-1"></a><span class="co">#&gt; countryFinland:zygMZ   -1.267  0.8706 -2.974  0.4390 0.14547</span></span>
-<span id="cb24-23"><a href="#cb24-23" tabindex="-1"></a><span class="co">#&gt; countryNorway:zygMZ    -2.146  0.9435 -3.995 -0.2969 0.02293</span></span>
-<span id="cb24-24"><a href="#cb24-24" tabindex="-1"></a><span class="co">#&gt; countrySweden:zygMZ    -1.326  0.8219 -2.937  0.2854 0.10680</span></span>
-<span id="cb24-25"><a href="#cb24-25" tabindex="-1"></a><span class="co">#&gt; ────────────────────────────────────────────────────────────</span></span>
-<span id="cb24-26"><a href="#cb24-26" tabindex="-1"></a><span class="co">#&gt; Null Hypothesis: </span></span>
-<span id="cb24-27"><a href="#cb24-27" tabindex="-1"></a><span class="co">#&gt;   [countryFinland:zygMZ] = 0</span></span>
-<span id="cb24-28"><a href="#cb24-28" tabindex="-1"></a><span class="co">#&gt;   [countryNorway:zygMZ] = 0</span></span>
-<span id="cb24-29"><a href="#cb24-29" tabindex="-1"></a><span class="co">#&gt;   [countrySweden:zygMZ] = 0 </span></span>
-<span id="cb24-30"><a href="#cb24-30" tabindex="-1"></a><span class="co">#&gt;  </span></span>
-<span id="cb24-31"><a href="#cb24-31" tabindex="-1"></a><span class="co">#&gt; chisq = 5.2661, df = 3, p-value = 0.1533</span></span>
-<span id="cb24-32"><a href="#cb24-32" tabindex="-1"></a></span>
-<span id="cb24-33"><a href="#cb24-33" tabindex="-1"></a> regconc <span class="ot">&lt;-</span> <span class="fu">cifreg</span>(<span class="fu">Event</span>(time,status)<span class="sc">~</span>country<span class="sc">+</span>zyg,<span class="at">data=</span>dd,<span class="at">prop=</span><span class="cn">NULL</span>)</span>
-<span id="cb24-34"><a href="#cb24-34" tabindex="-1"></a> regconc</span>
-<span id="cb24-35"><a href="#cb24-35" tabindex="-1"></a><span class="co">#&gt; Call:</span></span>
-<span id="cb24-36"><a href="#cb24-36" tabindex="-1"></a><span class="co">#&gt; cifreg(formula = Event(time, status) ~ country + zyg, data = dd, </span></span>
-<span id="cb24-37"><a href="#cb24-37" tabindex="-1"></a><span class="co">#&gt;     propodds = NULL)</span></span>
-<span id="cb24-38"><a href="#cb24-38" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb24-39"><a href="#cb24-39" tabindex="-1"></a><span class="co">#&gt;      n events</span></span>
-<span id="cb24-40"><a href="#cb24-40" tabindex="-1"></a><span class="co">#&gt;  14222    106</span></span>
-<span id="cb24-41"><a href="#cb24-41" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb24-42"><a href="#cb24-42" tabindex="-1"></a><span class="co">#&gt; coefficients:</span></span>
-<span id="cb24-43"><a href="#cb24-43" tabindex="-1"></a><span class="co">#&gt; countryFinland  countryNorway  countrySweden          zygMZ </span></span>
-<span id="cb24-44"><a href="#cb24-44" tabindex="-1"></a><span class="co">#&gt;      1.2924623      0.9333627      1.0743929      1.0105487</span></span>
-<span id="cb24-45"><a href="#cb24-45" tabindex="-1"></a></span>
-<span id="cb24-46"><a href="#cb24-46" tabindex="-1"></a> <span class="do">## logistic link </span></span>
-<span id="cb24-47"><a href="#cb24-47" tabindex="-1"></a> logitregconc <span class="ot">&lt;-</span> <span class="fu">cifreg</span>(<span class="fu">Event</span>(time,status)<span class="sc">~</span>country<span class="sc">+</span>zyg,<span class="at">data=</span>dd)</span>
-<span id="cb24-48"><a href="#cb24-48" tabindex="-1"></a> slr <span class="ot">&lt;-</span> <span class="fu">summary</span>(logitregconc)</span></code></pre></div>
+<span id="cb24-20"><a href="#cb24-20" tabindex="-1"></a> <span class="fu">summary</span>(<span class="fu">estimate</span>(regconc), <span class="at">contrast=</span><span class="fu">list</span>(<span class="dv">5</span>,<span class="dv">6</span>,<span class="dv">7</span>))</span>
+<span id="cb24-21"><a href="#cb24-21" tabindex="-1"></a><span class="co">#&gt; Call: estimate.default(x = b)</span></span>
+<span id="cb24-22"><a href="#cb24-22" tabindex="-1"></a><span class="co">#&gt; ────────────────────────────────────────────────────────────</span></span>
+<span id="cb24-23"><a href="#cb24-23" tabindex="-1"></a><span class="co">#&gt;                      Estimate Std.Err    2.5%   97.5%  P-value</span></span>
+<span id="cb24-24"><a href="#cb24-24" tabindex="-1"></a><span class="co">#&gt; countryFinland          2.207  0.7628  0.7123  3.7024 0.003807</span></span>
+<span id="cb24-25"><a href="#cb24-25" tabindex="-1"></a><span class="co">#&gt; countryNorway           2.317  0.7899  0.7684  3.8648 0.003361</span></span>
+<span id="cb24-26"><a href="#cb24-26" tabindex="-1"></a><span class="co">#&gt; countrySweden           2.022  0.7397  0.5725  3.4722 0.006258</span></span>
+<span id="cb24-27"><a href="#cb24-27" tabindex="-1"></a><span class="co">#&gt; zygMZ                   2.309  0.7740  0.7918  3.8257 0.002855</span></span>
+<span id="cb24-28"><a href="#cb24-28" tabindex="-1"></a><span class="co">#&gt; countryFinland:zygMZ   -1.267  0.8706 -2.9737  0.4390 0.145467</span></span>
+<span id="cb24-29"><a href="#cb24-29" tabindex="-1"></a><span class="co">#&gt; countryNorway:zygMZ    -2.146  0.9435 -3.9953 -0.2969 0.022926</span></span>
+<span id="cb24-30"><a href="#cb24-30" tabindex="-1"></a><span class="co">#&gt; countrySweden:zygMZ    -1.326  0.8219 -2.9366  0.2854 0.106797</span></span>
+<span id="cb24-31"><a href="#cb24-31" tabindex="-1"></a><span class="co">#&gt; ────────────────────────────────────────────────────────────</span></span>
+<span id="cb24-32"><a href="#cb24-32" tabindex="-1"></a><span class="co">#&gt; Null Hypothesis: </span></span>
+<span id="cb24-33"><a href="#cb24-33" tabindex="-1"></a><span class="co">#&gt;   [countryFinland:zygMZ] = 0</span></span>
+<span id="cb24-34"><a href="#cb24-34" tabindex="-1"></a><span class="co">#&gt;   [countryNorway:zygMZ] = 0</span></span>
+<span id="cb24-35"><a href="#cb24-35" tabindex="-1"></a><span class="co">#&gt;   [countrySweden:zygMZ] = 0 </span></span>
+<span id="cb24-36"><a href="#cb24-36" tabindex="-1"></a><span class="co">#&gt;  </span></span>
+<span id="cb24-37"><a href="#cb24-37" tabindex="-1"></a><span class="co">#&gt; chisq = 5.2661, df = 3, p-value = 0.1533</span></span>
+<span id="cb24-38"><a href="#cb24-38" tabindex="-1"></a></span>
+<span id="cb24-39"><a href="#cb24-39" tabindex="-1"></a> regconc <span class="ot">&lt;-</span> <span class="fu">cifreg</span>(<span class="fu">Event</span>(time,status)<span class="sc">~</span>country<span class="sc">+</span>zyg,<span class="at">data=</span>dd,<span class="at">prop=</span><span class="cn">NULL</span>)</span>
+<span id="cb24-40"><a href="#cb24-40" tabindex="-1"></a> regconc</span>
+<span id="cb24-41"><a href="#cb24-41" tabindex="-1"></a><span class="co">#&gt; Call:</span></span>
+<span id="cb24-42"><a href="#cb24-42" tabindex="-1"></a><span class="co">#&gt; cifreg(formula = Event(time, status) ~ country + zyg, data = dd, </span></span>
+<span id="cb24-43"><a href="#cb24-43" tabindex="-1"></a><span class="co">#&gt;     propodds = NULL)</span></span>
+<span id="cb24-44"><a href="#cb24-44" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb24-45"><a href="#cb24-45" tabindex="-1"></a><span class="co">#&gt;      n events</span></span>
+<span id="cb24-46"><a href="#cb24-46" tabindex="-1"></a><span class="co">#&gt;  14222    106</span></span>
+<span id="cb24-47"><a href="#cb24-47" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb24-48"><a href="#cb24-48" tabindex="-1"></a><span class="co">#&gt; coefficients:</span></span>
+<span id="cb24-49"><a href="#cb24-49" tabindex="-1"></a><span class="co">#&gt; countryFinland  countryNorway  countrySweden          zygMZ </span></span>
+<span id="cb24-50"><a href="#cb24-50" tabindex="-1"></a><span class="co">#&gt;      1.2924623      0.9333627      1.0743929      1.0105487</span></span>
+<span id="cb24-51"><a href="#cb24-51" tabindex="-1"></a></span>
+<span id="cb24-52"><a href="#cb24-52" tabindex="-1"></a> <span class="do">## logistic link </span></span>
+<span id="cb24-53"><a href="#cb24-53" tabindex="-1"></a> logitregconc <span class="ot">&lt;-</span> <span class="fu">cifreg</span>(<span class="fu">Event</span>(time,status)<span class="sc">~</span>country<span class="sc">+</span>zyg,<span class="at">data=</span>dd)</span>
+<span id="cb24-54"><a href="#cb24-54" tabindex="-1"></a> slr <span class="ot">&lt;-</span> <span class="fu">summary</span>(logitregconc)</span></code></pre></div>
 <div class="sourceCode" id="cb25"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1" tabindex="-1"></a>slr</span>
 <span id="cb25-2"><a href="#cb25-2" tabindex="-1"></a><span class="co">#&gt; </span></span>
 <span id="cb25-3"><a href="#cb25-3" tabindex="-1"></a><span class="co">#&gt;      n events</span></span>
@@ -1301,20 +1307,19 @@ the IPCW weighted AIC measure</p>
 <span id="cb46-23"><a href="#cb46-23" tabindex="-1"></a><span class="co">#&gt; [8] base     </span></span>
 <span id="cb46-24"><a href="#cb46-24" tabindex="-1"></a><span class="co">#&gt; </span></span>
 <span id="cb46-25"><a href="#cb46-25" tabindex="-1"></a><span class="co">#&gt; other attached packages:</span></span>
-<span id="cb46-26"><a href="#cb46-26" tabindex="-1"></a><span class="co">#&gt; [1] prodlim_2026.03.11 timereg_2.0.7      survival_3.8-6     mets_1.3.10       </span></span>
+<span id="cb46-26"><a href="#cb46-26" tabindex="-1"></a><span class="co">#&gt; [1] prodlim_2026.03.11 timereg_2.0.7      survival_3.8-6     mets_1.3.12       </span></span>
 <span id="cb46-27"><a href="#cb46-27" tabindex="-1"></a><span class="co">#&gt; </span></span>
 <span id="cb46-28"><a href="#cb46-28" tabindex="-1"></a><span class="co">#&gt; loaded via a namespace (and not attached):</span></span>
-<span id="cb46-29"><a href="#cb46-29" tabindex="-1"></a><span class="co">#&gt;  [1] vctrs_0.7.3            cli_3.6.6              knitr_1.51            </span></span>
-<span id="cb46-30"><a href="#cb46-30" tabindex="-1"></a><span class="co">#&gt;  [4] rlang_1.2.0            xfun_0.57              KernSmooth_2.23-26    </span></span>
-<span id="cb46-31"><a href="#cb46-31" tabindex="-1"></a><span class="co">#&gt;  [7] otel_0.2.0             data.table_1.18.4      glue_1.8.1            </span></span>
-<span id="cb46-32"><a href="#cb46-32" tabindex="-1"></a><span class="co">#&gt; [10] future.apply_1.20.2    listenv_0.10.1         lava_1.9.1            </span></span>
-<span id="cb46-33"><a href="#cb46-33" tabindex="-1"></a><span class="co">#&gt; [13] stats4_4.6.0           grid_4.6.0             evaluate_1.0.5        </span></span>
-<span id="cb46-34"><a href="#cb46-34" tabindex="-1"></a><span class="co">#&gt; [16] lifecycle_1.0.5        yaml_2.3.12            mvtnorm_1.3-7         </span></span>
-<span id="cb46-35"><a href="#cb46-35" tabindex="-1"></a><span class="co">#&gt; [19] numDeriv_2016.8-1.1    compiler_4.6.0         codetools_0.2-20      </span></span>
-<span id="cb46-36"><a href="#cb46-36" tabindex="-1"></a><span class="co">#&gt; [22] Rcpp_1.1.1-1.1         ucminf_1.2.3           future_1.70.0         </span></span>
-<span id="cb46-37"><a href="#cb46-37" tabindex="-1"></a><span class="co">#&gt; [25] lattice_0.22-9         digest_0.6.39          pillar_1.11.1         </span></span>
-<span id="cb46-38"><a href="#cb46-38" tabindex="-1"></a><span class="co">#&gt; [28] parallelly_1.47.0      parallel_4.6.0         Matrix_1.7-5          </span></span>
-<span id="cb46-39"><a href="#cb46-39" tabindex="-1"></a><span class="co">#&gt; [31] tools_4.6.0            RcppArmadillo_15.2.6-1 globals_0.19.1</span></span></code></pre></div>
+<span id="cb46-29"><a href="#cb46-29" tabindex="-1"></a><span class="co">#&gt;  [1] cli_3.6.6              knitr_1.51             rlang_1.2.0           </span></span>
+<span id="cb46-30"><a href="#cb46-30" tabindex="-1"></a><span class="co">#&gt;  [4] xfun_0.57              KernSmooth_2.23-26     otel_0.2.0            </span></span>
+<span id="cb46-31"><a href="#cb46-31" tabindex="-1"></a><span class="co">#&gt;  [7] data.table_1.18.4      future.apply_1.20.2    listenv_0.10.1        </span></span>
+<span id="cb46-32"><a href="#cb46-32" tabindex="-1"></a><span class="co">#&gt; [10] lava_1.9.2.1           stats4_4.6.0           grid_4.6.0            </span></span>
+<span id="cb46-33"><a href="#cb46-33" tabindex="-1"></a><span class="co">#&gt; [13] evaluate_1.0.5         yaml_2.3.12            mvtnorm_1.3-7         </span></span>
+<span id="cb46-34"><a href="#cb46-34" tabindex="-1"></a><span class="co">#&gt; [16] numDeriv_2016.8-1.1    compiler_4.6.0         codetools_0.2-20      </span></span>
+<span id="cb46-35"><a href="#cb46-35" tabindex="-1"></a><span class="co">#&gt; [19] Rcpp_1.1.1-1.1         ucminf_1.2.3           future_1.70.0         </span></span>
+<span id="cb46-36"><a href="#cb46-36" tabindex="-1"></a><span class="co">#&gt; [22] lattice_0.22-9         digest_0.6.39          parallelly_1.47.0     </span></span>
+<span id="cb46-37"><a href="#cb46-37" tabindex="-1"></a><span class="co">#&gt; [25] parallel_4.6.0         Matrix_1.7-5           tools_4.6.0           </span></span>
+<span id="cb46-38"><a href="#cb46-38" tabindex="-1"></a><span class="co">#&gt; [28] RcppArmadillo_15.2.6-1 globals_0.19.1</span></span></code></pre></div>
 </div>
 
 

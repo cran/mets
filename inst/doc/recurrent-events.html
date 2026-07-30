@@ -12,7 +12,7 @@
 
 <meta name="author" content="Klaus Holst &amp; Thomas Scheike" />
 
-<meta name="date" content="2026-05-24" />
+<meta name="date" content="2026-07-29" />
 
 <title>Recurrent events</title>
 
@@ -340,7 +340,7 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 
 <h1 class="title toc-ignore">Recurrent events</h1>
 <h4 class="author">Klaus Holst &amp; Thomas Scheike</h4>
-<h4 class="date">2026-05-24</h4>
+<h4 class="date">2026-07-29</h4>
 
 
 
@@ -605,47 +605,49 @@ function</p>
 <p>We can compare different marginal mean test (IPCW based) with a
 log-rank test</p>
 <div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a><span class="fu">test_logrankRecurrent</span>(out)</span>
-<span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a><span class="co">#&gt;    Estimate Std.Err   2.5%  97.5% P-value</span></span>
-<span id="cb6-3"><a href="#cb6-3" tabindex="-1"></a><span class="co">#&gt; p1   10.368   14.44 -17.93 38.661 0.47264</span></span>
-<span id="cb6-4"><a href="#cb6-4" tabindex="-1"></a><span class="co">#&gt; p2  -22.069   12.43 -46.43  2.288 0.07575</span></span>
-<span id="cb6-5"><a href="#cb6-5" tabindex="-1"></a><span class="co">#&gt; p3    2.019   15.72 -28.80 32.838 0.89785</span></span>
-<span id="cb6-6"><a href="#cb6-6" tabindex="-1"></a><span class="co">#&gt; ────────────────────────────────────────────────────────────</span></span>
-<span id="cb6-7"><a href="#cb6-7" tabindex="-1"></a><span class="co">#&gt; Null Hypothesis: </span></span>
-<span id="cb6-8"><a href="#cb6-8" tabindex="-1"></a><span class="co">#&gt;   [p1] = 0</span></span>
-<span id="cb6-9"><a href="#cb6-9" tabindex="-1"></a><span class="co">#&gt;   [p2] = 0</span></span>
-<span id="cb6-10"><a href="#cb6-10" tabindex="-1"></a><span class="co">#&gt;   [p3] = 0 </span></span>
-<span id="cb6-11"><a href="#cb6-11" tabindex="-1"></a><span class="co">#&gt;  </span></span>
-<span id="cb6-12"><a href="#cb6-12" tabindex="-1"></a><span class="co">#&gt; chisq = 3.3471, df = 3, p-value = 0.3411</span></span>
-<span id="cb6-13"><a href="#cb6-13" tabindex="-1"></a></span>
-<span id="cb6-14"><a href="#cb6-14" tabindex="-1"></a>dd <span class="ot">&lt;-</span> <span class="fu">test_marginalMean</span>(<span class="fu">Event</span>(entry,time,status)<span class="sc">~</span><span class="fu">strata</span>(strata)<span class="sc">+</span><span class="fu">cluster</span>(id),</span>
-<span id="cb6-15"><a href="#cb6-15" tabindex="-1"></a>             <span class="at">data=</span>rr,<span class="at">cause=</span><span class="dv">1</span>,<span class="at">death.code=</span><span class="dv">2</span>)</span>
-<span id="cb6-16"><a href="#cb6-16" tabindex="-1"></a>dd</span>
-<span id="cb6-17"><a href="#cb6-17" tabindex="-1"></a><span class="co">#&gt; coeffients:</span></span>
-<span id="cb6-18"><a href="#cb6-18" tabindex="-1"></a><span class="co">#&gt;                              p-value</span></span>
-<span id="cb6-19"><a href="#cb6-19" tabindex="-1"></a><span class="co">#&gt; time                       5079.7045</span></span>
-<span id="cb6-20"><a href="#cb6-20" tabindex="-1"></a><span class="co">#&gt; Pepe-Mori                         NA</span></span>
-<span id="cb6-21"><a href="#cb6-21" tabindex="-1"></a><span class="co">#&gt; Ratio-AUC                     0.2147</span></span>
-<span id="cb6-22"><a href="#cb6-22" tabindex="-1"></a><span class="co">#&gt; Proportionality               0.3865</span></span>
-<span id="cb6-23"><a href="#cb6-23" tabindex="-1"></a><span class="co">#&gt; Proportionality-score-test    0.3920</span></span>
-<span id="cb6-24"><a href="#cb6-24" tabindex="-1"></a><span class="fu">summary</span>(dd)</span>
-<span id="cb6-25"><a href="#cb6-25" tabindex="-1"></a><span class="co">#&gt; coeffients:</span></span>
-<span id="cb6-26"><a href="#cb6-26" tabindex="-1"></a><span class="co">#&gt;                              p-value</span></span>
-<span id="cb6-27"><a href="#cb6-27" tabindex="-1"></a><span class="co">#&gt; time                       5079.7045</span></span>
-<span id="cb6-28"><a href="#cb6-28" tabindex="-1"></a><span class="co">#&gt; Pepe-Mori                         NA</span></span>
-<span id="cb6-29"><a href="#cb6-29" tabindex="-1"></a><span class="co">#&gt; Ratio-AUC                     0.2147</span></span>
-<span id="cb6-30"><a href="#cb6-30" tabindex="-1"></a><span class="co">#&gt; Proportionality               0.3865</span></span>
-<span id="cb6-31"><a href="#cb6-31" tabindex="-1"></a><span class="co">#&gt; Proportionality-score-test    0.3920</span></span>
-<span id="cb6-32"><a href="#cb6-32" tabindex="-1"></a>dd<span class="sc">$</span>RAUCl</span>
-<span id="cb6-33"><a href="#cb6-33" tabindex="-1"></a><span class="co">#&gt;    n events</span></span>
-<span id="cb6-34"><a href="#cb6-34" tabindex="-1"></a><span class="co">#&gt;  400   1184</span></span>
-<span id="cb6-35"><a href="#cb6-35" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-36"><a href="#cb6-36" tabindex="-1"></a><span class="co">#&gt;  400 clusters</span></span>
-<span id="cb6-37"><a href="#cb6-37" tabindex="-1"></a><span class="co">#&gt; coeffients:</span></span>
-<span id="cb6-38"><a href="#cb6-38" tabindex="-1"></a><span class="co">#&gt;                          Estimate  Std.Err     2.5%    97.5% P-value</span></span>
-<span id="cb6-39"><a href="#cb6-39" tabindex="-1"></a><span class="co">#&gt; (Intercept)              24707.72  1498.20 21771.30 27644.15  0.0000</span></span>
-<span id="cb6-40"><a href="#cb6-40" tabindex="-1"></a><span class="co">#&gt; factor(strata__)strata=1 -3840.23  2028.83 -7816.67   136.20  0.0584</span></span>
-<span id="cb6-41"><a href="#cb6-41" tabindex="-1"></a><span class="co">#&gt; factor(strata__)strata=2 -1015.76  2026.74 -4988.10  2956.57  0.6162</span></span>
-<span id="cb6-42"><a href="#cb6-42" tabindex="-1"></a><span class="co">#&gt; factor(strata__)strata=3  -351.09  1948.38 -4169.84  3467.66  0.8570</span></span></code></pre></div>
+<span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a><span class="co">#&gt; Call: estimate.default(coef = contr, IC = contr.iid * nrow(contr.iid))</span></span>
+<span id="cb6-3"><a href="#cb6-3" tabindex="-1"></a><span class="co">#&gt; ────────────────────────────────────────────────────────────</span></span>
+<span id="cb6-4"><a href="#cb6-4" tabindex="-1"></a><span class="co">#&gt;    Estimate Std.Err   2.5%  97.5% P-value</span></span>
+<span id="cb6-5"><a href="#cb6-5" tabindex="-1"></a><span class="co">#&gt; p1   10.368   14.44 -17.93 38.661 0.47264</span></span>
+<span id="cb6-6"><a href="#cb6-6" tabindex="-1"></a><span class="co">#&gt; p2  -22.069   12.43 -46.43  2.288 0.07575</span></span>
+<span id="cb6-7"><a href="#cb6-7" tabindex="-1"></a><span class="co">#&gt; p3    2.019   15.72 -28.80 32.838 0.89785</span></span>
+<span id="cb6-8"><a href="#cb6-8" tabindex="-1"></a><span class="co">#&gt; ────────────────────────────────────────────────────────────</span></span>
+<span id="cb6-9"><a href="#cb6-9" tabindex="-1"></a><span class="co">#&gt; Null Hypothesis: </span></span>
+<span id="cb6-10"><a href="#cb6-10" tabindex="-1"></a><span class="co">#&gt;   [p1] = 0</span></span>
+<span id="cb6-11"><a href="#cb6-11" tabindex="-1"></a><span class="co">#&gt;   [p2] = 0</span></span>
+<span id="cb6-12"><a href="#cb6-12" tabindex="-1"></a><span class="co">#&gt;   [p3] = 0 </span></span>
+<span id="cb6-13"><a href="#cb6-13" tabindex="-1"></a><span class="co">#&gt;  </span></span>
+<span id="cb6-14"><a href="#cb6-14" tabindex="-1"></a><span class="co">#&gt; chisq = 3.3471, df = 3, p-value = 0.3411</span></span>
+<span id="cb6-15"><a href="#cb6-15" tabindex="-1"></a></span>
+<span id="cb6-16"><a href="#cb6-16" tabindex="-1"></a>dd <span class="ot">&lt;-</span> <span class="fu">test_marginalMean</span>(<span class="fu">Event</span>(entry,time,status)<span class="sc">~</span><span class="fu">strata</span>(strata)<span class="sc">+</span><span class="fu">cluster</span>(id),</span>
+<span id="cb6-17"><a href="#cb6-17" tabindex="-1"></a>             <span class="at">data=</span>rr,<span class="at">cause=</span><span class="dv">1</span>,<span class="at">death.code=</span><span class="dv">2</span>)</span>
+<span id="cb6-18"><a href="#cb6-18" tabindex="-1"></a>dd</span>
+<span id="cb6-19"><a href="#cb6-19" tabindex="-1"></a><span class="co">#&gt; coeffients:</span></span>
+<span id="cb6-20"><a href="#cb6-20" tabindex="-1"></a><span class="co">#&gt;                              p-value</span></span>
+<span id="cb6-21"><a href="#cb6-21" tabindex="-1"></a><span class="co">#&gt; time                       5079.7045</span></span>
+<span id="cb6-22"><a href="#cb6-22" tabindex="-1"></a><span class="co">#&gt; Pepe-Mori                         NA</span></span>
+<span id="cb6-23"><a href="#cb6-23" tabindex="-1"></a><span class="co">#&gt; Ratio-AUC                     0.2147</span></span>
+<span id="cb6-24"><a href="#cb6-24" tabindex="-1"></a><span class="co">#&gt; Proportionality               0.3865</span></span>
+<span id="cb6-25"><a href="#cb6-25" tabindex="-1"></a><span class="co">#&gt; Proportionality-score-test    0.3920</span></span>
+<span id="cb6-26"><a href="#cb6-26" tabindex="-1"></a><span class="fu">summary</span>(dd)</span>
+<span id="cb6-27"><a href="#cb6-27" tabindex="-1"></a><span class="co">#&gt; coeffients:</span></span>
+<span id="cb6-28"><a href="#cb6-28" tabindex="-1"></a><span class="co">#&gt;                              p-value</span></span>
+<span id="cb6-29"><a href="#cb6-29" tabindex="-1"></a><span class="co">#&gt; time                       5079.7045</span></span>
+<span id="cb6-30"><a href="#cb6-30" tabindex="-1"></a><span class="co">#&gt; Pepe-Mori                         NA</span></span>
+<span id="cb6-31"><a href="#cb6-31" tabindex="-1"></a><span class="co">#&gt; Ratio-AUC                     0.2147</span></span>
+<span id="cb6-32"><a href="#cb6-32" tabindex="-1"></a><span class="co">#&gt; Proportionality               0.3865</span></span>
+<span id="cb6-33"><a href="#cb6-33" tabindex="-1"></a><span class="co">#&gt; Proportionality-score-test    0.3920</span></span>
+<span id="cb6-34"><a href="#cb6-34" tabindex="-1"></a>dd<span class="sc">$</span>RAUCl</span>
+<span id="cb6-35"><a href="#cb6-35" tabindex="-1"></a><span class="co">#&gt;    n events</span></span>
+<span id="cb6-36"><a href="#cb6-36" tabindex="-1"></a><span class="co">#&gt;  400   1184</span></span>
+<span id="cb6-37"><a href="#cb6-37" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb6-38"><a href="#cb6-38" tabindex="-1"></a><span class="co">#&gt;  400 clusters</span></span>
+<span id="cb6-39"><a href="#cb6-39" tabindex="-1"></a><span class="co">#&gt; coeffients:</span></span>
+<span id="cb6-40"><a href="#cb6-40" tabindex="-1"></a><span class="co">#&gt;                          Estimate  Std.Err     2.5%    97.5% P-value</span></span>
+<span id="cb6-41"><a href="#cb6-41" tabindex="-1"></a><span class="co">#&gt; (Intercept)              24707.72  1498.20 21771.30 27644.15  0.0000</span></span>
+<span id="cb6-42"><a href="#cb6-42" tabindex="-1"></a><span class="co">#&gt; factor(strata__)strata=1 -3840.23  2028.83 -7816.67   136.20  0.0584</span></span>
+<span id="cb6-43"><a href="#cb6-43" tabindex="-1"></a><span class="co">#&gt; factor(strata__)strata=2 -1015.76  2026.74 -4988.10  2956.57  0.6162</span></span>
+<span id="cb6-44"><a href="#cb6-44" tabindex="-1"></a><span class="co">#&gt; factor(strata__)strata=3  -351.09  1948.38 -4169.84  3467.66  0.8570</span></span></code></pre></div>
 <p>The AUC suggest that strata 2 looses 3840 days less than strata
 0.</p>
 <p>If we adjust for covariates for the two rates we can still do
@@ -1415,20 +1417,19 @@ among survivors and positive dependence on terminal event.</li>
 <span id="cb35-23"><a href="#cb35-23" tabindex="-1"></a><span class="co">#&gt; [8] base     </span></span>
 <span id="cb35-24"><a href="#cb35-24" tabindex="-1"></a><span class="co">#&gt; </span></span>
 <span id="cb35-25"><a href="#cb35-25" tabindex="-1"></a><span class="co">#&gt; other attached packages:</span></span>
-<span id="cb35-26"><a href="#cb35-26" tabindex="-1"></a><span class="co">#&gt; [1] timereg_2.0.7  survival_3.8-6 mets_1.3.10   </span></span>
+<span id="cb35-26"><a href="#cb35-26" tabindex="-1"></a><span class="co">#&gt; [1] timereg_2.0.7  survival_3.8-6 mets_1.3.12   </span></span>
 <span id="cb35-27"><a href="#cb35-27" tabindex="-1"></a><span class="co">#&gt; </span></span>
 <span id="cb35-28"><a href="#cb35-28" tabindex="-1"></a><span class="co">#&gt; loaded via a namespace (and not attached):</span></span>
-<span id="cb35-29"><a href="#cb35-29" tabindex="-1"></a><span class="co">#&gt;  [1] vctrs_0.7.3            cli_3.6.6              knitr_1.51            </span></span>
-<span id="cb35-30"><a href="#cb35-30" tabindex="-1"></a><span class="co">#&gt;  [4] rlang_1.2.0            xfun_0.57              KernSmooth_2.23-26    </span></span>
-<span id="cb35-31"><a href="#cb35-31" tabindex="-1"></a><span class="co">#&gt;  [7] otel_0.2.0             glue_1.8.1             future.apply_1.20.2   </span></span>
-<span id="cb35-32"><a href="#cb35-32" tabindex="-1"></a><span class="co">#&gt; [10] listenv_0.10.1         lava_1.9.1             stats4_4.6.0          </span></span>
-<span id="cb35-33"><a href="#cb35-33" tabindex="-1"></a><span class="co">#&gt; [13] grid_4.6.0             evaluate_1.0.5         lifecycle_1.0.5       </span></span>
-<span id="cb35-34"><a href="#cb35-34" tabindex="-1"></a><span class="co">#&gt; [16] yaml_2.3.12            mvtnorm_1.3-7          numDeriv_2016.8-1.1   </span></span>
-<span id="cb35-35"><a href="#cb35-35" tabindex="-1"></a><span class="co">#&gt; [19] compiler_4.6.0         codetools_0.2-20       Rcpp_1.1.1-1.1        </span></span>
-<span id="cb35-36"><a href="#cb35-36" tabindex="-1"></a><span class="co">#&gt; [22] ucminf_1.2.3           future_1.70.0          lattice_0.22-9        </span></span>
-<span id="cb35-37"><a href="#cb35-37" tabindex="-1"></a><span class="co">#&gt; [25] digest_0.6.39          pillar_1.11.1          parallelly_1.47.0     </span></span>
-<span id="cb35-38"><a href="#cb35-38" tabindex="-1"></a><span class="co">#&gt; [28] parallel_4.6.0         Matrix_1.7-5           tools_4.6.0           </span></span>
-<span id="cb35-39"><a href="#cb35-39" tabindex="-1"></a><span class="co">#&gt; [31] RcppArmadillo_15.2.6-1 globals_0.19.1</span></span></code></pre></div>
+<span id="cb35-29"><a href="#cb35-29" tabindex="-1"></a><span class="co">#&gt;  [1] cli_3.6.6              knitr_1.51             rlang_1.2.0           </span></span>
+<span id="cb35-30"><a href="#cb35-30" tabindex="-1"></a><span class="co">#&gt;  [4] xfun_0.57              KernSmooth_2.23-26     otel_0.2.0            </span></span>
+<span id="cb35-31"><a href="#cb35-31" tabindex="-1"></a><span class="co">#&gt;  [7] future.apply_1.20.2    listenv_0.10.1         lava_1.9.2.1          </span></span>
+<span id="cb35-32"><a href="#cb35-32" tabindex="-1"></a><span class="co">#&gt; [10] stats4_4.6.0           grid_4.6.0             evaluate_1.0.5        </span></span>
+<span id="cb35-33"><a href="#cb35-33" tabindex="-1"></a><span class="co">#&gt; [13] yaml_2.3.12            mvtnorm_1.3-7          numDeriv_2016.8-1.1   </span></span>
+<span id="cb35-34"><a href="#cb35-34" tabindex="-1"></a><span class="co">#&gt; [16] compiler_4.6.0         codetools_0.2-20       Rcpp_1.1.1-1.1        </span></span>
+<span id="cb35-35"><a href="#cb35-35" tabindex="-1"></a><span class="co">#&gt; [19] ucminf_1.2.3           future_1.70.0          lattice_0.22-9        </span></span>
+<span id="cb35-36"><a href="#cb35-36" tabindex="-1"></a><span class="co">#&gt; [22] digest_0.6.39          parallelly_1.47.0      parallel_4.6.0        </span></span>
+<span id="cb35-37"><a href="#cb35-37" tabindex="-1"></a><span class="co">#&gt; [25] Matrix_1.7-5           tools_4.6.0            RcppArmadillo_15.2.6-1</span></span>
+<span id="cb35-38"><a href="#cb35-38" tabindex="-1"></a><span class="co">#&gt; [28] globals_0.19.1</span></span></code></pre></div>
 </div>
 
 

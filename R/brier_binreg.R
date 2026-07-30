@@ -1,5 +1,5 @@
 
-##' Binomial Regression with Stratified Pseudo-Values and Censoring Adjustment
+##' Stratified Binomial Regression with cross-validation option 
 ##'
 ##' Fits a stratified binomial regression model for the cumulative incidence
 ##' function (CIF), restricted mean survival time (RMST), or restricted mean
@@ -62,6 +62,7 @@
 ##'   regression coefficients are estimated using all observations \emph{not}
 ##'   in stratum \code{s} (a cross-validation-style fit), rather than the
 ##'   observations within stratum \code{s} (the default, \code{FALSE}).
+##' @param low.memory Logical. If \code{TRUE} only saves key quanties, coef, var, iid and some design structures.
 ##' @param ... Additional arguments, currently passed as optimizer
 ##'   \code{control} settings (e.g. \code{tol}, \code{stepsize}) to the
 ##'   Newton-Raphson routine.
@@ -123,7 +124,7 @@ binregStrata <- function(formula, data, cause=1, time=NULL, beta=NULL,
                           method="nr", augmentation=NULL,
                           outcome=c("cif","rmst","rmtl"),
                           model=c("default","logit","exp","lin"),
-                          Ydirect=NULL, strata=NULL, cv.fold=FALSE, ...)
+                          Ydirect=NULL, strata=NULL, cv.fold=FALSE, low.memory=FALSE,...)
 { # {{{
   monotone <- TRUE
   cl       <- match.call()
@@ -158,28 +159,41 @@ binregStrata <- function(formula, data, cause=1, time=NULL, beta=NULL,
   name.id <- conid$name.id; id <- conid$id; nid <- conid$nid
   orig.id <- id
 
-  if (is.null(des.offset))  offset  <- rep(0, length(exit)) else offset  <- des.offset
-  if (is.null(des.weights)) weights <- rep(1, length(exit)) else weights <- des.weights
+  ## ------------------------------------------------------------------
+  ## Weights / offset  (explicit arg > formula-embedded special > default)
+  ## ------------------------------------------------------------------
+  if (!is.null(offset)) {
+    offset <- offset
+  } else if (!is.null(des.offset)) {
+    offset <- des.offset
+  } else {
+    offset <- rep(0, length(exit))
+  }
+
+  if (!is.null(weights)) {
+    weights <- weights
+  } else if (!is.null(des.weights)) {
+    weights <- des.weights
+  } else {
+    weights <- rep(1, length(exit))
+  }
 
   ## ------------------------------------------------------------------
-  ## Strata
+  ## Strata  (explicit arg > formula-embedded special > default)
   ## ------------------------------------------------------------------
   des.strata <- des$strata
-  if (is.null(des.strata)) {
-    if (is.null(strata)) {
-      strata  <- rep(0, nrow(X)); nstrata <- 1
-    } else {
-      if (!is.numeric(strata)) stop("strata must be numeric\n")
-      ustrata <- sort(unique(strata)); nstrata <- length(ustrata)
-      strata  <- fast.approx(ustrata, strata) - 1
-    }
-  } else {
+  if (!is.null(strata)) {
+    if (!is.numeric(strata)) stop("strata must be numeric\n")
+    ustrata <- sort(unique(strata)); nstrata <- length(ustrata)
+    strata  <- fast.approx(ustrata, strata) - 1
+  } else if (!is.null(des.strata)) {
     strata  <- des.strata
     ustrata <- sort(unique(strata)); nstrata <- length(ustrata)
     strata  <- fast.approx(ustrata, strata) - 1
+  } else {
+    strata  <- rep(0, nrow(X)); nstrata <- 1
   }
 
-  if (is.null(time)) stop("Must give time for logistic modelling\n")
 
   ## ------------------------------------------------------------------
   ## Event / censoring indicators
@@ -650,7 +664,6 @@ binregStrata <- function(formula, data, cause=1, time=NULL, beta=NULL,
   val$iid.naive <- val$iid
   val$naive.var <- NULL
   val$coef_list <- beta_opt
-  val$des       <- des
 
   ## ------------------------------------------------------------------
   ## Censoring IID adjustment, per stratum block
@@ -687,11 +700,26 @@ binregStrata <- function(formula, data, cause=1, time=NULL, beta=NULL,
   val$strata_call  <- des.strata
   val$cv.fold      <- cv.fold
 
+  if (low.memory) {
+	val$design$y <- NULL
+	val$design$data <- NULL
+	val$design$x <- NULL
+	val$design$strata <- NULL
+	val$strata_orig <- NULL
+	val$strata_call <- NULL
+	val$MGciid <- NULL
+	val$iid.naive <- NULL
+	val$iid.naive <- NULL
+	val$cens.strata <-  NULL
+	val$cens.weights <-  NULL
+	val$name.id  <-  NULL
+  }
+
   class(val) <- c("binregStrata","binreg")
   return(val)
 } # }}}
 
-## {{{  summary, predict, 
+## {{{  predict, 
 
 ## small helper: given flat coef vector, route predictions per stratum
 strata_lp <- function(object, Z, strata_new, offset_new) {
@@ -776,45 +804,6 @@ predict.binregStrata <- function(object, newdata = NULL, se = TRUE,
   attr(preds, "id") <- x$cluster
   preds
 } ## }}} 
-
-##' @export
-summary.binregStrata <- function(object, ...) {
-  ## per-stratum coefficient tables
-  p         <- length(object$coef) / object$nstrata
-  beta_list <- split(object$coef, rep(seq_len(object$nstrata), each = p))
-  nms       <- colnames(object$design$x)
-
-  cat("Stratified binreg fit",object$nstrata,"strata\n")
-  cat("n =", object$n, "  events =", object$nevent, "\n\n")
-
-  for (s in seq_len(object$nstrata)) {
-    cols  <- (s - 1) * p + seq_len(p)
-    b_s   <- object$coef[cols]
-    var_s <- object$var[cols, cols]
-    cc    <- estimate(coef = b_s, vcov = var_s)$coefmat
-    rownames(cc) <- nms
-    cat("Stratum", s, ":\n")
-    printCoefmat(cc, ...)
-    if (object$model[1] %in% c("exp", "logit")) {
-      cat("exp(coef):\n")
-      printCoefmat(
-        exp(estimate(coef = b_s, vcov = var_s)$coefmat[, c(1,3,4), drop=FALSE]),
-        ...
-      )
-    }
-    cat("\n")
-  }
-  invisible(object)
-}
-
-##' @export
-coef.binregStrata <- function(object, ...) object$coef
-
-##' @export
-vcov.binregStrata <- function(object, ...) object$var
-
-##' @export
-IC.binregStrata <- function(x, ...) x$iid * NROW(x$iid)
 
 ## }}} 
 
@@ -1247,9 +1236,10 @@ brier_binreg <- function(formula, data, time,
   ## ------------------------------------------------------------------
   ## cv_iid_correctS -- block-sparse version (identical to brier_binregStrata)
   ## ------------------------------------------------------------------
-  cv_iid_correctS <- function(brier_fit, outff_fit, newdata,
+
+cv_iid_correctS <- function(brier_fit, outff_fit, newdata,
                                pred_vec, ipcw_wt_vec, outcome_vec,
-                               binreg_model) {
+                               binreg_model) { ## {{{ 
     nstrata <- outff_fit$nstrata
     p       <- length(outff_fit$coef) / nstrata
     n       <- length(pred_vec)
@@ -1263,12 +1253,12 @@ brier_binreg <- function(formula, data, time,
     } else {
       stop("Cannot determine stratum for newdata: needs 'fold' column.")
     }
-    Xs <- matrix(0.0, n, nstrata * p)
-    for (s in seq_len(nstrata)) {
-      idx  <- which(strata_idx == (s - 1L))
-      cols <- (s - 1L) * p + seq_len(p)
-      Xs[idx, cols] <- X[idx, , drop = FALSE]
-    }
+###    Xs <- matrix(0.0, n, nstrata * p)
+###    for (s in seq_len(nstrata)) {
+###      idx  <- which(strata_idx == (s - 1L))
+###      cols <- (s - 1L) * p + seq_len(p)
+###      Xs[idx, cols] <- X[idx, , drop = FALSE]
+###    }
     mu_prime <- switch(binreg_model,
       logit = pred_vec * (1 - pred_vec),
       exp   = pred_vec,
@@ -1276,9 +1266,27 @@ brier_binreg <- function(formula, data, time,
       stop("unrecognised binreg model '", binreg_model, "'")
     )
     resid       <- (outcome_vec - pred_vec) * ipcw_wt_vec
-    Dbrier_full <- -2 * colSums(Xs * mu_prime * resid) / n
+
+    Dbrier <- -2* Msumstrata(X * mu_prime * resid,strata_idx,nstrata)/n
+    Dbrier_full  <-  c(t(Dbrier))
+
+###   Dbrier_full <- -2 * colSums(Xs * mu_prime * resid) / n
+###   print(Dbrier_full)
+
     iid(brier_fit) + iid(outff_fit) %*% Dbrier_full
+  } ## }}} 
+
+  eco <- function(bbrier) {
+    bbrier$design <- NULL
+    bbrier$cens.weights <- bbrier$cens.strata <- bbrier$MGciid <- bbrier$call.id
+    bbrier$name.id <- bbrier$iid.naive  <- bbrier$id <- NULL
+    bbrier$design$y <- NULL
+    bbrier$design$data <- NULL
+    bbrier$design$x <- NULL
+    bbrier$design$strata <- NULL
+    return(bbrier)
   }
+
   ## ------------------------------------------------------------------
   ## resmeanIPCW wrapper / log-scale estimate helper
   ## ------------------------------------------------------------------
@@ -1325,6 +1333,7 @@ brier_binreg <- function(formula, data, time,
     predb        <- predict(outb, data, se = FALSE)
     data$brier_  <- (outcome - predb)^2
     bbrier       <- do_resmean(data, data$brier_, tt)
+    bbrier <- eco(bbrier)
     bbrier_log   <- log_est(bbrier)
 
     ## ---------------- null model: CV ----------------
@@ -1332,13 +1341,15 @@ brier_binreg <- function(formula, data, time,
     outfb      <- binregStrata(f0_strata, data = data, time = tt,
                                 strata     = strata_vec,
                                 cens.model = cens.model,
-                                cv.fold    = TRUE, ...)
+                                cv.fold    = TRUE, low.memory=TRUE,...)
     predbcv     <- predict_cvS(outfb, data)
     data$brier_ <- (outcome - predbcv)^2
     bbrierCV    <- do_resmean(data, data$brier_, tt)
+    bbrierCV    <- eco(bbrierCV)
     iid.bbrierCV <- cv_iid_correctS(bbrierCV, outfb, data,
                                      predbcv, ipcw_wt_b, outcome,
                                      binreg_model)
+    outfb$iid <- NULL
     bbrierCV_log <- log_est(bbrierCV, iid_corrected = iid.bbrierCV)
 
     null_res <- list(
@@ -1362,7 +1373,9 @@ brier_binreg <- function(formula, data, time,
       ipcw_wt_m   <- as.numeric(out$IPCW)
       pred        <- predict(out, data, se = FALSE)
       data$brier_ <- (outcome_m - pred)^2
+      out         <- NULL
       brier       <- do_resmean(data, data$brier_, tt)
+      brier       <- eco(brier)
       brier_log   <- log_est(brier)
       dbrier      <- brier_log$coef - bbrier_log$coef
       se.dbrier   <- as.numeric(crossprod(brier_log$iid - bbrier_log$iid)^.5)
@@ -1372,13 +1385,14 @@ brier_binreg <- function(formula, data, time,
       outff    <- binregStrata(f_strata, data = data, time = tt,
                                 strata     = strata_vec,
                                 cens.model = cens.model,
-                                cv.fold    = TRUE, ...)
+                                cv.fold    = TRUE, low.memory=TRUE,...)
       pred        <- predict_cvS(outff, data)
       data$brier_ <- (outcome_m - pred)^2
       brierCV     <- do_resmean(data, data$brier_, tt)
+      brierCV     <- eco(brierCV)
       iid.brierCV <- cv_iid_correctS(brierCV, outff, data,
-                                      pred, ipcw_wt_m, outcome_m,
-                                      binreg_model)
+                                      pred, ipcw_wt_m, outcome_m, binreg_model)
+      outff        <- NULL
       brierCV_log <- log_est(brierCV, iid_corrected = iid.brierCV)
       dbrierCV    <- brierCV_log$coef - bbrierCV_log$coef
       se.dbrierCV <- as.numeric(crossprod(brierCV_log$iid - bbrierCV_log$iid)^.5)
@@ -1399,7 +1413,11 @@ brier_binreg <- function(formula, data, time,
     ## iid matrix: n x (1 + nmodels)
     iid_cols <- vector("list", nmodels + 1L)
     iid_cols[[1]] <- bbrierCV_log$iid
-    for (mi in seq_len(nmodels)) iid_cols[[mi + 1L]] <- model_res[[mi]]$iid$brierCV
+    bbrierCV_log$iid <- NULL
+    for (mi in seq_len(nmodels)) {
+	    iid_cols[[mi + 1L]] <- model_res[[mi]]$iid$brierCV
+	    model_res[[mi]]$iid$brierCV <- NULL
+    }
     iid_mat <- do.call(cbind, iid_cols)
     colnames(iid_mat) <- c("null", names(rhs))
 
@@ -1436,566 +1454,6 @@ brier_binreg <- function(formula, data, time,
   }
 } ## }}}
 
-###brier_binreg <- function(formula, data, time,
-###                               fold             = 5,
-###                               rhs              = NULL,
-###                               rhs0             = ~+1,
-###                               cens.model       = ~+1,
-###                               brier.cens.model = ~+1,
-###                               brier.args       = list(),
-###                               cv.split.index   = NULL,
-###                               ...) { ## {{{
-###
-###  ## ------------------------------------------------------------------
-###  ## Small helpers
-###  ## ------------------------------------------------------------------
-###  extract_cluster_id <- function(f) {
-###    tt     <- terms(f, specials = "cluster")
-###    cl_idx <- attr(tt, "specials")$cluster
-###    if (is.null(cl_idx)) return(NULL)
-###    cl_term <- attr(tt, "variables")[[cl_idx + 1L]]
-###    as.character(cl_term[[2]])
-###  }
-###  drop_cluster <- function(f) {
-###    tt     <- terms(f, specials = "cluster")
-###    cl_idx <- attr(tt, "specials")$cluster
-###    if (is.null(cl_idx)) return(f)
-###    cl_var <- attr(tt, "variables")[[cl_idx + 1L]]
-###    update(f, paste("~ . -", deparse(cl_var)))
-###  }
-###
-###  ## ------------------------------------------------------------------
-###  ## Parse top-level formula
-###  ## ------------------------------------------------------------------
-###  lhs_str  <- deparse(formula[[2]])
-###  lhs_call <- formula[[2]]
-###  if (length(lhs_call) == 4L)
-###    stop("brier_binreg does not support delayed entry (left-truncation).\n",
-###         "  Found: ", deparse(lhs_call))
-###
-###  time_var   <- as.character(lhs_call[[2]])
-###  status_var <- as.character(lhs_call[[3]])
-###  id         <- extract_cluster_id(formula)
-###
-###  if (is.null(id)) {
-###    id         <- "id__"
-###    data[[id]] <- seq_len(nrow(data))
-###    formula    <- update(formula, paste("~ . + cluster(id__)"))
-###  }
-###  base_resmean <- as.formula(paste(lhs_str, "~ +1 + cluster(", id, ")"))
-###
-###  ## ------------------------------------------------------------------
-###  ## Parse rhs list
-###  ## ------------------------------------------------------------------
-###  formula_rhs_clean <- drop_cluster(
-###    reformulate(attr(terms(formula), "term.labels"), intercept = FALSE))
-###
-###  if (is.null(rhs))        rhs <- list(model1 = formula_rhs_clean)
-###  if (!is.list(rhs))       rhs <- list(model1 = rhs)
-###  if (is.null(names(rhs)) || any(names(rhs) == ""))
-###    names(rhs) <- paste0("model", seq_along(rhs))
-###
-###  rhs  <- lapply(rhs,  drop_cluster)
-###  rhs0 <- drop_cluster(rhs0)
-###
-###  ## build_full: attach lhs and cluster() to a bare rhs formula
-###  build_full <- function(f) {
-###    labs    <- attr(terms(f), "term.labels")
-###    rhs_str <- if (length(labs) == 0) "1" else paste(labs, collapse = " + ")
-###    as.formula(paste(lhs_str, "~", rhs_str, "+ cluster(", id, ")"))
-###  }
-###
-###  if (!id %in% names(data)) stop("id variable '", id, "' not found in data")
-###
-###  ## ------------------------------------------------------------------
-###  ## CV fold index -- computed once, reused for all time points
-###  ## ------------------------------------------------------------------
-###  as_fold_list <- function(x) {
-###    if (is.list(x))                      return(x)
-###    if (is.numeric(x) || is.integer(x)) return(split(seq_along(x), x))
-###    stop("Unsupported cv.split.index format")
-###  }
-###
-###  n  <- nrow(data)
-###  dd <- if (is.null(cv.split.index)) folds(n, fold) else as_fold_list(cv.split.index)
-###
-###  ## Attach fold membership to data (0-based stratum index for binregStrata)
-###  ## strata(fold) in cens.model will use the 1-based fold column.
-###  data$fold <- 0L
-###  for (k in seq_len(fold)) data$fold[dd[[k]]] <- k
-###  ## 0-based stratum vector passed to binregStrata via strata argument
-###  strata_vec <- data$fold - 1L   # 0 .. fold-1
-###
-###  ## ------------------------------------------------------------------
-###  ## build_strata_formula: attach strata(fold) to the rhs for cens.model
-###  ## and keep cluster() for binregStrata
-###  ## ------------------------------------------------------------------
-###  build_strata_formula <- function(f) {
-###    ## f is already drop_cluster'd; we re-attach cluster and add strata(fold)
-###    labs    <- attr(terms(f), "term.labels")
-###    rhs_str <- if (length(labs) == 0) "1" else paste(labs, collapse = " + ")
-###    as.formula(paste(lhs_str, "~", rhs_str,
-###                     "+ strata(fold) + cluster(", id, ")"))
-###  }
-###
-###  ## ------------------------------------------------------------------
-###  ## predict_cvS: get OOF predictions from a binregStrata(cv.fold=TRUE) fit
-###  ##
-###  ## binregStrata with cv.fold=TRUE fits beta_s on complement of stratum s.
-###  ## To predict for stratum s we simply call predict() on the full newdata:
-###  ## the predict.binregStrata routes each obs to its own stratum's beta_s,
-###  ## which was trained on the other strata -- exactly the OOF prediction.
-###  ## ------------------------------------------------------------------
-###  predict_cvS <- function(fit, newdata, se = FALSE) {
-###    as.numeric(predict(fit, newdata, se = se))
-###  }
-###
-###  ## ------------------------------------------------------------------
-###  ## cv_iid_correctS: delta-method IID correction for binregStrata CV fits
-###  ##
-###  ## binregStrata iid has shape n_id x (nstrata * p), blocked as
-###  ##   [ iid_beta_1 | iid_beta_2 | ... | iid_beta_K ]
-###  ## each block is n_id x p.
-###  ##
-###  ## For stratum s, beta_s was fitted on complement rows (strata != s-1).
-###  ## The Brier gradient w.r.t. beta_s is:
-###  ##   D_s = -2 * mean_over_ALL_n( mu'_i * (outcome_i - pred_i) * ipcw_i * x_i )
-###  ## but only obs in stratum s contribute through their OOF prediction
-###  ## (obs not in s used a different beta), so in practice we restrict to
-###  ## stratum-s obs for the gradient of the Brier w.r.t. beta_s.
-###  ##
-###  ## More precisely:
-###  ##   pred_i = mu(x_i' beta_{s_i})   where s_i = stratum of obs i
-###  ## so d(pred_i)/d(beta_s) = mu'_i * x_i  iff  s_i == s,  else 0.
-###  ##
-###  ## Therefore:
-###  ##   D_s = -2/n * sum_{i: s_i = s} mu'_i * (outcome_i - pred_i) * ipcw_i * x_i
-###  ##
-###  ## and the IID correction is:
-###  ##   iid(brier_fit) + sum_s  iid_beta_s  %*%  D_s
-###  ## ------------------------------------------------------------------
-###  cv_iid_correctS <- function(brier_fit, outff_fit, newdata,
-###                               pred_vec, ipcw_wt_vec, outcome_vec,
-###                               binreg_model) {
-###    nstrata <- outff_fit$nstrata
-###    p       <- length(outff_fit$coef) / nstrata
-###    n       <- length(pred_vec)
-###
-###    ## design matrix for all obs (rows ordered as in data / newdata)
-###    des  <- update_design(outff_fit$design, data = newdata, response = FALSE)
-###    X    <- des$x                               # n x p
-###    ## 0-based stratum index for each obs
-###    if (!is.null(des$strata)) {
-###      strata_idx <- as.integer(des$strata) - 1L
-###    } else {
-###      strata_idx <- outff_fit$strata_orig       # already 0-based after ord
-###    }
-###
-###    mu_prime <- switch(binreg_model,
-###      logit = pred_vec * (1 - pred_vec),
-###      exp   = pred_vec,
-###      lin   = rep(1.0, n),
-###      stop("unrecognised binreg model '", binreg_model, "'")
-###    )
-###
-###    iid_full <- iid(outff_fit)    # n_id x (nstrata * p)
-###    n_id     <- nrow(iid_full)
-###
-###    iid_adj <- matrix(0.0, n_id, 1)
-###
-###    for (s in seq_len(nstrata)) {
-###      ## obs whose OOF prediction came from beta_s (i.e. obs in stratum s-1)
-###      idx_s   <- which(strata_idx == (s - 1L))
-###      if (length(idx_s) == 0L) next
-###
-###      x_s       <- X[idx_s, , drop = FALSE]
-###      mu_s      <- mu_prime[idx_s]
-###      resid_s   <- (outcome_vec[idx_s] - pred_vec[idx_s]) * ipcw_wt_vec[idx_s]
-###
-###      ## gradient of Brier w.r.t. beta_s  (p-vector)
-###      D_s <- -2 / n * colSums(x_s * mu_s * resid_s)
-###
-###      ## iid block for beta_s
-###      cols    <- (s - 1L) * p + seq_len(p)
-###      iid_s   <- iid_full[, cols, drop = FALSE]   # n_id x p
-###
-######    print(D_s)
-######    print(head(iid_s))
-###      iid_adj <- iid_adj + iid_s %*% D_s          # n_id x 1
-###    }
-######    print(head(iid_adj))
-###
-###    iid(brier_fit) + iid_adj
-###  }
-###
-###
-###  ## ------------------------------------------------------------------
-##### cv_iid_correctS: delta-method IID correction for binregStrata CV fits
-#####
-##### Key alignment facts:
-#####   iid(outff_fit)  : n_id x (nstrata*p), rows in REORDERED id order
-#####                     (outff_fit$id is xx$id after Cox-prep reordering)
-#####                     outff_fit$name.id maps row -> original cluster label
-#####   iid(brier_fit)  : n x 1, rows in ORIGINAL data order,
-#####                     indexed by original cluster id
-#####
-##### We must accumulate iid_adj in the same row space as iid(brier_fit).
-#####
-##### Strategy:
-#####   1. Compute D_s (p-vector gradient) for each stratum s -- uses
-#####      original-data-order vectors (pred_vec, ipcw_wt_vec, outcome_vec,
-#####      and X from update_design on newdata which is in original order).
-#####   2. For each stratum, iid_s = iid_full[, cols_s] is n_id x p in
-#####      REORDERED order.  Map it back to original order via name.id.
-#####   3. Add iid_s %*% D_s into iid_adj at the right rows.
-#####   4. Return iid(brier_fit) + iid_adj, both in original order.
-##### ------------------------------------------------------------------
-###cv_iid_correctS <- function(brier_fit, outff_fit, newdata,
-###                             pred_vec, ipcw_wt_vec, outcome_vec,
-###                             binreg_model) { ## {{{ 
-###  nstrata  <- outff_fit$nstrata
-###  p        <- length(outff_fit$coef) / nstrata
-###  n        <- length(pred_vec)                  # original data n
-###  iid_b    <- iid(brier_fit)                    # n_id_brier x 1, original order
-###  n_id_b   <- nrow(iid_b)
-###
-###  ## ------------------------------------------------------------------
-###  ## Design matrix in ORIGINAL data order (newdata = original data)
-###  ## ------------------------------------------------------------------
-###  des      <- update_design(outff_fit$design, data = newdata,
-###                                   response = FALSE)
-###  X        <- des$x                             # n x p, original order
-###
-###  ## 0-based stratum index in original data order
-###  strata_idx <- if (!is.null(des$strata)) {
-###    as.integer(des$strata) - 1L
-###  } else if ("fold" %in% names(newdata)) {
-###    as.integer(newdata$fold) - 1L
-###  } else {
-###    ## strata_orig is in reordered frame -- use fold column as fallback
-###    stop("Cannot determine stratum membership for newdata in cv_iid_correctS.\n",
-###         "  Ensure newdata contains a 'fold' column (1-based).")
-###  }
-###
-###  ## ------------------------------------------------------------------
-###  ## mu' in original data order
-###  ## ------------------------------------------------------------------
-###  mu_prime <- switch(binreg_model,
-###    logit = pred_vec * (1 - pred_vec),
-###    exp   = pred_vec,
-###    lin   = rep(1.0, n),
-###    stop("unrecognised binreg model '", binreg_model, "'")
-###  )
-###
-###  ## ------------------------------------------------------------------
-###  ## iid of outff_fit: n_id x (nstrata*p), rows in REORDERED order.
-###  ## Reorder to original cluster order using name.id / orig.id.
-###  ##
-###  ## outff_fit$name.id : character vector of length n_id giving cluster
-###  ##                     labels in REORDERED frame order
-###  ## We need to map these to the row indices of iid(brier_fit).
-###  ## brier_fit is a resmeanIPCW fit whose iid rows correspond to the
-###  ## unique cluster ids in the original data in the order they first
-###  ## appear (standard mets convention).
-###  ## ------------------------------------------------------------------
-###  iid_full   <- iid(outff_fit)                  # n_id x (nstrata*p), reordered
-###  n_id       <- nrow(iid_full)
-###
-###  ## Build a re-indexing vector: for each row r of iid_full (reordered),
-###  ## which row of iid_b (original order) does it belong to?
-###  ## outff_fit$name.id gives cluster labels in reordered frame.
-###  ## We use match() against the cluster labels of brier_fit.
-###  ## resmeanIPCW stores cluster id in $id (integer, 0-based or 1-based)
-###  ## and $name.id.  Use name.id when available, else fall back to id.
-###  if (!is.null(outff_fit$name.id) && !is.null(brier_fit$name.id)) {
-###    ## both have string cluster labels -- align on those
-###    reorder_idx <- match(outff_fit$name.id, brier_fit$name.id)
-###  } else {
-###    ## integer cluster ids -- outff_fit$id is in reordered frame,
-###    ## values are 0-based cluster indices matching brier_fit$id
-###    ## resmeanIPCW $id is 1-based; subtract 1 to get 0-based index
-###    reorder_idx <- match(outff_fit$id + 1L,
-###                         sort(unique(brier_fit$id)))
-###    if (anyNA(reorder_idx)) {
-###      ## last resort: assume same ordering
-###      reorder_idx <- seq_len(n_id)
-###    }
-###  }
-###
-###  ## iid_full reordered to match brier_fit row space
-###  ## If n_id == n_id_b and reorder_idx is a permutation, this is exact.
-###  ## If some cluster ids appear in one but not the other (edge case),
-###  ## we restrict to the intersection -- but normally they match.
-###  iid_full_orig <- matrix(0.0, n_id_b, ncol(iid_full))
-###  valid         <- !is.na(reorder_idx) & reorder_idx <= n_id_b
-###  iid_full_orig[reorder_idx[valid], ] <- iid_full[valid, ]
-###
-###  ## ------------------------------------------------------------------
-###  ## Accumulate iid adjustment stratum by stratum
-###  ## ------------------------------------------------------------------
-###  iid_adj <- matrix(0.0, n_id_b, 1)
-###
-###  for (s in seq_len(nstrata)) {
-###    ## obs in stratum s (their OOF pred came from beta_s)
-###    idx_s <- which(strata_idx == (s - 1L))
-###    if (length(idx_s) == 0L) next
-###
-###    x_s     <- X[idx_s, , drop = FALSE]        # n_s x p, original order
-###    mu_s    <- mu_prime[idx_s]
-###    resid_s <- (outcome_vec[idx_s] - pred_vec[idx_s]) * ipcw_wt_vec[idx_s]
-###
-###    ## gradient of Brier w.r.t. beta_s (p-vector)
-###    D_s <- -2 / n * colSums(x_s * mu_s * resid_s)
-###
-###    ## iid block for beta_s, now in original-data row order
-###    cols    <- (s - 1L) * p + seq_len(p)
-###    iid_s   <- iid_full_orig[, cols, drop = FALSE]   # n_id_b x p
-###
-###    iid_adj <- iid_adj + iid_s %*% D_s               # n_id_b x 1
-###  }
-###
-###  iid_b + iid_adj
-###} ## }}} 
-###
-###
-###cv_iid_correctS <- function(brier_fit, outff_fit, newdata,
-###                             pred_vec, ipcw_wt_vec, outcome_vec,
-###                             binreg_model) { ## {{{ 
-###  nstrata <- outff_fit$nstrata
-###  p       <- length(outff_fit$coef) / nstrata
-###  n       <- length(pred_vec)
-###
-###  ## ------------------------------------------------------------------
-###  ## Design matrix in original data order
-###  ## ------------------------------------------------------------------
-###  des        <- update_design(outff_fit$design, data = newdata,
-###                                     response = FALSE)
-###  X          <- des$x                           # n x p, original order
-###
-###  ## 0-based stratum index, original order
-###  strata_idx <- if (!is.null(des$strata)) {
-###    as.integer(des$strata) - 1L
-###  } else if ("fold" %in% names(newdata)) {
-###    as.integer(newdata$fold) - 1L
-###  } else {
-###    stop("Cannot determine stratum for newdata: needs 'fold' column.")
-###  }
-###
-###  ## ------------------------------------------------------------------
-###  ## Build full block-diagonal Xs: n x (nstrata*p)
-###  ## For cv.fold: obs i in stratum s_i contributes only to block s_i
-###  ## (its OOF prediction came from beta_{s_i}).
-###  ## This mirrors the Xs construction inside binregStrata for MGCiid,
-###  ## but here each obs goes in its OWN stratum block (not complement),
-###  ## because d(pred_i)/d(beta_s) is nonzero only when s == s_i.
-###  ## ------------------------------------------------------------------
-###  Xs <- matrix(0.0, n, nstrata * p)
-###  for (s in seq_len(nstrata)) {
-###    idx  <- which(strata_idx == (s - 1L))
-###    cols <- (s - 1L) * p + seq_len(p)
-###    Xs[idx, cols] <- X[idx, , drop = FALSE]
-###  }
-###
-###  ## ------------------------------------------------------------------
-###  ## mu' in original order
-###  ## ------------------------------------------------------------------
-###  mu_prime <- switch(binreg_model,
-###    logit = pred_vec * (1 - pred_vec),
-###    exp   = pred_vec,
-###    lin   = rep(1.0, n),
-###    stop("unrecognised binreg model '", binreg_model, "'")
-###  )
-###
-###  ## ------------------------------------------------------------------
-###  ## Full gradient vector: nstrata*p
-###  ## Dbrier_full[cols_s] = -2/n * sum_{i: s_i=s} mu'_i*(Y_i-pred_i)*ipcw_i * x_i
-###  ## All other blocks are zero because d(pred_i)/d(beta_s)=0 for s != s_i.
-###  ## ------------------------------------------------------------------
-###  resid      <- (outcome_vec - pred_vec) * ipcw_wt_vec   # n-vector
-###  Dbrier_full <- -2 * colSums(Xs * mu_prime * resid)/n # nstrata*p vector
-###
-###  ## ------------------------------------------------------------------
-###  ## iid(outff_fit): n_id x (nstrata*p)
-###  ## Single matrix multiply -- structurally identical to brier_binreg's
-###  ##   iid(outff_fit) %*% Dbrier
-###  ## ------------------------------------------------------------------
-######  print(head(iid(outff_fit))) 
-######  print(Dbrier_full)
-######  print(head( iid(outff_fit) %*% Dbrier_full))
-###  iid(brier_fit) + iid(outff_fit) %*% Dbrier_full
-###}
-###
-###
-###  ## ------------------------------------------------------------------
-###  ## resmeanIPCW wrapper
-###  ## ------------------------------------------------------------------
-###  do_resmean <- function(dat, Ydirect, tt) {
-###    do.call(resmeanIPCW,
-###            c(list(base_resmean, dat, time = tt,
-###                   Ydirect    = Ydirect,
-###                   cens.model = brier.cens.model,
-###                   model      = "lin"),
-###              brier.args))
-###  } ## }}} 
-###
-###  ## ------------------------------------------------------------------
-###  ## log-scale estimate helper
-###  ## ------------------------------------------------------------------
-###  log_est <- function(fit, iid_corrected = NULL) {
-###    if (!is.null(iid_corrected)) {
-###      n <- nrow(iid_corrected)
-###      e <- lava::estimate(NULL,
-###                          coef = fit$coef,
-###                          IC   = iid_corrected * n,
-###                          f    = log)
-###    } else {
-###      e <- estimate(fit, f = log)
-###    }
-###    list(coef = as.numeric(e$coef),
-###         se   = as.numeric(diag(vcov(e))^.5),
-###         iid  = iid(e))
-###  }
-###
-###  ## ------------------------------------------------------------------
-###  ## run_one: compute Brier scores at a single time point
-###  ## ------------------------------------------------------------------
-###  run_one <- function(tt) { ## {{{
-###
-###    ## ----------------------------------------------------------------
-###    ## Apparent (no-CV) null model via plain binreg
-###    ## ----------------------------------------------------------------
-###    outb         <- binreg(build_full(rhs0), data, time = tt, ...)
-###    binreg_model <- outb$model
-###    outcome      <- as.numeric(outb$Y)
-###    ipcw_wt_b    <- as.numeric(outb$IPCW)
-###    predb        <- predict(outb, data, se = FALSE)
-###    data$brier_  <- (outcome - predb)^2
-###    bbrier       <- do_resmean(data, data$brier_, tt)
-###    bbrier_log   <- log_est(bbrier)
-###
-###    ## ----------------------------------------------------------------
-###    ## CV null model via binregStrata(cv.fold = TRUE)
-###    ## The fold column acts as the stratum; cv.fold=TRUE means beta_s
-###    ## is estimated on all obs NOT in fold s.
-###    ## ----------------------------------------------------------------
-###    f0_strata  <- build_strata_formula(rhs0)
-###    outfb      <- binregStrata(f0_strata, data = data, time = tt,
-###                                strata     = strata_vec,
-###                                cens.model = cens.model,
-###                                cv.fold    = TRUE, ...)
-######    print(estimate(outfb))
-###    predbcv    <- predict_cvS(outfb, data)
-###    data$brier_ <- (outcome - predbcv)^2
-###    bbrierCV    <- do_resmean(data, data$brier_, tt)
-###
-###    iid.bbrierCV <- cv_iid_correctS(bbrierCV, outfb, data,
-###                                     predbcv, ipcw_wt_b, outcome,
-###                                     binreg_model)
-###    bbrierCV_log <- log_est(bbrierCV, iid_corrected = iid.bbrierCV)
-###
-###    null_res <- list(
-###      coef = c(bbrier   = bbrier_log$coef,
-###               bbrierCV = bbrierCV_log$coef),
-###      se   = c(bbrier   = bbrier_log$se,
-###               bbrierCV = bbrierCV_log$se),
-###      iid  = list(bbrierCV = bbrierCV_log$iid)
-###    )
-###
-###    ## ----------------------------------------------------------------
-###    ## Loop over candidate models
-###    ## ----------------------------------------------------------------
-###    model_res        <- vector("list", length(rhs))
-###    names(model_res) <- names(rhs)
-###
-###    for (m in seq_along(rhs)) {
-###      f <- rhs[[m]]
-###
-###      ## --- apparent -------------------------------------------------
-###      out        <- binreg(build_full(f), data, time = tt, ...)
-###      outcome_m  <- as.numeric(out$Y)
-###      ipcw_wt_m  <- as.numeric(out$IPCW)
-###      pred       <- predict(out, data, se = FALSE)
-###      data$brier_ <- (outcome_m - pred)^2
-###      brier       <- do_resmean(data, data$brier_, tt)
-###      brier_log   <- log_est(brier)
-###      dbrier      <- brier_log$coef - bbrier_log$coef
-###      se.dbrier   <- as.numeric(crossprod(brier_log$iid - bbrier_log$iid)^.5)
-###
-###      ## --- CV via binregStrata(cv.fold = TRUE) ----------------------
-###      f_strata <- build_strata_formula(f)
-###      outff    <- binregStrata(f_strata, data = data, time = tt,
-###                                strata     = strata_vec,
-###                                cens.model = cens.model,
-###                                cv.fold    = TRUE, ...)
-######      print(estimate(outff))
-###      pred        <- predict_cvS(outff, data)
-###      data$brier_ <- (outcome_m - pred)^2
-###      brierCV     <- do_resmean(data, data$brier_, tt)
-###
-###      iid.brierCV <- cv_iid_correctS(brierCV, outff, data,
-###                                      pred, ipcw_wt_m, outcome_m,
-###                                      binreg_model)
-###      brierCV_log <- log_est(brierCV, iid_corrected = iid.brierCV)
-###      dbrierCV    <- brierCV_log$coef - bbrierCV_log$coef
-###      se.dbrierCV <- as.numeric(crossprod(brierCV_log$iid - bbrierCV_log$iid)^.5)
-###
-###      model_res[[m]] <- list(
-###        coef  = c(brier     = brier_log$coef,
-###                  brierCV   = brierCV_log$coef),
-###        se    = c(brier     = brier_log$se,
-###                  brierCV   = brierCV_log$se),
-###        dcoef = c(dbrier    = dbrier,
-###                  dbrierCV  = dbrierCV),
-###        sed   = c(se.dbrier   = se.dbrier,
-###                  se.dbrierCV = se.dbrierCV),
-###        iid   = list(brierCV = brierCV_log$iid)
-###      )
-###    }
-###
-###    ## iid matrix: n x (1 + nmodels)  null | model1 | model2 | ...
-###    iid_mat <- cbind(
-###      null = bbrierCV_log$iid,
-###      do.call(cbind, setNames(
-###        lapply(model_res, function(m) m$iid$brierCV),
-###        names(rhs)
-###      ))
-###    )
-###
-###    structure(
-###      list(null             = null_res,
-###           models           = model_res,
-###           iid_mat          = iid_mat,
-###           cv.split.index   = dd,
-###           time             = tt,
-###           fold             = fold,
-###           rhs              = rhs,
-###           rhs0             = rhs0,
-###           model            = binreg_model,
-###           cens.model       = cens.model,
-###           brier.cens.model = brier.cens.model),
-###      class = "binregCV"
-###    )
-###  } ## }}}
-###
-###  ## ------------------------------------------------------------------
-###  ## Dispatch: single or multiple time points
-###  ## ------------------------------------------------------------------
-###  cl <- match.call()
-###  if (length(time) == 1) {
-###    out        <- run_one(time)
-###    out$call   <- cl
-###    class(out) <- "binregCV"
-###    out
-###  } else {
-###    res        <- setNames(lapply(time, run_one), as.character(time))
-###    res$call   <- cl
-###    res$rhs    <- rhs
-###    res$rhs0   <- rhs0
-###    class(res) <- "binregCV_list"
-###    res
-###  }
-###} ## }}}
-###
 ## {{{  infrastructure for brier_binreg
 ## =============================================================================
 ## estimate.binregCV  -- lava-style joint estimate  (null + all CV models)
@@ -2203,6 +1661,7 @@ summarize_brier_binregCV <- function(fit,
 ##' @param type Either \code{"cv"} (default) for cross-validated Brier scores
 ##'   only, or \code{"both"} to also include apparent (in-sample) scores.
 ##' @param ... Not currently used.
+##' @aliases print.binregCV
 ##' @export
 summary.binregCV <- function(object, transform = NULL,
                               conf.level = 0.95,
@@ -2212,6 +1671,16 @@ summary.binregCV <- function(object, transform = NULL,
                             conf.level = conf.level,
                             type       = match.arg(type))
 }
+
+##' @export
+print.binregCV <- function(x, transform = NULL, 
+                              conf.level = 0.95, type = c("cv", "both"), ...) { ## {{{ 
+  print(summarize_brier_binregCV(x,
+                            transform  = transform,
+                            conf.level = conf.level,
+                            type       = match.arg(type)))
+} ## }}} 
+
 
 ##' Summary method for binregCV_list objects
 ##'

@@ -73,6 +73,8 @@
 ##' @references
 ##' Two-stage binomial modelling
 ##' @examples
+##' library(mets)  ## do not delete this line 
+##' set.seed(123)  ## do not delete this line 
 ##' data(twinstut)
 ##' twinstut0 <- subset(twinstut, tvparnr<4000)
 ##' twinstut <- twinstut0

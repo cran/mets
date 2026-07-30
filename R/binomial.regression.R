@@ -442,6 +442,9 @@ if (length(dots)==0) {
     MGCiid <- apply(MGt,2,sumstrata,xx$id,max(id)+1)
   }## }}}
 
+  ## do not need this, since have iid
+  val$Dlogl  <- NULL
+
   val$call <- cl
   val$MGciid <- MGCiid 
   val$call.id <- call.id
@@ -831,14 +834,20 @@ if (length(dots)==0) {
 #'
 #' @examples
 #' \dontrun{
+#' data(bmt)
+#' dfactor(bmt)  <-  ~.
+#'
+#' fit  <- binregATE(Event(time,cause)~tcell.f+platelet+age,bmt,time=50,cause=1,
+#'	  treat.model=tcell.f~platelet+age)
+#
 #' # default ATE behavior (DR + G)
-#' IC.binreg(fit)
+#' head(IC(fit))
 #'
 #' # only DR component
-#' IC.binreg(fit, "DR")
+#' head(IC(fit, "DR"))
 #'
 #' # multiple components
-#' IC.binreg(fit, c("coef", "DR"))
+#' head(IC(fit, c("coef", "DR")))
 #' }
 #'
 #' @export
@@ -2088,8 +2097,8 @@ for (a in seq_along(nlevels)) {
 vv <- crossprod(risk.iid)
 
 Gout <- estimate(coef=Gest$Gest,vcov=vv,labels=paste("risk",nlevels,sep=""))
-ed <-  estimate(coef=Gest$Gest,vcov=vv,f=function(p) p[-1]-p[1])
-rd <- estimate(coef=Gest$Gest,vcov=vv,f=function(p) log(p[-1]/p[1]),null=0)
+ed <-  summary(estimate(coef=Gest$Gest,vcov=vv),f=function(p) p[-1]-p[1])
+rd <- summary(estimate(coef=Gest$Gest,vcov=vv),f=function(p) log(p[-1]/p[1]),null=0)
 out <- list(risk.iid=risk.iid,risk=Gout,difference=ed,ratio=rd,vcov=vv,model=x$model[1])
 class(out) <- "survivalG"
 return(out)

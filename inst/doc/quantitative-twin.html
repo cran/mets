@@ -540,12 +540,7 @@ pair)</p>
 and DZ correlation:</p>
 <div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" tabindex="-1"></a><span class="fu">estimate</span>(lu,lava<span class="sc">::</span><span class="fu">contr</span>(<span class="dv">5</span><span class="sc">:</span><span class="dv">6</span>,<span class="dv">6</span>))</span>
 <span id="cb14-2"><a href="#cb14-2" tabindex="-1"></a><span class="co">#&gt;                           Estimate Std.Err   2.5%  97.5%   P-value</span></span>
-<span id="cb14-3"><a href="#cb14-3" tabindex="-1"></a><span class="co">#&gt; [atanh(rhoMZ)@1] - [a....   0.4816 0.04177 0.3997 0.5635 9.431e-31</span></span>
-<span id="cb14-4"><a href="#cb14-4" tabindex="-1"></a><span class="co">#&gt; ────────────────────────────────────────────────────────────</span></span>
-<span id="cb14-5"><a href="#cb14-5" tabindex="-1"></a><span class="co">#&gt; Null Hypothesis: </span></span>
-<span id="cb14-6"><a href="#cb14-6" tabindex="-1"></a><span class="co">#&gt;   [atanh(rhoMZ)@1] - [atanh(rhoDZ)@2] = 0 </span></span>
-<span id="cb14-7"><a href="#cb14-7" tabindex="-1"></a><span class="co">#&gt;  </span></span>
-<span id="cb14-8"><a href="#cb14-8" tabindex="-1"></a><span class="co">#&gt; chisq = 132.9162, df = 1, p-value &lt; 2.2e-16</span></span></code></pre></div>
+<span id="cb14-3"><a href="#cb14-3" tabindex="-1"></a><span class="co">#&gt; [atanh(rhoMZ)@1] - [a....   0.4816 0.04177 0.3997 0.5635 9.431e-31</span></span></code></pre></div>
 <p>We also consider the ACE model</p>
 <div class="sourceCode" id="cb15"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" tabindex="-1"></a>ace0 <span class="ot">&lt;-</span> <span class="fu">twinlm</span>(bmi <span class="sc">~</span> age<span class="sc">+</span>gender, <span class="at">data=</span>dd, <span class="at">DZ=</span><span class="st">&quot;DZ&quot;</span>, <span class="at">zyg=</span><span class="st">&quot;zyg&quot;</span>, <span class="at">id=</span><span class="st">&quot;tvparnr&quot;</span>, <span class="at">type=</span><span class="st">&quot;ace&quot;</span>)</span>
 <span id="cb15-2"><a href="#cb15-2" tabindex="-1"></a><span class="fu">summary</span>(ace0)</span>

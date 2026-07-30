@@ -12,7 +12,7 @@
 
 <meta name="author" content="Klaus Holst &amp; Thomas Scheike" />
 
-<meta name="date" content="2026-05-24" />
+<meta name="date" content="2026-07-29" />
 
 <title>Binomial Regression for Survival and Competing Risks Data</title>
 
@@ -341,7 +341,7 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 <h1 class="title toc-ignore">Binomial Regression for Survival and
 Competing Risks Data</h1>
 <h4 class="author">Klaus Holst &amp; Thomas Scheike</h4>
-<h4 class="date">2026-05-24</h4>
+<h4 class="date">2026-07-29</h4>
 
 
 
@@ -518,17 +518,20 @@ covariances, along the lines of:</p>
 <span id="cb6-11"><a href="#cb6-11" tabindex="-1"></a>}</span>
 <span id="cb6-12"><a href="#cb6-12" tabindex="-1"></a>     </span>
 <span id="cb6-13"><a href="#cb6-13" tabindex="-1"></a><span class="fu">estimate</span>(outs,<span class="at">f=</span>riskdifratio,dd,<span class="at">null=</span><span class="fu">c</span>(<span class="dv">0</span>,<span class="dv">1</span>,<span class="dv">1</span>))</span>
-<span id="cb6-14"><a href="#cb6-14" tabindex="-1"></a><span class="co">#&gt;    Estimate Std.Err     2.5%  97.5% P-value</span></span>
-<span id="cb6-15"><a href="#cb6-15" tabindex="-1"></a><span class="co">#&gt; p1   0.1192 0.07344 -0.02471 0.2632 0.10448</span></span>
-<span id="cb6-16"><a href="#cb6-16" tabindex="-1"></a><span class="co">#&gt; p2   1.3894 0.32197  0.75833 2.0204 0.22652</span></span>
-<span id="cb6-17"><a href="#cb6-17" tabindex="-1"></a><span class="co">#&gt; p3   0.7197 0.16679  0.39284 1.0467 0.09291</span></span>
-<span id="cb6-18"><a href="#cb6-18" tabindex="-1"></a><span class="co">#&gt; ────────────────────────────────────────────────────────────</span></span>
-<span id="cb6-19"><a href="#cb6-19" tabindex="-1"></a><span class="co">#&gt; Null Hypothesis: </span></span>
-<span id="cb6-20"><a href="#cb6-20" tabindex="-1"></a><span class="co">#&gt;   [p1] = 0</span></span>
-<span id="cb6-21"><a href="#cb6-21" tabindex="-1"></a><span class="co">#&gt;   [p2] = 1</span></span>
-<span id="cb6-22"><a href="#cb6-22" tabindex="-1"></a><span class="co">#&gt;   [p3] = 1 </span></span>
-<span id="cb6-23"><a href="#cb6-23" tabindex="-1"></a><span class="co">#&gt;  </span></span>
-<span id="cb6-24"><a href="#cb6-24" tabindex="-1"></a><span class="co">#&gt; chisq = 12.0249, df = 2, p-value = 0.002448</span></span></code></pre></div>
+<span id="cb6-14"><a href="#cb6-14" tabindex="-1"></a><span class="co">#&gt; Call: estimate.default(x = outs, f = riskdifratio, dd, null = c(0, </span></span>
+<span id="cb6-15"><a href="#cb6-15" tabindex="-1"></a><span class="co">#&gt;     1, 1))</span></span>
+<span id="cb6-16"><a href="#cb6-16" tabindex="-1"></a><span class="co">#&gt; ────────────────────────────────────────────────────────────</span></span>
+<span id="cb6-17"><a href="#cb6-17" tabindex="-1"></a><span class="co">#&gt;    Estimate Std.Err     2.5%  97.5% P-value</span></span>
+<span id="cb6-18"><a href="#cb6-18" tabindex="-1"></a><span class="co">#&gt; p1   0.1192 0.07344 -0.02471 0.2632 0.10448</span></span>
+<span id="cb6-19"><a href="#cb6-19" tabindex="-1"></a><span class="co">#&gt; p2   1.3894 0.32197  0.75833 2.0204 0.22652</span></span>
+<span id="cb6-20"><a href="#cb6-20" tabindex="-1"></a><span class="co">#&gt; p3   0.7197 0.16679  0.39284 1.0467 0.09291</span></span>
+<span id="cb6-21"><a href="#cb6-21" tabindex="-1"></a><span class="co">#&gt; ────────────────────────────────────────────────────────────</span></span>
+<span id="cb6-22"><a href="#cb6-22" tabindex="-1"></a><span class="co">#&gt; Null Hypothesis: </span></span>
+<span id="cb6-23"><a href="#cb6-23" tabindex="-1"></a><span class="co">#&gt;   [p1] = 0</span></span>
+<span id="cb6-24"><a href="#cb6-24" tabindex="-1"></a><span class="co">#&gt;   [p2] = 1</span></span>
+<span id="cb6-25"><a href="#cb6-25" tabindex="-1"></a><span class="co">#&gt;   [p3] = 1 </span></span>
+<span id="cb6-26"><a href="#cb6-26" tabindex="-1"></a><span class="co">#&gt;  </span></span>
+<span id="cb6-27"><a href="#cb6-27" tabindex="-1"></a><span class="co">#&gt; chisq = 12.0249, df = 2, p-value = 0.002448</span></span></code></pre></div>
 <p>same as</p>
 <div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a>run <span class="ot">&lt;-</span> <span class="dv">0</span></span>
 <span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a><span class="cf">if</span> (run<span class="sc">==</span><span class="dv">1</span>) {</span>
@@ -564,12 +567,12 @@ covariances, along the lines of:</p>
 <span id="cb8-22"><a href="#cb8-22" tabindex="-1"></a><span class="co">#&gt; [1] stats     graphics  grDevices utils     datasets  methods   base     </span></span>
 <span id="cb8-23"><a href="#cb8-23" tabindex="-1"></a><span class="co">#&gt; </span></span>
 <span id="cb8-24"><a href="#cb8-24" tabindex="-1"></a><span class="co">#&gt; other attached packages:</span></span>
-<span id="cb8-25"><a href="#cb8-25" tabindex="-1"></a><span class="co">#&gt; [1] timereg_2.0.7  survival_3.8-6 mets_1.3.10   </span></span>
+<span id="cb8-25"><a href="#cb8-25" tabindex="-1"></a><span class="co">#&gt; [1] timereg_2.0.7  survival_3.8-6 mets_1.3.12   </span></span>
 <span id="cb8-26"><a href="#cb8-26" tabindex="-1"></a><span class="co">#&gt; </span></span>
 <span id="cb8-27"><a href="#cb8-27" tabindex="-1"></a><span class="co">#&gt; loaded via a namespace (and not attached):</span></span>
 <span id="cb8-28"><a href="#cb8-28" tabindex="-1"></a><span class="co">#&gt;  [1] cli_3.6.6              knitr_1.51             rlang_1.2.0           </span></span>
 <span id="cb8-29"><a href="#cb8-29" tabindex="-1"></a><span class="co">#&gt;  [4] xfun_0.57              otel_0.2.0             future.apply_1.20.2   </span></span>
-<span id="cb8-30"><a href="#cb8-30" tabindex="-1"></a><span class="co">#&gt;  [7] listenv_0.10.1         lava_1.9.1             stats4_4.6.0          </span></span>
+<span id="cb8-30"><a href="#cb8-30" tabindex="-1"></a><span class="co">#&gt;  [7] listenv_0.10.1         lava_1.9.2.1           stats4_4.6.0          </span></span>
 <span id="cb8-31"><a href="#cb8-31" tabindex="-1"></a><span class="co">#&gt; [10] grid_4.6.0             evaluate_1.0.5         yaml_2.3.12           </span></span>
 <span id="cb8-32"><a href="#cb8-32" tabindex="-1"></a><span class="co">#&gt; [13] mvtnorm_1.3-7          numDeriv_2016.8-1.1    compiler_4.6.0        </span></span>
 <span id="cb8-33"><a href="#cb8-33" tabindex="-1"></a><span class="co">#&gt; [16] codetools_0.2-20       Rcpp_1.1.1-1.1         ucminf_1.2.3          </span></span>

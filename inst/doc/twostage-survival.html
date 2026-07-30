@@ -12,7 +12,7 @@
 
 <meta name="author" content="Klaus Holst &amp; Thomas Scheike" />
 
-<meta name="date" content="2026-05-24" />
+<meta name="date" content="2026-07-29" />
 
 <title>Analysis of multivariate survival data</title>
 
@@ -340,7 +340,7 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 
 <h1 class="title toc-ignore">Analysis of multivariate survival data</h1>
 <h4 class="author">Klaus Holst &amp; Thomas Scheike</h4>
-<h4 class="date">2026-05-24</h4>
+<h4 class="date">2026-07-29</h4>
 
 
 
@@ -1603,20 +1603,19 @@ model.</p>
 <span id="cb32-23"><a href="#cb32-23" tabindex="-1"></a><span class="co">#&gt; [8] base     </span></span>
 <span id="cb32-24"><a href="#cb32-24" tabindex="-1"></a><span class="co">#&gt; </span></span>
 <span id="cb32-25"><a href="#cb32-25" tabindex="-1"></a><span class="co">#&gt; other attached packages:</span></span>
-<span id="cb32-26"><a href="#cb32-26" tabindex="-1"></a><span class="co">#&gt; [1] prodlim_2026.03.11 timereg_2.0.7      survival_3.8-6     mets_1.3.10       </span></span>
+<span id="cb32-26"><a href="#cb32-26" tabindex="-1"></a><span class="co">#&gt; [1] prodlim_2026.03.11 timereg_2.0.7      survival_3.8-6     mets_1.3.12       </span></span>
 <span id="cb32-27"><a href="#cb32-27" tabindex="-1"></a><span class="co">#&gt; </span></span>
 <span id="cb32-28"><a href="#cb32-28" tabindex="-1"></a><span class="co">#&gt; loaded via a namespace (and not attached):</span></span>
-<span id="cb32-29"><a href="#cb32-29" tabindex="-1"></a><span class="co">#&gt;  [1] vctrs_0.7.3            cli_3.6.6              knitr_1.51            </span></span>
-<span id="cb32-30"><a href="#cb32-30" tabindex="-1"></a><span class="co">#&gt;  [4] rlang_1.2.0            xfun_0.57              KernSmooth_2.23-26    </span></span>
-<span id="cb32-31"><a href="#cb32-31" tabindex="-1"></a><span class="co">#&gt;  [7] otel_0.2.0             data.table_1.18.4      glue_1.8.1            </span></span>
-<span id="cb32-32"><a href="#cb32-32" tabindex="-1"></a><span class="co">#&gt; [10] future.apply_1.20.2    listenv_0.10.1         lava_1.9.1            </span></span>
-<span id="cb32-33"><a href="#cb32-33" tabindex="-1"></a><span class="co">#&gt; [13] stats4_4.6.0           grid_4.6.0             evaluate_1.0.5        </span></span>
-<span id="cb32-34"><a href="#cb32-34" tabindex="-1"></a><span class="co">#&gt; [16] lifecycle_1.0.5        yaml_2.3.12            mvtnorm_1.3-7         </span></span>
-<span id="cb32-35"><a href="#cb32-35" tabindex="-1"></a><span class="co">#&gt; [19] numDeriv_2016.8-1.1    compiler_4.6.0         codetools_0.2-20      </span></span>
-<span id="cb32-36"><a href="#cb32-36" tabindex="-1"></a><span class="co">#&gt; [22] Rcpp_1.1.1-1.1         ucminf_1.2.3           future_1.70.0         </span></span>
-<span id="cb32-37"><a href="#cb32-37" tabindex="-1"></a><span class="co">#&gt; [25] lattice_0.22-9         digest_0.6.39          pillar_1.11.1         </span></span>
-<span id="cb32-38"><a href="#cb32-38" tabindex="-1"></a><span class="co">#&gt; [28] parallelly_1.47.0      parallel_4.6.0         Matrix_1.7-5          </span></span>
-<span id="cb32-39"><a href="#cb32-39" tabindex="-1"></a><span class="co">#&gt; [31] tools_4.6.0            RcppArmadillo_15.2.6-1 globals_0.19.1</span></span></code></pre></div>
+<span id="cb32-29"><a href="#cb32-29" tabindex="-1"></a><span class="co">#&gt;  [1] cli_3.6.6              knitr_1.51             rlang_1.2.0           </span></span>
+<span id="cb32-30"><a href="#cb32-30" tabindex="-1"></a><span class="co">#&gt;  [4] xfun_0.57              KernSmooth_2.23-26     otel_0.2.0            </span></span>
+<span id="cb32-31"><a href="#cb32-31" tabindex="-1"></a><span class="co">#&gt;  [7] data.table_1.18.4      future.apply_1.20.2    listenv_0.10.1        </span></span>
+<span id="cb32-32"><a href="#cb32-32" tabindex="-1"></a><span class="co">#&gt; [10] lava_1.9.2.1           stats4_4.6.0           grid_4.6.0            </span></span>
+<span id="cb32-33"><a href="#cb32-33" tabindex="-1"></a><span class="co">#&gt; [13] evaluate_1.0.5         yaml_2.3.12            mvtnorm_1.3-7         </span></span>
+<span id="cb32-34"><a href="#cb32-34" tabindex="-1"></a><span class="co">#&gt; [16] numDeriv_2016.8-1.1    compiler_4.6.0         codetools_0.2-20      </span></span>
+<span id="cb32-35"><a href="#cb32-35" tabindex="-1"></a><span class="co">#&gt; [19] Rcpp_1.1.1-1.1         ucminf_1.2.3           future_1.70.0         </span></span>
+<span id="cb32-36"><a href="#cb32-36" tabindex="-1"></a><span class="co">#&gt; [22] lattice_0.22-9         digest_0.6.39          parallelly_1.47.0     </span></span>
+<span id="cb32-37"><a href="#cb32-37" tabindex="-1"></a><span class="co">#&gt; [25] parallel_4.6.0         Matrix_1.7-5           tools_4.6.0           </span></span>
+<span id="cb32-38"><a href="#cb32-38" tabindex="-1"></a><span class="co">#&gt; [28] RcppArmadillo_15.2.6-1 globals_0.19.1</span></span></code></pre></div>
 </div>
 
 

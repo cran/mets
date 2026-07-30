@@ -2,7 +2,7 @@
 % Please edit documentation in R/brier_binreg.R
 \name{binregStrata}
 \alias{binregStrata}
-\title{Binomial Regression with Stratified Pseudo-Values and Censoring Adjustment}
+\title{Stratified Binomial Regression with cross-validation option}
 \usage{
 binregStrata(
   formula,
@@ -26,6 +26,7 @@ binregStrata(
   Ydirect = NULL,
   strata = NULL,
   cv.fold = FALSE,
+  low.memory = FALSE,
   ...
 )
 }
@@ -102,6 +103,8 @@ not specified via \code{strata()} in the formula.}
 regression coefficients are estimated using all observations \emph{not}
 in stratum \code{s} (a cross-validation-style fit), rather than the
 observations within stratum \code{s} (the default, \code{FALSE}).}
+
+\item{low.memory}{Logical. If \code{TRUE} only saves key quanties, coef, var, iid and some design structures.}
 
 \item{...}{Additional arguments, currently passed as optimizer
 \code{control} settings (e.g. \code{tol}, \code{stepsize}) to the
